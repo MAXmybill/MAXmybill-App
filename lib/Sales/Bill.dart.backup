@@ -1,0 +1,1019 @@
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
+import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:maxmybill/Colors.dart';
+import 'package:provider/provider.dart';
+
+// --- PROJECT IMPORTS ---
+import 'package:maxmybill/models/cart_item.dart';
+import 'package:maxmybill/Sales/Invoice.dart';
+import 'package:maxmybill/utils/firestore_service.dart';
+import 'package:maxmybill/models/sale.dart';
+import 'package:maxmybill/services/sale_sync_service.dart';
+import 'package:maxmybill/services/local_stock_service.dart';
+import 'package:maxmybill/services/number_generator_service.dart';
+import 'package:maxmybill/utils/translation_helper.dart';
+import 'package:maxmybill/utils/plan_permission_helper.dart';
+
+// ==========================================
+// 1. BILL PAGE (Main State Widget)
+// ==========================================
+class BillPage extends StatefulWidget {
+  final String uid;
+  final String? userEmail;
+  final List<CartItem> cartItems;
+  final double totalAmount;
+  final String? savedOrderId;
+  final double? discountAmount;
+  final String? customerPhone;
+  final String? customerName;
+  final String? customerGST;
+  final String? quotationId;
+  final String? existingInvoiceNumber;
+  final String? unsettledSaleId;
+
+  const BillPage({
+    super.key,
+    required this.uid,
+    this.userEmail,
+    required this.cartItems,
+    required this.totalAmount,
+    this.savedOrderId,
+    this.discountAmount,
+    this.customerPhone,
+    this.customerName,
+    this.customerGST,
+    this.quotationId,
+    this.existingInvoiceNumber,
+    this.unsettledSaleId,
+  });
+
+  @override
+  State<BillPage> createState() => _BillPageState();
+}
+
+class _BillPageState extends State<BillPage> {
+  late String _uid;
+  String? _selectedCustomerPhone;
+  String? _selectedCustomerName;
+  String? _selectedCustomerGST;
+  double _discountAmount = 0.0;
+  String _creditNote = '';
+  List<Map<String, dynamic>> _selectedCreditNotes = [];
+  double _totalCreditNotesAmount = 0.0;
+  String? _existingInvoiceNumber;
+  String? _unsettledSaleId;
+
+  @override
+  void initState() {
+    super.initState();
+    _uid = widget.uid;
+    if (widget.discountAmount != null) _discountAmount = widget.discountAmount!;
+    if (widget.customerPhone != null) {
+      _selectedCustomerPhone = widget.customerPhone;
+      _selectedCustomerName = widget.customerName;
+      _selectedCustomerGST = widget.customerGST;
+    }
+    _existingInvoiceNumber = widget.existingInvoiceNumber;
+    _unsettledSaleId = widget.unsettledSaleId;
+  }
+
+  void _deselectCustomer() {
+    setState(() {
+      _selectedCustomerPhone = null;
+      _selectedCustomerName = null;
+      _selectedCustomerGST = null;
+      _selectedCreditNotes = [];
+      _totalCreditNotesAmount = 0.0;
+      _creditNote = '';
+    });
+  }
+
+  // --- CALCULATIONS ---
+  double get _subtotal {
+    return widget.cartItems.fold(0.0, (sum, item) {
+      if (item.taxType == 'Price includes Tax') {
+        return sum + (item.basePrice * item.quantity);
+      } else {
+        return sum + item.total;
+      }
+    });
+  }
+
+  double get _totalTax => widget.cartItems.fold(0.0, (sum, item) => sum + item.taxAmount);
+
+  double get _totalWithTax => widget.cartItems.fold(0.0, (sum, item) => sum + item.totalWithTax);
+
+  double get _finalAmount {
+    final amountAfterDiscount = _totalWithTax - _discountAmount;
+    final creditToApply = _totalCreditNotesAmount > amountAfterDiscount ? amountAfterDiscount : _totalCreditNotesAmount;
+    return amountAfterDiscount - creditToApply;
+  }
+
+  double get _actualCreditUsed {
+    final amountAfterDiscount = _totalWithTax - _discountAmount;
+    return _totalCreditNotesAmount > amountAfterDiscount ? amountAfterDiscount : _totalCreditNotesAmount;
+  }
+
+  // --- LOGIC METHODS ---
+
+  void _proceedToPayment(String paymentMode) {
+    if (paymentMode == 'Set later') {
+      _generateUnsettledInvoice();
+      return;
+    }
+
+    Navigator.push(
+      context,
+      CupertinoPageRoute(
+        builder: (context) => paymentMode == 'Split'
+            ? SplitPaymentPage(
+          uid: _uid,
+          userEmail: widget.userEmail,
+          cartItems: widget.cartItems,
+          totalAmount: _finalAmount,
+          customerPhone: _selectedCustomerPhone,
+          customerName: _selectedCustomerName,
+          customerGST: _selectedCustomerGST,
+          discountAmount: _discountAmount,
+          creditNote: _creditNote,
+          savedOrderId: widget.savedOrderId,
+          selectedCreditNotes: _selectedCreditNotes,
+          quotationId: widget.quotationId,
+          existingInvoiceNumber: _existingInvoiceNumber,
+          unsettledSaleId: _unsettledSaleId,
+        )
+            : PaymentPage(
+          uid: _uid,
+          userEmail: widget.userEmail,
+          cartItems: widget.cartItems,
+          totalAmount: _finalAmount,
+          paymentMode: paymentMode,
+          customerPhone: _selectedCustomerPhone,
+          customerName: _selectedCustomerName,
+          customerGST: _selectedCustomerGST,
+          discountAmount: _discountAmount,
+          creditNote: _creditNote,
+          savedOrderId: widget.savedOrderId,
+          selectedCreditNotes: _selectedCreditNotes,
+          quotationId: widget.quotationId,
+          existingInvoiceNumber: _existingInvoiceNumber,
+          unsettledSaleId: _unsettledSaleId,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generateUnsettledInvoice() async {
+    try {
+      showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+
+      final invoiceNumber = _existingInvoiceNumber ?? await NumberGeneratorService.generateInvoiceNumber();
+
+      bool isOnline = false;
+      try {
+        final connectivityResult = await Connectivity().checkConnectivity().timeout(const Duration(seconds: 2), onTimeout: () => [ConnectivityResult.none]);
+        isOnline = !connectivityResult.contains(ConnectivityResult.none);
+      } catch (e) { isOnline = false; }
+
+      final businessDetails = await _fetchBusinessDetails();
+      final staffName = await _fetchStaffName(_uid);
+
+      final String businessName = businessDetails['businessName'] ?? 'Business';
+      final String businessLocation = businessDetails['location'] ?? 'Location';
+      final String businessPhone = businessDetails['businessPhone'] ?? '';
+
+      final Map<String, double> taxMap = {};
+      for (var item in widget.cartItems) {
+        if (item.taxAmount > 0 && item.taxName != null) {
+          taxMap[item.taxName!] = (taxMap[item.taxName!] ?? 0.0) + item.taxAmount;
+        }
+      }
+      final taxList = taxMap.entries.map((e) => {'name': e.key, 'amount': e.value}).toList();
+      final totalTax = taxMap.values.fold(0.0, (a, b) => a + b);
+
+      final baseSaleData = {
+        'invoiceNumber': invoiceNumber,
+        'items': widget.cartItems.map((e) => {'productId': e.productId, 'name': e.name, 'quantity': e.quantity, 'price': e.price, 'total': e.total}).toList(),
+        'subtotal': _totalWithTax + _discountAmount,
+        'discount': _discountAmount,
+        'total': _finalAmount,
+        'taxes': taxList,
+        'totalTax': totalTax,
+        'paymentMode': 'Set later',
+        'paymentStatus': 'unsettled',
+        'cashReceived': 0.0,
+        'customerPhone': _selectedCustomerPhone,
+        'customerName': _selectedCustomerName,
+        'customerGST': _selectedCustomerGST,
+        'creditNote': _creditNote,
+        'date': DateTime.now().toIso8601String(),
+        'staffId': _uid,
+        'staffName': staffName ?? 'Staff',
+        'businessName': businessName,
+        'businessLocation': businessLocation,
+        'businessPhone': businessPhone,
+        'savedOrderId': widget.savedOrderId,
+        'quotationId': widget.quotationId,
+      };
+
+      if (isOnline) {
+        final saleData = {...baseSaleData, 'timestamp': FieldValue.serverTimestamp()};
+        if (_unsettledSaleId != null) {
+          // Updating existing unsettled sale
+          await FirestoreService().updateDocument('sales', _unsettledSaleId!, saleData).timeout(const Duration(seconds: 10));
+        } else {
+          // Creating new unsettled sale
+          await FirestoreService().addDocument('sales', saleData).timeout(const Duration(seconds: 10));
+          await _updateProductStock();
+
+          // Delete saved order only for NEW unsettled sales (not when updating)
+          if (widget.savedOrderId != null) {
+            await FirestoreService().deleteDocument('savedOrders', widget.savedOrderId!);
+          }
+        }
+
+        if (_selectedCreditNotes.isNotEmpty) await _markCreditNotesAsUsed(invoiceNumber, _selectedCreditNotes);
+        if (widget.quotationId != null && widget.quotationId!.isNotEmpty) {
+          await FirestoreService().updateDocument('quotations', widget.quotationId!, {'status': 'unsettled', 'billed': true, 'settledAt': null});
+        }
+      } else {
+        await _saveOfflineSale(invoiceNumber, {...baseSaleData, 'timestamp': DateTime.now().toIso8601String()});
+        await _updateProductStockLocally();
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.push(context, CupertinoPageRoute(builder: (_) => InvoicePage(
+          uid: _uid, userEmail: widget.userEmail, businessName: businessName, businessLocation: businessLocation,
+          businessPhone: businessPhone, invoiceNumber: invoiceNumber, dateTime: DateTime.now(),
+          items: widget.cartItems.map((e) => {'name': e.name, 'quantity': e.quantity, 'price': e.price, 'total': e.totalWithTax, 'taxPercentage': e.taxPercentage ?? 0, 'taxAmount': e.taxAmount}).toList(),
+          subtotal: _subtotal, discount: _discountAmount, taxes: taxList, total: _finalAmount, paymentMode: 'Set later - Unsettled', cashReceived: 0.0,
+          customerName: _selectedCustomerName, customerPhone: _selectedCustomerPhone,
+        )));
+      }
+    } catch (e) {
+      if (mounted) { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: kErrorColor)); }
+    }
+  }
+
+  void _clearOrder() {
+    showDialog(context: context, builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: kErrorColor, size: 40),
+            const SizedBox(height: 16),
+            const Text('Clear Order?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 12),
+            const Text('Are you sure you want to discard this bill? All progress will be lost.', textAlign: TextAlign.center, style: TextStyle(color: kBlack54, fontSize: 14)),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL'))),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: kErrorColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                    onPressed: () { Navigator.pop(context); Navigator.pop(context); },
+                    child: const Text('CLEAR', style: TextStyle(color: kWhite, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+    ));
+  }
+
+  // --- POPUPS ---
+
+  void _showCustomerDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _CustomerSelectionDialog(
+        uid: _uid,
+        onCustomerSelected: (phone, name, gst) {
+          setState(() {
+            _selectedCustomerPhone = phone;
+            _selectedCustomerName = name;
+            _selectedCustomerGST = gst;
+          });
+        },
+      ),
+    );
+  }
+
+  void _showDiscountDialog() {
+    final TextEditingController controller = TextEditingController(text: _discountAmount > 0 ? _discountAmount.toString() : '');
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: kWhite,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(context.tr('discount'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: kBlack87)),
+                GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, size: 24, color: kBlack54)),
+              ]),
+              const SizedBox(height: 24),
+              _buildPopupTextField(controller: controller, label: 'Discount Amount', hint: '0.00', keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity, height: 50,
+                child: ElevatedButton(
+                  onPressed: () { setState(() => _discountAmount = double.tryParse(controller.text) ?? 0.0); Navigator.pop(context); },
+                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                  child: Text(context.tr('apply'), style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCreditNoteDialog() {
+    final TextEditingController controller = TextEditingController(text: _creditNote);
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: kWhite,
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(context.tr('add_internal_note'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: kBlack87)),
+                GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close, size: 24, color: kBlack54)),
+              ]),
+              const SizedBox(height: 24),
+              _buildPopupTextField(controller: controller, label: 'Internal Note', hint: 'e.g. Delivered to...', maxLines: 3),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity, height: 50,
+                child: ElevatedButton(
+                  onPressed: () { setState(() => _creditNote = controller.text.trim()); Navigator.pop(context); },
+                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                  child: Text(context.tr('save'), style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w600)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showCreditNotesDialog() {
+    if (_selectedCustomerPhone == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select a customer first')));
+      return;
+    }
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text(context.tr('available_credit_notes'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                  GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close)),
+                ]),
+                const SizedBox(height: 16),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxHeight: 350),
+                  child: FutureBuilder<Stream<QuerySnapshot>>(
+                    future: FirestoreService().getCollectionStream('creditNotes'),
+                    builder: (context, futureSnapshot) {
+                      if (!futureSnapshot.hasData) return const Center(child: CircularProgressIndicator());
+                      return StreamBuilder<QuerySnapshot>(
+                        stream: futureSnapshot.data!,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                          final creditNotes = snapshot.data?.docs.where((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            return data['customerPhone'] == _selectedCustomerPhone && data['status'] == 'Available';
+                          }).toList() ?? [];
+                          if (creditNotes.isEmpty) return const Padding(padding: EdgeInsets.symmetric(vertical: 40), child: Text('No available credit notes'));
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: creditNotes.length,
+                            itemBuilder: (context, index) {
+                              final doc = creditNotes[index];
+                              final data = doc.data() as Map<String, dynamic>;
+                              final isSelected = _selectedCreditNotes.any((cn) => cn['id'] == doc.id);
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
+                                child: CheckboxListTile(
+                                  title: Text(data['creditNoteNumber'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                                  subtitle: Text('Rs ${(data['amount'] ?? 0.0).toStringAsFixed(2)}'),
+                                  value: isSelected,
+                                  onChanged: (val) {
+                                    setDialogState(() {
+                                      if (val == true) { _selectedCreditNotes.add({'id': doc.id, 'amount': (data['amount'] ?? 0.0).toDouble()}); }
+                                      else { _selectedCreditNotes.removeWhere((cn) => cn['id'] == doc.id); }
+                                      _totalCreditNotesAmount = _selectedCreditNotes.fold(0.0, (sum, cn) => sum + (cn['amount'] as double));
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity, height: 50,
+                  child: ElevatedButton(
+                    onPressed: () { setState(() {}); Navigator.pop(context); },
+                    style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                    child: const Text('APPLY', style: TextStyle(color: kWhite, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- UI COMPONENTS ---
+
+  Widget _buildPopupTextField({required TextEditingController controller, required String label, String? hint, TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      keyboardType: keyboardType,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kBlack87),
+      decoration: InputDecoration(
+        labelText: label, hintText: hint, filled: true, fillColor: kGreyBg, contentPadding: const EdgeInsets.all(16),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGrey300)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kPrimaryColor, width: 1.5)),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kGreyBg,
+      appBar: AppBar(
+        backgroundColor: kPrimaryColor,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: kWhite),
+        title: Text(context.tr('Bill Summary'), style: const TextStyle(color: kWhite, fontWeight: FontWeight.w600, fontSize: 18)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 20), onPressed: () => Navigator.pop(context)),
+        actions: [IconButton(icon: const Icon(Icons.delete_sweep_rounded, color: kWhite, size: 22), onPressed: _clearOrder)],
+      ),
+      body: Column(
+        children: [
+          _buildCustomerSection(),
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              itemCount: widget.cartItems.length,
+              separatorBuilder: (ctx, i) => const SizedBox(height: 10),
+              itemBuilder: (ctx, i) => _buildItemRow(widget.cartItems[i]),
+            ),
+          ),
+          _buildBottomPanel(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerSection() {
+    final bool hasCustomer = _selectedCustomerName != null && _selectedCustomerName!.isNotEmpty;
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(color: kWhite),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: InkWell(
+        onTap: _showCustomerDialog,
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: hasCustomer ? kPrimaryColor.withOpacity(0.05) : kWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: hasCustomer ? kPrimaryColor.withOpacity(0.5) : kOrange, width: 1.5),
+          ),
+          child: Row(
+            children: [
+              CircleAvatar(backgroundColor: hasCustomer ? kPrimaryColor : kOrange, radius: 20, child: Icon(hasCustomer ? Icons.person_rounded : Icons.person_add_rounded, color: kWhite, size: 20)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(hasCustomer ? _selectedCustomerName! : 'Assign Customer', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: hasCustomer ? kBlack87 : kOrange)),
+                    if (hasCustomer) Text(_selectedCustomerPhone ?? '', style: const TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+              ),
+              if (hasCustomer) ...[
+                GestureDetector(
+                  onTap: _deselectCustomer,
+                  behavior: HitTestBehavior.opaque,
+                  child: Container(
+                    padding: const EdgeInsets.all(6), margin: const EdgeInsets.only(right: 8),
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: kGreyBg),
+                    child: const Icon(Icons.close_rounded, size: 16, color: kBlack54),
+                  ),
+                ),
+              ],
+              const Icon(Icons.arrow_forward_ios_rounded, color: kGrey300, size: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildItemRow(CartItem item) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: kGrey200), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 4))]),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(8)),
+            child: Text('${item.quantity}x', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: kPrimaryColor)),
+          ),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(item.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: kBlack87)), Text('@ Rs ${item.price.toStringAsFixed(2)}', style: const TextStyle(color: kBlack54, fontSize: 12, fontWeight: FontWeight.w500))])),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text('Rs ${item.totalWithTax.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: kBlack87)),
+              if (item.taxAmount > 0) Text('+Rs ${item.taxAmount.toStringAsFixed(2)} tax', style: const TextStyle(color: kGoogleYellow, fontSize: 10, fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomPanel() {
+    return Container(
+      decoration: BoxDecoration(color: kWhite, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, -5))], border: Border.all(color: kBorderColor)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(height: 4, width: 40, margin: const EdgeInsets.only(top: 12), decoration: BoxDecoration(color: kGrey300, borderRadius: BorderRadius.circular(2))),
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                _buildSummaryRow('Subtotal', _subtotal.toStringAsFixed(2)),
+                if (_totalTax > 0) _buildSummaryRow('Tax', _totalTax.toStringAsFixed(2)),
+                _buildSummaryRow('Discount', '- ${_discountAmount.toStringAsFixed(2)}', color: kGoogleGreen, isClickable: true, onTap: _showDiscountDialog),
+                if (_selectedCreditNotes.isNotEmpty) _buildSummaryRow('Credit Notes', '- ${_actualCreditUsed.toStringAsFixed(2)}', color: kOrange, isClickable: true, onTap: _showCreditNotesDialog),
+                const Divider(height: 24, color: kGrey200),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Total Payable', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack54)), Text('Rs ${_finalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: kPrimaryColor))]),
+                const SizedBox(height: 20),
+                if (_selectedCustomerName == null || _selectedCustomerName!.isEmpty)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    decoration: BoxDecoration(color: kGoogleYellow.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: kGoogleYellow.withOpacity(0.3))),
+                    child: Row(children: [const Icon(Icons.warning_amber_rounded, color: kGoogleYellow, size: 18), const SizedBox(width: 10), const Expanded(child: Text('Select customer to continue', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF856404)))), TextButton(onPressed: _showCustomerDialog, child: const Text('SELECT', style: TextStyle(fontWeight: FontWeight.w600)))]),
+                  ),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildPayIcon(Icons.payments_rounded, 'Cash', () => _proceedToPayment('Cash')), _buildPayIcon(Icons.qr_code_scanner_rounded, 'Online', () => _proceedToPayment('Online')), _buildPayIcon(Icons.history_toggle_off_rounded, 'Later', () => _proceedToPayment('Set later')), _buildPayIcon(Icons.menu_book_rounded, 'Credit', () => _proceedToPayment('Credit')), _buildPayIcon(Icons.call_split_rounded, 'Split', () => _proceedToPayment('Split'))]),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {Color? color, bool isClickable = false, VoidCallback? onTap}) {
+    return InkWell(onTap: onTap, child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Row(children: [Text(label, style: const TextStyle(color: kBlack54, fontSize: 14, fontWeight: FontWeight.w500)), if (isClickable) const Padding(padding: EdgeInsets.only(left: 4), child: Icon(Icons.edit_rounded, size: 12, color: kPrimaryColor))]), Text(value, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: color ?? kBlack87))])));
+  }
+
+  Widget _buildPayIcon(IconData icon, String label, VoidCallback onTap) {
+    return Column(children: [InkWell(onTap: onTap, borderRadius: BorderRadius.circular(16), child: Container(width: 54, height: 54, decoration: BoxDecoration(color: kWhite, shape: BoxShape.circle, border: Border.all(color: kGrey200, width: 1.5), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))]), child: Icon(icon, color: kPrimaryColor, size: 24))), const SizedBox(height: 8), Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBlack54, letterSpacing: 0.5))]);
+  }
+
+  // --- HELPERS (LOGIC PRESERVED) ---
+  Future<Map<String, String?>> _fetchBusinessDetails() async {
+    final storeDoc = await FirestoreService().getCurrentStoreDoc();
+    if (storeDoc != null && storeDoc.exists) {
+      final data = storeDoc.data() as Map<String, dynamic>?;
+      return {'businessName': data?['businessName'], 'location': data?['location'] ?? data?['businessLocation'], 'businessPhone': data?['businessPhone']};
+    }
+    return {'businessName': null, 'location': null, 'businessPhone': null};
+  }
+  Future<String?> _fetchStaffName(String uid) async { final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get(); return userDoc.data()?['name']; }
+  Future<void> _updateProductStock() async {
+    final localStockService = context.read<LocalStockService>();
+    for (var cartItem in widget.cartItems) {
+      final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId);
+      await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity))});
+      await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity);
+    }
+  }
+  Future<void> _updateProductStockLocally() async {
+    final localStockService = context.read<LocalStockService>();
+    for (var cartItem in widget.cartItems) { await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity); }
+  }
+  Future<void> _markCreditNotesAsUsed(String invoiceNumber, List<Map<String, dynamic>> selectedCreditNotes) async {
+    for (var creditNote in selectedCreditNotes) { await FirestoreService().updateDocument('creditNotes', creditNote['id'], {'status': 'Used', 'usedInInvoice': invoiceNumber, 'usedAt': FieldValue.serverTimestamp()}); }
+  }
+  Future<void> _saveOfflineSale(String invoiceNumber, Map<String, dynamic> saleData) async {
+    final saleSyncService = Provider.of<SaleSyncService>(context, listen: false);
+    await saleSyncService.saveSale(Sale(id: invoiceNumber, data: saleData, isSynced: false));
+  }
+}
+
+// ==========================================
+// 2. CUSTOMER SELECTION DIALOG
+// ==========================================
+class _CustomerSelectionDialog extends StatefulWidget {
+  final String uid;
+  final Function(String phone, String name, String? gst) onCustomerSelected;
+  const _CustomerSelectionDialog({required this.uid, required this.onCustomerSelected});
+  @override
+  State<_CustomerSelectionDialog> createState() => _CustomerSelectionDialogState();
+}
+
+class _CustomerSelectionDialogState extends State<_CustomerSelectionDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _prefillName, _prefillPhone;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() => setState(() => _searchQuery = _searchController.text.toLowerCase()));
+  }
+
+  Future<void> _importFromContacts() async {
+    final canImport = await PlanPermissionHelper.canImportContacts();
+    if (!canImport) { PlanPermissionHelper.showUpgradeDialog(context, 'Import Contacts'); return; }
+    if (!await FlutterContacts.requestPermission()) return;
+    final contacts = await FlutterContacts.getContacts(withProperties: true);
+    showDialog(context: context, builder: (context) {
+      List<Contact> filtered = contacts;
+      return StatefulBuilder(builder: (context, setDialogState) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: SizedBox(width: 350, height: 500, child: Column(children: [
+          Padding(padding: const EdgeInsets.all(20), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Select Contact', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)), GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close))])),
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: TextField(decoration: const InputDecoration(hintText: 'Search...', prefixIcon: Icon(Icons.search), border: OutlineInputBorder()), onChanged: (v) => setDialogState(() => filtered = contacts.where((c) => c.displayName.toLowerCase().contains(v.toLowerCase())).toList()))),
+          Expanded(child: ListView.builder(itemCount: filtered.length, itemBuilder: (context, i) {
+            final c = filtered[i]; final phone = c.phones.isNotEmpty ? c.phones.first.number.replaceAll(' ', '') : '';
+            return ListTile(title: Text(c.displayName), subtitle: Text(phone), onTap: phone.isEmpty ? null : () { setState(() { _prefillName = c.displayName; _prefillPhone = phone; }); Navigator.pop(context); _showAddCustomerDialog(); });
+          })),
+        ])),
+      ));
+    });
+  }
+
+  void _showAddCustomerDialog() {
+    final nameCtrl = TextEditingController(text: _prefillName ?? ''), phoneCtrl = TextEditingController(text: _prefillPhone ?? ''), gstCtrl = TextEditingController();
+    showDialog(context: context, builder: (context) => Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('New Customer', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)), GestureDetector(onTap: () => Navigator.pop(context), child: const Icon(Icons.close))]),
+        const SizedBox(height: 20),
+        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder())),
+        const SizedBox(height: 16),
+        TextField(controller: phoneCtrl, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Phone', border: OutlineInputBorder())),
+        const SizedBox(height: 16),
+        TextField(controller: gstCtrl, decoration: const InputDecoration(labelText: 'GST (Optional)', border: OutlineInputBorder())),
+        const SizedBox(height: 24),
+        SizedBox(width: double.infinity, height: 50, child: ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor), onPressed: () async {
+          if (nameCtrl.text.isEmpty || phoneCtrl.text.isEmpty) return;
+          await FirestoreService().setDocument('customers', phoneCtrl.text.trim(), {'name': nameCtrl.text.trim(), 'phone': phoneCtrl.text.trim(), 'gst': gstCtrl.text.trim().isEmpty ? null : gstCtrl.text.trim(), 'balance': 0.0, 'totalSales': 0.0, 'timestamp': FieldValue.serverTimestamp(), 'lastUpdated': FieldValue.serverTimestamp()});
+          if (mounted) { Navigator.pop(context); widget.onCustomerSelected(phoneCtrl.text.trim(), nameCtrl.text.trim(), gstCtrl.text.trim()); }
+        }, child: const Text('ADD CUSTOMER', style: TextStyle(color: kWhite, fontWeight: FontWeight.w600)))),
+      ])),
+    )).then((_) => setState(() { _prefillName = null; _prefillPhone = null; }));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: Colors.white,
+      child: Container(height: 600, padding: const EdgeInsets.all(20), child: Column(children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text('Select Customer', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: kBlack87)), IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded, color: kBlack54))]),
+        const SizedBox(height: 12),
+        TextFormField(controller: _searchController, decoration: InputDecoration(hintText: 'Search Name or Phone...', prefixIcon: const Icon(Icons.search_rounded, color: kPrimaryColor), filled: true, fillColor: kGreyBg, contentPadding: const EdgeInsets.symmetric(vertical: 14), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGrey300)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kPrimaryColor, width: 1.5)))),
+        const SizedBox(height: 12),
+        Row(children: [Expanded(child: _buildActionBtn(Icons.person_add_rounded, 'Add New', kPrimaryColor, _showAddCustomerDialog)), const SizedBox(width: 10), Expanded(child: _buildActionBtn(Icons.contact_phone_rounded, 'Contacts', kPrimaryColor, _importFromContacts))]),
+        const SizedBox(height: 12),
+        const Divider(color: kGrey200),
+        Expanded(child: FutureBuilder<Stream<QuerySnapshot>>(future: FirestoreService().getCollectionStream('customers'), builder: (ctx, streamSnap) {
+          if (!streamSnap.hasData) return const Center(child: CircularProgressIndicator());
+          return StreamBuilder<QuerySnapshot>(stream: streamSnap.data, builder: (ctx, snap) {
+            if (!snap.hasData) return const Center(child: Text('No customers'));
+            final filtered = snap.data!.docs.where((doc) { final data = doc.data() as Map<String, dynamic>; return data['name'].toString().toLowerCase().contains(_searchQuery) || data['phone'].toString().contains(_searchQuery); }).toList();
+            return ListView.separated(itemCount: filtered.length, separatorBuilder: (_, __) => const Divider(color: kGrey200, height: 1), itemBuilder: (ctx, i) {
+              final data = filtered[i].data() as Map<String, dynamic>;
+              return ListTile(onTap: () { widget.onCustomerSelected(data['phone'], data['name'], data['gst']); Navigator.pop(context); }, leading: CircleAvatar(backgroundColor: kPrimaryColor.withOpacity(0.1), child: Text(data['name'][0].toUpperCase(), style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w600))), title: Text(data['name'], style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)), subtitle: Text(data['phone'], style: const TextStyle(fontSize: 12, color: kBlack54)), trailing: Text('Rs ${(data['balance'] ?? 0).toStringAsFixed(0)}', style: TextStyle(fontWeight: FontWeight.w600, color: (data['balance'] ?? 0) > 0 ? Colors.red : Colors.green)));
+            });
+          });
+        }))
+      ])),
+    );
+  }
+
+  Widget _buildActionBtn(IconData icon, String label, Color color, VoidCallback onTap) {
+    return InkWell(onTap: onTap, child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kGrey200)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(icon, size: 16, color: color), const SizedBox(width: 6), Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600))])));
+  }
+}
+
+// ==========================================
+// 3. PAYMENT PAGE
+// ==========================================
+class PaymentPage extends StatefulWidget {
+  final String uid; final String? userEmail; final List<CartItem> cartItems; final double totalAmount; final String paymentMode; final String? customerPhone; final String? customerName; final String? customerGST; final double discountAmount; final String creditNote; final String? savedOrderId; final List<Map<String, dynamic>> selectedCreditNotes; final String? quotationId; final String? existingInvoiceNumber; final String? unsettledSaleId;
+  const PaymentPage({super.key, required this.uid, this.userEmail, required this.cartItems, required this.totalAmount, required this.paymentMode, this.customerPhone, this.customerName, this.customerGST, required this.discountAmount, required this.creditNote, this.savedOrderId, this.selectedCreditNotes = const [], this.quotationId, this.existingInvoiceNumber, this.unsettledSaleId});
+  @override State<PaymentPage> createState() => _PaymentPageState();
+}
+
+class _PaymentPageState extends State<PaymentPage> {
+  double _cashReceived = 0.0;
+  final TextEditingController _displayController = TextEditingController(text: '0.0');
+  double get _change => _cashReceived - widget.totalAmount;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.paymentMode != 'Credit') {
+      _cashReceived = widget.totalAmount;
+      _displayController.text = widget.totalAmount.toStringAsFixed(1);
+    }
+  }
+
+  void _onKeyTap(String val) {
+    setState(() {
+      String cur = _displayController.text;
+      if (val == 'back') { if (cur.length > 1) _displayController.text = cur.substring(0, cur.length - 1); else _displayController.text = '0'; }
+      else if (val == '.') { if (!cur.contains('.')) _displayController.text += '.'; }
+      else { if (cur == '0' || cur == '0.0') _displayController.text = val; else _displayController.text += val; }
+      _cashReceived = double.tryParse(_displayController.text) ?? 0.0;
+    });
+  }
+
+  Future<void> _completeSale() async {
+    if (widget.paymentMode == 'Credit' && widget.customerPhone == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Customer required for Credit'))); return; }
+    if (widget.paymentMode != 'Credit' && _cashReceived < widget.totalAmount - 0.01) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment insufficient'), backgroundColor: Colors.red)); return; }
+    try {
+      showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+      final invoiceNumber = widget.existingInvoiceNumber ?? await NumberGeneratorService.generateInvoiceNumber();
+      final businessDetails = await _fetchBusinessDetails();
+      final staffName = await _fetchStaffName(widget.uid);
+
+      final String businessName = businessDetails['businessName'] ?? 'Business';
+      final String businessLocation = businessDetails['location'] ?? 'Location';
+      final String businessPhone = businessDetails['businessPhone'] ?? '';
+
+      final Map<String, double> taxMap = {};
+      for (var item in widget.cartItems) { if (item.taxAmount > 0 && item.taxName != null) taxMap[item.taxName!] = (taxMap[item.taxName!] ?? 0.0) + item.taxAmount; }
+      final taxList = taxMap.entries.map((e) => {'name': e.key, 'amount': e.value}).toList();
+      final totalTax = taxMap.values.fold(0.0, (a, b) => a + b);
+
+      final baseSaleData = {
+        'invoiceNumber': invoiceNumber, 'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.total}).toList(),
+        'subtotal': widget.totalAmount + widget.discountAmount, 'discount': widget.discountAmount, 'total': widget.totalAmount, 'taxes': taxList, 'totalTax': totalTax,
+        'paymentMode': widget.paymentMode, 'cashReceived': _cashReceived, 'change': _change > 0 ? _change : 0.0, 'customerPhone': widget.customerPhone, 'customerName': widget.customerName, 'customerGST': widget.customerGST, 'creditNote': widget.creditNote, 'date': DateTime.now().toIso8601String(), 'staffId': widget.uid, 'staffName': staffName ?? 'Staff', 'businessName': businessName, 'businessLocation': businessLocation, 'businessPhone': businessPhone, 'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      if (widget.paymentMode == 'Credit') await _updateCustomerCredit(widget.customerPhone!, widget.totalAmount - _cashReceived, invoiceNumber);
+
+      if (widget.unsettledSaleId != null) {
+        // Settling an unsettled sale - just update the existing sale document
+        await FirestoreService().updateDocument('sales', widget.unsettledSaleId!, {...baseSaleData, 'paymentStatus': 'settled', 'settledAt': FieldValue.serverTimestamp()});
+      } else {
+        // New sale - create document and update stock
+        await FirestoreService().addDocument('sales', baseSaleData);
+        await _updateProductStock();
+
+        // Delete saved order only for NEW sales (not unsettled sales)
+        if (widget.savedOrderId != null) {
+          await FirestoreService().deleteDocument('savedOrders', widget.savedOrderId!);
+        }
+      }
+
+      if (widget.selectedCreditNotes.isNotEmpty) await _markCreditNotesAsUsed(invoiceNumber, widget.selectedCreditNotes);
+      if (widget.quotationId != null && widget.quotationId!.isNotEmpty) {
+        await FirestoreService().updateDocument('quotations', widget.quotationId!, {'status': 'settled', 'billed': true, 'settledAt': FieldValue.serverTimestamp()});
+      }
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        Navigator.popUntil(context, (route) => route.isFirst);
+        Navigator.push(context, CupertinoPageRoute(builder: (_) => InvoicePage(
+            uid: widget.uid, userEmail: widget.userEmail, businessName: businessName, businessLocation: businessLocation, businessPhone: businessPhone, invoiceNumber: invoiceNumber, dateTime: DateTime.now(),
+            items: widget.cartItems.map((e)=> {'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount}).toList(),
+            subtotal: widget.totalAmount + widget.discountAmount - totalTax, discount: widget.discountAmount, taxes: taxList, total: widget.totalAmount, paymentMode: widget.paymentMode, cashReceived: _cashReceived, customerName: widget.customerName, customerPhone: widget.customerPhone)));
+      }
+    } catch (e) { if (mounted) { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); } }
+  }
+
+  Future<Map<String, String?>> _fetchBusinessDetails() async {
+    final storeDoc = await FirestoreService().getCurrentStoreDoc();
+    if (storeDoc != null && storeDoc.exists) {
+      final data = storeDoc.data() as Map<String, dynamic>?;
+      return {'businessName': data?['businessName'], 'location': data?['location'] ?? data?['businessLocation'], 'businessPhone': data?['businessPhone']};
+    }
+    return {'businessName': null, 'location': null, 'businessPhone': null};
+  }
+  Future<String?> _fetchStaffName(String uid) async { final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get(); return userDoc.data()?['name']; }
+  Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber) async { final customerRef = await FirestoreService().getDocumentReference('customers', phone); await FirebaseFirestore.instance.runTransaction((transaction) async { final customerDoc = await transaction.get(customerRef); if (customerDoc.exists) { final currentBalance = (customerDoc.data() as Map<String, dynamic>?)?['balance'] as double? ?? 0.0; transaction.update(customerRef, {'balance': currentBalance + amount, 'lastUpdated': FieldValue.serverTimestamp()}); } }); }
+  Future<void> _updateProductStock() async { final localStockService = context.read<LocalStockService>(); for (var cartItem in widget.cartItems) { final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId); await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity))}); await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity); } }
+  Future<void> _markCreditNotesAsUsed(String invoiceNumber, List<Map<String, dynamic>> selectedCreditNotes) async { for (var creditNote in selectedCreditNotes) { await FirestoreService().updateDocument('creditNotes', creditNote['id'], {'status': 'Used', 'usedInInvoice': invoiceNumber, 'usedAt': FieldValue.serverTimestamp()}); } }
+
+  @override
+  Widget build(BuildContext context) {
+    bool canPay = widget.paymentMode == 'Credit' || _cashReceived >= widget.totalAmount - 0.01;
+    return Scaffold(backgroundColor: kGreyBg, appBar: AppBar(title: Text('${widget.paymentMode} Payment', style: const TextStyle(color: kWhite, fontWeight: FontWeight.w600)), backgroundColor: kPrimaryColor, elevation: 0, centerTitle: true, leading: IconButton(icon: const Icon(Icons.arrow_back_ios_new, color: kWhite, size: 20), onPressed: () => Navigator.pop(context))), body: Column(children: [Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 24), decoration: const BoxDecoration(color: kWhite, borderRadius: BorderRadius.vertical(bottom: Radius.circular(30))), child: Column(children: [Text(context.tr('total_bill'), style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w600, letterSpacing: 1)), Text('Rs ${widget.totalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w600, color: kBlack87)), const SizedBox(height: 24), Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(20), border: Border.all(color: kGrey200, width: 2)), child: Column(children: [const Text('RECEIVED AMOUNT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kBlack54)), const SizedBox(height: 8), Text(_displayController.text, style: TextStyle(fontSize: 48, fontWeight: FontWeight.w600, color: canPay ? kGoogleGreen : kPrimaryColor, letterSpacing: -1))])), const SizedBox(height: 16), if (widget.paymentMode != 'Credit') Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('CHANGE: ', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kBlack54)), Text('Rs ${_change > 0 ? _change.toStringAsFixed(2) : "0.00"}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: _change >= 0 ? kGoogleGreen : kGoogleRed))])])), const Spacer(), Container(padding: const EdgeInsets.fromLTRB(20, 20, 20, 32), decoration: const BoxDecoration(color: kWhite, borderRadius: BorderRadius.vertical(top: Radius.circular(32))), child: Column(children: [_buildKeyPad(), const SizedBox(height: 24), SizedBox(width: double.infinity, height: 60, child: ElevatedButton(onPressed: canPay ? _completeSale : null, style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), elevation: 0), child: const Text('COMPLETE SALE', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: kWhite, letterSpacing: 1))))]))]));
+  }
+  Widget _buildKeyPad() { final List<String> keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back']; return GridView.builder(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 14, mainAxisSpacing: 14, childAspectRatio: 1.8), itemCount: keys.length, itemBuilder: (ctx, i) => _buildKey(keys[i])); }
+  Widget _buildKey(String key) { return Material(color: kGreyBg, borderRadius: BorderRadius.circular(14), child: InkWell(onTap: () => _onKeyTap(key), borderRadius: BorderRadius.circular(14), child: Center(child: key == 'back' ? const Icon(Icons.backspace_rounded, color: kBlack87, size: 22) : Text(key, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: kBlack87))))); }
+}
+
+// ==========================================
+// 4. SPLIT PAYMENT PAGE (RESTORED LOGIC)
+// ==========================================
+class SplitPaymentPage extends StatefulWidget {
+  final String uid; final String? userEmail; final List<CartItem> cartItems; final double totalAmount; final String? customerPhone; final String? customerName; final String? customerGST; final double discountAmount; final String creditNote; final String? savedOrderId; final List<Map<String, dynamic>> selectedCreditNotes; final String? quotationId; final String? existingInvoiceNumber; final String? unsettledSaleId;
+  const SplitPaymentPage({super.key, required this.uid, this.userEmail, required this.cartItems, required this.totalAmount, this.customerPhone, this.customerName, this.customerGST, required this.discountAmount, required this.creditNote, this.savedOrderId, this.selectedCreditNotes = const [], this.quotationId, this.existingInvoiceNumber, this.unsettledSaleId});
+  @override State<SplitPaymentPage> createState() => _SplitPaymentPageState();
+}
+
+class _SplitPaymentPageState extends State<SplitPaymentPage> {
+  final TextEditingController _cashController = TextEditingController(text: '0.00');
+  final TextEditingController _onlineController = TextEditingController(text: '0.00');
+  final TextEditingController _creditController = TextEditingController(text: '0.00');
+
+  double _cashAmount = 0.0;
+  double _onlineAmount = 0.0;
+  double _creditAmount = 0.0;
+  double get _totalPaid => _cashAmount + _onlineAmount + _creditAmount;
+  double get _dueAmount => widget.totalAmount - _totalPaid;
+
+  @override
+  void initState() {
+    super.initState();
+    _cashController.addListener(() => setState(() => _cashAmount = double.tryParse(_cashController.text) ?? 0.0));
+    _onlineController.addListener(() => setState(() => _onlineAmount = double.tryParse(_onlineController.text) ?? 0.0));
+    _creditController.addListener(() => setState(() => _creditAmount = double.tryParse(_creditController.text) ?? 0.0));
+  }
+
+  Future<void> _processSplitSale() async {
+    if (_dueAmount > 0.01) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Payment insufficient'))); return; }
+    if (_creditAmount > 0 && widget.customerPhone == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Customer required for Credit'))); return; }
+
+    try {
+      showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
+      final invoiceNumber = widget.existingInvoiceNumber ?? await NumberGeneratorService.generateInvoiceNumber();
+      final businessDetails = await _fetchBusinessDetails();
+      final staffName = await _fetchStaffName(widget.uid);
+
+      final String businessName = businessDetails['businessName'] ?? 'Business';
+      final String businessLocation = businessDetails['location'] ?? 'Location';
+      final String businessPhone = businessDetails['businessPhone'] ?? '';
+
+      final Map<String, double> taxMap = {};
+      for (var item in widget.cartItems) { if (item.taxAmount > 0 && item.taxName != null) taxMap[item.taxName!] = (taxMap[item.taxName!] ?? 0.0) + item.taxAmount; }
+      final taxList = taxMap.entries.map((e) => {'name': e.key, 'amount': e.value}).toList();
+      final totalTax = taxMap.values.fold(0.0, (a, b) => a + b);
+
+      final baseSaleData = {
+        'invoiceNumber': invoiceNumber, 'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.total}).toList(),
+        'subtotal': widget.totalAmount + widget.discountAmount, 'discount': widget.discountAmount, 'total': widget.totalAmount, 'taxes': taxList, 'totalTax': totalTax,
+        'paymentMode': 'Split', 'cashReceived': _totalPaid - _creditAmount, 'cashReceived_split': _cashAmount, 'onlineReceived_split': _onlineAmount, 'creditIssued_split': _creditAmount, 'customerPhone': widget.customerPhone, 'customerName': widget.customerName, 'customerGST': widget.customerGST, 'creditNote': widget.creditNote, 'date': DateTime.now().toIso8601String(), 'staffId': widget.uid, 'staffName': staffName ?? 'Staff', 'businessName': businessName, 'businessLocation': businessLocation, 'businessPhone': businessPhone, 'timestamp': FieldValue.serverTimestamp(),
+      };
+
+      if (_creditAmount > 0) await _updateCustomerCredit(widget.customerPhone!, _creditAmount, invoiceNumber);
+
+      if (widget.unsettledSaleId != null) {
+        // Settling an unsettled sale - just update the existing sale document
+        await FirestoreService().updateDocument('sales', widget.unsettledSaleId!, {...baseSaleData, 'paymentStatus': 'settled', 'settledAt': FieldValue.serverTimestamp()});
+      } else {
+        // New sale - create document and update stock
+        await FirestoreService().addDocument('sales', baseSaleData);
+        await _updateProductStock();
+
+        // Delete saved order only for NEW sales (not unsettled sales)
+        if (widget.savedOrderId != null) {
+          await FirestoreService().deleteDocument('savedOrders', widget.savedOrderId!);
+        }
+      }
+
+      if (widget.selectedCreditNotes.isNotEmpty) await _markCreditNotesAsUsed(invoiceNumber, widget.selectedCreditNotes);
+      if (widget.quotationId != null && widget.quotationId!.isNotEmpty) {
+        await FirestoreService().updateDocument('quotations', widget.quotationId!, {'status': 'settled', 'billed': true, 'settledAt': FieldValue.serverTimestamp()});
+      }
+
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        Navigator.popUntil(context, (route) => route.isFirst);
+        Navigator.push(context, CupertinoPageRoute(builder: (_) => InvoicePage(
+            uid: widget.uid, userEmail: widget.userEmail, businessName: businessName, businessLocation: businessLocation, businessPhone: businessPhone, invoiceNumber: invoiceNumber, dateTime: DateTime.now(),
+            items: widget.cartItems.map((e)=> {'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount}).toList(),
+            subtotal: widget.totalAmount + widget.discountAmount - totalTax, discount: widget.discountAmount, taxes: taxList, total: widget.totalAmount, paymentMode: 'Split', cashReceived: _totalPaid - _creditAmount, customerName: widget.customerName, customerPhone: widget.customerPhone)));
+      }
+    } catch (e) { if (mounted) { Navigator.pop(context); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); } }
+  }
+
+  Future<Map<String, String?>> _fetchBusinessDetails() async {
+    final storeDoc = await FirestoreService().getCurrentStoreDoc();
+    if (storeDoc != null && storeDoc.exists) {
+      final data = storeDoc.data() as Map<String, dynamic>?;
+      return {'businessName': data?['businessName'], 'location': data?['location'] ?? data?['businessLocation'], 'businessPhone': data?['businessPhone']};
+    }
+    return {'businessName': null, 'location': null, 'businessPhone': null};
+  }
+  Future<String?> _fetchStaffName(String uid) async { final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get(); return userDoc.data()?['name']; }
+  Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber) async { final customerRef = await FirestoreService().getDocumentReference('customers', phone); await FirebaseFirestore.instance.runTransaction((transaction) async { final customerDoc = await transaction.get(customerRef); if (customerDoc.exists) { final currentBalance = (customerDoc.data() as Map<String, dynamic>?)?['balance'] as double? ?? 0.0; transaction.update(customerRef, {'balance': currentBalance + amount, 'lastUpdated': FieldValue.serverTimestamp()}); } }); }
+  Future<void> _updateProductStock() async { final localStockService = context.read<LocalStockService>(); for (var cartItem in widget.cartItems) { final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId); await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity))}); await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity); } }
+  Future<void> _markCreditNotesAsUsed(String invoiceNumber, List<Map<String, dynamic>> selectedCreditNotes) async { for (var creditNote in selectedCreditNotes) { await FirestoreService().updateDocument('creditNotes', creditNote['id'], {'status': 'Used', 'usedInInvoice': invoiceNumber, 'usedAt': FieldValue.serverTimestamp()}); } }
+
+  @override
+  Widget build(BuildContext context) {
+    bool isComplete = _dueAmount <= 0.01 && _dueAmount >= -0.01;
+    return Scaffold(
+      backgroundColor: kGreyBg,
+      appBar: AppBar(title: const Text('Split Payment', style: TextStyle(color: kWhite, fontWeight: FontWeight.w600)), backgroundColor: kPrimaryColor, iconTheme: const IconThemeData(color: kWhite), elevation: 0),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity, padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(color: kPrimaryColor, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: kPrimaryColor.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]),
+              child: Column(children: [
+                const Text('TOTAL BILL AMOUNT', style: TextStyle(color: kWhite, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 1)),
+                const SizedBox(height: 8),
+                Text('Rs ${widget.totalAmount.toStringAsFixed(2)}', style: const TextStyle(color: kWhite, fontSize: 32, fontWeight: FontWeight.w600)),
+              ]),
+            ),
+            const SizedBox(height: 24),
+            _buildInput('Cash Received', Icons.payments_rounded, _cashController),
+            const SizedBox(height: 12),
+            _buildInput('Online / UPI', Icons.qr_code_scanner_rounded, _onlineController),
+            const SizedBox(height: 12),
+            _buildInput('Credit Book', Icons.menu_book_rounded, _creditController, enabled: widget.customerPhone != null),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(16), border: Border.all(color: kGrey200)),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Text('Remaining Due', style: TextStyle(fontWeight: FontWeight.w600)),
+                Text('Rs ${_dueAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: isComplete ? kGoogleGreen : kGoogleRed)),
+              ]),
+            ),
+          ],
+        ),
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(20),
+        child: SizedBox(height: 60, child: ElevatedButton(onPressed: isComplete ? _processSplitSale : null, style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('SETTLE BILL', style: TextStyle(color: kWhite, fontWeight: FontWeight.w600)))),
+      ),
+    );
+  }
+
+  Widget _buildInput(String label, IconData icon, TextEditingController ctrl, {bool enabled = true}) {
+    return TextFormField(
+        controller: ctrl, enabled: enabled, keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: label, prefixIcon: Icon(icon, color: enabled ? kPrimaryColor : kBlack54),
+          filled: true, fillColor: kWhite,
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGrey200)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kPrimaryColor, width: 1.5)),
+          disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kGrey100)),
+        )
+    );
+  }
+}
