@@ -44,7 +44,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAarypDsma-UFSw0gFw2lv99s1f_bsh4QA',
-    appId: '1:490905109908:android:e2b78733448c36fb07fb81',
+    appId: '1:490905109908:android:87c9f6d82400690607fb81',
     messagingSenderId: '490905109908',
     projectId: 'maxbillup',
     storageBucket: 'maxbillup.firebasestorage.app',

@@ -19,6 +19,7 @@ import 'services/sale_sync_service.dart';
 import 'services/local_stock_service.dart';
 import 'services/cart_service.dart';
 import 'services/auth_cache_service.dart';
+import 'services/notification_service.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
@@ -61,6 +62,9 @@ void main() async {
 
   // Initialize AuthCacheService for persistent login cache
   await AuthCacheService.instance.initialize();
+
+  // Initialize FCM notifications and deep-link handling
+  await NotificationService().initialize();
 
   // Initialize SaleSyncService for offline sales syncing
   final saleSyncService = SaleSyncService();
@@ -107,6 +111,7 @@ class MyApp extends StatelessWidget {
     final themeNotifier = Provider.of<ThemeNotifier>(context);
 
     return MaterialApp(
+      navigatorKey: NotificationService.navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'MAXmybill',
       theme: ThemeData(

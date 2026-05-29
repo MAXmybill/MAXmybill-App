@@ -4,17 +4,17 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:maxmybill/Colors.dart';
 import 'package:provider/provider.dart';
 import 'LoginPage.dart';
 import 'BusinessDetailsPage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maxmybill/Sales/NewSale.dart';
+import 'package:maxmybill/Menu/KnowledgePage.dart';
 import 'package:maxmybill/Admin/Home.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
 import 'package:maxmybill/services/in_app_update_service.dart';
 import 'package:maxmybill/services/single_session_service.dart';
+import 'package:maxmybill/services/notification_service.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -93,7 +93,12 @@ class _SplashPageState extends State<SplashPage>
         final planProvider = Provider.of<PlanProvider>(context, listen: false);
         planProvider.initialize(); // Don't await - let it run in background
 
+        await NotificationService().unsubscribeFromKnowledgeTopic();
+
         if (!mounted) return;
+
+        final pendingKnowledge =
+            NotificationService.consumePendingKnowledgePayload();
 
         // Navigate to Admin Home page
         Navigator.of(context).pushReplacement(
@@ -102,6 +107,18 @@ class _SplashPageState extends State<SplashPage>
                 HomePage(uid: sessionData.uid, userEmail: sessionData.email),
           ),
         );
+
+        if (pendingKnowledge != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (_) =>
+                    KnowledgePage(onBack: () => Navigator.pop(context)),
+              ),
+            );
+          });
+        }
         return;
       }
 
@@ -133,8 +150,12 @@ class _SplashPageState extends State<SplashPage>
         final planProvider = Provider.of<PlanProvider>(context, listen: false);
         planProvider.initialize(); // Don't await - let it run in background
 
+        await NotificationService().subscribeToKnowledgeTopic();
+
         if (!mounted) return;
 
+        final pendingKnowledge =
+            NotificationService.consumePendingKnowledgePayload();
         // Navigate to NewSalePage for regular users
         Navigator.of(context).pushReplacement(
           CupertinoPageRoute(
@@ -142,6 +163,18 @@ class _SplashPageState extends State<SplashPage>
                 NewSalePage(uid: sessionData.uid, userEmail: sessionData.email),
           ),
         );
+
+        if (pendingKnowledge != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (_) =>
+                    KnowledgePage(onBack: () => Navigator.pop(context)),
+              ),
+            );
+          });
+        }
       } catch (e) {
         debugPrint('Error checking user registration status: $e');
         // On error, navigate to NewSalePage as fallback

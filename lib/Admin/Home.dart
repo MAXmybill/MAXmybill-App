@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:maxmybill/services/direct_notification_service.dart';
+// notification logic moved to KnowledgeEditorPage
+import 'KnowledgeEditorPage.dart';
+import 'SupportPage.dart';
 import 'package:maxmybill/Auth/LoginPage.dart';
 import 'package:maxmybill/Colors.dart';
-import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -125,6 +126,16 @@ class _HomePageState extends State<HomePage>
                       ],
                     ),
                   ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        HeroIcon(HeroIcons.lifebuoy, size: 16),
+                        SizedBox(width: 8),
+                        Text('Support'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -136,6 +147,7 @@ class _HomePageState extends State<HomePage>
         children: [
           StoresTab(adminEmail: widget.userEmail),
           const KnowledgeTab(),
+          const SupportTab(),
         ],
       ),
     );
@@ -341,6 +353,36 @@ class StoresTab extends StatelessWidget {
 class KnowledgeTab extends StatelessWidget {
   const KnowledgeTab({super.key});
 
+  String _getRelativeTime(dynamic timestamp) {
+    if (timestamp == null) return 'now';
+
+    try {
+      DateTime postTime;
+      if (timestamp is Timestamp) {
+        postTime = timestamp.toDate();
+      } else {
+        return 'now';
+      }
+
+      final now = DateTime.now();
+      final difference = now.difference(postTime);
+
+      if (difference.inSeconds < 60) {
+        return 'now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}m';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}d';
+      } else {
+        return DateFormat('dd MMM').format(postTime);
+      }
+    } catch (e) {
+      return 'now';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -377,51 +419,79 @@ class KnowledgeTab extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: kGrey200),
                 ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  leading: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => KnowledgeEditorPage(
+                          docId: posts[index].id,
+                          data: data,
+                        ),
+                      ),
                     ),
-                    child: const HeroIcon(
-                      HeroIcons.documentText,
-                      color: kPrimaryColor,
-                      size: 22,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top small meta row (time / actions)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _getRelativeTime(data['createdAt']),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: kBlack54,
+                                ),
+                              ),
+                              Container(
+                                width: 28,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: kGreyBg,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Center(
+                                  child: HeroIcon(
+                                    HeroIcons.chevronUp,
+                                    size: 14,
+                                    color: kBlack54,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Title row
+                          Text(
+                            data['title'] ?? 'Untitled',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: kBlack87,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Content line below
+                          Text(
+                            data['content'] ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: kBlack54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  title: Text(
-                    data['title'] ?? 'Untitled',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: kBlack87,
-                      fontSize: 14,
-                    ),
-                  ),
-                  subtitle: Text(
-                    data['content'] ?? '',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: kBlack54,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  trailing: const HeroIcon(
-                    HeroIcons.pencilSquare,
-                    color: kGrey400,
-                    size: 24,
-                  ),
-                  onTap: () => _showKnowledgeDialog(
-                    context,
-                    docId: posts[index].id,
-                    data: data,
                   ),
                 ),
               );
@@ -430,7 +500,10 @@ class KnowledgeTab extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showKnowledgeDialog(context),
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const KnowledgeEditorPage()),
+        ),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -447,236 +520,206 @@ class KnowledgeTab extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _showKnowledgeDialog(
-    BuildContext context, {
-    String? docId,
-    Map<String, dynamic>? data,
-  }) {
-    final titleController = TextEditingController(text: data?['title']);
-    final contentController = TextEditingController(text: data?['content']);
-    String category = data?['category'] ?? 'General';
+// ==========================================
+// SUPPORT TAB
+// ==========================================
+class SupportTab extends StatelessWidget {
+  const SupportTab({super.key});
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: kWhite,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          docId == null ? 'New Article' : 'Edit Article',
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 0.5,
-          ),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildDialogField(
-                titleController,
-                'Article Title',
-                HeroIcons.pencil,
-              ),
-              const SizedBox(height: 16),
-              _buildCategoryDropdown(category, (v) => category = v!),
-              const SizedBox(height: 16),
-              _buildDialogField(
-                contentController,
-                'Content',
-                HeroIcons.pencilSquare,
-                maxLines: 4,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          if (docId != null)
-            TextButton(
-              child: const Text(
-                'Delete',
-                style: TextStyle(
-                  color: kErrorColor,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: kGreyBg,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('support_requests')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(color: kPrimaryColor),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return _buildEmptyState(
+              HeroIcons.lifebuoy,
+              'No support requests pending.',
+            );
+          }
+
+          // Filter and sort locally to avoid composite index requirement
+          var requests = snapshot.data!.docs.where((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['status'] ?? 'pending';
+            return status != 'resolved';
+          }).toList();
+
+          // Sort by status then by createdAt
+          requests.sort((a, b) {
+            final aData = a.data() as Map<String, dynamic>;
+            final bData = b.data() as Map<String, dynamic>;
+
+            final aStatus = aData['status'] ?? 'pending';
+            final bStatus = bData['status'] ?? 'pending';
+
+            // First sort by status
+            int statusCompare = aStatus.compareTo(bStatus);
+            if (statusCompare != 0) return statusCompare;
+
+            // Then sort by createdAt descending
+            final aTime = aData['createdAt'] as Timestamp?;
+            final bTime = bData['createdAt'] as Timestamp?;
+
+            if (aTime == null && bTime == null) return 0;
+            if (aTime == null) return 1;
+            if (bTime == null) return -1;
+            return bTime.compareTo(aTime);
+          });
+
+          if (requests.isEmpty) {
+            return _buildEmptyState(
+              HeroIcons.lifebuoy,
+              'No support requests pending.',
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: requests.length,
+            separatorBuilder: (c, i) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final data = requests[index].data() as Map<String, dynamic>;
+              final requestId = requests[index].id;
+              final status = data['status'] ?? 'pending';
+              final statusColor = status == 'pending'
+                  ? Colors.orange
+                  : (status == 'in_progress' ? kPrimaryColor : kGoogleGreen);
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: kGrey200),
                 ),
-              ),
-              onPressed: () async {
-                await FirebaseFirestore.instance
-                    .collection('knowledge')
-                    .doc(docId)
-                    .delete();
-                if (context.mounted) Navigator.pop(context);
-              },
-            ),
-          TextButton(
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: kBlack54,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () async {
-              final titleText = titleController.text.trim();
-              final contentText = contentController.text.trim();
-              if (titleText.isEmpty) return;
-
-              final payload = {
-                'title': titleText,
-                'content': contentText,
-                'category': category,
-                'updatedAt': FieldValue.serverTimestamp(),
-              };
-
-              try {
-                if (docId == null) {
-                  payload['createdAt'] = FieldValue.serverTimestamp();
-                  await FirebaseFirestore.instance
-                      .collection('knowledge')
-                      .add(payload);
-                  await DirectNotificationService()
-                      .sendKnowledgeNotificationViaFirestore(
-                        title: titleText,
-                        content: contentText,
-                        category: category,
-                      );
-                } else {
-                  await FirebaseFirestore.instance
-                      .collection('knowledge')
-                      .doc(docId)
-                      .update(payload);
-                }
-                if (context.mounted) Navigator.pop(context);
-              } catch (e) {
-                debugPrint('Error: $e');
-              }
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SupportPage(
+                          requestId: requestId,
+                          requestData: data,
+                        ),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Top meta row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _getRelativeTime(data['createdAt']),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: kBlack54,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: statusColor.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  status.replaceAll('_', ' ').toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    color: statusColor,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Store/User info
+                          Text(
+                            data['storeName'] ?? 'Unknown Store',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: kBlack87,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            data['subject'] ?? 'No subject',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: kBlack54,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
             },
-            child: Text(
-              docId == null ? 'Post' : 'Save',
-              style: const TextStyle(
-                color: kWhite,
-                fontWeight: FontWeight.w900,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDialogField(
-    TextEditingController ctrl,
-    String hint,
-    HeroIcons icon, {
-    int maxLines = 1,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: kGreyBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kGrey200),
-      ),
-      child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: ctrl,
-        builder: (context, value, _) {
-          final bool hasText = value.text.isNotEmpty;
-          return TextField(
-            controller: ctrl,
-            maxLines: maxLines,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-            decoration: InputDecoration(
-              hintText: hint,
-              prefixIcon: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: HeroIcon(icon, color: kPrimaryColor, size: 18),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFF8F9FA),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: hasText ? kPrimaryColor : kGrey200,
-                  width: hasText ? 1.5 : 1.0,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: hasText ? kPrimaryColor : kGrey200,
-                  width: hasText ? 1.5 : 1.0,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
-              ),
-              labelStyle: TextStyle(
-                color: hasText ? kPrimaryColor : kBlack54,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-              floatingLabelStyle: TextStyle(
-                color: hasText ? kPrimaryColor : kPrimaryColor,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildCategoryDropdown(String current, Function(String?) onSel) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: kGreyBg,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kGrey200),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: current,
-          isExpanded: true,
-          icon: const HeroIcon(
-            HeroIcons.chevronDown,
-            color: kBlack54,
-            size: 20,
-          ),
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: kBlack87,
-          ),
-          items: [
-            'General',
-            'Tutorial',
-            'Updates',
-            'Tips',
-          ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-          onChanged: onSel,
-        ),
-      ),
-    );
+  String _getRelativeTime(dynamic timestamp) {
+    if (timestamp == null) return 'now';
+
+    try {
+      DateTime postTime;
+      if (timestamp is Timestamp) {
+        postTime = timestamp.toDate();
+      } else {
+        return 'now';
+      }
+
+      final now = DateTime.now();
+      final difference = now.difference(postTime);
+
+      if (difference.inSeconds < 60) {
+        return 'now';
+      } else if (difference.inMinutes < 60) {
+        return '${difference.inMinutes}m';
+      } else if (difference.inHours < 24) {
+        return '${difference.inHours}h';
+      } else if (difference.inDays < 7) {
+        return '${difference.inDays}d';
+      } else {
+        return DateFormat('dd MMM').format(postTime);
+      }
+    } catch (e) {
+      return 'now';
+    }
   }
 }
 

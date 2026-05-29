@@ -1,15 +1,53 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:maxmybill/Menu/KnowledgePage.dart';
 
 class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  static final GlobalKey<NavigatorState> navigatorKey =
+      GlobalKey<NavigatorState>();
+  static Map<String, dynamic>? _pendingKnowledgePayload;
+
   // Singleton pattern
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
+
+  static Map<String, dynamic>? consumePendingKnowledgePayload() {
+    final payload = _pendingKnowledgePayload;
+    _pendingKnowledgePayload = null;
+    return payload;
+  }
+
+  void _handleNotificationTap(Map<String, dynamic> data) {
+    final type = (data['type'] ?? '').toString();
+    if (type != 'knowledge') return;
+
+    final payload = Map<String, dynamic>.from(data);
+    _pendingKnowledgePayload = payload;
+
+    final navigator = navigatorKey.currentState;
+    final context = navigatorKey.currentContext;
+    if (navigator == null || context == null) return;
+
+    _pendingKnowledgePayload = null;
+    navigator.push(
+      CupertinoPageRoute(
+        builder: (_) => KnowledgePage(
+          onBack: () {
+            if (navigator.canPop()) {
+              navigator.pop();
+            }
+          },
+        ),
+      ),
+    );
+  }
 
   /// Initialize Firebase Messaging
   Future<void> initialize() async {
@@ -35,8 +73,21 @@ class NotificationService {
           await _saveTokenToFirestore(token);
         }
 
+        await subscribeToKnowledgeTopic();
+
         // Listen for token refresh
         _messaging.onTokenRefresh.listen(_saveTokenToFirestore);
+
+        // Handle taps while app is running/backgrounded
+        FirebaseMessaging.onMessageOpenedApp.listen((message) {
+          _handleNotificationTap(message.data);
+        });
+
+        // Handle taps that launched the app from a terminated state
+        final initialMessage = await _messaging.getInitialMessage();
+        if (initialMessage != null) {
+          _handleNotificationTap(initialMessage.data);
+        }
       } else {
         debugPrint('❌ User declined notification permission');
       }
@@ -78,11 +129,13 @@ class NotificationService {
       }
 
       // Create notification payload
+      // Notification title should be the article title, and body should contain the article content
       final notification = {
-        'title': '🔔 New $category Post',
-        'body': title,
+        'title': title,
+        'body': content,
         'data': {
           'type': 'knowledge',
+          'route': 'knowledge',
           'title': title,
           'content': content,
           'category': category,
@@ -99,7 +152,9 @@ class NotificationService {
         'sent': false,
       });
 
-      debugPrint('✅ Notification queued for ${tokensSnapshot.docs.length} devices');
+      debugPrint(
+        '✅ Notification queued for ${tokensSnapshot.docs.length} devices',
+      );
     } catch (e) {
       debugPrint('❌ Error sending notification: $e');
     }
@@ -125,4 +180,3 @@ class NotificationService {
     }
   }
 }
-

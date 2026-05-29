@@ -90,13 +90,16 @@ class DirectNotificationService {
         body: jsonEncode({
           'to': '/topics/knowledge_updates',
           'notification': {
-            'title': '🔔 New $category Post',
-            'body': title,
+            // Use article title as notification title and article content as body
+            'title': title,
+            'body': content,
             'sound': 'default',
             'badge': '1',
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
           },
           'data': {
             'type': 'knowledge',
+          'route': 'knowledge',
             'title': title,
             'content': content,
             'category': category,
@@ -135,11 +138,13 @@ class DirectNotificationService {
       }
 
       // Create notification payload
+      // Notification title should be the article title, and body should contain the article content
       final notification = {
-        'title': '🔔 New $category Post',
-        'body': title,
+        'title': title,
+        'body': content,
         'data': {
           'type': 'knowledge',
+          'route': 'knowledge',
           'title': title,
           'content': content,
           'category': category,

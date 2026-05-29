@@ -4068,10 +4068,8 @@ class _InvoicePageState extends State<InvoicePage>
   /// Format table row with full item name support (wraps to multiple lines).
   /// Layout:
   ///   • If name fits on one line  → single row: [NAME_____][QTY][PRICE][AMT]
-  ///   • If name is too long       → name wraps across rows inside the item column
-  ///                                  first line  : [name chunk 1               ]
-  ///                                  middle lines: [name chunk n               ]
-  ///                                  last values : [                 ][QTY][PRICE][AMT]
+  ///   • If name is too long       → name wraps across rows inside the item column,
+  ///                                  and the final wrapped line carries the values.
   List<String> _formatTableRowMultiLine(
     String item,
     String qty,
@@ -4098,17 +4096,15 @@ class _InvoicePageState extends State<InvoicePage>
       // ── Multi-line item name ─────────────────────────────────────────────────
       final itemChunks = _wrapText(item, itemW);
 
-      // First line: first name chunk (padded to fill line)
-      lines.add('${itemChunks[0].padRight(lineWidth)}');
-
-      // Continuation name lines
-      for (int i = 1; i < itemChunks.length; i++) {
-        lines.add('${itemChunks[i].padRight(lineWidth)}');
+      // All chunks except the last are printed as full-width wrapped lines.
+      for (int i = 0; i < itemChunks.length - 1; i++) {
+        lines.add(itemChunks[i].padRight(lineWidth));
       }
 
-      // Values line: blank item col, then numeric columns right-aligned
+      // Final wrapped line: name chunk + Qty/Price/Amt on the same line.
+      final lastChunk = itemChunks.last.padRight(itemW);
       lines.add(
-        '${' ' * itemW}'
+        '$lastChunk'
         '${qty.padLeft(qtyW)}'
         '${price.padLeft(priceW)}'
         '${amt.padLeft(amtW)}',

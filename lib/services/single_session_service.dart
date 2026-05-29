@@ -132,10 +132,6 @@ class SingleSessionService {
       'activeDeviceLabelAtRequest': data?['activeDeviceLabel']?.toString(),
     });
 
-    // Start listener (so if old device approves and activeSessionId flips, we stay consistent)
-    _currentSessionId = requestedSessionId;
-    await _startListening(uid: uid);
-
     return ActivateSessionResult(
       activated: false,
       needsApproval: true,
@@ -172,6 +168,9 @@ class SingleSessionService {
             'activeDeviceLabel': data?['requestedByDeviceLabel']?.toString(),
             'activeSessionUpdatedAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
+
+          _currentSessionId = requestedSessionId;
+          await _startListening(uid: uid);
           await sub?.cancel();
           if (!completer.isCompleted) completer.complete(true);
         } else if (status == 'denied' ||

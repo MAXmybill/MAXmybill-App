@@ -11,6 +11,7 @@ const Color kGrey400 = Color(0xFFBDBBD); // Colors.grey[400]
 const Color kGrey300 = Color(0xFFE0E0E0); // Colors.grey[300]
 const Color kGrey200 = Color(0xFFEEEEEE); // Colors.grey[200]
 const Color kGrey100 = Color(0xFFF5F5F5); // Colors.grey[100]
+const Color kGrey50 = Color(0xFFFAFAFA); // Colors.grey[50]
 const Color kOrange = Color(0xFFF07C23);
 final Color kBorderColor = Color(0xFFE3F2FD);
 
