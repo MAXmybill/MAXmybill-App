@@ -14,7 +14,11 @@ class StockPage extends StatefulWidget {
   final String uid;
   final String? userEmail;
 
-  const StockPage({super.key, required this.uid, this.userEmail});
+  const StockPage({
+    super.key,
+    required this.uid,
+    this.userEmail,
+  });
 
   @override
   State<StockPage> createState() => _StockPageState();
@@ -60,8 +64,7 @@ class _StockPageState extends State<StockPage> {
               Navigator.push(
                 context,
                 CupertinoPageRoute(
-                  builder: (context) =>
-                      AddProductPage(uid: _uid, userEmail: _userEmail),
+                  builder: (context) => AddProductPage(uid: _uid, userEmail: _userEmail),
                 ),
               );
             },
@@ -76,7 +79,9 @@ class _StockPageState extends State<StockPage> {
                 ? ProductsPage(uid: _uid, userEmail: _userEmail)
                 : CategoryPage(uid: _uid, userEmail: _userEmail),
           ),
+
         ],
+
       ),
       bottomNavigationBar: CommonBottomNav(
         uid: widget.uid,

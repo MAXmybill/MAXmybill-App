@@ -11,7 +11,11 @@ class AddCategoryPopup extends StatefulWidget {
   final String uid;
   final String? userEmail;
 
-  const AddCategoryPopup({super.key, required this.uid, this.userEmail});
+  const AddCategoryPopup({
+    super.key,
+    required this.uid,
+    this.userEmail,
+  });
 
   @override
   State<AddCategoryPopup> createState() => _AddCategoryPopupState();
@@ -58,18 +62,14 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
     setState(() => _isLoading = true);
 
     try {
-      final categoriesCollection = await FirestoreService().getStoreCollection(
-        'categories',
-      );
+      final categoriesCollection = await FirestoreService().getStoreCollection('categories');
 
       // Check if category already exists
-      final existingCategory = await categoriesCollection
-          .where('name', isEqualTo: categoryName)
-          .get();
+      final existingCategory = await categoriesCollection.where('name', isEqualTo: categoryName).get();
       if (existingCategory.docs.isNotEmpty) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(context.tr('category_exists'))));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('category_exists'))),
+        );
         setState(() => _isLoading = false);
         return;
       }
@@ -87,9 +87,9 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
       );
       Navigator.pop(context, categoryName);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.tr('failed_to_save'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('failed_to_save'))),
+      );
     } finally {
       setState(() => _isLoading = false);
     }
@@ -119,11 +119,7 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const HeroIcon(
-                    HeroIcons.xMark,
-                    size: 24,
-                    color: Colors.black54,
-                  ),
+                  child: const HeroIcon(HeroIcons.xMark, size: 24, color: Colors.black54),
                 ),
               ],
             ),
@@ -142,28 +138,22 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
                 onPressed: _isLoading ? null : _saveCategory,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
                     : Text(
-                        context.tr('add'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  context.tr('add'),
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -178,66 +168,45 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ValueListenableBuilder<TextEditingValue>(
-          valueListenable: _categoryController,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextFormField(
-              controller: _categoryController,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              decoration: InputDecoration(
-                labelText: 'Category Name',
-                floatingLabelBehavior: FloatingLabelBehavior.auto,
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            );
-          },
-        ),
+      valueListenable: _categoryController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+          controller: _categoryController,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+          decoration: InputDecoration(
+            labelText:'Category Name',
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+        
+);
+      },
+    ),
         const SizedBox(height: 6),
         Text(
           "e.g. Fruit, Vegetable, Steel, Plastics, etc.",
           style: TextStyle(fontSize: 13, color: Colors.grey[500]),
         ),
+
       ],
     );
   }
+
 }

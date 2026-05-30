@@ -29,38 +29,13 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
 
   // Permission categories for organized display
   final Map<String, List<String>> _categories = {
-    'Sales & Billing': [
-      'customerManagement',
-      'creditDetails',
-      'quotation',
-      'creditNotes',
-    ],
-    'Invoice Actions': [
-      'billHistory',
-      'editInvoice',
-      'returnInvoice',
-      'cancelInvoice',
-    ],
-    'Expenses Management': [
-      'expenses',
-      'expenseCategories',
-      'stockPurchase',
-      'vendors',
-    ],
+    'Sales & Billing': ['customerManagement', 'creditDetails','quotation', 'creditNotes'],
+    'Invoice Actions': ['billHistory', 'editInvoice', 'returnInvoice', 'cancelInvoice'],
+    'Expenses Management': ['expenses', 'expenseCategories', 'stockPurchase', 'vendors'],
     'Growth+': [
-      'daybook',
-      'salesSummary',
-      'salesReport',
-      'analytics',
-      'itemSalesReport',
-      'topCustomer',
-      'stockReport',
-      'lowStockProduct',
-      'topProducts',
-      'topCategory',
-      'expensesReport',
-      'taxReport',
-      'staffSalesReport',
+      'daybook', 'salesSummary', 'salesReport', 'analytics','itemSalesReport',
+      'topCustomer', 'stockReport', 'lowStockProduct', 'topProducts',
+      'topCategory', 'expensesReport', 'taxReport', 'staffSalesReport'
     ],
     'Product Management': ['addProduct', 'addCategory'],
     'Settings': ['editBusinessProfile', 'receiptCustomization', 'taxSettings'],
@@ -149,10 +124,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
     return key
         .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')
         .split(' ')
-        .map(
-          (word) =>
-              word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '',
-        )
+        .map((word) => word.isNotEmpty ? word[0].toUpperCase() + word.substring(1) : '')
         .join(' ')
         .trim();
   }
@@ -179,11 +151,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
         ),
         title: Text(
           widget.title,
-          style: const TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-          ),
+          style: const TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16),
         ),
         backgroundColor: kPrimaryColor,
         elevation: 0,
@@ -233,11 +201,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                     color: kPrimaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(
-                    Icons.security,
-                    color: kPrimaryColor,
-                    size: 24,
-                  ),
+                  child: const Icon(Icons.security, color: kPrimaryColor, size: 24),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -277,11 +241,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                       value: 'enable_all',
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: kGoogleGreen,
-                            size: 20,
-                          ),
+                          Icon(Icons.check_circle, color: kGoogleGreen, size: 20),
                           SizedBox(width: 12),
                           Text('Enable All'),
                         ],
@@ -328,9 +288,7 @@ class _PermissionEditorPageState extends State<PermissionEditorPage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
                 child: const Text(

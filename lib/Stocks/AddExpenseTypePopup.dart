@@ -10,7 +10,11 @@ class AddExpenseTypePopup extends StatefulWidget {
   final String uid;
   final String? userEmail;
 
-  const AddExpenseTypePopup({super.key, required this.uid, this.userEmail});
+  const AddExpenseTypePopup({
+    super.key,
+    required this.uid,
+    this.userEmail,
+  });
 
   @override
   State<AddExpenseTypePopup> createState() => _AddExpenseTypePopupState();
@@ -29,19 +33,15 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
   Future<void> _saveType() async {
     final typeName = _typeController.text.trim();
     if (typeName.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(context.tr('enter_expense_type'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.tr('enter_expense_type'))),
+      );
       return;
     }
     setState(() => _isLoading = true);
     try {
-      final typesCollection = await FirestoreService().getStoreCollection(
-        'expenseCategories',
-      );
-      final existingType = await typesCollection
-          .where('name', isEqualTo: typeName)
-          .get();
+      final typesCollection = await FirestoreService().getStoreCollection('expenseCategories');
+      final existingType = await typesCollection.where('name', isEqualTo: typeName).get();
       if (existingType.docs.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.tr('expense_type_exists'))),
@@ -91,11 +91,7 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
                 ),
                 GestureDetector(
                   onTap: () => Navigator.pop(context),
-                  child: const HeroIcon(
-                    HeroIcons.xMark,
-                    size: 24,
-                    color: Colors.black54,
-                  ),
+                  child: const HeroIcon(HeroIcons.xMark, size: 24, color: Colors.black54),
                 ),
               ],
             ),
@@ -114,28 +110,22 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
                 onPressed: _isLoading ? null : _saveType,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                   elevation: 0,
                 ),
                 child: _isLoading
                     ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
-                      )
+                  height: 20,
+                  width: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
                     : const Text(
-                        'Add',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                  'Add',
+                  style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -150,60 +140,37 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ValueListenableBuilder<TextEditingValue>(
-          valueListenable: _typeController,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextFormField(
-              controller: _typeController,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
-              decoration: InputDecoration(
-                labelText: 'Expense Type Name',
-                floatingLabelBehavior: FloatingLabelBehavior.auto,
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            );
-          },
-        ),
+      valueListenable: _typeController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+          controller: _typeController,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
+          decoration: InputDecoration(
+            labelText: 'Expense Type Name',
+            floatingLabelBehavior: FloatingLabelBehavior.auto,
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+        
+);
+      },
+    ),
         const SizedBox(height: 6),
         Text(
           "e.g. Salary, Rent, Electricity, Travel, etc.",

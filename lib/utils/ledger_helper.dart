@@ -8,17 +8,10 @@ import 'package:maxmybill/utils/firestore_service.dart';
 class LedgerHelper {
   /// Compute the closing balance for a customer by replaying all transactions.
   /// Returns the outstanding credit amount (positive = customer owes money).
-  static Future<double> computeClosingBalance(
-    String customerId, {
-    bool syncToFirestore = false,
-  }) async {
+  static Future<double> computeClosingBalance(String customerId, {bool syncToFirestore = false}) async {
     try {
-      final salesCollection = await FirestoreService().getStoreCollection(
-        'sales',
-      );
-      final creditsCollection = await FirestoreService().getStoreCollection(
-        'credits',
-      );
+      final salesCollection = await FirestoreService().getStoreCollection('sales');
+      final creditsCollection = await FirestoreService().getStoreCollection('credits');
 
       final salesSnap = await salesCollection
           .where('customerPhone', isEqualTo: customerId)
@@ -48,12 +41,7 @@ class LedgerHelper {
           final cashPaid = (d['cashReceived'] ?? 0.0).toDouble();
           final onlinePaid = (d['onlineReceived'] ?? 0.0).toDouble();
           final creditAmt = total - cashPaid - onlinePaid;
-          entries.add(
-            _BalanceEntry(
-              date: date,
-              balanceImpact: creditAmt > 0 ? creditAmt : 0,
-            ),
-          );
+          entries.add(_BalanceEntry(date: date, balanceImpact: creditAmt > 0 ? creditAmt : 0));
         } else {
           entries.add(_BalanceEntry(date: date, balanceImpact: 0));
         }
@@ -87,9 +75,7 @@ class LedgerHelper {
       }
 
       if (syncToFirestore) {
-        final customersCollection = await FirestoreService().getStoreCollection(
-          'customers',
-        );
+        final customersCollection = await FirestoreService().getStoreCollection('customers');
         await customersCollection.doc(customerId).update({
           'balance': balance,
           'lastLedgerSync': FieldValue.serverTimestamp(),

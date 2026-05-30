@@ -67,10 +67,7 @@ class ReferralService {
   /// Mark that referral popup was shown
   static Future<void> markReferralShown() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _keyLastReferralShown,
-      DateTime.now().toIso8601String(),
-    );
+    await prefs.setString(_keyLastReferralShown, DateTime.now().toIso8601String());
   }
 
   /// Mark that user dismissed the referral popup permanently
@@ -251,3 +248,4 @@ Download now: www.maxmybill.com
     };
   }
 }
+

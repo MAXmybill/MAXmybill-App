@@ -9,10 +9,7 @@ class SyncStatusIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saleSyncService = Provider.of<SaleSyncService>(
-      context,
-      listen: false,
-    );
+    final saleSyncService = Provider.of<SaleSyncService>(context, listen: false);
 
     return FutureBuilder<int>(
       future: Future.value(saleSyncService.getUnsyncedCount()),
@@ -24,10 +21,7 @@ class SyncStatusIndicator extends StatelessWidget {
         }
 
         return Container(
-          margin: EdgeInsets.symmetric(
-            horizontal: R.sp(context, 16),
-            vertical: R.sp(context, 8),
-          ),
+          margin: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 8)),
           padding: R.all(context, 12),
           decoration: BoxDecoration(
             color: Colors.orange.shade50,
@@ -45,7 +39,7 @@ class SyncStatusIndicator extends StatelessWidget {
                     Text(
                       '$unsyncedCount sale${unsyncedCount > 1 ? 's' : ''} pending sync',
                       style: TextStyle(
-                        fontWeight: FontWeight.bold,
+                       fontWeight: FontWeight.bold,
                         color: Colors.orange.shade900,
                         fontSize: R.sp(context, 14),
                       ),
@@ -87,10 +81,7 @@ class SyncStatusDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final saleSyncService = Provider.of<SaleSyncService>(
-      context,
-      listen: false,
-    );
+    final saleSyncService = Provider.of<SaleSyncService>(context, listen: false);
     final unsyncedSales = saleSyncService.getUnsyncedSales();
 
     return Dialog(
@@ -107,7 +98,7 @@ class SyncStatusDialog extends StatelessWidget {
                 const SizedBox(width: 12),
                 const Text(
                   'Sync Status',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -118,17 +109,13 @@ class SyncStatusDialog extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 20),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.check_circle,
-                        color: Colors.green,
-                        size: 48,
-                      ),
+                      const Icon(Icons.check_circle, color: Colors.green, size: 48),
                       const SizedBox(height: 12),
                       Text(
                         'All sales synced!',
                         style: TextStyle(
                           fontSize: R.sp(context, 16),
-                          fontWeight: FontWeight.bold,
+                         fontWeight: FontWeight.bold,
                         ),
                       ),
                     ],
@@ -165,8 +152,8 @@ class SyncStatusDialog extends StatelessWidget {
                             title: Text('Invoice: ${sale.id}'),
                             subtitle: Text(
                               hasError
-                                  ? 'Error: ${sale.syncError}'
-                                  : 'Created: ${sale.createdAt.toString().split('.')[0]}',
+                                ? 'Error: ${sale.syncError}'
+                                : 'Created: ${sale.createdAt.toString().split('.')[0]}',
                               style: TextStyle(
                                 fontSize: R.sp(context, 11),
                                 color: hasError ? Colors.red.shade700 : null,
@@ -194,9 +181,7 @@ class SyncStatusDialog extends StatelessWidget {
                       icon: const Icon(Icons.sync),
                       label: const Text('Sync All Now'),
                       style: ElevatedButton.styleFrom(
-                        padding: EdgeInsets.symmetric(
-                          vertical: R.sp(context, 12),
-                        ),
+                        padding: EdgeInsets.symmetric(vertical: R.sp(context, 12)),
                       ),
                     ),
                   ),

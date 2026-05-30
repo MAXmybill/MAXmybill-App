@@ -5,6 +5,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'LoginPage.dart';
 import 'BusinessDetailsPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -46,14 +47,17 @@ class _SplashPageState extends State<SplashPage>
       // Ensure we land on login.
       Navigator.of(context).pushAndRemoveUntil(
         CupertinoPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
+            (route) => false,
       );
 
       // Show confirmation message after navigation.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
+          SnackBar(
+            content: Text(message),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       });
     });
@@ -72,66 +76,109 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Future<void> _navigateToNextScreen() async {
-    // Try to get reliable user data (Firebase first, then cache as fallback)
-    final sessionData = await AuthCacheService.instance.getReliableUserData();
-
-    if (sessionData != null) {
-      debugPrint(
-        '📱 Session found (${sessionData.source}): ${sessionData.email}',
-      );
-
-      // Start single-session enforcement for already logged in users.
-      // IMPORTANT: do NOT overwrite active session on splash; only listen.
-      await SingleSessionService.instance.startSessionListener(
-        uid: sessionData.uid,
-      );
-
-      // Check if the logged-in user is admin
-      final userEmail = sessionData.email.toLowerCase();
-      if (userEmail == 'maxmybillapp@gmail.com') {
-        // Initialize PlanProvider in background (non-blocking)
-        final planProvider = Provider.of<PlanProvider>(context, listen: false);
-        planProvider.initialize(); // Don't await - let it run in background
-
-        await NotificationService().unsubscribeFromKnowledgeTopic();
-
-        if (!mounted) return;
-
-        final pendingKnowledge =
-            NotificationService.consumePendingKnowledgePayload();
-
-        // Navigate to Admin Home page
-        Navigator.of(context).pushReplacement(
-          CupertinoPageRoute(
-            builder: (_) =>
-                HomePage(uid: sessionData.uid, userEmail: sessionData.email),
-          ),
-        );
-
-        if (pendingKnowledge != null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            Navigator.of(context).push(
-              CupertinoPageRoute(
-                builder: (_) =>
-                    KnowledgePage(onBack: () => Navigator.pop(context)),
-              ),
+    try {
+      // Check internet connectivity
+      final connectivity = Connectivity();
+      final result = await connectivity.checkConnectivity();
+      final isOffline = result.isEmpty || result.contains(ConnectivityResult.none);
+      
+      // Try to get reliable user data (Firebase first, then cache as fallback)
+      final sessionData = await AuthCacheService.instance.getReliableUserData();
+      
+      if (sessionData != null) {
+        debugPrint('📱 Session found (${sessionData.source}): ${sessionData.email}');
+        
+        // Start single-session enforcement for logged-in users (non-blocking, timeout protected)
+        // IMPORTANT: do NOT overwrite active session on splash; only listen.
+        if (!isOffline) {
+          try {
+            await SingleSessionService.instance.startSessionListener(uid: sessionData.uid).timeout(
+              const Duration(seconds: 5),
+              onTimeout: () {
+                debugPrint('⚠️ Session listener timeout');
+                return null;
+              },
             );
-          });
+          } catch (e) {
+            debugPrint('⚠️ Could not start session listener: $e');
+            // Continue anyway - app can still work
+          }
         }
-        return;
-      }
 
-      // Check if user has completed business registration
-      try {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(sessionData.uid)
-            .get();
+        // Check if the logged-in user is admin
+        final userEmail = sessionData.email.toLowerCase();
+        if (userEmail == 'maxmybillapp@gmail.com') {
+          // Initialize PlanProvider in background (non-blocking)
+          final planProvider = Provider.of<PlanProvider>(context, listen: false);
+          planProvider.initialize(); // Don't await - let it run in background
 
-        if (!mounted) return;
+          // Unsubscribe from knowledge topic (non-blocking)
+          NotificationService().unsubscribeFromKnowledgeTopic().catchError((e) {
+            debugPrint('⚠️ Could not unsubscribe from topic: $e');
+          });
 
-        if (!userDoc.exists) {
+          if (!mounted) return;
+
+          final pendingKnowledge = NotificationService.consumePendingKnowledgePayload();
+
+          // Navigate to Admin Home page
+          Navigator.of(context).pushReplacement(
+            CupertinoPageRoute(
+              builder: (_) => HomePage(
+                uid: sessionData.uid,
+                userEmail: sessionData.email,
+              ),
+            ),
+          );
+
+          if (pendingKnowledge != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted) return;
+              Navigator.of(context).push(
+                CupertinoPageRoute(
+                  builder: (_) => KnowledgePage(
+                    onBack: () => Navigator.pop(context),
+                  ),
+                ),
+              );
+            });
+          }
+          return;
+        }
+
+        // Check if user has completed business registration
+        // Use timeout to prevent blocking if offline
+        bool userDocExists = true;
+        if (!isOffline) {
+          try {
+            final userDoc = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(sessionData.uid)
+                .get()
+                .timeout(
+                  const Duration(seconds: 8),
+                  onTimeout: () {
+                    debugPrint('⚠️ Firestore query timeout - assuming user registered (offline)');
+                    throw TimeoutException('Firestore operation timed out');
+                  },
+                );
+            userDocExists = userDoc.exists;
+          } catch (e) {
+            if (e is TimeoutException) {
+              debugPrint('⚠️ Firestore timeout, assuming user is registered');
+              userDocExists = true; // Assume registered if we can't check
+            } else {
+              debugPrint('⚠️ Error checking user registration: $e');
+              userDocExists = true; // Assume registered if error occurs
+            }
+          }
+        } else {
+          // Offline mode - assume user is registered if they have a session
+          debugPrint('🔓 Offline mode - skipping registration check');
+          userDocExists = true;
+        }
+
+        if (!userDocExists) {
           // User started registration but didn't complete - redirect to BusinessDetailsPage
           Navigator.of(context).pushReplacement(
             CupertinoPageRoute(
@@ -145,22 +192,26 @@ class _SplashPageState extends State<SplashPage>
           return;
         }
 
-        // User has completed registration - proceed normally
+        // User has completed registration (or offline, so assume completed) - proceed normally
         // Initialize PlanProvider in background (non-blocking)
         final planProvider = Provider.of<PlanProvider>(context, listen: false);
         planProvider.initialize(); // Don't await - let it run in background
 
-        await NotificationService().subscribeToKnowledgeTopic();
+        // Subscribe to knowledge topic (non-blocking)
+        NotificationService().subscribeToKnowledgeTopic().catchError((e) {
+          debugPrint('⚠️ Could not subscribe to topic: $e');
+        });
 
         if (!mounted) return;
 
-        final pendingKnowledge =
-            NotificationService.consumePendingKnowledgePayload();
+        final pendingKnowledge = NotificationService.consumePendingKnowledgePayload();
         // Navigate to NewSalePage for regular users
         Navigator.of(context).pushReplacement(
           CupertinoPageRoute(
-            builder: (_) =>
-                NewSalePage(uid: sessionData.uid, userEmail: sessionData.email),
+            builder: (_) => NewSalePage(
+              uid: sessionData.uid,
+              userEmail: sessionData.email,
+            ),
           ),
         );
 
@@ -169,29 +220,27 @@ class _SplashPageState extends State<SplashPage>
             if (!mounted) return;
             Navigator.of(context).push(
               CupertinoPageRoute(
-                builder: (_) =>
-                    KnowledgePage(onBack: () => Navigator.pop(context)),
+                builder: (_) => KnowledgePage(
+                  onBack: () => Navigator.pop(context),
+                ),
               ),
             );
           });
         }
-      } catch (e) {
-        debugPrint('Error checking user registration status: $e');
-        // On error, navigate to NewSalePage as fallback
-        if (!mounted) return;
+      } else {
+        // User is NOT logged in
+        debugPrint('🔓 No session found, showing login');
         Navigator.of(context).pushReplacement(
-          CupertinoPageRoute(
-            builder: (_) =>
-                NewSalePage(uid: sessionData.uid, userEmail: sessionData.email),
-          ),
+          CupertinoPageRoute(builder: (_) => const LoginPage()),
         );
       }
-    } else {
-      // User is NOT logged in
-      debugPrint('🔓 No session found, showing login');
-      Navigator.of(
-        context,
-      ).pushReplacement(CupertinoPageRoute(builder: (_) => const LoginPage()));
+    } catch (e) {
+      debugPrint('⚠️ Error in splash navigation: $e');
+      // Fallback: show login page
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        CupertinoPageRoute(builder: (_) => const LoginPage()),
+      );
     }
   }
 
@@ -220,10 +269,7 @@ class _SplashPageState extends State<SplashPage>
       final locationStatus = await Permission.location.request();
 
       // If all permissions granted, enable Bluetooth
-      if (bluetoothStatus.isGranted &&
-          scanStatus.isGranted &&
-          connectStatus.isGranted &&
-          locationStatus.isGranted) {
+      if (bluetoothStatus.isGranted && scanStatus.isGranted && connectStatus.isGranted && locationStatus.isGranted) {
         try {
           await FlutterBluePlus.turnOn();
           debugPrint('✅ Bluetooth enabled successfully');
@@ -245,23 +291,47 @@ class _SplashPageState extends State<SplashPage>
     // Get screen size to determine device type
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    final diagonal = sqrt(
-      screenWidth * screenWidth + screenHeight * screenHeight,
-    );
+    final diagonal = sqrt(screenWidth * screenWidth + screenHeight * screenHeight);
 
     // Determine if device is tablet/iPad (diagonal > 7 inches assuming ~160 dpi)
     // Typically tablets have diagonal > 1100 pixels
     final isTablet = diagonal > 1100 || screenWidth > 600;
 
     // Choose appropriate splash image with correct file extension
-    final splashImage = isTablet
-        ? 'assets/MAX_my_bill_tab.png'
-        : 'assets/MAX_my_bill_mobile.png';
+    final splashImage = isTablet ? 'assets/MAX_my_bill_tab.png' : 'assets/MAX_my_bill_mobile.png';
 
     return Scaffold(
-      backgroundColor: Color(0xff4456E0),
-      body: SizedBox.expand(
-        child: Image.asset(splashImage, fit: BoxFit.contain),
+      backgroundColor: const Color(0xff4456E0),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                splashImage,
+                fit: BoxFit.contain,
+              ),
+            ),
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 28,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Image.asset(
+                      'assets/diamond.gif',
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

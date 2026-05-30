@@ -25,9 +25,7 @@ class ExcelImportService {
       }
 
       // Load template from assets
-      final ByteData data = await rootBundle.load(
-        'excel/Customer Templete.xlsx',
-      );
+      final ByteData data = await rootBundle.load('excel/Customer Templete.xlsx');
       final List<int> bytes = data.buffer.asUint8List();
 
       // Get downloads directory
@@ -51,11 +49,8 @@ class ExcelImportService {
       }
 
       // Save file
-      final String fileName =
-          'Customer_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final File file = File(
-        '${directory.path}${Platform.pathSeparator}$fileName',
-      );
+      final String fileName = 'Customer_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final File file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
       // Verify file was created
@@ -84,9 +79,7 @@ class ExcelImportService {
       }
 
       // Load template from assets
-      final ByteData data = await rootBundle.load(
-        'excel/Product Templete.xlsx',
-      );
+      final ByteData data = await rootBundle.load('excel/Product Templete.xlsx');
       final List<int> bytes = data.buffer.asUint8List();
 
       // Get downloads directory
@@ -110,11 +103,8 @@ class ExcelImportService {
       }
 
       // Save file
-      final String fileName =
-          'Product_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final File file = File(
-        '${directory.path}${Platform.pathSeparator}$fileName',
-      );
+      final String fileName = 'Product_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+      final File file = File('${directory.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
       // Verify file was created
@@ -170,10 +160,7 @@ class ExcelImportService {
   }
 
   /// Process Customer Excel bytes - call this after picking the file
-  static Future<Map<String, dynamic>> processCustomersExcel(
-    Uint8List bytes,
-    String uid,
-  ) async {
+  static Future<Map<String, dynamic>> processCustomersExcel(Uint8List bytes, String uid) async {
     try {
       print('🔵 Starting Excel processing...');
       final excel = Excel.decodeBytes(bytes);
@@ -202,39 +189,22 @@ class ExcelImportService {
           final row = table.rows[rowIndex];
 
           // Skip empty rows
-          if (row.isEmpty ||
-              row.every((cell) => cell == null || cell.value == null)) {
+          if (row.isEmpty || row.every((cell) => cell == null || cell.value == null)) {
             continue;
           }
 
           // Extract data based on template columns:
           // A: Phone Number, B: Name, C: Tax No, D: Address, E: Default Discount %,
           // F: Last Due, G: Date of Birth, H: Customer Rating
-          final phone = row.length > 0
-              ? row[0]?.value?.toString().trim() ?? ''
-              : '';
-          final name = row.length > 1
-              ? row[1]?.value?.toString().trim() ?? ''
-              : '';
+          final phone = row.length > 0 ? row[0]?.value?.toString().trim() ?? '' : '';
+          final name = row.length > 1 ? row[1]?.value?.toString().trim() ?? '' : '';
           print('🔵 Processing row ${rowIndex + 1}: $name - $phone');
-          final gstin = row.length > 2
-              ? row[2]?.value?.toString().trim() ?? ''
-              : '';
-          final address = row.length > 3
-              ? row[3]?.value?.toString().trim() ?? ''
-              : '';
-          final discountStr = row.length > 4
-              ? row[4]?.value?.toString().trim() ?? '0'
-              : '0';
-          final lastDueStr = row.length > 5
-              ? row[5]?.value?.toString().trim() ?? '0'
-              : '0';
-          final dobStr = row.length > 6
-              ? row[6]?.value?.toString().trim() ?? ''
-              : '';
-          final ratingStr = row.length > 7
-              ? row[7]?.value?.toString().trim() ?? '0'
-              : '0';
+          final gstin = row.length > 2 ? row[2]?.value?.toString().trim() ?? '' : '';
+          final address = row.length > 3 ? row[3]?.value?.toString().trim() ?? '' : '';
+          final discountStr = row.length > 4 ? row[4]?.value?.toString().trim() ?? '0' : '0';
+          final lastDueStr = row.length > 5 ? row[5]?.value?.toString().trim() ?? '0' : '0';
+          final dobStr = row.length > 6 ? row[6]?.value?.toString().trim() ?? '' : '';
+          final ratingStr = row.length > 7 ? row[7]?.value?.toString().trim() ?? '0' : '0';
 
           // Validate required fields
           if (name.isEmpty || phone.isEmpty) {
@@ -257,8 +227,7 @@ class ExcelImportService {
               // Check for ISO 8601 format (e.g., 2000-02-12T00:00:00.000Z)
               if (cleanDateStr.contains('T')) {
                 dob = DateTime.parse(cleanDateStr);
-              } else if (cleanDateStr.contains('-') ||
-                  cleanDateStr.contains('/')) {
+              } else if (cleanDateStr.contains('-') || cleanDateStr.contains('/')) {
                 final separator = cleanDateStr.contains('-') ? '-' : '/';
                 final parts = cleanDateStr.split(separator);
                 if (parts.length == 3) {
@@ -283,31 +252,20 @@ class ExcelImportService {
                 // Try parsing as Excel date serial number
                 final serialNumber = int.tryParse(cleanDateStr);
                 if (serialNumber != null) {
-                  dob = DateTime(
-                    1899,
-                    12,
-                    30,
-                  ).add(Duration(days: serialNumber));
+                  dob = DateTime(1899, 12, 30).add(Duration(days: serialNumber));
                 }
               }
             } catch (e) {
               // Silently skip invalid dates - customer will be imported without DOB
-              print(
-                '⚠️ Could not parse date: $dobStr - customer will be imported without DOB',
-              );
+              print('⚠️ Could not parse date: $dobStr - customer will be imported without DOB');
             }
           }
 
           // Check if customer already exists
-          final existingCustomer = await FirestoreService().getDocument(
-            'customers',
-            phone,
-          );
+          final existingCustomer = await FirestoreService().getDocument('customers', phone);
 
           if (existingCustomer.exists) {
-            errors.add(
-              'Row ${rowIndex + 1}: Customer with phone $phone already exists',
-            );
+            errors.add('Row ${rowIndex + 1}: Customer with phone $phone already exists');
             failCount++;
             continue;
           }
@@ -336,25 +294,18 @@ class ExcelImportService {
           // Add customer to Firestore
           print('📝 Saving customer: $name with phone: $phone');
           try {
-            await FirestoreService().setDocument(
-              'customers',
-              phone,
-              customerData,
-            );
+            await FirestoreService().setDocument('customers', phone, customerData);
             print('✅ Customer saved successfully: $name');
           } catch (saveError) {
             print('❌ Error saving customer $name: $saveError');
-            errors.add(
-              'Row ${rowIndex + 1}: Failed to save - ${saveError.toString()}',
-            );
+            errors.add('Row ${rowIndex + 1}: Failed to save - ${saveError.toString()}');
             failCount++;
             continue;
           }
 
           // If there's a last due amount, create credit entry
           if (lastDue > 0) {
-            final creditsCollection = await FirestoreService()
-                .getStoreCollection('credits');
+            final creditsCollection = await FirestoreService().getStoreCollection('credits');
             await creditsCollection.add({
               'customerName': name,
               'customerPhone': phone,
@@ -383,15 +334,11 @@ class ExcelImportService {
         'successCount': successCount,
         'failCount': failCount,
         'errors': errors,
-        'message':
-            '$successCount customers imported successfully${failCount > 0 ? ', $failCount failed' : ''}',
+        'message': '$successCount customers imported successfully${failCount > 0 ? ', $failCount failed' : ''}',
       };
     } catch (e) {
       print('💥 Fatal error: $e');
-      return {
-        'success': false,
-        'message': 'Error processing Excel: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error processing Excel: ${e.toString()}'};
     }
   }
 
@@ -412,9 +359,7 @@ class ExcelImportService {
       }
 
       // Read Excel file
-      final bytes =
-          result.files.first.bytes ??
-          await File(result.files.first.path!).readAsBytes();
+      final bytes = result.files.first.bytes ?? await File(result.files.first.path!).readAsBytes();
 
       // Use the new processing method
       return await processCustomersExcel(bytes, uid);
@@ -424,10 +369,7 @@ class ExcelImportService {
   }
 
   /// Process Product Excel bytes - call this after picking the file
-  static Future<Map<String, dynamic>> processProductsExcel(
-    Uint8List bytes,
-    String uid,
-  ) async {
+  static Future<Map<String, dynamic>> processProductsExcel(Uint8List bytes, String uid) async {
     try {
       final excel = Excel.decodeBytes(bytes);
 
@@ -454,52 +396,25 @@ class ExcelImportService {
           final row = table.rows[rowIndex];
 
           // Skip empty rows
-          if (row.isEmpty ||
-              row.every((cell) => cell == null || cell.value == null)) {
+          if (row.isEmpty || row.every((cell) => cell == null || cell.value == null)) {
             continue;
           }
 
           // Extract data based on actual template columns
-          final category = row.length > 0
-              ? row[0]?.value?.toString().trim() ?? ''
-              : '';
-          final name = row.length > 1
-              ? row[1]?.value?.toString().trim() ?? ''
-              : '';
-          String barcode = row.length > 2
-              ? row[2]?.value?.toString().trim() ?? ''
-              : '';
-          final priceStr = row.length > 3
-              ? row[3]?.value?.toString().trim() ?? '0'
-              : '0';
-          final quantityStr = row.length > 4
-              ? row[4]?.value?.toString().trim() ?? '0'
-              : '0';
-          final lowStockAlertStr = row.length > 5
-              ? row[5]?.value?.toString().trim() ?? '0'
-              : '0';
-          final unit = row.length > 6
-              ? row[6]?.value?.toString().trim() ?? 'Piece'
-              : 'Piece';
-          final costPriceStr = row.length > 7
-              ? row[7]?.value?.toString().trim() ?? '0'
-              : '0';
-          final mrpStr = row.length > 8
-              ? row[8]?.value?.toString().trim() ?? '0'
-              : '0';
+          final category = row.length > 0 ? row[0]?.value?.toString().trim() ?? '' : '';
+          final name = row.length > 1 ? row[1]?.value?.toString().trim() ?? '' : '';
+          String barcode = row.length > 2 ? row[2]?.value?.toString().trim() ?? '' : '';
+          final priceStr = row.length > 3 ? row[3]?.value?.toString().trim() ?? '0' : '0';
+          final quantityStr = row.length > 4 ? row[4]?.value?.toString().trim() ?? '0' : '0';
+          final lowStockAlertStr = row.length > 5 ? row[5]?.value?.toString().trim() ?? '0' : '0';
+          final unit = row.length > 6 ? row[6]?.value?.toString().trim() ?? 'Piece' : 'Piece';
+          final costPriceStr = row.length > 7 ? row[7]?.value?.toString().trim() ?? '0' : '0';
+          final mrpStr = row.length > 8 ? row[8]?.value?.toString().trim() ?? '0' : '0';
           // Column 9 is "Tax Type" but it's actually the TAX NAME (VAT, GST, etc.)
-          final taxNameFromExcel = row.length > 9
-              ? row[9]?.value?.toString().trim() ?? ''
-              : '';
-          final gstStr = row.length > 10
-              ? row[10]?.value?.toString().trim() ?? '0'
-              : '0';
-          final location = row.length > 11
-              ? row[11]?.value?.toString().trim() ?? ''
-              : '';
-          final expiryDateStr = row.length > 12
-              ? row[12]?.value?.toString().trim() ?? ''
-              : '';
+          final taxNameFromExcel = row.length > 9 ? row[9]?.value?.toString().trim() ?? '' : '';
+          final gstStr = row.length > 10 ? row[10]?.value?.toString().trim() ?? '0' : '0';
+          final location = row.length > 11 ? row[11]?.value?.toString().trim() ?? '' : '';
+          final expiryDateStr = row.length > 12 ? row[12]?.value?.toString().trim() ?? '' : '';
 
           // Validate required fields - ONLY Item Name is required
           if (name.isEmpty) {
@@ -528,8 +443,7 @@ class ExcelImportService {
               // Check for ISO 8601 format
               if (expiryDateStr.contains('T')) {
                 expiryDate = DateTime.parse(expiryDateStr);
-              } else if (expiryDateStr.contains('-') ||
-                  expiryDateStr.contains('/')) {
+              } else if (expiryDateStr.contains('-') || expiryDateStr.contains('/')) {
                 final separator = expiryDateStr.contains('-') ? '-' : '/';
                 final parts = expiryDateStr.split(separator);
                 if (parts.length == 3) {
@@ -557,15 +471,10 @@ class ExcelImportService {
           }
 
           // Check if product already exists
-          final existingProduct = await FirestoreService().getDocument(
-            'Products',
-            barcode,
-          );
+          final existingProduct = await FirestoreService().getDocument('Products', barcode);
 
           if (existingProduct.exists) {
-            errors.add(
-              'Row ${rowIndex + 1}: Product with barcode $barcode already exists',
-            );
+            errors.add('Row ${rowIndex + 1}: Product with barcode $barcode already exists');
             failCount++;
             continue;
           }
@@ -588,8 +497,7 @@ class ExcelImportService {
           String? taxType;
           if (gst > 0) {
             taxType = 'Add Tax at Billing'; // Default for products with tax
-          } else if (taxName != null &&
-              (taxName.contains('Exempt') || taxName.contains('Zero'))) {
+          } else if (taxName != null && (taxName.contains('Exempt') || taxName.contains('Zero'))) {
             taxType = 'Exempt from Tax';
           }
 
@@ -622,8 +530,7 @@ class ExcelImportService {
             'isFavorite': false,
             'isActive': true,
             'lowStockAlert': lowStockAlert,
-            'lowStockAlertType':
-                'Count', // Valid values: 'Count' or 'Percentage'
+            'lowStockAlertType': 'Count', // Valid values: 'Count' or 'Percentage'
             'location': location,
             'expiryDate': expiryDate?.toIso8601String(),
           };
@@ -631,18 +538,12 @@ class ExcelImportService {
           // Add product to Firestore
           print('📝 Saving product: $name with barcode: $barcode');
           try {
-            await FirestoreService().setDocument(
-              'Products',
-              barcode,
-              productData,
-            );
+            await FirestoreService().setDocument('Products', barcode, productData);
             print('✅ Product saved successfully: $name');
             successCount++;
           } catch (saveError) {
             print('❌ Error saving product $name: $saveError');
-            errors.add(
-              'Row ${rowIndex + 1}: Failed to save - ${saveError.toString()}',
-            );
+            errors.add('Row ${rowIndex + 1}: Failed to save - ${saveError.toString()}');
             failCount++;
           }
         } catch (e) {
@@ -652,23 +553,17 @@ class ExcelImportService {
         }
       }
 
-      print(
-        '🎉 Product import complete: $successCount success, $failCount failed',
-      );
+      print('🎉 Product import complete: $successCount success, $failCount failed');
       return {
         'success': true,
         'successCount': successCount,
         'failCount': failCount,
         'errors': errors,
-        'message':
-            '$successCount products imported successfully${failCount > 0 ? ', $failCount failed' : ''}',
+        'message': '$successCount products imported successfully${failCount > 0 ? ', $failCount failed' : ''}',
       };
     } catch (e) {
       print('💥 Fatal error in product import: $e');
-      return {
-        'success': false,
-        'message': 'Error processing Excel: ${e.toString()}',
-      };
+      return {'success': false, 'message': 'Error processing Excel: ${e.toString()}'};
     }
   }
 
@@ -689,9 +584,7 @@ class ExcelImportService {
       }
 
       // Read Excel file
-      final bytes =
-          result.files.first.bytes ??
-          await File(result.files.first.path!).readAsBytes();
+      final bytes = result.files.first.bytes ?? await File(result.files.first.path!).readAsBytes();
 
       // Use the new processing method
       return await processProductsExcel(bytes, uid);
@@ -700,3 +593,4 @@ class ExcelImportService {
     }
   }
 }
+

@@ -65,10 +65,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadPermissions() async {
     try {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.uid)
-          .get();
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(widget.uid).get();
       if (userDoc.exists && mounted) {
         final data = userDoc.data() as Map<String, dynamic>;
         setState(() {
@@ -104,10 +101,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final fs = FirestoreService();
 
     final storeDoc = await fs.getCurrentStoreDoc();
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(widget.uid)
-        .get(const GetOptions(source: Source.cache));
+    final userDoc = await FirebaseFirestore.instance.collection('users').doc(widget.uid).get(
+        const GetOptions(source: Source.cache)
+    );
 
     if (mounted) {
       setState(() {
@@ -190,18 +186,9 @@ class _SettingsPageState extends State<SettingsPage> {
           initialUserData: _userData,
         );
       case 'UserManagement':
-        return StaffManagementPage(
-          uid: widget.uid,
-          userEmail: widget.userEmail,
-          onBack: _goBack,
-        );
+        return StaffManagementPage(uid: widget.uid, userEmail: widget.userEmail, onBack: _goBack);
       case 'ReceiptSettings':
-        return ReceiptSettingsPage(
-          onBack: _goBack,
-          onNavigate: _navigateTo,
-          uid: widget.uid,
-          userEmail: widget.userEmail,
-        );
+        return ReceiptSettingsPage(onBack: _goBack, onNavigate: _navigateTo, uid: widget.uid, userEmail: widget.userEmail);
       case 'BillPrintSettings':
         return BillPrintSettingsPage(onBack: _goBack);
       case 'ReceiptCustomization':
@@ -227,17 +214,13 @@ class _SettingsPageState extends State<SettingsPage> {
       case 'VideoTutorials':
         return VideoTutorialsPage(onBack: _goBack);
       default:
-        return _buildMainSettingsPage(
-          context,
-          MediaQuery.of(context).size.width,
-        );
+        return _buildMainSettingsPage(context, MediaQuery.of(context).size.width);
     }
   }
 
   Widget _buildMainSettingsPage(BuildContext context, double screenWidth) {
     final planProvider = context.watch<PlanProvider>();
-    final bool isStaffLocked =
-        _isAdmin && !planProvider.canAccessStaffManagement();
+    final bool isStaffLocked = _isAdmin && !planProvider.canAccessStaffManagement();
 
     return Scaffold(
       backgroundColor: kGreyBg,
@@ -245,15 +228,7 @@ class _SettingsPageState extends State<SettingsPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: Text(
-          context.tr('settings'),
-          style: const TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: Text(context.tr('settings'), style: const TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 18, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
@@ -262,108 +237,96 @@ class _SettingsPageState extends State<SettingsPage> {
       body: _loading
           ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-              children: [
-                _buildProfileCard(),
-                const SizedBox(height: 24),
-                _buildSectionTitle("App config"),
-                // 1. Business Profile - only visible if admin or has editBusinessProfile permission
-                if (_isAdmin || _hasPermission('editBusinessProfile'))
-                  _buildModernTile(
-                    title: "Business Profile",
-                    icon: HeroIcons.buildingStorefront,
-                    color: kGoogleGreen,
-                    onTap: () => _navigateTo('BusinessDetails'),
-                    subtitle: "Manage business profile & details",
-                  ),
-                // 2. User Management (visible for owner or staff with explicit staffManagement permission)
-                if (_isAdmin || _hasPermission('staffManagement'))
-                  _buildModernTile(
-                    title: "Staff Access & Roles",
-                    icon: HeroIcons.users,
-                    color: const Color(0xFF9C27B0),
-                    isLocked: isStaffLocked,
-                    onTap: () async {
-                      if (!_isAdmin) {
-                        _navigateTo('UserManagement');
-                        return;
-                      }
-                      final canAccess =
-                          await PlanPermissionHelper.canAccessStaffManagement();
-                      if (!mounted) return;
-                      if (canAccess) {
-                        _navigateTo('UserManagement');
-                      } else {
-                        PlanPermissionHelper.showUpgradeDialog(
-                          context,
-                          'Staff Access & Roles',
-                          uid: widget.uid,
-                        );
-                      }
-                    },
-                    subtitle: "Manage staff & permissions",
-                  ),
-                // 3. Tax Settings - only visible if admin or has taxSettings permission
-                if (_isAdmin || _hasPermission('taxSettings'))
-                  _buildModernTile(
-                    title: "Tax Settings",
-                    icon: HeroIcons.receiptPercent,
-                    color: const Color(0xFF00796B),
-                    onTap: () => _navigateTo('TaxSettings'),
-                    subtitle: "GST, VAT & local tax compliance",
-                  ),
-                // 4. Bill & Print Settings - only visible if admin or has receiptCustomization permission
-                if (_isAdmin || _hasPermission('receiptCustomization'))
-                  _buildModernTile(
-                    title: "Bill Receipt Settings",
-                    icon: HeroIcons.documentText,
-                    color: kOrange,
-                    onTap: () => _navigateTo('BillPrintSettings'),
-                    subtitle: "Invoice templates & format",
-                  ),
-                // 5. Printer Setup
-                _buildModernTile(
-                  title: "Printer Setup",
-                  icon: HeroIcons.printer,
-                  color: const Color(0xFFE91E63),
-                  onTap: () => _navigateTo('PrinterSetup'),
-                  subtitle: "Setup Bluetooth thermal printers",
-                ),
-                // 6. General Settings (Language included)
-                _buildModernTile(
-                  title: "General Settings",
-                  icon: HeroIcons.cog6Tooth,
-                  color: kPrimaryColor,
-                  onTap: () => _navigateTo('GeneralSettings'),
-                  subtitle: "Language", //, theme & preferences
-                ),
-
-                // Invite a Friend
-                _buildModernTile(
-                  title: "Invite a Friend",
-                  icon: HeroIcons.share,
-                  color: const Color(0xFF2F7CF6),
-                  onTap: () => ReferralService.showReferralDialog(context),
-                  subtitle: "Share MAXmybill with friends",
-                ),
-                const SizedBox(height: 32),
-                const Center(
-                  child: Text(
-                    'Version 1.0.0',
-                    style: TextStyle(
-                      color: kBlack54,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildLogoutButton(),
-                const SizedBox(height: 40),
-              ],
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+        children: [
+          _buildProfileCard(),
+          const SizedBox(height: 24),
+          _buildSectionTitle("App config"),
+          // 1. Business Profile - only visible if admin or has editBusinessProfile permission
+            if (_isAdmin || _hasPermission('editBusinessProfile'))
+            _buildModernTile(
+              title: "Business Profile",
+              icon: HeroIcons.buildingStorefront,
+              color: kGoogleGreen,
+              onTap: () => _navigateTo('BusinessDetails'),
+              subtitle: "Manage business profile & details",
             ),
+          // 2. User Management (visible for owner or staff with explicit staffManagement permission)
+          if (_isAdmin || _hasPermission('staffManagement'))
+            _buildModernTile(
+              title: "Staff Access & Roles",
+              icon: HeroIcons.users,
+              color: const Color(0xFF9C27B0),
+              isLocked: isStaffLocked,
+              onTap: () async {
+                if (!_isAdmin) {
+                  _navigateTo('UserManagement');
+                  return;
+                }
+                final canAccess = await PlanPermissionHelper.canAccessStaffManagement();
+                if (!mounted) return;
+                if (canAccess) {
+                  _navigateTo('UserManagement');
+                } else {
+                  PlanPermissionHelper.showUpgradeDialog(
+                    context,
+                    'Staff Access & Roles',
+                    uid: widget.uid,
+                  );
+                }
+              },
+              subtitle: "Manage staff & permissions",
+            ),
+          // 3. Tax Settings - only visible if admin or has taxSettings permission
+          if (_isAdmin || _hasPermission('taxSettings'))
+            _buildModernTile(
+              title: "Tax Settings",
+              icon: HeroIcons.receiptPercent,
+              color: const Color(0xFF00796B),
+              onTap: () => _navigateTo('TaxSettings'),
+              subtitle: "GST, VAT & local tax compliance",
+            ),
+          // 4. Bill & Print Settings - only visible if admin or has receiptCustomization permission
+          if (_isAdmin || _hasPermission('receiptCustomization'))
+            _buildModernTile(
+              title: "Bill Receipt Settings",
+              icon: HeroIcons.documentText,
+              color: kOrange,
+              onTap: () => _navigateTo('BillPrintSettings'),
+              subtitle: "Invoice templates & format",
+            ),
+          // 5. Printer Setup
+          _buildModernTile(
+            title: "Printer Setup",
+            icon: HeroIcons.printer,
+            color: const Color(0xFFE91E63),
+            onTap: () => _navigateTo('PrinterSetup'),
+            subtitle: "Setup Bluetooth thermal printers",
+          ),
+          // 6. General Settings (Language included)
+          _buildModernTile(
+            title: "General Settings",
+            icon: HeroIcons.cog6Tooth,
+            color: kPrimaryColor,
+            onTap: () => _navigateTo('GeneralSettings'),
+            subtitle: "Language",//, theme & preferences
+          ),
+
+          // Invite a Friend
+          _buildModernTile(
+            title: "Invite a Friend",
+            icon: HeroIcons.share,
+            color: const Color(0xFF2F7CF6),
+            onTap: () => ReferralService.showReferralDialog(context),
+            subtitle: "Share MAXmybill with friends",
+          ),
+          const SizedBox(height: 32),
+          const Center(child: Text('Version 1.0.0', style: TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, fontFamily: 'Lato'))),
+          const SizedBox(height: 16),
+          _buildLogoutButton(),
+          const SizedBox(height: 40),
+        ],
+      ),
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -381,11 +344,7 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Widget _buildProfileCard() {
-    final name =
-        _storeData?['businessName'] ??
-        _userData?['businessName'] ??
-        _userData?['name'] ??
-        'Business Owner';
+    final name = _storeData?['businessName'] ?? _userData?['businessName'] ?? _userData?['name'] ?? 'Business Owner';
     final email = _userData?['email'] ?? widget.userEmail ?? '';
     final logoUrl = (_storeData?['logoUrl'] as String?) ?? '';
 
@@ -396,21 +355,18 @@ class _SettingsPageState extends State<SettingsPage> {
         final plan = planProvider.cachedPlan;
         final originalPlan = planProvider.originalPlan;
         final normalizedPlan = plan.toLowerCase().trim();
-        final isPremium =
-            plan.toLowerCase() != 'free' && plan.toLowerCase() != 'starter';
-        final isHighestPlan =
-            normalizedPlan == PlanProvider.PLAN_MAX.toLowerCase();
+        final isPremium = plan.toLowerCase() != 'free' && plan.toLowerCase() != 'starter';
+        final isHighestPlan = normalizedPlan == PlanProvider.PLAN_MAX.toLowerCase();
         final expiryDate = planProvider.cachedExpiryDate;
         final isExpiringSoon = planProvider.isExpiringSoon;
         final daysUntilExpiry = planProvider.daysUntilExpiry;
 
         // Check if plan is expired (originalPlan was premium but current plan is free due to expiry)
-        final isExpired =
-            originalPlan.toLowerCase() != 'free' &&
-            originalPlan.toLowerCase() != 'starter' &&
-            plan.toLowerCase() == 'free' &&
-            expiryDate != null &&
-            DateTime.now().isAfter(expiryDate);
+        final isExpired = originalPlan.toLowerCase() != 'free' &&
+                         originalPlan.toLowerCase() != 'starter' &&
+                         plan.toLowerCase() == 'free' &&
+                         expiryDate != null &&
+                         DateTime.now().isAfter(expiryDate);
         final showUpgradeCta = isExpired || !isHighestPlan;
 
         // Format expiry date
@@ -444,10 +400,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           child: InteractiveViewer(
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                              child: Image.network(
-                                logoUrl,
-                                fit: BoxFit.contain,
-                              ),
+                              child: Image.network(logoUrl, fit: BoxFit.contain),
                             ),
                           ),
                         ),
@@ -456,8 +409,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   }
                 },
                 child: Container(
-                  width: 72,
-                  height: 72,
+                  width: 72, height: 72,
                   decoration: BoxDecoration(
                     color: kGreyBg,
                     borderRadius: BorderRadius.circular(12),
@@ -468,18 +420,10 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
                           child: logoUrl.isNotEmpty
-                              ? Image.network(
-                                  logoUrl,
-                                  fit: BoxFit.cover,
-                                  key: ValueKey(logoUrl),
-                                )
+                              ? Image.network(logoUrl, fit: BoxFit.cover, key: ValueKey(logoUrl))
                               : Container(
                                   alignment: Alignment.center,
-                                  child: const HeroIcon(
-                                    HeroIcons.buildingStorefront,
-                                    size: 28,
-                                    color: kGrey400,
-                                  ),
+                                  child: const HeroIcon(HeroIcons.buildingStorefront, size: 28, color: kGrey400),
                                 ),
                         ),
                       ),
@@ -500,94 +444,34 @@ class _SettingsPageState extends State<SettingsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                        color: kBlack87,
-                        fontFamily: 'NotoSans',
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: kBlack87, fontFamily: 'NotoSans'), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
-                    Text(
-                      email,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: kBlack54,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'Lato',
-                      ),
-                    ),
+                    Text(email, style: const TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w600, fontFamily: 'Lato')),
                     const SizedBox(height: 10),
                     // Plan badge - clickable to go to subscription page
                     GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        CupertinoPageRoute(
-                          builder: (context) => SubscriptionPlanPage(
-                            uid: widget.uid,
-                            currentPlan: plan,
-                          ),
-                        ),
-                      ),
+                      onTap: () => Navigator.push(context, CupertinoPageRoute(builder: (context) => SubscriptionPlanPage(uid: widget.uid, currentPlan: plan))),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color:
-                                      (isExpired
-                                              ? kErrorColor
-                                              : (isPremium
-                                                    ? kGoogleGreen
-                                                    : kOrange))
-                                          .withOpacity(0.1),
+                                  color: (isExpired ? kErrorColor : (isPremium ? kGoogleGreen : kOrange)).withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color:
-                                        (isExpired
-                                                ? kErrorColor
-                                                : (isPremium
-                                                      ? kGoogleGreen
-                                                      : kOrange))
-                                            .withOpacity(0.2),
-                                  ),
+                                  border: Border.all(color: (isExpired ? kErrorColor : (isPremium ? kGoogleGreen : kOrange)).withOpacity(0.2)),
                                 ),
                                 child: Text(
                                   isExpired ? 'Expired' : plan,
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    color: isExpired
-                                        ? kErrorColor
-                                        : (isPremium ? kGoogleGreen : kOrange),
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.5,
-                                    fontFamily: 'Lato',
-                                  ),
+                                  style: TextStyle(fontSize: 9, color: isExpired ? kErrorColor : (isPremium ? kGoogleGreen : kOrange), fontWeight: FontWeight.w900, letterSpacing: 0.5, fontFamily: 'Lato')
                                 ),
                               ),
                               if (showUpgradeCta) ...[
                                 const SizedBox(width: 12),
-                                Text(
-                                  isExpired ? 'Renew Now' : 'Upgrade Now',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: kPrimaryColor,
-                                    letterSpacing: 0.5,
-                                    fontFamily: 'Lato',
-                                  ),
-                                ),
-                              ],
+                                Text(isExpired ? 'Renew Now' : 'Upgrade Now', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: 0.5, fontFamily: 'Lato')),
+                              ]
                             ],
                           ),
                           // Expiry info
@@ -595,11 +479,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                const HeroIcon(
-                                  HeroIcons.exclamationTriangle,
-                                  size: 12,
-                                  color: kErrorColor,
-                                ),
+                                const HeroIcon(HeroIcons.exclamationTriangle, size: 12, color: kErrorColor),
                                 const SizedBox(width: 4),
                                 Text(
                                   'Expired on $expiryText',
@@ -616,40 +496,22 @@ class _SettingsPageState extends State<SettingsPage> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                HeroIcon(
-                                  HeroIcons.calendar,
-                                  size: 12,
-                                  color: isExpiringSoon
-                                      ? kErrorColor
-                                      : kBlack54,
-                                ),
+                                HeroIcon(HeroIcons.calendar, size: 12, color: isExpiringSoon ? kErrorColor : kBlack54),
                                 const SizedBox(width: 4),
                                 Text(
                                   isExpiringSoon
-                                      ? 'Expires in $daysUntilExpiry day${daysUntilExpiry == 1 ? '' : 's'} ($expiryText)'
-                                      : 'Valid till $expiryText',
+                                    ? 'Expires in $daysUntilExpiry day${daysUntilExpiry == 1 ? '' : 's'} ($expiryText)'
+                                    : 'Valid till $expiryText',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: isExpiringSoon
-                                        ? kErrorColor
-                                        : kBlack54,
-                                    fontWeight: isExpiringSoon
-                                        ? FontWeight.w700
-                                        : FontWeight.w500,
+                                    color: isExpiringSoon ? kErrorColor : kBlack54,
+                                    fontWeight: isExpiringSoon ? FontWeight.w700 : FontWeight.w500,
                                     fontFamily: 'Lato',
                                   ),
                                 ),
                                 if (isExpiringSoon) ...[
                                   const SizedBox(width: 6),
-                                  const Text(
-                                    'Renew',
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.w900,
-                                      color: kPrimaryColor,
-                                      fontFamily: 'Lato',
-                                    ),
-                                  ),
+                                  const Text('Renew', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor, fontFamily: 'Lato')),
                                 ],
                               ],
                             ),
@@ -668,31 +530,11 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   String _getMonthName(int month) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return months[month - 1];
   }
 
-  Widget _buildModernTile({
-    required String title,
-    required HeroIcons icon,
-    required Color color,
-    required VoidCallback onTap,
-    String? subtitle,
-    bool isLocked = false,
-  }) {
+  Widget _buildModernTile({required String title, required HeroIcons icon, required Color color, required VoidCallback onTap, String? subtitle, bool isLocked = false}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
@@ -704,36 +546,13 @@ class _SettingsPageState extends State<SettingsPage> {
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
+          width: 44, height: 44,
+          decoration: BoxDecoration(color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(12)),
           child: HeroIcon(icon, color: color, size: 22),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
-            color: kBlack87,
-          ),
-        ),
-        subtitle: subtitle != null
-            ? Text(
-                subtitle,
-                style: const TextStyle(
-                  color: kBlack54,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: 'Lato',
-                ),
-              )
-            : null,
-        trailing: isLocked
-            ? const PremiumLockBadge(size: 22)
-            : const HeroIcon(HeroIcons.chevronRight, color: kGrey400, size: 14),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: kBlack87)),
+        subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(color: kBlack54, fontSize: 11, fontWeight: FontWeight.w500, fontFamily: 'Lato')) : null,
+        trailing: isLocked ? const PremiumLockBadge(size: 40) : const HeroIcon(HeroIcons.chevronRight, color: kGrey400, size: 14),
       ),
     );
   }
@@ -746,44 +565,21 @@ class _SettingsPageState extends State<SettingsPage> {
           FirestoreService().clearCache();
           await FirebaseAuth.instance.signOut();
           if (!mounted) return;
-          Navigator.of(context).pushAndRemoveUntil(
-            CupertinoPageRoute(builder: (_) => const LoginPage()),
-            (r) => false,
-          );
+          Navigator.of(context).pushAndRemoveUntil(CupertinoPageRoute(builder: (_) => const LoginPage()), (r) => false);
         },
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: kErrorColor, width: 1.5),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text(
-          "Sign Out",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: kErrorColor,
-            letterSpacing: 1.0,
-            fontFamily: 'Lato',
-          ),
-        ),
+        child: const Text("Sign Out", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kErrorColor, letterSpacing: 1.0, fontFamily: 'Lato')),
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 12, left: 4),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: kBlack54,
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.5,
-        fontFamily: 'NotoSans',
-      ),
-    ),
+    child: Text(title, style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontFamily: 'NotoSans')),
   );
 }
 
@@ -810,16 +606,9 @@ class BusinessDetailsPage extends StatefulWidget {
 
 class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameCtrl = TextEditingController(),
-      _phoneCtrl = TextEditingController(),
-      _personalPhoneCtrl = TextEditingController(),
-      _locCtrl = TextEditingController(),
-      _emailCtrl = TextEditingController(),
-      _ownerCtrl = TextEditingController();
-  final _taxTypeCtrl = TextEditingController(),
-      _taxNumberCtrl = TextEditingController();
-  final _licenseTypeCtrl = TextEditingController(),
-      _licenseNumberCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController(), _phoneCtrl = TextEditingController(), _personalPhoneCtrl = TextEditingController(), _locCtrl = TextEditingController(), _emailCtrl = TextEditingController(), _ownerCtrl = TextEditingController();
+  final _taxTypeCtrl = TextEditingController(), _taxNumberCtrl = TextEditingController();
+  final _licenseTypeCtrl = TextEditingController(), _licenseNumberCtrl = TextEditingController();
   bool _loading = false, _fetching = true, _uploadingImage = false;
   bool _hasChanges = false;
   bool _isPremium = false;
@@ -1043,27 +832,14 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     }
     if (widget.initialUserData != null) {
       _emailCtrl.text = widget.initialUserData!['email'] ?? '';
-      if (_ownerCtrl.text.isEmpty)
-        _ownerCtrl.text = widget.initialUserData!['name'] ?? '';
+      if (_ownerCtrl.text.isEmpty) _ownerCtrl.text = widget.initialUserData!['name'] ?? '';
     }
 
     _loadData();
   }
 
   @override
-  void dispose() {
-    _nameCtrl.dispose();
-    _phoneCtrl.dispose();
-    _personalPhoneCtrl.dispose();
-    _taxTypeCtrl.dispose();
-    _taxNumberCtrl.dispose();
-    _licenseTypeCtrl.dispose();
-    _licenseNumberCtrl.dispose();
-    _locCtrl.dispose();
-    _emailCtrl.dispose();
-    _ownerCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _nameCtrl.dispose(); _phoneCtrl.dispose(); _personalPhoneCtrl.dispose(); _taxTypeCtrl.dispose(); _taxNumberCtrl.dispose(); _licenseTypeCtrl.dispose(); _licenseNumberCtrl.dispose(); _locCtrl.dispose(); _emailCtrl.dispose(); _ownerCtrl.dispose(); super.dispose(); }
 
   void _storeOriginalValues() {
     _originalValues = {
@@ -1124,11 +900,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   Future<void> _saveAllFields() async {
     // Basic form validation (if you use _formKey around fields)
     if (_formKey.currentState != null && !_formKey.currentState!.validate()) {
-      CommonWidgets.showSnackBar(
-        context,
-        'Please fix validation errors',
-        bgColor: const Color(0xFFFF5252),
-      );
+      CommonWidgets.showSnackBar(context, 'Please fix validation errors', bgColor: const Color(0xFFFF5252));
       return;
     }
 
@@ -1140,9 +912,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
 
       // Build update payload (trimmed values)
       final localPhone = _phoneCtrl.text.replaceAll(RegExp(r'[^0-9]'), '');
-      final fullPhone = localPhone.isEmpty
-          ? ''
-          : '$_selectedCountryCode$localPhone';
+      final fullPhone = localPhone.isEmpty ? '' : '$_selectedCountryCode$localPhone';
       final updateData = <String, dynamic>{
         'businessName': _nameCtrl.text.trim(),
         'businessPhone': fullPhone,
@@ -1153,26 +923,15 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         'email': _emailCtrl.text.trim(),
         'currency': _selectedCurrency,
         // Combine tax/license fields if present
-        'taxType':
-            (_taxTypeCtrl.text.trim().isNotEmpty &&
-                _taxNumberCtrl.text.trim().isNotEmpty)
+        'taxType': (_taxTypeCtrl.text.trim().isNotEmpty && _taxNumberCtrl.text.trim().isNotEmpty)
             ? '${_taxTypeCtrl.text.trim()} ${_taxNumberCtrl.text.trim()}'
-            : (_taxNumberCtrl.text.trim().isNotEmpty
-                  ? _taxNumberCtrl.text.trim()
-                  : _taxTypeCtrl.text.trim()),
-        'licenseNumber':
-            (_licenseTypeCtrl.text.trim().isNotEmpty &&
-                _licenseNumberCtrl.text.trim().isNotEmpty)
+            : (_taxNumberCtrl.text.trim().isNotEmpty ? _taxNumberCtrl.text.trim() : _taxTypeCtrl.text.trim()),
+        'licenseNumber': (_licenseTypeCtrl.text.trim().isNotEmpty && _licenseNumberCtrl.text.trim().isNotEmpty)
             ? '${_licenseTypeCtrl.text.trim()} ${_licenseNumberCtrl.text.trim()}'
-            : (_licenseNumberCtrl.text.trim().isNotEmpty
-                  ? _licenseNumberCtrl.text.trim()
-                  : _licenseTypeCtrl.text.trim()),
+            : (_licenseNumberCtrl.text.trim().isNotEmpty ? _licenseNumberCtrl.text.trim() : _licenseTypeCtrl.text.trim()),
       };
 
-      await FirebaseFirestore.instance
-          .collection('store')
-          .doc(storeId)
-          .set(updateData, SetOptions(merge: true));
+      await FirebaseFirestore.instance.collection('store').doc(storeId).set(updateData, SetOptions(merge: true));
       await FirestoreService().notifyStoreDataChanged();
 
       // Reset change tracking on success
@@ -1183,30 +942,20 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         });
       }
 
-      CommonWidgets.showSnackBar(
-        context,
-        'All changes saved successfully!',
-        bgColor: const Color(0xFF4CAF50),
-      );
+      CommonWidgets.showSnackBar(context, 'All changes saved successfully!', bgColor: const Color(0xFF4CAF50));
     } catch (e) {
-      CommonWidgets.showSnackBar(
-        context,
-        'Error saving: ${e.toString()}',
-        bgColor: const Color(0xFFFF5252),
-      );
+      CommonWidgets.showSnackBar(context, 'Error saving: ${e.toString()}', bgColor: const Color(0xFFFF5252));
       debugPrint('BusinessDetailsPage save error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
+
   Future<void> _loadData() async {
     try {
       final store = await FirestoreService().getCurrentStoreDoc();
-      final user = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.uid)
-          .get();
+      final user = await FirebaseFirestore.instance.collection('users').doc(widget.uid).get();
       if (store != null && store.exists) {
         final data = store.data() as Map<String, dynamic>;
         setState(() {
@@ -1248,10 +997,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           final plan = (data['plan'] ?? 'free').toString().toLowerCase().trim();
           final expiryRaw = data['subscriptionExpiryDate']?.toString();
           bool hasActivePaidPlan = false;
-          if (plan != 'free' &&
-              plan != 'starter' &&
-              expiryRaw != null &&
-              expiryRaw.isNotEmpty) {
+          if (plan != 'free' && plan != 'starter' && expiryRaw != null && expiryRaw.isNotEmpty) {
             try {
               final expiry = DateTime.parse(expiryRaw);
               hasActivePaidPlan = DateTime.now().isBefore(expiry);
@@ -1277,16 +1023,12 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       // Store original values after loading and setup change listeners
       _storeOriginalValues();
       _setupChangeListeners();
-    } catch (e) {
-      debugPrint(e.toString());
-    }
+    } catch (e) { debugPrint(e.toString()); }
   }
 
   void _applyBusinessPhoneFromData(Map<String, dynamic> data) {
     final rawPhone = (data['businessPhone'] ?? '').toString().trim();
-    final savedCode = (data['businessPhoneCountryCode'] ?? '')
-        .toString()
-        .trim();
+    final savedCode = (data['businessPhoneCountryCode'] ?? '').toString().trim();
 
     var resolvedCode = savedCode;
     if (resolvedCode.isEmpty && rawPhone.startsWith('+')) {
@@ -1297,10 +1039,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       _setSelectedCountryCode(resolvedCode);
     }
 
-    _phoneCtrl.text = _stripCountryCodeFromPhone(
-      rawPhone,
-      _selectedCountryCode,
-    );
+    _phoneCtrl.text = _stripCountryCodeFromPhone(rawPhone, _selectedCountryCode);
   }
 
   void _setSelectedCountryCode(String code) {
@@ -1338,9 +1077,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     }
 
     if (codeToStrip.isNotEmpty && normalized.startsWith(codeToStrip)) {
-      return normalized
-          .substring(codeToStrip.length)
-          .replaceAll(RegExp(r'[^0-9]'), '');
+      return normalized.substring(codeToStrip.length).replaceAll(RegExp(r'[^0-9]'), '');
     }
 
     return normalized.replaceFirst('+', '').replaceAll(RegExp(r'[^0-9]'), '');
@@ -1348,10 +1085,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 100,
-    );
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery, imageQuality: 100);
     if (pickedFile != null) {
       final croppedFile = await ImageCropper().cropImage(
         sourcePath: pickedFile.path,
@@ -1390,22 +1124,14 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     try {
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId == null) throw Exception('Identity Error');
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('store_logos')
-          .child('$storeId.jpg');
+      final storageRef = FirebaseStorage.instance.ref().child('store_logos').child('$storeId.jpg');
       final uploadTask = await storageRef.putFile(_selectedImage!);
       final downloadUrl = await uploadTask.ref.getDownloadURL();
-      await FirebaseFirestore.instance.collection('store').doc(storeId).set({
-        'logoUrl': downloadUrl,
-      }, SetOptions(merge: true));
+      await FirebaseFirestore.instance.collection('store').doc(storeId).set({'logoUrl': downloadUrl}, SetOptions(merge: true));
       await FirestoreService().notifyStoreDataChanged();
       if (mounted) setState(() => _logoUrl = downloadUrl);
-    } catch (e) {
-      debugPrint(e.toString());
-    } finally {
-      if (mounted) setState(() => _uploadingImage = false);
-    }
+    } catch (e) { debugPrint(e.toString()); }
+    finally { if (mounted) setState(() => _uploadingImage = false); }
   }
 
   void _showPremiumRequiredDialog() {
@@ -1417,62 +1143,28 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           children: [
             Container(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: kOrange.withAlpha(25),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.workspace_premium_rounded,
-                color: kOrange,
-                size: 24,
-              ),
+              decoration: BoxDecoration(color: kOrange.withAlpha(25), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.workspace_premium_rounded, color: kOrange, size: 24),
             ),
             const SizedBox(width: 12),
-            const Text(
-              'Premium Feature',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-                fontFamily: 'NotoSans',
-              ),
-            ),
+            const Text('Premium Feature', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, fontFamily: 'NotoSans')),
           ],
         ),
-        content: const Text(
-          'Upgrade to Premium to customize your business logo.',
-          style: TextStyle(color: kBlack54, fontFamily: 'Lato'),
-        ),
+        content: const Text('Upgrade to Premium to customize your business logo.', style: TextStyle(color: kBlack54, fontFamily: 'Lato')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Later',
-              style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Later', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600))),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
               Navigator.push(
                 context,
                 CupertinoPageRoute(
-                  builder: (_) => SubscriptionPlanPage(
-                    uid: widget.uid,
-                    currentPlan: 'free',
-                  ),
+                  builder: (_) => SubscriptionPlanPage(uid: widget.uid, currentPlan: 'free'),
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Upgrade',
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            child: const Text('Upgrade', style: TextStyle(color: kWhite, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1484,41 +1176,17 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Remove Logo?',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
-        content: const Text(
-          'Are you sure you want to remove your business logo?',
-          style: TextStyle(color: kBlack54, fontFamily: 'Lato'),
-        ),
+        title: const Text('Remove Logo?', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, fontFamily: 'NotoSans')),
+        content: const Text('Are you sure you want to remove your business logo?', style: TextStyle(color: kBlack54, fontFamily: 'Lato')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600))),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(ctx);
               await _removeLogo();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kErrorColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              'Remove',
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: kErrorColor, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+            child: const Text('Remove', style: TextStyle(color: kWhite, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1531,371 +1199,210 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId == null) throw Exception('Identity Error');
       // Remove from Firestore
-      await FirebaseFirestore.instance.collection('store').doc(storeId).update({
-        'logoUrl': FieldValue.delete(),
-      });
+      await FirebaseFirestore.instance.collection('store').doc(storeId).update({'logoUrl': FieldValue.delete()});
       // Try to delete from Storage
       try {
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('store_logos')
-            .child('$storeId.jpg');
+        final storageRef = FirebaseStorage.instance.ref().child('store_logos').child('$storeId.jpg');
         await storageRef.delete();
       } catch (_) {}
       await FirestoreService().notifyStoreDataChanged();
-      if (mounted)
-        setState(() {
-          _logoUrl = null;
-          _selectedImage = null;
-        });
-      CommonWidgets.showSnackBar(
-        context,
-        'Logo removed successfully',
-        bgColor: kGoogleGreen,
-      );
+      if (mounted) setState(() { _logoUrl = null; _selectedImage = null; });
+      CommonWidgets.showSnackBar(context, 'Logo removed successfully', bgColor: kGoogleGreen);
     } catch (e) {
       debugPrint(e.toString());
-      CommonWidgets.showSnackBar(
-        context,
-        'Error removing logo',
-        bgColor: kErrorColor,
-      );
+      CommonWidgets.showSnackBar(context, 'Error removing logo', bgColor: kErrorColor);
     } finally {
       if (mounted) setState(() => _uploadingImage = false);
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (bool didPop, dynamic result) {
-        if (!didPop) {
-          widget.onBack();
-        }
-      },
+      onPopInvokedWithResult: (bool didPop, dynamic result) { if (!didPop) { widget.onBack(); } },
       child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-          ),
-          title: const Text(
-            "Business Profile",
-            style: TextStyle(
-              color: kWhite,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              fontFamily: 'NotoSans',
-            ),
-          ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+        ),
+          title: const Text("Business Profile", style: TextStyle(color: kWhite, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: 'NotoSans')),
           backgroundColor: kPrimaryColor,
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-            onPressed: () => widget.onBack(),
-          ),
+          leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: () => widget.onBack()),
         ),
-        body: _fetching
-            ? const Center(child: CircularProgressIndicator())
-            : Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            Center(
-                              child: Stack(
-                                children: [
-                                  Container(
-                                    width: 110,
-                                    height: 110,
-                                    decoration: BoxDecoration(
-                                      color: kWhite,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: kGrey200,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: _selectedImage != null
-                                          ? Image.file(
-                                              _selectedImage!,
-                                              fit: BoxFit.cover,
-                                            )
-                                          : _logoUrl != null &&
-                                                _logoUrl!.isNotEmpty
-                                          ? Image.network(
-                                              _logoUrl!,
-                                              fit: BoxFit.cover,
-                                              key: ValueKey(_logoUrl),
-                                            )
-                                          : const Center(
-                                              child: HeroIcon(
-                                                HeroIcons.buildingStorefront,
-                                                size: 40,
-                                                color: kGrey400,
-                                              ),
-                                            ),
-                                    ),
-                                  ),
-                                  // Edit/Add button with premium restriction
-                                  Positioned(
-                                    bottom: 0,
-                                    right: 0,
-                                    child: GestureDetector(
-                                      onTap: _uploadingImage
-                                          ? null
-                                          : () {
-                                              if (!_isPremium) {
-                                                _showPremiumRequiredDialog();
-                                              } else {
-                                                _pickImage();
-                                              }
-                                            },
-                                      child: Container(
-                                        width: 34,
-                                        height: 34,
-                                        decoration: BoxDecoration(
-                                          color: _isPremium
-                                              ? kPrimaryColor
-                                              : kGrey400,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: kWhite,
-                                            width: 2,
-                                          ),
-                                        ),
-                                        child: _uploadingImage
-                                            ? const Padding(
-                                                padding: EdgeInsets.all(8.0),
-                                                child:
-                                                    CircularProgressIndicator(
-                                                      color: kWhite,
-                                                      strokeWidth: 2,
-                                                    ),
-                                              )
-                                            : Stack(
-                                                children: [
-                                                  const Center(
-                                                    child: Icon(
-                                                      Icons.camera_alt_rounded,
-                                                      color: kWhite,
-                                                      size: 16,
-                                                    ),
-                                                  ),
-                                                  if (!_isPremium)
-                                                    Positioned(
-                                                      top: 0,
-                                                      right: 0,
-                                                      child: Container(
-                                                        width: 14,
-                                                        height: 14,
-                                                        decoration: BoxDecoration(
-                                                          color: kOrange,
-                                                          borderRadius:
-                                                              BorderRadius.circular(
-                                                                7,
-                                                              ),
-                                                        ),
-                                                        child: const Icon(
-                                                          Icons
-                                                              .workspace_premium_rounded,
-                                                          color: kWhite,
-                                                          size: 10,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                ],
-                                              ),
-                                      ),
-                                    ),
-                                  ),
-                                  // Remove button - only show if there's a logo and user is premium
-                                  if ((_logoUrl != null &&
-                                          _logoUrl!.isNotEmpty) ||
-                                      _selectedImage != null)
-                                    Positioned(
-                                      top: 0,
-                                      right: 0,
-                                      child: GestureDetector(
-                                        onTap: _uploadingImage
-                                            ? null
-                                            : () {
-                                                if (!_isPremium) {
-                                                  _showPremiumRequiredDialog();
-                                                } else {
-                                                  _showRemoveLogoDialog();
-                                                }
-                                              },
-                                        child: Container(
-                                          width: 24,
-                                          height: 24,
-                                          decoration: BoxDecoration(
-                                            color: kErrorColor,
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                            border: Border.all(
-                                              color: kWhite,
-                                              width: 2,
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.close_rounded,
-                                            color: kWhite,
-                                            size: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            _buildSectionLabel("Identity & Tax"),
-                            _buildModernField(
-                              "Business Name",
-                              _nameCtrl,
-                              Icons.store_rounded,
-                              isMandatory: true,
-                            ),
-                            _buildBusinessPhoneWithCountryCode(),
-                            _buildLocationField(),
-                            _buildModernFieldWithHint(
-                              "Tax Type",
-                              _taxTypeCtrl,
-                              Icons.receipt_long_rounded,
-                              hint: "VAT, GST, Sales Tax",
-                            ),
-                            _buildModernFieldWithHint(
-                              "Tax Number",
-                              _taxNumberCtrl,
-                              Icons.numbers_rounded,
-                              hint: "Enter your tax identification number",
-                            ),
-                            _buildModernFieldWithHint(
-                              "License Type",
-                              _licenseTypeCtrl,
-                              Icons.badge_rounded,
-                              hint: "Business License, Trade License",
-                            ),
-                            _buildModernFieldWithHint(
-                              "License Number",
-                              _licenseNumberCtrl,
-                              Icons.numbers_rounded,
-                              hint: "Enter your license number",
-                            ),
-                            _buildCurrencyField(),
-                            const SizedBox(height: 24),
-                            _buildSectionLabel("Contact & Ownership"),
-                            _buildModernField(
-                              "Owner Name",
-                              _ownerCtrl,
-                              Icons.person_rounded,
-                            ),
-                            _buildModernField(
-                              "Personal Phone",
-                              _personalPhoneCtrl,
-                              Icons.phone_rounded,
-                              type: TextInputType.phone,
-                            ),
-                            _buildModernField(
-                              "Email Address",
-                              _emailCtrl,
-                              Icons.email_rounded,
-                              enabled: false,
-                            ),
-                            const SizedBox(height: 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Bottom Update Button - only show when there are changes
-                  if (_hasChanges)
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.only(
-                        left: 16,
-                        right: 16,
-                        top: 16,
-                        bottom: 16 + MediaQuery.of(context).padding.bottom,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kWhite,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(25),
-                            blurRadius: 10,
-                            offset: const Offset(0, -2),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: _loading ? null : _saveAllFields,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
+        body: _fetching ? const Center(child: CircularProgressIndicator()) : Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      Center(child: Stack(children: [
+                        Container(
+                          width: 110, height: 110,
+                          decoration: BoxDecoration(
+                            color: kWhite,
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: kGrey200, width: 2),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: _selectedImage != null
+                                ? Image.file(_selectedImage!, fit: BoxFit.cover)
+                                : _logoUrl != null && _logoUrl!.isNotEmpty
+                                ? Image.network(_logoUrl!, fit: BoxFit.cover, key: ValueKey(_logoUrl))
+                                : const Center(child: HeroIcon(HeroIcons.buildingStorefront, size: 40, color: kGrey400)),
                           ),
                         ),
-                        child: _loading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  color: kWhite,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text(
-                                'Update',
-                                style: TextStyle(
-                                  color: kWhite,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: 'NotoSans',
-                                ),
+                        // Edit/Add button with premium restriction
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _uploadingImage ? null : () {
+                              if (!_isPremium) {
+                                _showPremiumRequiredDialog();
+                              } else {
+                                _pickImage();
+                              }
+                            },
+                            child: Container(
+                              width: 34, height: 34,
+                              decoration: BoxDecoration(
+                                color: _isPremium ? kPrimaryColor : kGrey400,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: kWhite, width: 2),
                               ),
-                      ),
-                    ),
-                ],
+                              child: _uploadingImage
+                                  ? const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(color: kWhite, strokeWidth: 2))
+                                  : Stack(
+                                      children: [
+                                        const Center(child: Icon(Icons.camera_alt_rounded, color: kWhite, size: 16)),
+                                        if (!_isPremium)
+                                          Positioned(
+                                            top: 0,
+                                            right: 0,
+                                            child: Container(
+                                              width: 14, height: 14,
+                                              decoration: BoxDecoration(
+                                                color: kOrange,
+                                                borderRadius: BorderRadius.circular(7),
+                                              ),
+                                              child: const Icon(Icons.workspace_premium_rounded, color: kWhite, size: 10),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                        // Remove button - only show if there's a logo and user is premium
+                        if ((_logoUrl != null && _logoUrl!.isNotEmpty) || _selectedImage != null)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: _uploadingImage ? null : () {
+                                if (!_isPremium) {
+                                  _showPremiumRequiredDialog();
+                                } else {
+                                  _showRemoveLogoDialog();
+                                }
+                              },
+                              child: Container(
+                                width: 24, height: 24,
+                                decoration: BoxDecoration(
+                                  color: kErrorColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: kWhite, width: 2),
+                                ),
+                                child: const Icon(Icons.close_rounded, color: kWhite, size: 12),
+                              ),
+                            ),
+                          ),
+                      ])),
+                      const SizedBox(height: 24),
+                      _buildSectionLabel("Identity & Tax"),
+                      _buildModernField("Business Name", _nameCtrl, Icons.store_rounded, isMandatory: true),
+                      _buildBusinessPhoneWithCountryCode(),
+                      _buildLocationField(),
+                      _buildModernFieldWithHint("Tax Type", _taxTypeCtrl, Icons.receipt_long_rounded, hint: "VAT, GST, Sales Tax"),
+                      _buildModernFieldWithHint("Tax Number", _taxNumberCtrl, Icons.numbers_rounded, hint: "Enter your tax identification number"),
+                      _buildModernFieldWithHint("License Type", _licenseTypeCtrl, Icons.badge_rounded, hint: "Business License, Trade License"),
+                      _buildModernFieldWithHint("License Number", _licenseNumberCtrl, Icons.numbers_rounded, hint: "Enter your license number"),
+                      _buildCurrencyField(),
+                      const SizedBox(height: 24),
+                      _buildSectionLabel("Contact & Ownership"),
+                      _buildModernField("Owner Name", _ownerCtrl, Icons.person_rounded),
+                      _buildModernField("Personal Phone", _personalPhoneCtrl, Icons.phone_rounded, type: TextInputType.phone),
+                      _buildModernField("Email Address", _emailCtrl, Icons.email_rounded, enabled: false),
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
               ),
+            ),
+            // Bottom Update Button - only show when there are changes
+            if (_hasChanges)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: 16 + MediaQuery.of(context).padding.bottom,
+                ),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withAlpha(25),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _loading ? null : _saveAllFields,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _loading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: kWhite, strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Update',
+                          style: TextStyle(
+                            color: kWhite,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'NotoSans',
+                          ),
+                        ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSectionLabel(String title) => Padding(
     padding: const EdgeInsets.only(bottom: 12, left: 4),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: kBlack54,
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.5,
-        fontFamily: 'NotoSans',
-      ),
-    ),
+    child: Text(title, style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontFamily: 'NotoSans')),
   );
 
-  Widget _buildModernField(
-    String label,
-    TextEditingController ctrl,
-    IconData icon, {
-    bool enabled = true,
-    TextInputType type = TextInputType.text,
-    bool isMandatory = false,
-  }) {
+  Widget _buildModernField(String label, TextEditingController ctrl, IconData icon, {bool enabled = true, TextInputType type = TextInputType.text, bool isMandatory = false}) {
     return _FocusAwareField(
       ctrl: ctrl,
       builder: (isFocused) {
@@ -1914,68 +1421,37 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 controller: ctrl,
                 enabled: enabled,
                 keyboardType: type,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: kBlack87,
-                  fontFamily: 'Lato',
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
                 decoration: InputDecoration(
                   labelText: isMandatory ? '$label *' : label,
-                  labelStyle: TextStyle(
-                    color: labelColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'NotoSans',
-                  ),
+                  labelStyle: TextStyle(color: labelColor, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
                   prefixIcon: Icon(icon, color: iconColor, size: 20),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: borderColor,
-                      width: borderWidth,
-                    ),
+                    borderSide: BorderSide(color: borderColor, width: borderWidth),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: borderColor,
-                      width: borderWidth,
-                    ),
+                    borderSide: BorderSide(color: borderColor, width: borderWidth),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: kPrimaryColor,
-                      width: 2.0,
-                    ),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
                   ),
                   disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: isFilled ? kGrey300 : kGrey200,
-                      width: 1.0,
-                    ),
+                    borderSide: BorderSide(color: isFilled ? kGrey300 : kGrey200, width: 1.0),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: kErrorColor),
                   ),
-                  floatingLabelStyle: TextStyle(
-                    color: isFocused ? kPrimaryColor : kBlack54,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  floatingLabelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontWeight: FontWeight.w900),
                 ),
-                validator: isMandatory
-                    ? (v) =>
-                          v == null || v.isEmpty ? '$label is required' : null
-                    : null,
+                validator: isMandatory ? (v) => v == null || v.isEmpty ? '$label is required' : null : null,
                 onChanged: (_) => _checkForChanges(),
               ),
             );
@@ -1985,15 +1461,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     );
   }
 
-  Widget _buildModernFieldWithHint(
-    String label,
-    TextEditingController ctrl,
-    IconData icon, {
-    bool enabled = true,
-    TextInputType type = TextInputType.text,
-    bool isMandatory = false,
-    String? hint,
-  }) {
+  Widget _buildModernFieldWithHint(String label, TextEditingController ctrl, IconData icon, {bool enabled = true, TextInputType type = TextInputType.text, bool isMandatory = false, String? hint}) {
     return _FocusAwareField(
       ctrl: ctrl,
       builder: (isFocused) {
@@ -2012,74 +1480,39 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 controller: ctrl,
                 enabled: enabled,
                 keyboardType: type,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: kBlack87,
-                  fontFamily: 'Lato',
-                ),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
                 decoration: InputDecoration(
                   labelText: isMandatory ? '$label *' : label,
                   hintText: hint,
-                  hintStyle: const TextStyle(
-                    color: kGrey400,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w400,
-                  ),
-                  labelStyle: TextStyle(
-                    color: labelColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    fontFamily: 'NotoSans',
-                  ),
+                  hintStyle: const TextStyle(color: kGrey400, fontSize: 12, fontWeight: FontWeight.w400),
+                  labelStyle: TextStyle(color: labelColor, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
                   prefixIcon: Icon(icon, color: iconColor, size: 20),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 14,
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: borderColor,
-                      width: borderWidth,
-                    ),
+                    borderSide: BorderSide(color: borderColor, width: borderWidth),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: borderColor,
-                      width: borderWidth,
-                    ),
+                    borderSide: BorderSide(color: borderColor, width: borderWidth),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: kPrimaryColor,
-                      width: 2.0,
-                    ),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
                   ),
                   disabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: isFilled ? kGrey300 : kGrey200,
-                      width: 1.0,
-                    ),
+                    borderSide: BorderSide(color: isFilled ? kGrey300 : kGrey200, width: 1.0),
                   ),
                   errorBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: const BorderSide(color: kErrorColor),
                   ),
-                  floatingLabelStyle: TextStyle(
-                    color: isFocused ? kPrimaryColor : kBlack54,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  floatingLabelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontWeight: FontWeight.w900),
                 ),
-                validator: isMandatory
-                    ? (v) =>
-                          v == null || v.isEmpty ? '$label is required' : null
-                    : null,
+                validator: isMandatory ? (v) => v == null || v.isEmpty ? '$label is required' : null : null,
                 onChanged: (_) => _checkForChanges(),
               ),
             );
@@ -2098,37 +1531,19 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           child: TextFormField(
             controller: _phoneCtrl,
             keyboardType: TextInputType.phone,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-            ],
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: kBlack87,
-              fontFamily: 'Lato',
-            ),
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
             decoration: InputDecoration(
               labelText: 'Business Contact Number *',
-              labelStyle: TextStyle(
-                color: isFocused ? kPrimaryColor : kBlack54,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'NotoSans',
-              ),
+              labelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
               prefixIcon: GestureDetector(
                 onTap: _showCountryCodePickerProfile,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        _selectedCountryFlag,
-                        style: const TextStyle(fontSize: 18),
-                      ),
+                      Text(_selectedCountryFlag, style: const TextStyle(fontSize: 18)),
                       const SizedBox(width: 3),
                       Text(
                         _selectedCountryCode,
@@ -2139,47 +1554,29 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           fontFamily: 'NotoSans',
                         ),
                       ),
-                      Icon(
-                        Icons.arrow_drop_down,
-                        size: 16,
-                        color: isFocused ? kPrimaryColor : kBlack54,
-                      ),
+                      Icon(Icons.arrow_drop_down, size: 16, color: isFocused ? kPrimaryColor : kBlack54),
                     ],
                   ),
                 ),
               ),
               filled: true,
               fillColor: const Color(0xFFF8F9FA),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isFocused ? kPrimaryColor : kGrey200,
-                  width: isFocused ? 2.0 : 1.0,
-                ),
+                borderSide: BorderSide(color: isFocused ? kPrimaryColor : kGrey200, width: isFocused ? 2.0 : 1.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isFocused ? kPrimaryColor : kGrey200,
-                  width: isFocused ? 2.0 : 1.0,
-                ),
+                borderSide: BorderSide(color: isFocused ? kPrimaryColor : kGrey200, width: isFocused ? 2.0 : 1.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
               ),
-              floatingLabelStyle: TextStyle(
-                color: isFocused ? kPrimaryColor : kBlack54,
-                fontWeight: FontWeight.w900,
-              ),
+              floatingLabelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontWeight: FontWeight.w900),
             ),
-            validator: (v) => v == null || v.isEmpty
-                ? 'Business Contact Number is required'
-                : null,
+            validator: (v) => v == null || v.isEmpty ? 'Business Contact Number is required' : null,
             onChanged: (_) => _checkForChanges(),
           ),
         );
@@ -2193,17 +1590,14 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final filtered = _countryCodes.where((c) {
               if (searchQuery.isEmpty) return true;
               final q = searchQuery.toLowerCase();
-              return c['name']!.toLowerCase().contains(q) ||
-                  c['code']!.contains(q);
+              return c['name']!.toLowerCase().contains(q) || c['code']!.contains(q);
             }).toList();
 
             return SizedBox(
@@ -2214,42 +1608,24 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                     child: Column(
                       children: [
-                        const Text(
-                          "Select Country Code",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            color: kBlack87,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        const Text("Select Country Code",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: kBlack87, fontFamily: 'NotoSans')),
                         const SizedBox(height: 14),
                         TextField(
                           autofocus: false,
                           decoration: InputDecoration(
                             hintText: 'Search country...',
-                            hintStyle: const TextStyle(
-                              fontSize: 13,
-                              color: kGrey400,
-                            ),
-                            prefixIcon: const Icon(
-                              Icons.search_rounded,
-                              color: kPrimaryColor,
-                              size: 20,
-                            ),
+                            hintStyle: const TextStyle(fontSize: 13, color: kGrey400),
+                            prefixIcon: const Icon(Icons.search_rounded, color: kPrimaryColor, size: 20),
                             filled: true,
                             fillColor: kGreyBg,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           ),
-                          onChanged: (v) =>
-                              setModalState(() => searchQuery = v),
+                          onChanged: (v) => setModalState(() => searchQuery = v),
                         ),
                       ],
                     ),
@@ -2257,8 +1633,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                   Expanded(
                     child: ListView.separated(
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: kGrey100),
+                      separatorBuilder: (_, __) => const Divider(height: 1, color: kGrey100),
                       itemBuilder: (context, i) {
                         final c = filtered[i];
                         final isSelected = c['code'] == _selectedCountryCode;
@@ -2271,41 +1646,26 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                             _checkForChanges();
                             Navigator.pop(ctx);
                           },
-                          leading: Text(
-                            c['flag']!,
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                          title: Text(
-                            c['name']!,
-                            style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.w800
-                                  : FontWeight.w600,
-                              fontSize: 14,
-                              color: isSelected ? kPrimaryColor : kBlack87,
-                              fontFamily: 'Lato',
-                            ),
-                          ),
+                          leading: Text(c['flag']!, style: const TextStyle(fontSize: 24)),
+                          title: Text(c['name']!,
+                              style: TextStyle(
+                                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                  fontSize: 14,
+                                  color: isSelected ? kPrimaryColor : kBlack87,
+                                  fontFamily: 'Lato')),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                c['code']!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700,
-                                  color: isSelected ? kPrimaryColor : kBlack54,
-                                  fontFamily: 'NotoSans',
-                                ),
-                              ),
+                              Text(c['code']!,
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: isSelected ? kPrimaryColor : kBlack54,
+                                      fontFamily: 'NotoSans')),
                               if (isSelected)
                                 const Padding(
                                   padding: EdgeInsets.only(left: 8),
-                                  child: Icon(
-                                    Icons.check_circle_rounded,
-                                    color: kPrimaryColor,
-                                    size: 20,
-                                  ),
+                                  child: Icon(Icons.check_circle_rounded, color: kPrimaryColor, size: 20),
                                 ),
                             ],
                           ),
@@ -2331,55 +1691,29 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           child: TextFormField(
             controller: _locCtrl,
             keyboardType: TextInputType.streetAddress,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              color: kBlack87,
-              fontFamily: 'Lato',
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
             maxLines: 2,
             minLines: 1,
             decoration: InputDecoration(
               labelText: "Address",
-              labelStyle: TextStyle(
-                color: isFocused ? kPrimaryColor : kBlack54,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'NotoSans',
-              ),
-              prefixIcon: Icon(
-                Icons.location_on_rounded,
-                color: isFocused ? kPrimaryColor : kBlack54,
-                size: 20,
-              ),
+              labelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
+              prefixIcon: Icon(Icons.location_on_rounded, color: isFocused ? kPrimaryColor : kBlack54, size: 20),
               filled: true,
               fillColor: const Color(0xFFF8F9FA),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isFocused ? kPrimaryColor : kGrey200,
-                  width: isFocused ? 2.0 : 1.0,
-                ),
+                borderSide: BorderSide(color: isFocused ? kPrimaryColor : kGrey200, width: isFocused ? 2.0 : 1.0),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(
-                  color: isFocused ? kPrimaryColor : kGrey200,
-                  width: isFocused ? 2.0 : 1.0,
-                ),
+                borderSide: BorderSide(color: isFocused ? kPrimaryColor : kGrey200, width: isFocused ? 2.0 : 1.0),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
               ),
-              floatingLabelStyle: TextStyle(
-                color: isFocused ? kPrimaryColor : kBlack54,
-                fontWeight: FontWeight.w900,
-              ),
+              floatingLabelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontWeight: FontWeight.w900),
             ),
             onChanged: (_) => _checkForChanges(),
           ),
@@ -2389,10 +1723,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   }
 
   Widget _buildCurrencyField() {
-    final sel = _currencies.firstWhere(
-      (c) => c['code'] == _selectedCurrency,
-      orElse: () => _currencies[3],
-    );
+    final sel = _currencies.firstWhere((c) => c['code'] == _selectedCurrency, orElse: () => _currencies[3]);
     final hasValue = _selectedCurrency.isNotEmpty;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -2404,18 +1735,11 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           decoration: BoxDecoration(
             color: const Color(0xFFF8F9FA),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: hasValue ? kPrimaryColor : kGrey200,
-              width: hasValue ? 1.5 : 1.0,
-            ),
+            border: Border.all(color: hasValue ? kPrimaryColor : kGrey200, width: hasValue ? 1.5 : 1.0),
           ),
           child: Row(
             children: [
-              Icon(
-                Icons.currency_exchange_rounded,
-                color: kPrimaryColor,
-                size: 20,
-              ),
+              Icon(Icons.currency_exchange_rounded, color: kPrimaryColor, size: 20),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
@@ -2423,32 +1747,17 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                   children: [
                     const Text(
                       "Business Currency",
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: kBlack54,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.5,
-                        fontFamily: 'NotoSans',
-                      ),
+                      style: TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5, fontFamily: 'NotoSans'),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       "${sel['symbol']} ${sel['code']} - ${sel['name']}",
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: kBlack87,
-                        fontFamily: 'Lato',
-                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87, fontFamily: 'Lato'),
                     ),
                   ],
                 ),
               ),
-              const Icon(
-                Icons.keyboard_arrow_down_rounded,
-                color: kBlack54,
-                size: 22,
-              ),
+              const Icon(Icons.keyboard_arrow_down_rounded, color: kBlack54, size: 22),
             ],
           ),
         ),
@@ -2462,9 +1771,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -2482,32 +1789,17 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    const Text(
-                      "Select Currency",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: kBlack87,
-                        letterSpacing: 0.5,
-                        fontFamily: 'NotoSans',
-                      ),
-                    ),
+                    const Text("Select Currency",
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: kBlack87, letterSpacing: 0.5, fontFamily: 'NotoSans')),
                     const SizedBox(height: 20),
                     TextField(
                       autofocus: false,
                       decoration: InputDecoration(
                         hintText: 'Search currency...',
-                        hintStyle: const TextStyle(
-                          fontSize: 13,
-                          color: kGrey400,
-                        ),
+                        hintStyle: const TextStyle(fontSize: 13, color: kGrey400),
                         prefixIcon: const Padding(
                           padding: EdgeInsets.all(12.0),
-                          child: HeroIcon(
-                            HeroIcons.magnifyingGlass,
-                            color: kPrimaryColor,
-                            size: 20,
-                          ),
+                          child: HeroIcon(HeroIcons.magnifyingGlass, color: kPrimaryColor, size: 20),
                         ),
                         filled: true,
                         fillColor: kGreyBg,
@@ -2516,8 +1808,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           borderSide: BorderSide.none,
                         ),
                       ),
-                      onChanged: (value) =>
-                          setModalState(() => searchQuery = value),
+                      onChanged: (value) => setModalState(() => searchQuery = value),
                     ),
                     const SizedBox(height: 16),
                     if (searchQuery.isNotEmpty)
@@ -2527,11 +1818,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           alignment: Alignment.centerLeft,
                           child: Text(
                             '${filteredCurrencies.length} ${filteredCurrencies.length == 1 ? 'currency' : 'currencies'} found',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: kBlack54,
-                              fontWeight: FontWeight.w600,
-                            ),
+                            style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600),
                           ),
                         ),
                       ),
@@ -2541,90 +1828,52 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  HeroIcon(
-                                    HeroIcons.magnifyingGlass,
-                                    size: 48,
-                                    color: kGrey400,
-                                  ),
+                                  HeroIcon(HeroIcons.magnifyingGlass, size: 48, color: kGrey400),
                                   SizedBox(height: 12),
-                                  Text(
-                                    'No currencies found',
-                                    style: TextStyle(
-                                      color: kGrey400,
-                                      fontSize: 14,
-                                    ),
-                                  ),
+                                  Text('No currencies found', style: TextStyle(color: kGrey400, fontSize: 14)),
                                 ],
                               ),
                             )
                           : ListView.separated(
                               itemCount: filteredCurrencies.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1, color: kGrey100),
+                              separatorBuilder: (_, __) => const Divider(height: 1, color: kGrey100),
                               itemBuilder: (context, i) {
                                 final c = filteredCurrencies[i];
-                                final isSelected =
-                                    c['code'] == _selectedCurrency;
+                                final isSelected = c['code'] == _selectedCurrency;
                                 return ListTile(
                                   onTap: () {
-                                    setState(
-                                      () => _selectedCurrency = c['code']!,
-                                    );
+                                    setState(() => _selectedCurrency = c['code']!);
                                     _checkForChanges();
                                     Navigator.pop(ctx);
                                   },
                                   contentPadding: EdgeInsets.zero,
                                   leading: Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: 40, height: 40,
                                     decoration: BoxDecoration(
-                                      color: isSelected
-                                          ? kPrimaryColor.withAlpha(25)
-                                          : kGreyBg,
+                                      color: isSelected ? kPrimaryColor.withAlpha(25) : kGreyBg,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Center(
-                                      child: Text(
-                                        c['symbol']!,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: isSelected
-                                              ? kPrimaryColor
-                                              : kBlack54,
-                                        ),
-                                      ),
+                                      child: Text(c['symbol']!,
+                                          style: TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.bold,
+                                              color: isSelected ? kPrimaryColor : kBlack54)),
                                     ),
                                   ),
-                                  title: Text(
-                                    c['name']!,
-                                    style: TextStyle(
-                                      fontWeight: isSelected
-                                          ? FontWeight.w800
-                                          : FontWeight.w600,
-                                      fontSize: 14,
-                                      color: isSelected
-                                          ? kPrimaryColor
-                                          : kBlack87,
-                                      fontFamily: 'Lato',
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    c['code']!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: isSelected
-                                          ? kPrimaryColor
-                                          : kBlack54,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  title: Text(c['name']!,
+                                      style: TextStyle(
+                                          fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                          fontSize: 14,
+                                          color: isSelected ? kPrimaryColor : kBlack87,
+                                          fontFamily: 'Lato')),
+                                  subtitle: Text(c['code']!,
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: isSelected ? kPrimaryColor : kBlack54,
+                                          fontWeight: FontWeight.w500)),
                                   trailing: isSelected
-                                      ? const Icon(
-                                          Icons.check_circle_rounded,
-                                          color: kPrimaryColor,
-                                          size: 24,
-                                        )
+                                      ? const Icon(Icons.check_circle_rounded, color: kPrimaryColor, size: 24)
                                       : null,
                                 );
                               },
@@ -2651,8 +1900,7 @@ class BillPrintSettingsPage extends StatefulWidget {
   State<BillPrintSettingsPage> createState() => _BillPrintSettingsPageState();
 }
 
-class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
-    with SingleTickerProviderStateMixin {
+class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   // Thermal Printer Settings
@@ -2668,8 +1916,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
   bool _thermalShowDelivery = false;
   bool _thermalShowLicense = true;
   String _thermalSaleInvoiceText = 'Thank you for your purchase!';
-  bool _thermalShowTaxColumnInTable =
-      false; // Tax column removed by default for thermal
+  bool _thermalShowTaxColumnInTable = false; // Tax column removed by default for thermal
 
   // A4 Printer Settings
   bool _a4ShowHeader = true;
@@ -2691,13 +1938,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
 
   // Document Numbering Settings
   String _selectedDocType = 'Invoice';
-  final List<String> _docTypes = [
-    'Invoice',
-    'Quotation/Estimation',
-    'Purchase',
-    'Expense',
-    'Payment Receipt',
-  ];
+  final List<String> _docTypes = ['Invoice', 'Quotation/Estimation', 'Purchase', 'Expense', 'Payment Receipt'];
 
   // Prefix and number controllers for each document type
   final _invoicePrefixCtrl = TextEditingController();
@@ -2749,43 +1990,32 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
       _thermalPageSize = prefs.getString('thermal_page_size') ?? '58mm';
       _thermalShowHeader = prefs.getBool('thermal_show_header') ?? true;
       _thermalShowLogo = prefs.getBool('thermal_show_logo') ?? true;
-      _thermalShowCustomerInfo =
-          prefs.getBool('thermal_show_customer_info') ?? true;
+      _thermalShowCustomerInfo = prefs.getBool('thermal_show_customer_info') ?? true;
       _thermalShowItemTable = prefs.getBool('thermal_show_item_table') ?? true;
-      _thermalShowTotalItemQuantity =
-          prefs.getBool('thermal_show_total_item_quantity') ?? true;
-      _thermalShowTaxDetails =
-          prefs.getBool('thermal_show_tax_details') ?? true;
+      _thermalShowTotalItemQuantity = prefs.getBool('thermal_show_total_item_quantity') ?? true;
+      _thermalShowTaxDetails = prefs.getBool('thermal_show_tax_details') ?? true;
       _thermalShowYouSaved = prefs.getBool('thermal_show_you_saved') ?? true;
-      _thermalShowDescription =
-          prefs.getBool('thermal_show_description') ?? false;
+      _thermalShowDescription = prefs.getBool('thermal_show_description') ?? false;
       _thermalShowDelivery = prefs.getBool('thermal_show_delivery') ?? false;
       _thermalShowLicense = prefs.getBool('thermal_show_license') ?? true;
-      _thermalSaleInvoiceText =
-          prefs.getString('thermal_sale_invoice_text') ??
-          'Thank you for your purchase!';
-      _thermalShowTaxColumnInTable =
-          prefs.getBool('thermal_show_tax_column') ?? false;
+      _thermalSaleInvoiceText = prefs.getString('thermal_sale_invoice_text') ?? 'Thank you for your purchase!';
+      _thermalShowTaxColumnInTable = prefs.getBool('thermal_show_tax_column') ?? false;
 
       // A4 settings
       _a4ShowHeader = prefs.getBool('a4_show_header') ?? true;
       _a4ShowLogo = prefs.getBool('a4_show_logo') ?? true;
       _a4ShowCustomerInfo = prefs.getBool('a4_show_customer_info') ?? true;
       _a4ShowItemTable = prefs.getBool('a4_show_item_table') ?? true;
-      _a4ShowTotalItemQuantity =
-          prefs.getBool('a4_show_total_item_quantity') ?? true;
+      _a4ShowTotalItemQuantity = prefs.getBool('a4_show_total_item_quantity') ?? true;
       _a4ShowTaxDetails = prefs.getBool('a4_show_tax_details') ?? true;
       _a4ShowYouSaved = prefs.getBool('a4_show_you_saved') ?? true;
       _a4ShowDescription = prefs.getBool('a4_show_description') ?? false;
       _a4ShowDelivery = prefs.getBool('a4_show_delivery') ?? false;
       _a4ShowLicense = prefs.getBool('a4_show_license') ?? true;
-      _a4SaleInvoiceText =
-          prefs.getString('a4_sale_invoice_text') ??
-          'Thank you for your purchase!';
+      _a4SaleInvoiceText = prefs.getString('a4_sale_invoice_text') ?? 'Thank you for your purchase!';
       _a4ShowSignature = prefs.getBool('a4_show_signature') ?? false;
       _a4EstimationText = prefs.getString('a4_estimation_text') ?? '';
-      _a4DeliveryChallanText =
-          prefs.getString('a4_delivery_challan_text') ?? '';
+      _a4DeliveryChallanText = prefs.getString('a4_delivery_challan_text') ?? '';
       _a4ShowTaxColumnInTable = prefs.getBool('a4_show_tax_column') ?? true;
       _a4ColorTheme = prefs.getString('a4_color_theme') ?? 'blue';
     });
@@ -2800,45 +2030,29 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           setState(() {
             // Invoice
             _invoicePrefixCtrl.text = data['invoicePrefix']?.toString() ?? '';
-            _invoiceNumberCtrl.text = (data['nextInvoiceNumber'] ?? 100001)
-                .toString();
-            _oldInvoiceSeries = List<Map<String, dynamic>>.from(
-              data['oldInvoiceSeries'] ?? [],
-            );
+            _invoiceNumberCtrl.text = (data['nextInvoiceNumber'] ?? 100001).toString();
+            _oldInvoiceSeries = List<Map<String, dynamic>>.from(data['oldInvoiceSeries'] ?? []);
 
             // Quotation / Estimation (combined)
-            _quotationPrefixCtrl.text =
-                data['quotationPrefix']?.toString() ?? '';
-            _quotationNumberCtrl.text = (data['nextQuotationNumber'] ?? 100001)
-                .toString();
-            _oldQuotationSeries = List<Map<String, dynamic>>.from(
-              data['oldQuotationSeries'] ?? [],
-            );
+            _quotationPrefixCtrl.text = data['quotationPrefix']?.toString() ?? '';
+            _quotationNumberCtrl.text = (data['nextQuotationNumber'] ?? 100001).toString();
+            _oldQuotationSeries = List<Map<String, dynamic>>.from(data['oldQuotationSeries'] ?? []);
+
 
             // Purchase
             _purchasePrefixCtrl.text = data['purchasePrefix']?.toString() ?? '';
-            _purchaseNumberCtrl.text = (data['nextPurchaseNumber'] ?? 100001)
-                .toString();
-            _oldPurchaseSeries = List<Map<String, dynamic>>.from(
-              data['oldPurchaseSeries'] ?? [],
-            );
+            _purchaseNumberCtrl.text = (data['nextPurchaseNumber'] ?? 100001).toString();
+            _oldPurchaseSeries = List<Map<String, dynamic>>.from(data['oldPurchaseSeries'] ?? []);
 
             // Expense
             _expensePrefixCtrl.text = data['expensePrefix']?.toString() ?? '';
-            _expenseNumberCtrl.text = (data['nextExpenseNumber'] ?? 100001)
-                .toString();
-            _oldExpenseSeries = List<Map<String, dynamic>>.from(
-              data['oldExpenseSeries'] ?? [],
-            );
+            _expenseNumberCtrl.text = (data['nextExpenseNumber'] ?? 100001).toString();
+            _oldExpenseSeries = List<Map<String, dynamic>>.from(data['oldExpenseSeries'] ?? []);
 
             // Payment Receipt
-            _paymentReceiptPrefixCtrl.text =
-                data['paymentReceiptPrefix']?.toString() ?? 'PR';
-            _paymentReceiptNumberCtrl.text =
-                (data['nextPaymentReceiptNumber'] ?? 100001).toString();
-            _oldPaymentReceiptSeries = List<Map<String, dynamic>>.from(
-              data['oldPaymentReceiptSeries'] ?? [],
-            );
+            _paymentReceiptPrefixCtrl.text = data['paymentReceiptPrefix']?.toString() ?? 'PR';
+            _paymentReceiptNumberCtrl.text = (data['nextPaymentReceiptNumber'] ?? 100001).toString();
+            _oldPaymentReceiptSeries = List<Map<String, dynamic>>.from(data['oldPaymentReceiptSeries'] ?? []);
           });
         }
       }
@@ -2856,30 +2070,21 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     await prefs.setBool('thermal_show_logo', _thermalShowLogo);
     await prefs.setBool('thermal_show_customer_info', _thermalShowCustomerInfo);
     await prefs.setBool('thermal_show_item_table', _thermalShowItemTable);
-    await prefs.setBool(
-      'thermal_show_total_item_quantity',
-      _thermalShowTotalItemQuantity,
-    );
+    await prefs.setBool('thermal_show_total_item_quantity', _thermalShowTotalItemQuantity);
     await prefs.setBool('thermal_show_tax_details', _thermalShowTaxDetails);
     await prefs.setBool('thermal_show_you_saved', _thermalShowYouSaved);
     await prefs.setBool('thermal_show_description', _thermalShowDescription);
     await prefs.setBool('thermal_show_delivery', _thermalShowDelivery);
     await prefs.setBool('thermal_show_license', _thermalShowLicense);
     await prefs.setString('thermal_sale_invoice_text', _thermalSaleInvoiceText);
-    await prefs.setBool(
-      'thermal_show_tax_column',
-      _thermalShowTaxColumnInTable,
-    );
+    await prefs.setBool('thermal_show_tax_column', _thermalShowTaxColumnInTable);
 
     // A4 settings
     await prefs.setBool('a4_show_header', _a4ShowHeader);
     await prefs.setBool('a4_show_logo', _a4ShowLogo);
     await prefs.setBool('a4_show_customer_info', _a4ShowCustomerInfo);
     await prefs.setBool('a4_show_item_table', _a4ShowItemTable);
-    await prefs.setBool(
-      'a4_show_total_item_quantity',
-      _a4ShowTotalItemQuantity,
-    );
+    await prefs.setBool('a4_show_total_item_quantity', _a4ShowTotalItemQuantity);
     await prefs.setBool('a4_show_tax_details', _a4ShowTaxDetails);
     await prefs.setBool('a4_show_you_saved', _a4ShowYouSaved);
     await prefs.setBool('a4_show_description', _a4ShowDescription);
@@ -2893,30 +2098,11 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     await prefs.setString('a4_color_theme', _a4ColorTheme);
 
     // Also save for invoice page compatibility
-    await prefs.setBool(
-      'receipt_show_logo',
-      _tabController.index == 0 ? _thermalShowLogo : _a4ShowLogo,
-    );
-    await prefs.setBool(
-      'receipt_show_customer_details',
-      _tabController.index == 0
-          ? _thermalShowCustomerInfo
-          : _a4ShowCustomerInfo,
-    );
-    await prefs.setBool(
-      'receipt_show_total_items',
-      _tabController.index == 0
-          ? _thermalShowTotalItemQuantity
-          : _a4ShowTotalItemQuantity,
-    );
-    await prefs.setBool(
-      'receipt_show_save_amount',
-      _tabController.index == 0 ? _thermalShowYouSaved : _a4ShowYouSaved,
-    );
-    await prefs.setString(
-      'receipt_footer_description',
-      _tabController.index == 0 ? _thermalSaleInvoiceText : _a4SaleInvoiceText,
-    );
+    await prefs.setBool('receipt_show_logo', _tabController.index == 0 ? _thermalShowLogo : _a4ShowLogo);
+    await prefs.setBool('receipt_show_customer_details', _tabController.index == 0 ? _thermalShowCustomerInfo : _a4ShowCustomerInfo);
+    await prefs.setBool('receipt_show_total_items', _tabController.index == 0 ? _thermalShowTotalItemQuantity : _a4ShowTotalItemQuantity);
+    await prefs.setBool('receipt_show_save_amount', _tabController.index == 0 ? _thermalShowYouSaved : _a4ShowYouSaved);
+    await prefs.setString('receipt_footer_description', _tabController.index == 0 ? _thermalSaleInvoiceText : _a4SaleInvoiceText);
   }
 
   Future<void> _saveDocumentNumberSettings() async {
@@ -2939,22 +2125,13 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
 
           // Always save to history if the values are different from new values
           if (currentPrefix != newPrefix || currentNumber != newNumber) {
-            final oldSeries = List<Map<String, dynamic>>.from(
-              currentData['oldInvoiceSeries'] ?? [],
-            );
+            final oldSeries = List<Map<String, dynamic>>.from(currentData['oldInvoiceSeries'] ?? []);
             // Check if this series already exists in history
-            final existsInHistory = oldSeries.any(
-              (s) =>
-                  (s['prefix']?.toString() ?? '') ==
-                      (currentPrefix.isEmpty ? '--' : currentPrefix) &&
-                  s['number'] == currentNumber,
-            );
-            if (!existsInHistory &&
-                (currentPrefix.isNotEmpty || currentNumber != 100001)) {
-              oldSeries.add({
-                'prefix': currentPrefix.isEmpty ? '--' : currentPrefix,
-                'number': currentNumber,
-              });
+            final existsInHistory = oldSeries.any((s) =>
+              (s['prefix']?.toString() ?? '') == (currentPrefix.isEmpty ? '--' : currentPrefix) &&
+              s['number'] == currentNumber);
+            if (!existsInHistory && (currentPrefix.isNotEmpty || currentNumber != 100001)) {
+              oldSeries.add({'prefix': currentPrefix.isEmpty ? '--' : currentPrefix, 'number': currentNumber});
               updateData['oldInvoiceSeries'] = oldSeries;
               // Update local state immediately
               setState(() => _oldInvoiceSeries = oldSeries);
@@ -2965,26 +2142,16 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           break;
 
         case 'Quotation/Estimation':
-          final currentPrefix =
-              currentData['quotationPrefix']?.toString() ?? '';
+          final currentPrefix = currentData['quotationPrefix']?.toString() ?? '';
           final currentNumber = currentData['nextQuotationNumber'] ?? 100001;
 
           if (currentPrefix != newPrefix || currentNumber != newNumber) {
-            final oldSeries = List<Map<String, dynamic>>.from(
-              currentData['oldQuotationSeries'] ?? [],
-            );
-            final existsInHistory = oldSeries.any(
-              (s) =>
-                  (s['prefix']?.toString() ?? '') ==
-                      (currentPrefix.isEmpty ? '--' : currentPrefix) &&
-                  s['number'] == currentNumber,
-            );
-            if (!existsInHistory &&
-                (currentPrefix.isNotEmpty || currentNumber != 100001)) {
-              oldSeries.add({
-                'prefix': currentPrefix.isEmpty ? '--' : currentPrefix,
-                'number': currentNumber,
-              });
+            final oldSeries = List<Map<String, dynamic>>.from(currentData['oldQuotationSeries'] ?? []);
+            final existsInHistory = oldSeries.any((s) =>
+              (s['prefix']?.toString() ?? '') == (currentPrefix.isEmpty ? '--' : currentPrefix) &&
+              s['number'] == currentNumber);
+            if (!existsInHistory && (currentPrefix.isNotEmpty || currentNumber != 100001)) {
+              oldSeries.add({'prefix': currentPrefix.isEmpty ? '--' : currentPrefix, 'number': currentNumber});
               updateData['oldQuotationSeries'] = oldSeries;
               setState(() => _oldQuotationSeries = oldSeries);
             }
@@ -2998,21 +2165,12 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           final currentNumber = currentData['nextPurchaseNumber'] ?? 100001;
 
           if (currentPrefix != newPrefix || currentNumber != newNumber) {
-            final oldSeries = List<Map<String, dynamic>>.from(
-              currentData['oldPurchaseSeries'] ?? [],
-            );
-            final existsInHistory = oldSeries.any(
-              (s) =>
-                  (s['prefix']?.toString() ?? '') ==
-                      (currentPrefix.isEmpty ? '--' : currentPrefix) &&
-                  s['number'] == currentNumber,
-            );
-            if (!existsInHistory &&
-                (currentPrefix.isNotEmpty || currentNumber != 100001)) {
-              oldSeries.add({
-                'prefix': currentPrefix.isEmpty ? '--' : currentPrefix,
-                'number': currentNumber,
-              });
+            final oldSeries = List<Map<String, dynamic>>.from(currentData['oldPurchaseSeries'] ?? []);
+            final existsInHistory = oldSeries.any((s) =>
+              (s['prefix']?.toString() ?? '') == (currentPrefix.isEmpty ? '--' : currentPrefix) &&
+              s['number'] == currentNumber);
+            if (!existsInHistory && (currentPrefix.isNotEmpty || currentNumber != 100001)) {
+              oldSeries.add({'prefix': currentPrefix.isEmpty ? '--' : currentPrefix, 'number': currentNumber});
               updateData['oldPurchaseSeries'] = oldSeries;
               setState(() => _oldPurchaseSeries = oldSeries);
             }
@@ -3026,21 +2184,12 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           final currentNumber = currentData['nextExpenseNumber'] ?? 100001;
 
           if (currentPrefix != newPrefix || currentNumber != newNumber) {
-            final oldSeries = List<Map<String, dynamic>>.from(
-              currentData['oldExpenseSeries'] ?? [],
-            );
-            final existsInHistory = oldSeries.any(
-              (s) =>
-                  (s['prefix']?.toString() ?? '') ==
-                      (currentPrefix.isEmpty ? '--' : currentPrefix) &&
-                  s['number'] == currentNumber,
-            );
-            if (!existsInHistory &&
-                (currentPrefix.isNotEmpty || currentNumber != 100001)) {
-              oldSeries.add({
-                'prefix': currentPrefix.isEmpty ? '--' : currentPrefix,
-                'number': currentNumber,
-              });
+            final oldSeries = List<Map<String, dynamic>>.from(currentData['oldExpenseSeries'] ?? []);
+            final existsInHistory = oldSeries.any((s) =>
+              (s['prefix']?.toString() ?? '') == (currentPrefix.isEmpty ? '--' : currentPrefix) &&
+              s['number'] == currentNumber);
+            if (!existsInHistory && (currentPrefix.isNotEmpty || currentNumber != 100001)) {
+              oldSeries.add({'prefix': currentPrefix.isEmpty ? '--' : currentPrefix, 'number': currentNumber});
               updateData['oldExpenseSeries'] = oldSeries;
               setState(() => _oldExpenseSeries = oldSeries);
             }
@@ -3050,27 +2199,16 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           break;
 
         case 'Payment Receipt':
-          final currentPrefix =
-              currentData['paymentReceiptPrefix']?.toString() ?? 'PR';
-          final currentNumber =
-              currentData['nextPaymentReceiptNumber'] ?? 100001;
+          final currentPrefix = currentData['paymentReceiptPrefix']?.toString() ?? 'PR';
+          final currentNumber = currentData['nextPaymentReceiptNumber'] ?? 100001;
 
           if (currentPrefix != newPrefix || currentNumber != newNumber) {
-            final oldSeries = List<Map<String, dynamic>>.from(
-              currentData['oldPaymentReceiptSeries'] ?? [],
-            );
-            final existsInHistory = oldSeries.any(
-              (s) =>
-                  (s['prefix']?.toString() ?? '') ==
-                      (currentPrefix.isEmpty ? '--' : currentPrefix) &&
-                  s['number'] == currentNumber,
-            );
-            if (!existsInHistory &&
-                (currentPrefix.isNotEmpty || currentNumber != 100001)) {
-              oldSeries.add({
-                'prefix': currentPrefix.isEmpty ? '--' : currentPrefix,
-                'number': currentNumber,
-              });
+            final oldSeries = List<Map<String, dynamic>>.from(currentData['oldPaymentReceiptSeries'] ?? []);
+            final existsInHistory = oldSeries.any((s) =>
+              (s['prefix']?.toString() ?? '') == (currentPrefix.isEmpty ? '--' : currentPrefix) &&
+              s['number'] == currentNumber);
+            if (!existsInHistory && (currentPrefix.isNotEmpty || currentNumber != 100001)) {
+              oldSeries.add({'prefix': currentPrefix.isEmpty ? '--' : currentPrefix, 'number': currentNumber});
               updateData['oldPaymentReceiptSeries'] = oldSeries;
               setState(() => _oldPaymentReceiptSeries = oldSeries);
             }
@@ -3080,29 +2218,18 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           break;
       }
 
-      await FirebaseFirestore.instance
-          .collection('store')
-          .doc(storeId)
-          .update(updateData);
+      await FirebaseFirestore.instance.collection('store').doc(storeId).update(updateData);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Document numbering updated!'),
-            backgroundColor: kGoogleGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('Document numbering updated!'), backgroundColor: kGoogleGreen, behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
       debugPrint('Error saving document number settings: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: kErrorColor,
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: kErrorColor, behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -3110,35 +2237,23 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
 
   String _getActivePrefix() {
     switch (_selectedDocType) {
-      case 'Invoice':
-        return _invoicePrefixCtrl.text;
-      case 'Quotation/Estimation':
-        return _quotationPrefixCtrl.text;
-      case 'Purchase':
-        return _purchasePrefixCtrl.text;
-      case 'Expense':
-        return _expensePrefixCtrl.text;
-      case 'Payment Receipt':
-        return _paymentReceiptPrefixCtrl.text;
-      default:
-        return '';
+      case 'Invoice': return _invoicePrefixCtrl.text;
+      case 'Quotation/Estimation': return _quotationPrefixCtrl.text;
+      case 'Purchase': return _purchasePrefixCtrl.text;
+      case 'Expense': return _expensePrefixCtrl.text;
+      case 'Payment Receipt': return _paymentReceiptPrefixCtrl.text;
+      default: return '';
     }
   }
 
   int _getActiveNumber() {
     switch (_selectedDocType) {
-      case 'Invoice':
-        return int.tryParse(_invoiceNumberCtrl.text) ?? 100001;
-      case 'Quotation/Estimation':
-        return int.tryParse(_quotationNumberCtrl.text) ?? 100001;
-      case 'Purchase':
-        return int.tryParse(_purchaseNumberCtrl.text) ?? 100001;
-      case 'Expense':
-        return int.tryParse(_expenseNumberCtrl.text) ?? 100001;
-      case 'Payment Receipt':
-        return int.tryParse(_paymentReceiptNumberCtrl.text) ?? 100001;
-      default:
-        return 100001;
+      case 'Invoice': return int.tryParse(_invoiceNumberCtrl.text) ?? 100001;
+      case 'Quotation/Estimation': return int.tryParse(_quotationNumberCtrl.text) ?? 100001;
+      case 'Purchase': return int.tryParse(_purchaseNumberCtrl.text) ?? 100001;
+      case 'Expense': return int.tryParse(_expenseNumberCtrl.text) ?? 100001;
+      case 'Payment Receipt': return int.tryParse(_paymentReceiptNumberCtrl.text) ?? 100001;
+      default: return 100001;
     }
   }
 
@@ -3189,31 +2304,16 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) widget.onBack();
-      },
+      onPopInvokedWithResult: (didPop, result) { if (!didPop) widget.onBack(); },
       child: Scaffold(
         backgroundColor: kGreyBg,
         appBar: AppBar(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-          ),
-          title: const Text(
-            'Bill Receipt Settings',
-            style: TextStyle(
-              color: kWhite,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              fontFamily: 'NotoSans',
-            ),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
+          title: const Text('Bill Receipt Settings', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
           backgroundColor: kPrimaryColor,
           elevation: 0,
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-            onPressed: widget.onBack,
-          ),
+          leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack),
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(64),
             child: Container(
@@ -3237,42 +2337,11 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                   dividerColor: Colors.transparent,
                   labelColor: kWhite,
                   unselectedLabelColor: kBlack54,
-                  labelStyle: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 0.3,
-                  ),
+                  labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.3),
                   tabs: const [
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.print_rounded, size: 14),
-                          SizedBox(width: 4),
-                          Text('Thermal'),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.picture_as_pdf_rounded, size: 14),
-                          SizedBox(width: 4),
-                          Text('A4/PDF'),
-                        ],
-                      ),
-                    ),
-                    Tab(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.tag_rounded, size: 14),
-                          SizedBox(width: 4),
-                          Text('DOC NO.'),
-                        ],
-                      ),
-                    ),
+                    Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.print_rounded, size: 14), SizedBox(width: 4), Text('Thermal')])),
+                    Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.picture_as_pdf_rounded, size: 14), SizedBox(width: 4), Text('A4/PDF')])),
+                    Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.tag_rounded, size: 14), SizedBox(width: 4), Text('DOC NO.')])),
                   ],
                 ),
               ),
@@ -3296,67 +2365,26 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildInfoCard(
-          'Thermal Receipt',
-          'Small paper print for POS printers',
-          Icons.print_rounded,
-        ),
+        _buildInfoCard('Thermal Receipt', 'Small paper print for POS printers', Icons.print_rounded),
         const SizedBox(height: 16),
         _buildSectionLabel('Identity & Branding'),
-        _SettingsGroup(
-          children: [
-            _SwitchTile('Show Header', _thermalShowHeader, (v) {
-              setState(() => _thermalShowHeader = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Logo', _thermalShowLogo, (v) {
-              setState(() => _thermalShowLogo = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Customer Information', _thermalShowCustomerInfo, (
-              v,
-            ) {
-              setState(() => _thermalShowCustomerInfo = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Item Table', _thermalShowItemTable, (v) {
-              setState(() => _thermalShowItemTable = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show License Number', _thermalShowLicense, (v) {
-              setState(() => _thermalShowLicense = v);
-              _saveSettings();
-            }, showDivider: false),
-          ],
-        ),
+        _SettingsGroup(children: [
+          _SwitchTile('Show Header', _thermalShowHeader, (v) { setState(() => _thermalShowHeader = v); _saveSettings(); }),
+          _SwitchTile('Show Logo', _thermalShowLogo, (v) { setState(() => _thermalShowLogo = v); _saveSettings(); }),
+          _SwitchTile('Show Customer Information', _thermalShowCustomerInfo, (v) { setState(() => _thermalShowCustomerInfo = v); _saveSettings(); }),
+          _SwitchTile('Show Item Table', _thermalShowItemTable, (v) { setState(() => _thermalShowItemTable = v); _saveSettings(); }),
+          _SwitchTile('Show License Number', _thermalShowLicense, (v) { setState(() => _thermalShowLicense = v); _saveSettings(); }, showDivider: false),
+        ]),
         const SizedBox(height: 16),
         _buildSectionLabel('Totals & Taxes'),
-        _SettingsGroup(
-          children: [
-            _SwitchTile('Total Item Quantity', _thermalShowTotalItemQuantity, (
-              v,
-            ) {
-              setState(() => _thermalShowTotalItemQuantity = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Tax Details', _thermalShowTaxDetails, (v) {
-              setState(() => _thermalShowTaxDetails = v);
-              _saveSettings();
-            }),
-            _SwitchTile('You Saved', _thermalShowYouSaved, (v) {
-              setState(() => _thermalShowYouSaved = v);
-              _saveSettings();
-            }, showDivider: false),
-          ],
-        ),
+        _SettingsGroup(children: [
+          _SwitchTile('Total Item Quantity', _thermalShowTotalItemQuantity, (v) { setState(() => _thermalShowTotalItemQuantity = v); _saveSettings(); }),
+          _SwitchTile('Tax Details', _thermalShowTaxDetails, (v) { setState(() => _thermalShowTaxDetails = v); _saveSettings(); }),
+          _SwitchTile('You Saved', _thermalShowYouSaved, (v) { setState(() => _thermalShowYouSaved = v); _saveSettings(); }, showDivider: false),
+        ]),
         const SizedBox(height: 16),
         _buildSectionLabel('Footer'),
-        _buildTextFieldSection('Sale Invoice Text', _thermalSaleInvoiceText, (
-          v,
-        ) {
-          _thermalSaleInvoiceText = v;
-          _saveSettings();
-        }),
+        _buildTextFieldSection('Sale Invoice Text', _thermalSaleInvoiceText, (v) { _thermalSaleInvoiceText = v; _saveSettings(); }),
         const SizedBox(height: 24),
       ],
     );
@@ -3366,32 +2394,17 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildInfoCard(
-          'A4 / Pdf Invoice',
-          'Full-page invoice for print or sharing',
-          Icons.picture_as_pdf_rounded,
-        ),
+        _buildInfoCard('A4 / Pdf Invoice', 'Full-page invoice for print or sharing', Icons.picture_as_pdf_rounded),
         const SizedBox(height: 16),
         // Color Theme Selector
         _buildSectionLabel('Color Theme'),
         Container(
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kGrey200),
-          ),
+          decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Invoice Color',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  fontFamily: 'NotoSans',
-                ),
-              ),
+              const Text('Invoice Color', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'NotoSans')),
               const SizedBox(height: 12),
               Wrap(
                 spacing: 12,
@@ -3421,78 +2434,28 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         ),
         const SizedBox(height: 16),
         _buildSectionLabel('Identity & Branding'),
-        _SettingsGroup(
-          children: [
-            _SwitchTile('Show Header', _a4ShowHeader, (v) {
-              setState(() => _a4ShowHeader = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Logo', _a4ShowLogo, (v) {
-              setState(() => _a4ShowLogo = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Customer Information', _a4ShowCustomerInfo, (v) {
-              setState(() => _a4ShowCustomerInfo = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Item Table', _a4ShowItemTable, (v) {
-              setState(() => _a4ShowItemTable = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show Tax Column in Table', _a4ShowTaxColumnInTable, (
-              v,
-            ) {
-              setState(() => _a4ShowTaxColumnInTable = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Show License Number', _a4ShowLicense, (v) {
-              setState(() => _a4ShowLicense = v);
-              _saveSettings();
-            }, showDivider: false),
-          ],
-        ),
+        _SettingsGroup(children: [
+          _SwitchTile('Show Header', _a4ShowHeader, (v) { setState(() => _a4ShowHeader = v); _saveSettings(); }),
+          _SwitchTile('Show Logo', _a4ShowLogo, (v) { setState(() => _a4ShowLogo = v); _saveSettings(); }),
+          _SwitchTile('Show Customer Information', _a4ShowCustomerInfo, (v) { setState(() => _a4ShowCustomerInfo = v); _saveSettings(); }),
+          _SwitchTile('Show Item Table', _a4ShowItemTable, (v) { setState(() => _a4ShowItemTable = v); _saveSettings(); }),
+          _SwitchTile('Show Tax Column in Table', _a4ShowTaxColumnInTable, (v) { setState(() => _a4ShowTaxColumnInTable = v); _saveSettings(); }),
+          _SwitchTile('Show License Number', _a4ShowLicense, (v) { setState(() => _a4ShowLicense = v); _saveSettings(); }, showDivider: false),
+        ]),
         const SizedBox(height: 16),
         _buildSectionLabel('Totals & Taxes'),
-        _SettingsGroup(
-          children: [
-            _SwitchTile('Total Item Quantity', _a4ShowTotalItemQuantity, (v) {
-              setState(() => _a4ShowTotalItemQuantity = v);
-              _saveSettings();
-            }),
-            _SwitchTile('Tax Details', _a4ShowTaxDetails, (v) {
-              setState(() => _a4ShowTaxDetails = v);
-              _saveSettings();
-            }),
-            _SwitchTile('You Saved', _a4ShowYouSaved, (v) {
-              setState(() => _a4ShowYouSaved = v);
-              _saveSettings();
-            }, showDivider: false),
-          ],
-        ),
+        _SettingsGroup(children: [
+          _SwitchTile('Total Item Quantity', _a4ShowTotalItemQuantity, (v) { setState(() => _a4ShowTotalItemQuantity = v); _saveSettings(); }),
+          _SwitchTile('Tax Details', _a4ShowTaxDetails, (v) { setState(() => _a4ShowTaxDetails = v); _saveSettings(); }),
+          _SwitchTile('You Saved', _a4ShowYouSaved, (v) { setState(() => _a4ShowYouSaved = v); _saveSettings(); }, showDivider: false),
+        ]),
         const SizedBox(height: 16),
         _buildSectionLabel('Footer'),
-        _SettingsGroup(
-          children: [
-            _SwitchTile('Print Signature', _a4ShowSignature, (v) {
-              setState(() => _a4ShowSignature = v);
-              _saveSettings();
-            }, showDivider: false),
-          ],
-        ),
+        _SettingsGroup(children: [_SwitchTile('Print Signature', _a4ShowSignature, (v) { setState(() => _a4ShowSignature = v); _saveSettings(); }, showDivider: false)]),
         const SizedBox(height: 16),
-        _buildTextFieldSection('Sale Invoice Text', _a4SaleInvoiceText, (v) {
-          _a4SaleInvoiceText = v;
-          _saveSettings();
-        }),
+        _buildTextFieldSection('Sale Invoice Text', _a4SaleInvoiceText, (v) { _a4SaleInvoiceText = v; _saveSettings(); }),
         const SizedBox(height: 12),
-        _buildTextFieldSection(
-          'Estimation / Quotation Text',
-          _a4EstimationText,
-          (v) {
-            _a4EstimationText = v;
-            _saveSettings();
-          },
-        ),
+        _buildTextFieldSection('Estimation / Quotation Text', _a4EstimationText, (v) { _a4EstimationText = v; _saveSettings(); }),
         const SizedBox(height: 24),
       ],
     );
@@ -3552,9 +2515,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
 
     final previewPrefix = prefixCtrl.text.isEmpty ? '' : prefixCtrl.text;
     final previewNumber = numberCtrl.text.isEmpty ? '100001' : numberCtrl.text;
-    final previewFull = previewPrefix.isEmpty
-        ? previewNumber
-        : '$previewPrefix$previewNumber';
+    final previewFull = previewPrefix.isEmpty ? previewNumber : '$previewPrefix$previewNumber';
 
     return ListView(
       padding: const EdgeInsets.all(12),
@@ -3565,52 +2526,20 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           child: Row(
             children: _docTypes.map((type) {
               final isSelected = _selectedDocType == type;
-              Color chipColor = type == 'Invoice'
-                  ? kPrimaryColor
-                  : type == 'Quotation/Estimation'
-                  ? Colors.orange
-                  : type == 'Purchase'
-                  ? Colors.purple
-                  : type == 'Expense'
-                  ? Colors.teal
-                  : Colors.green;
+              Color chipColor = type == 'Invoice' ? kPrimaryColor : type == 'Quotation/Estimation' ? Colors.orange : type == 'Purchase' ? Colors.purple : type == 'Expense' ? Colors.teal : Colors.green;
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: GestureDetector(
                   onTap: () => setState(() => _selectedDocType = type),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     decoration: BoxDecoration(
                       color: isSelected ? chipColor : kWhite,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isSelected ? chipColor : kGrey200,
-                        width: isSelected ? 1.5 : 1,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: chipColor.withOpacity(0.2),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : [],
+                      border: Border.all(color: isSelected ? chipColor : kGrey200, width: isSelected ? 1.5 : 1),
+                      boxShadow: isSelected ? [BoxShadow(color: chipColor.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))] : [],
                     ),
-                    child: Text(
-                      type == 'Quotation/Estimation' ? 'Quotation' : type,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        fontSize: 12,
-                        fontFamily: 'NotoSans',
-                        color: isSelected ? kWhite : chipColor,
-                      ),
-                    ),
+                    child: Text(type == 'Quotation/Estimation' ? 'Quotation' : type, style: TextStyle(fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600, fontSize: 12, fontFamily: 'NotoSans', color: isSelected ? kWhite : chipColor)),
                   ),
                 ),
               );
@@ -3622,53 +2551,23 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         // Preview Card (compact)
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: docColor,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(color: docColor, borderRadius: BorderRadius.circular(12)),
           child: Row(
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Next $docLabel',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: kWhite.withAlpha(200),
-                      ),
-                    ),
+                    Text('Next $docLabel', style: TextStyle(fontSize: 11, color: kWhite.withAlpha(200))),
                     const SizedBox(height: 2),
-                    Text(
-                      previewFull,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 20,
-                        color: kWhite,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    Text(previewFull, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: kWhite, letterSpacing: 0.5)),
                   ],
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: kWhite.withAlpha(40),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Preview',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: kWhite.withAlpha(220),
-                  ),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: kWhite.withAlpha(40), borderRadius: BorderRadius.circular(8)),
+                child: Text('Preview', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: kWhite.withAlpha(220))),
               ),
             ],
           ),
@@ -3678,11 +2577,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         // Input Fields (compact)
         Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kGrey200),
-          ),
+          decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
           child: Column(
             children: [
               Row(
@@ -3691,35 +2586,23 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Prefix',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: kBlack54,
-                          ),
-                        ),
+                        const Text('Prefix', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBlack54)),
                         const SizedBox(height: 4),
                         TextField(
                           controller: prefixCtrl,
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[a-zA-Z0-9]'),
-                            ),
+                            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
                           ],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                           decoration: InputDecoration(
                             hintText: 'DD',
-                            hintStyle: const TextStyle(
-                              color: kGrey400,
-                              fontSize: 13,
-                            ),
-
+                            hintStyle: const TextStyle(color: kGrey400, fontSize: 13),
+                            
+                            
                             isDense: true,
+                            
+                            
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -3732,14 +2615,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Starting Number',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: kBlack54,
-                          ),
-                        ),
+                        const Text('Starting Number', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBlack54)),
                         const SizedBox(height: 4),
                         TextField(
                           controller: numberCtrl,
@@ -3747,18 +2623,15 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
                           ],
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
                           decoration: InputDecoration(
                             hintText: '505',
-                            hintStyle: const TextStyle(
-                              color: kGrey400,
-                              fontSize: 13,
-                            ),
-
+                            hintStyle: const TextStyle(color: kGrey400, fontSize: 13),
+                            
+                            
                             isDense: true,
+                            
+                            
                           ),
                           onChanged: (_) => setState(() {}),
                         ),
@@ -3772,19 +2645,8 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _saveDocumentNumberSettings,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: docColor,
-                    foregroundColor: kWhite,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-                  ),
+                  style: ElevatedButton.styleFrom(backgroundColor: docColor, foregroundColor: kWhite, padding: const EdgeInsets.symmetric(vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), elevation: 0),
+                  child: const Text('Save', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
                 ),
               ),
             ],
@@ -3796,42 +2658,18 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kGrey200),
-            ),
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Text(
-                      'History',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: docColor,
-                      ),
-                    ),
+                    Text('History', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: docColor)),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: docColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${oldSeries.length}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: docColor,
-                        ),
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: docColor.withAlpha(20), borderRadius: BorderRadius.circular(10)),
+                      child: Text('${oldSeries.length}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: docColor)),
                     ),
                   ],
                 ),
@@ -3841,39 +2679,17 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                   final number = series['number']?.toString() ?? '--';
                   return Container(
                     margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kGreyBg,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(8)),
                     child: Row(
                       children: [
-                        Text(
-                          prefix == '--' ? 'No Prefix' : prefix,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
+                        Text(prefix == '--' ? 'No Prefix' : prefix, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
                         const SizedBox(width: 8),
-                        Text(
-                          '• $number',
-                          style: const TextStyle(fontSize: 12, color: kBlack54),
-                        ),
+                        Text('• $number', style: const TextStyle(fontSize: 12, color: kBlack54)),
                         const Spacer(),
                         GestureDetector(
                           onTap: () => _reuseSeries(_selectedDocType, series),
-                          child: Text(
-                            'Reuse',
-                            style: TextStyle(
-                              color: docColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
-                            ),
-                          ),
+                          child: Text('Reuse', style: TextStyle(color: docColor, fontWeight: FontWeight.w700, fontSize: 12)),
                         ),
                       ],
                     ),
@@ -3900,10 +2716,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: kPrimaryColor.withAlpha(25),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: kPrimaryColor.withAlpha(25), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: kPrimaryColor, size: 24),
           ),
           const SizedBox(width: 12),
@@ -3911,25 +2724,9 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    fontFamily: 'NotoSans',
-                    color: kBlack87,
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'NotoSans', color: kBlack87)),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: kBlack54,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Lato',
-                  ),
-                ),
+                Text(subtitle, style: const TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
               ],
             ),
           ),
@@ -3938,12 +2735,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     );
   }
 
-  Widget _buildPageSizeOption(
-    String label,
-    String value,
-    bool isSelected,
-    bool isThermal,
-  ) {
+  Widget _buildPageSizeOption(String label, String value, bool isSelected, bool isThermal) {
     return Expanded(
       child: GestureDetector(
         onTap: () {
@@ -3954,34 +2746,13 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? kPrimaryColor.withAlpha(25) : kGreyBg,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: isSelected ? kPrimaryColor : kGrey300),
-          ),
+          decoration: BoxDecoration(color: isSelected ? kPrimaryColor.withAlpha(25) : kGreyBg, borderRadius: BorderRadius.circular(10), border: Border.all(color: isSelected ? kPrimaryColor : kGrey300)),
           child: Column(
             children: [
-              Icon(
-                Icons.receipt_long_rounded,
-                color: isSelected ? kWhite : kBlack54,
-                size: 24,
-              ),
+              Icon(Icons.receipt_long_rounded, color: isSelected ? kWhite : kBlack54, size: 24),
               const SizedBox(height: 6),
-              Text(
-                "58mm",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 13,
-                  color: isSelected ? kWhite : kBlack87,
-                ),
-              ),
-              Text(
-                "2 inch",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isSelected ? kWhite.withOpacity(0.8) : kBlack54,
-                ),
-              ),
+              Text("58mm", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: isSelected ? kWhite : kBlack87)),
+              Text("2 inch", style: TextStyle(fontSize: 10, color: isSelected ? kWhite.withOpacity(0.8) : kBlack54)),
             ],
           ),
         ),
@@ -3989,57 +2760,32 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     );
   }
 
-  Widget _buildTextFieldSection(
-    String label,
-    String value,
-    Function(String) onChanged,
-  ) {
+  Widget _buildTextFieldSection(String label, String value, Function(String) onChanged) {
     final controller = TextEditingController(text: value);
     return Container(
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kGrey200),
-      ),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              fontSize: 14,
-              fontFamily: 'NotoSans',
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'NotoSans')),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          onChanged: onChanged,
+          maxLines: 2,
+          style: const TextStyle(fontSize: 14, fontFamily: 'Lato'),
+          decoration: InputDecoration(
+            hintText: 'Enter $label',
+            hintStyle: const TextStyle(color: kGrey400, fontSize: 12, fontWeight: FontWeight.w400),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
+            filled: true,
+            fillColor: kGreyBg,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: controller,
-            onChanged: onChanged,
-            maxLines: 2,
-            style: const TextStyle(fontSize: 14, fontFamily: 'Lato'),
-            decoration: InputDecoration(
-              hintText: 'Enter $label',
-              hintStyle: const TextStyle(
-                color: kGrey400,
-                fontSize: 12,
-                fontWeight: FontWeight.w400,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: kGreyBg,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ]),
     );
   }
 
@@ -4056,63 +2802,33 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
         decoration: BoxDecoration(
           color: color,
           shape: BoxShape.circle,
-          border: Border.all(
-            color: isSelected ? kWhite : Colors.transparent,
-            width: 3,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withAlpha(100),
-                    blurRadius: 8,
-                    spreadRadius: 2,
-                  ),
-                ]
-              : null,
+          border: Border.all(color: isSelected ? kWhite : Colors.transparent, width: 3),
+          boxShadow: isSelected ? [BoxShadow(color: color.withAlpha(100), blurRadius: 8, spreadRadius: 2)] : null,
         ),
-        child: isSelected
-            ? const Icon(Icons.check, color: kWhite, size: 18)
-            : null,
+        child: isSelected ? const Icon(Icons.check, color: kWhite, size: 18) : null,
       ),
     );
   }
 
   Color _getThemeColor(String theme) {
     switch (theme) {
-      case 'gold':
-        return const Color(0xFFC9A441);
-      case 'lavender':
-        return const Color(0xFF9A96D8);
-      case 'green':
-        return const Color(0xFF1CB466);
-      case 'brown':
-        return const Color(0xFFAF4700);
-      case 'blue':
-        return const Color(0xFF6488E0);
-      case 'peach':
-        return const Color(0xFFFAA774);
-      case 'red':
-        return const Color(0xFFDB4747);
-      case 'purple':
-        return const Color(0xFF7A1FA2);
-      case 'orange':
-        return const Color(0xFFF45715);
-      case 'pink':
-        return const Color(0xFFE2A9F1);
-      case 'copper':
-        return const Color(0xFFB36A22);
-      case 'black':
-        return const Color(0xFF000000);
-      case 'olive':
-        return const Color(0xFF9B9B6E);
-      case 'navy':
-        return const Color(0xFF2F6798);
-      case 'grey':
-        return const Color(0xFF737373);
-      case 'forest':
-        return const Color(0xFF4F6F1F);
-      default:
-        return const Color(0xFF6488E0);
+      case 'gold': return const Color(0xFFC9A441);
+      case 'lavender': return const Color(0xFF9A96D8);
+      case 'green': return const Color(0xFF1CB466);
+      case 'brown': return const Color(0xFFAF4700);
+      case 'blue': return const Color(0xFF6488E0);
+      case 'peach': return const Color(0xFFFAA774);
+      case 'red': return const Color(0xFFDB4747);
+      case 'purple': return const Color(0xFF7A1FA2);
+      case 'orange': return const Color(0xFFF45715);
+      case 'pink': return const Color(0xFFE2A9F1);
+      case 'copper': return const Color(0xFFB36A22);
+      case 'black': return const Color(0xFF000000);
+      case 'olive': return const Color(0xFF9B9B6E);
+      case 'navy': return const Color(0xFF2F6798);
+      case 'grey': return const Color(0xFF737373);
+      case 'forest': return const Color(0xFF4F6F1F);
+      default: return const Color(0xFF6488E0);
     }
   }
 
@@ -4127,15 +2843,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Preview',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-              color: kBlack54,
-              fontFamily: 'NotoSans',
-            ),
-          ),
+          const Text('Preview', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 11, color: kBlack54, fontFamily: 'NotoSans')),
           const SizedBox(height: 8),
           // A4 Preview Card
           AspectRatio(
@@ -4145,11 +2853,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                 color: kWhite,
                 borderRadius: BorderRadius.circular(4),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -4159,9 +2863,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                     height: 32,
                     decoration: BoxDecoration(
                       color: themeColor,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
-                      ),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Row(
@@ -4180,23 +2882,9 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                height: 6,
-                                width: 50,
-                                decoration: BoxDecoration(
-                                  color: kWhite.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
+                              Container(height: 6, width: 50, decoration: BoxDecoration(color: kWhite.withOpacity(0.9), borderRadius: BorderRadius.circular(2))),
                               const SizedBox(height: 3),
-                              Container(
-                                height: 4,
-                                width: 35,
-                                decoration: BoxDecoration(
-                                  color: kWhite.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(2),
-                                ),
-                              ),
+                              Container(height: 4, width: 35, decoration: BoxDecoration(color: kWhite.withOpacity(0.6), borderRadius: BorderRadius.circular(2))),
                             ],
                           ),
                         ),
@@ -4204,23 +2892,9 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Container(
-                              height: 5,
-                              width: 28,
-                              decoration: BoxDecoration(
-                                color: kWhite.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
+                            Container(height: 5, width: 28, decoration: BoxDecoration(color: kWhite.withOpacity(0.8), borderRadius: BorderRadius.circular(2))),
                             const SizedBox(height: 3),
-                            Container(
-                              height: 4,
-                              width: 22,
-                              decoration: BoxDecoration(
-                                color: kWhite.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
+                            Container(height: 4, width: 22, decoration: BoxDecoration(color: kWhite.withOpacity(0.5), borderRadius: BorderRadius.circular(2))),
                           ],
                         ),
                       ],
@@ -4240,46 +2914,18 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      height: 4,
-                                      width: 35,
-                                      decoration: BoxDecoration(
-                                        color: kGrey300,
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
+                                    Container(height: 4, width: 35, decoration: BoxDecoration(color: kGrey300, borderRadius: BorderRadius.circular(2))),
                                     const SizedBox(height: 3),
-                                    Container(
-                                      height: 3,
-                                      width: 50,
-                                      decoration: BoxDecoration(
-                                        color: kGrey200,
-                                        borderRadius: BorderRadius.circular(2),
-                                      ),
-                                    ),
+                                    Container(height: 3, width: 50, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(2))),
                                   ],
                                 ),
                               ),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Container(
-                                    height: 4,
-                                    width: 25,
-                                    decoration: BoxDecoration(
-                                      color: kGrey300,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
+                                  Container(height: 4, width: 25, decoration: BoxDecoration(color: kGrey300, borderRadius: BorderRadius.circular(2))),
                                   const SizedBox(height: 3),
-                                  Container(
-                                    height: 3,
-                                    width: 30,
-                                    decoration: BoxDecoration(
-                                      color: kGrey200,
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
+                                  Container(height: 3, width: 30, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(2))),
                                 ],
                               ),
                             ],
@@ -4295,133 +2941,45 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Row(
                               children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: Container(
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: themeColor.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ),
+                                Expanded(flex: 3, child: Container(height: 3, decoration: BoxDecoration(color: themeColor.withOpacity(0.5), borderRadius: BorderRadius.circular(1)))),
                                 const SizedBox(width: 4),
-                                Expanded(
-                                  child: Container(
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: themeColor.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: themeColor.withOpacity(0.5), borderRadius: BorderRadius.circular(1)))),
                                 const SizedBox(width: 4),
-                                Expanded(
-                                  child: Container(
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: themeColor.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: themeColor.withOpacity(0.5), borderRadius: BorderRadius.circular(1)))),
                                 const SizedBox(width: 4),
-                                Expanded(
-                                  child: Container(
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: themeColor.withOpacity(0.5),
-                                      borderRadius: BorderRadius.circular(1),
-                                    ),
-                                  ),
-                                ),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: themeColor.withOpacity(0.5), borderRadius: BorderRadius.circular(1)))),
                               ],
                             ),
                           ),
                           const SizedBox(height: 4),
                           // Table rows
-                          ...List.generate(
-                            3,
-                            (index) => Padding(
-                              padding: const EdgeInsets.only(bottom: 3),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Container(
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: kGrey200,
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Container(
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: kGrey200,
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Container(
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: kGrey200,
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Container(
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: kGrey200,
-                                        borderRadius: BorderRadius.circular(1),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                          ...List.generate(3, (index) => Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Row(
+                              children: [
+                                Expanded(flex: 3, child: Container(height: 3, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(1)))),
+                                const SizedBox(width: 4),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(1)))),
+                                const SizedBox(width: 4),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(1)))),
+                                const SizedBox(width: 4),
+                                Expanded(child: Container(height: 3, decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(1)))),
+                              ],
                             ),
-                          ),
+                          )),
                           const Spacer(),
                           // Total section
                           Container(
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              border: Border(
-                                top: BorderSide(
-                                  color: themeColor.withOpacity(0.3),
-                                  width: 1,
-                                ),
-                              ),
+                              border: Border(top: BorderSide(color: themeColor.withOpacity(0.3), width: 1)),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                Container(
-                                  height: 4,
-                                  width: 20,
-                                  decoration: BoxDecoration(
-                                    color: kGrey300,
-                                    borderRadius: BorderRadius.circular(1),
-                                  ),
-                                ),
+                                Container(height: 4, width: 20, decoration: BoxDecoration(color: kGrey300, borderRadius: BorderRadius.circular(1))),
                                 const SizedBox(width: 8),
-                                Container(
-                                  height: 5,
-                                  width: 25,
-                                  decoration: BoxDecoration(
-                                    color: themeColor,
-                                    borderRadius: BorderRadius.circular(1),
-                                  ),
-                                ),
+                                Container(height: 5, width: 25, decoration: BoxDecoration(color: themeColor, borderRadius: BorderRadius.circular(1))),
                               ],
                             ),
                           ),
@@ -4434,19 +2992,10 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
                     height: 14,
                     decoration: BoxDecoration(
                       color: themeColor.withOpacity(0.1),
-                      borderRadius: const BorderRadius.vertical(
-                        bottom: Radius.circular(4),
-                      ),
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
                     ),
                     child: Center(
-                      child: Container(
-                        height: 3,
-                        width: 40,
-                        decoration: BoxDecoration(
-                          color: themeColor.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
+                      child: Container(height: 3, width: 40, decoration: BoxDecoration(color: themeColor.withOpacity(0.4), borderRadius: BorderRadius.circular(2))),
                     ),
                   ),
                 ],
@@ -4458,19 +3007,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
     );
   }
 
-  Widget _buildSectionLabel(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 12, left: 4),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: kBlack54,
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.5,
-        fontFamily: 'NotoSans',
-      ),
-    ),
-  );
+  Widget _buildSectionLabel(String title) => Padding(padding: const EdgeInsets.only(bottom: 12, left: 4), child: Text(title, style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontFamily: 'NotoSans')));
 }
 
 // ==========================================
@@ -4479,11 +3016,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage>
 class GeneralSettingsPage extends StatefulWidget {
   final VoidCallback onBack;
   final Function(String) onNavigate;
-  const GeneralSettingsPage({
-    super.key,
-    required this.onBack,
-    required this.onNavigate,
-  });
+  const GeneralSettingsPage({super.key, required this.onBack, required this.onNavigate});
   @override
   State<GeneralSettingsPage> createState() => _GeneralSettingsPageState();
 }
@@ -4494,10 +3027,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   bool _notificationsEnabled = true;
 
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
+  void initState() { super.initState(); _loadSettings(); }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -4519,161 +3049,64 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) widget.onBack();
-      },
+      onPopInvokedWithResult: (didPop, result) { if (!didPop) widget.onBack(); },
       child: Scaffold(
         backgroundColor: kGreyBg,
         appBar: AppBar(
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-          ),
-          title: const Text(
-            'General Settings',
-            style: TextStyle(
-              color: kWhite,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-              fontFamily: 'NotoSans',
-            ),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(bottom: Radius.circular(24))),
+          title: const Text('General Settings', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
           backgroundColor: kPrimaryColor,
           elevation: 0,
           centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-            onPressed: widget.onBack,
+          leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack),
+        ),
+        body: ListView(padding: const EdgeInsets.all(16), children: [
+          _buildSectionLabel('Language'),
+          Container(
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
+            child: ListTile(
+              leading: const Icon(Icons.language_rounded, color: kPrimaryColor),
+              title: const Text('Language', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'NotoSans')),
+              subtitle: Text(_selectedLanguage, style: const TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
+              onTap: () => widget.onNavigate('Language'),
+            ),
           ),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildSectionLabel('Language'),
-            Container(
-              decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kGrey200),
+          const SizedBox(height: 16),
+          _buildSectionLabel('Appearance'),
+          Container(
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
+            child: ListTile(
+              leading: Container(
+                width: 40, height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.purple.withAlpha(20),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.palette_rounded, color: Colors.purple, size: 22),
               ),
-              child: ListTile(
-                leading: const Icon(
-                  Icons.language_rounded,
-                  color: kPrimaryColor,
-                ),
-                title: const Text(
-                  'Language',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    fontFamily: 'NotoSans',
+              title: Row(
+                children: [
+                  const Text('App Theme', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, fontFamily: 'NotoSans', color: kBlack87)),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(color: kPrimaryColor.withAlpha(20), borderRadius: BorderRadius.circular(4)),
+                    child: const Text('Coming Soon', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kPrimaryColor)),
                   ),
-                ),
-                subtitle: Text(
-                  _selectedLanguage,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: kBlack54,
-                    fontWeight: FontWeight.w500,
-                    fontFamily: 'Lato',
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: kGrey400,
-                ),
-                onTap: () => widget.onNavigate('Language'),
+                ],
               ),
+              subtitle: const Text('Light, Dark, Modern', style: TextStyle(fontSize: 12, color: kBlack54, fontFamily: 'Lato')),
+              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey300),
+              onTap: null,
             ),
-            const SizedBox(height: 16),
-            _buildSectionLabel('Appearance'),
-            Container(
-              decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kGrey200),
-              ),
-              child: ListTile(
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.purple.withAlpha(20),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.palette_rounded,
-                    color: Colors.purple,
-                    size: 22,
-                  ),
-                ),
-                title: Row(
-                  children: [
-                    const Text(
-                      'App Theme',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
-                        fontFamily: 'NotoSans',
-                        color: kBlack87,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Coming Soon',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                subtitle: const Text(
-                  'Light, Dark, Modern',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: kBlack54,
-                    fontFamily: 'Lato',
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: kGrey300,
-                ),
-                onTap: null,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ]),
       ),
     );
   }
 
-  Widget _buildSectionLabel(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 12, left: 4),
-    child: Text(
-      title,
-      style: const TextStyle(
-        color: kBlack54,
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 1.5,
-        fontFamily: 'NotoSans',
-      ),
-    ),
-  );
+  Widget _buildSectionLabel(String title) => Padding(padding: const EdgeInsets.only(bottom: 12, left: 4), child: Text(title, style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontFamily: 'NotoSans')));
 }
 
 // ==========================================
@@ -4682,8 +3115,7 @@ class _GeneralSettingsPageState extends State<GeneralSettingsPage> {
 class PrinterSetupPage extends StatefulWidget {
   final VoidCallback onBack;
   const PrinterSetupPage({super.key, required this.onBack});
-  @override
-  State<PrinterSetupPage> createState() => _PrinterSetupPageState();
+  @override State<PrinterSetupPage> createState() => _PrinterSetupPageState();
 }
 
 class _PrinterSetupPageState extends State<PrinterSetupPage> {
@@ -4694,11 +3126,7 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
   int _thermalNumberOfCopies = 1;
   int _a4NumberOfCopies = 1;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
+  @override void initState() { super.initState(); _loadSettings(); }
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
@@ -4727,13 +3155,7 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
     if (savedId != null) {
       final devices = await FlutterBluePlus.bondedDevices;
       if (mounted) {
-        try {
-          setState(
-            () => _selectedDevice = devices.firstWhere(
-              (d) => d.remoteId.toString() == savedId,
-            ),
-          );
-        } catch (_) {}
+        try { setState(() => _selectedDevice = devices.firstWhere((d) => d.remoteId.toString() == savedId)); } catch (_) {}
       }
     }
   }
@@ -4743,9 +3165,10 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
     try {
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId != null) {
-        await FirebaseFirestore.instance.collection('store').doc(storeId).set({
-          'thermalNumberOfCopies': value,
-        }, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('store').doc(storeId).set(
+          {'thermalNumberOfCopies': value},
+          SetOptions(merge: true),
+        );
       }
     } catch (e) {
       debugPrint('Error saving thermal copies: $e');
@@ -4757,9 +3180,10 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
     try {
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId != null) {
-        await FirebaseFirestore.instance.collection('store').doc(storeId).set({
-          'a4NumberOfCopies': value,
-        }, SetOptions(merge: true));
+        await FirebaseFirestore.instance.collection('store').doc(storeId).set(
+          {'a4NumberOfCopies': value},
+          SetOptions(merge: true),
+        );
       }
     } catch (e) {
       debugPrint('Error saving A4 copies: $e');
@@ -4770,9 +3194,7 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
     if (await Permission.bluetoothScan.request().isDenied) return;
     setState(() => _isScanning = true);
     await FlutterBluePlus.startScan(timeout: const Duration(seconds: 4));
-    FlutterBluePlus.scanResults.listen((r) {
-      if (mounted) setState(() {});
-    });
+    FlutterBluePlus.scanResults.listen((r) { if(mounted) setState(() {}); });
     await Future.delayed(const Duration(seconds: 4));
     await FlutterBluePlus.stopScan();
     if (mounted) setState(() => _isScanning = false);
@@ -4798,98 +3220,21 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
       appBar: AppBar(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        ),
-        title: const Text(
-          "Printer Setup",
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: kPrimaryColor,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: widget.onBack,
-        ),
-      ),
+        ),title: const Text("Printer Setup", style: TextStyle(color: kWhite,fontWeight: FontWeight.bold, fontSize: 16)), centerTitle: true, backgroundColor: kPrimaryColor, leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (_selectedDevice != null)
-            Container(
-              padding: const EdgeInsets.all(16),
-              margin: const EdgeInsets.only(bottom: 24),
-              decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: kGoogleGreen.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.print_rounded,
-                    color: kGoogleGreen,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Active Printer",
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: kGoogleGreen,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          _selectedDevice!.platformName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 15,
-                            color: kBlack87,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => setState(() => _selectedDevice = null),
-                    icon: const Icon(
-                      Icons.delete_sweep_rounded,
-                      color: kErrorColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          if (_selectedDevice != null) Container(padding: const EdgeInsets.all(16), margin: const EdgeInsets.only(bottom: 24), decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGoogleGreen.withOpacity(0.3))), child: Row(children: [const Icon(Icons.print_rounded, color: kGoogleGreen, size: 28), const SizedBox(width: 16), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text("Active Printer", style: TextStyle(fontSize: 9, color: kGoogleGreen, fontWeight: FontWeight.w900, letterSpacing: 0.5)), Text(_selectedDevice!.platformName, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: kBlack87))])), IconButton(onPressed: () => setState(() => _selectedDevice = null), icon: const Icon(Icons.delete_sweep_rounded, color: kErrorColor))])),
 
           // Printer Width Setting
           Container(
             padding: const EdgeInsets.all(16),
             margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kGrey200),
-            ),
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Paper Width",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: kBlack54,
-                    letterSpacing: 1.0,
-                  ),
-                ),
+                const Text("Paper Width", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -4899,45 +3244,16 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: _printerWidth == '58mm'
-                                ? kPrimaryColor
-                                : kGreyBg,
+                            color: _printerWidth == '58mm' ? kPrimaryColor : kGreyBg,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _printerWidth == '58mm'
-                                  ? kPrimaryColor
-                                  : kGrey300,
-                            ),
+                            border: Border.all(color: _printerWidth == '58mm' ? kPrimaryColor : kGrey300),
                           ),
                           child: Column(
                             children: [
-                              Icon(
-                                Icons.receipt_long_rounded,
-                                color: _printerWidth == '58mm'
-                                    ? kWhite
-                                    : kBlack54,
-                                size: 24,
-                              ),
+                              Icon(Icons.receipt_long_rounded, color: _printerWidth == '58mm' ? kWhite : kBlack54, size: 24),
                               const SizedBox(height: 6),
-                              Text(
-                                "58mm",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13,
-                                  color: _printerWidth == '58mm'
-                                      ? kWhite
-                                      : kBlack87,
-                                ),
-                              ),
-                              Text(
-                                "2 inch",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: _printerWidth == '58mm'
-                                      ? kWhite.withOpacity(0.8)
-                                      : kBlack54,
-                                ),
-                              ),
+                              Text("58mm", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: _printerWidth == '58mm' ? kWhite : kBlack87)),
+                              Text("2 inch", style: TextStyle(fontSize: 10, color: _printerWidth == '58mm' ? kWhite.withOpacity(0.8) : kBlack54)),
                             ],
                           ),
                         ),
@@ -4950,45 +3266,16 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           decoration: BoxDecoration(
-                            color: _printerWidth == '80mm'
-                                ? kPrimaryColor
-                                : kGreyBg,
+                            color: _printerWidth == '80mm' ? kPrimaryColor : kGreyBg,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: _printerWidth == '80mm'
-                                  ? kPrimaryColor
-                                  : kGrey300,
-                            ),
+                            border: Border.all(color: _printerWidth == '80mm' ? kPrimaryColor : kGrey300),
                           ),
                           child: Column(
                             children: [
-                              Icon(
-                                Icons.receipt_rounded,
-                                color: _printerWidth == '80mm'
-                                    ? kWhite
-                                    : kBlack54,
-                                size: 24,
-                              ),
+                              Icon(Icons.receipt_rounded, color: _printerWidth == '80mm' ? kWhite : kBlack54, size: 24),
                               const SizedBox(height: 6),
-                              Text(
-                                "80mm",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 13,
-                                  color: _printerWidth == '80mm'
-                                      ? kWhite
-                                      : kBlack87,
-                                ),
-                              ),
-                              Text(
-                                "3 inch",
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: _printerWidth == '80mm'
-                                      ? kWhite.withOpacity(0.8)
-                                      : kBlack54,
-                                ),
-                              ),
+                              Text("80mm", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, color: _printerWidth == '80mm' ? kWhite : kBlack87)),
+                              Text("3 inch", style: TextStyle(fontSize: 10, color: _printerWidth == '80mm' ? kWhite.withOpacity(0.8) : kBlack54)),
                             ],
                           ),
                         ),
@@ -5000,195 +3287,61 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
             ),
           ),
 
-          Text(
-            "Paired Devices",
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: kBlack54,
-              letterSpacing: 1.0,
-            ),
-          ),
+          Text("Paired Devices", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)),
           const SizedBox(height: 12),
           _buildDeviceList(),
           const SizedBox(height: 24),
 
           // Number of Copies Section
-          const Text(
-            "Print Copies",
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              color: kBlack54,
-              letterSpacing: 1.0,
-            ),
-          ),
+          const Text("Print Copies", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)),
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kGrey200),
-            ),
+            decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
             child: Column(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.print_rounded,
-                            color: kPrimaryColor,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'Thermal Receipt Copies',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            fontFamily: 'Lato',
-                          ),
-                        ),
-                      ],
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.print_rounded, color: kPrimaryColor, size: 20),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.remove_circle_outline,
-                            color: kPrimaryColor,
-                          ),
-                          onPressed: _thermalNumberOfCopies > 1
-                              ? () => _updateThermalCopies(
-                                  _thermalNumberOfCopies - 1,
-                                )
-                              : null,
-                        ),
-                        Text(
-                          '$_thermalNumberOfCopies',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.add_circle_outline,
-                            color: kPrimaryColor,
-                          ),
-                          onPressed: () =>
-                              _updateThermalCopies(_thermalNumberOfCopies + 1),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    const SizedBox(width: 12),
+                    const Text('Thermal Receipt Copies', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato')),
+                  ]),
+                  Row(children: [
+                    IconButton(icon: const Icon(Icons.remove_circle_outline, color: kPrimaryColor), onPressed: _thermalNumberOfCopies > 1 ? () => _updateThermalCopies(_thermalNumberOfCopies - 1) : null),
+                    Text('$_thermalNumberOfCopies', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    IconButton(icon: const Icon(Icons.add_circle_outline, color: kPrimaryColor), onPressed: () => _updateThermalCopies(_thermalNumberOfCopies + 1)),
+                  ]),
+                ]),
                 const Divider(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.withAlpha(25),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.picture_as_pdf_rounded,
-                            color: Colors.orange,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'A4 / PDF Copies',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                            fontFamily: 'Lato',
-                          ),
-                        ),
-                      ],
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: Colors.orange.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.orange, size: 20),
                     ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.remove_circle_outline,
-                            color: kPrimaryColor,
-                          ),
-                          onPressed: _a4NumberOfCopies > 1
-                              ? () => _updateA4Copies(_a4NumberOfCopies - 1)
-                              : null,
-                        ),
-                        Text(
-                          '$_a4NumberOfCopies',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(
-                            Icons.add_circle_outline,
-                            color: kPrimaryColor,
-                          ),
-                          onPressed: () =>
-                              _updateA4Copies(_a4NumberOfCopies + 1),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    const SizedBox(width: 12),
+                    const Text('A4 / PDF Copies', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato')),
+                  ]),
+                  Row(children: [
+                    IconButton(icon: const Icon(Icons.remove_circle_outline, color: kPrimaryColor), onPressed: _a4NumberOfCopies > 1 ? () => _updateA4Copies(_a4NumberOfCopies - 1) : null),
+                    Text('$_a4NumberOfCopies', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+                    IconButton(icon: const Icon(Icons.add_circle_outline, color: kPrimaryColor), onPressed: () => _updateA4Copies(_a4NumberOfCopies + 1)),
+                  ]),
+                ]),
               ],
             ),
           ),
           const SizedBox(height: 24),
 
-          _SettingsGroup(
-            children: [
-              _SwitchTile("Auto Print Receipt", _enableAutoPrint, (v) async {
-                (await SharedPreferences.getInstance()).setBool(
-                  'enable_auto_print',
-                  v,
-                );
-                setState(() => _enableAutoPrint = v);
-              }, showDivider: false),
-            ],
-          ),
+          _SettingsGroup(children: [_SwitchTile("Auto Print Receipt", _enableAutoPrint, (v) async { (await SharedPreferences.getInstance()).setBool('enable_auto_print', v); setState(() => _enableAutoPrint = v); }, showDivider: false)]),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isScanning ? null : _scanForDevices,
-        backgroundColor: kPrimaryColor,
-        icon: _isScanning
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(color: kWhite, strokeWidth: 2),
-              )
-            : const Icon(Icons.bluetooth_searching_rounded, color: kWhite),
-        label: Text(
-          _isScanning ? "SCANNING..." : "Scan For Printers",
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-            color: kWhite,
-          ),
-        ),
-      ),
+      floatingActionButton: FloatingActionButton.extended(onPressed: _isScanning ? null : _scanForDevices, backgroundColor: kPrimaryColor, icon: _isScanning ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: kWhite, strokeWidth: 2)) : const Icon(Icons.bluetooth_searching_rounded,color: kWhite), label: Text(_isScanning ? "SCANNING..." : "Scan For Printers", style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12,color: kWhite))),
     );
   }
 
@@ -5197,59 +3350,8 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
       future: FlutterBluePlus.bondedDevices,
       builder: (ctx, snap) {
         final devices = snap.data ?? [];
-        if (devices.isEmpty)
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: kWhite,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: kGrey200),
-            ),
-            child: const Center(
-              child: Text(
-                "No paired devices found",
-                style: TextStyle(color: kBlack54, fontSize: 13),
-              ),
-            ),
-          );
-        return Container(
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kGrey200),
-          ),
-          child: Column(
-            children: devices
-                .map(
-                  (d) => ListTile(
-                    onTap: () => _selectDevice(d),
-                    leading: const Icon(
-                      Icons.print_outlined,
-                      color: kPrimaryColor,
-                    ),
-                    title: Text(
-                      d.platformName.isEmpty
-                          ? "Unknown Printer"
-                          : d.platformName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: Text(
-                      d.remoteId.toString(),
-                      style: const TextStyle(fontSize: 10),
-                    ),
-                    trailing: const Icon(
-                      Icons.add_circle_outline_rounded,
-                      color: kPrimaryColor,
-                      size: 20,
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        );
+        if (devices.isEmpty) return Container(padding: const EdgeInsets.all(24), decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)), child: const Center(child: Text("No paired devices found", style: TextStyle(color: kBlack54, fontSize: 13))));
+        return Container(decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)), child: Column(children: devices.map((d) => ListTile(onTap: () => _selectDevice(d), leading: const Icon(Icons.print_outlined, color: kPrimaryColor), title: Text(d.platformName.isEmpty ? "Unknown Printer" : d.platformName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)), subtitle: Text(d.remoteId.toString(), style: const TextStyle(fontSize: 10)), trailing: const Icon(Icons.add_circle_outline_rounded, color: kPrimaryColor, size: 20))).toList()));
       },
     );
   }
@@ -5261,83 +3363,15 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
 class FeatureSettingsPage extends StatefulWidget {
   final VoidCallback onBack;
   const FeatureSettingsPage({super.key, required this.onBack});
-  @override
-  State<FeatureSettingsPage> createState() => _FeatureSettingsPageState();
+  @override State<FeatureSettingsPage> createState() => _FeatureSettingsPageState();
 }
 
 class _FeatureSettingsPageState extends State<FeatureSettingsPage> {
-  bool _enableAutoPrint = true, _blockOutOfStock = true;
-  double _decimals = 2;
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: kGreyBg,
-    appBar: AppBar(
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-      ),
-      title: const Text(
-        "Features",
-        style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-      ),
-      backgroundColor: kPrimaryColor,
-      centerTitle: true,
-      elevation: 0,
-      leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-        onPressed: widget.onBack,
-      ),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _SettingsGroup(
-          children: [
-            _SwitchTile(
-              "Auto Print Receipt",
-              _enableAutoPrint,
-              (v) => setState(() => _enableAutoPrint = v),
-            ),
-            _SwitchTile(
-              "Block Out-of-Stock Sales",
-              _blockOutOfStock,
-              (v) => setState(() => _blockOutOfStock = v),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        "Decimal Precision",
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const Spacer(),
-                      Text(
-                        _decimals.toInt().toString(),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _decimals,
-                    min: 0,
-                    max: 4,
-                    divisions: 4,
-                    activeColor: kPrimaryColor,
-                    onChanged: (v) => setState(() => _decimals = v),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
+  bool _enableAutoPrint = true, _blockOutOfStock = true; double _decimals = 2;
+  @override Widget build(BuildContext context) => Scaffold(backgroundColor: kGreyBg, appBar: AppBar(
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+        ),title: const Text("Features", style: TextStyle(color: kWhite,fontWeight: FontWeight.bold)), backgroundColor: kPrimaryColor, centerTitle: true, elevation: 0, leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack)), body: ListView(padding: const EdgeInsets.all(16), children: [_SettingsGroup(children: [_SwitchTile("Auto Print Receipt", _enableAutoPrint, (v) => setState(() => _enableAutoPrint = v)), _SwitchTile("Block Out-of-Stock Sales", _blockOutOfStock, (v) => setState(() => _blockOutOfStock = v)), Padding(padding: const EdgeInsets.all(16), child: Column(children: [Row(children: [const Text("Decimal Precision", style: TextStyle(fontWeight: FontWeight.w700)), const Spacer(), Text(_decimals.toInt().toString(), style: const TextStyle(fontWeight: FontWeight.w900, color: kPrimaryColor))]), Slider(value: _decimals, min: 0, max: 4, divisions: 4, activeColor: kPrimaryColor, onChanged: (v) => setState(() => _decimals = v))]))])]));
 }
 
 // ==========================================
@@ -5349,122 +3383,87 @@ class ReceiptSettingsPage extends StatelessWidget {
   final String uid;
   final String? userEmail;
 
-  const ReceiptSettingsPage({
-    super.key,
-    required this.onBack,
-    required this.onNavigate,
-    required this.uid,
-    this.userEmail,
-  });
+  const ReceiptSettingsPage({super.key, required this.onBack, required this.onNavigate, required this.uid, this.userEmail});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kGreyBg,
-      appBar: AppBar(
+        backgroundColor: kGreyBg,
+        appBar: AppBar(
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          "Receipt Settings",
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            letterSpacing: 1.5,
+          title: const Text("Receipt Settings", style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1.5)),
+          backgroundColor: kPrimaryColor,
+          centerTitle: true,
+          elevation: 0,
+          leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
+              onPressed: onBack
           ),
         ),
-        backgroundColor: kPrimaryColor,
-        centerTitle: true,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: onBack,
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header Accent
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-              decoration: const BoxDecoration(
-                color: kPrimaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(32),
-                  bottomRight: Radius.circular(32),
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Accent
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                decoration: const BoxDecoration(
+                  color: kPrimaryColor,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Hub Configuration", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: kWhite)),
+                    const SizedBox(height: 8),
+                    Text("Manage your thermal hardware and aesthetic presentation in one place.",
+                        style: TextStyle(fontSize: 13, color: kWhite.withOpacity(0.8), height: 1.4, fontWeight: FontWeight.w500)),
+                  ],
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Hub Configuration",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: kWhite,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Manage your thermal hardware and aesthetic presentation in one place.",
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: kWhite.withOpacity(0.8),
-                      height: 1.4,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildActionTile(
-                    title: "Design Engine",
-                    description:
-                        "Customize templates, branding, and visibility.",
-                    icon: Icons.auto_awesome_mosaic_rounded,
-                    color: Colors.indigo,
-                    onTap: () => onNavigate('ReceiptCustomization'),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildActionTile(
-                    title: "Printer Link",
-                    description: "Manage thermal hardware and Bluetooth link.",
-                    icon: Icons.print_rounded,
-                    color: Colors.blue,
-                    onTap: () => onNavigate('PrinterSetup'),
-                  ),
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildActionTile(
+                      title: "Design Engine",
+                      description: "Customize templates, branding, and visibility.",
+                      icon: Icons.auto_awesome_mosaic_rounded,
+                      color: Colors.indigo,
+                      onTap: () => onNavigate('ReceiptCustomization'),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildActionTile(
+                      title: "Printer Link",
+                      description: "Manage thermal hardware and Bluetooth link.",
+                      icon: Icons.print_rounded,
+                      color: Colors.blue,
+                      onTap: () => onNavigate('PrinterSetup'),
+                    ),
 
-                  const SizedBox(height: 40),
-                  _buildSectionHeader("Operational Status"),
-                  const SizedBox(height: 16),
-                  _buildStatusItem("Thermal Engine", "Ready", true),
-                  _buildStatusItem("Cloud Synchronization", "Active", true),
-                ],
+                    const SizedBox(height: 40),
+                    _buildSectionHeader("Operational Status"),
+                    const SizedBox(height: 16),
+                    _buildStatusItem("Thermal Engine", "Ready", true),
+                    _buildStatusItem("Cloud Synchronization", "Active", true),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
+            ],
+          ),
+        )
     );
   }
 
-  Widget _buildActionTile({
-    required String title,
-    required String description,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildActionTile({required String title, required String description, required IconData icon, required Color color, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
@@ -5475,21 +3474,14 @@ class ReceiptSettingsPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: kGrey200),
           boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.02),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
+            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 15, offset: const Offset(0, 8))
           ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
               child: Icon(icon, color: color, size: 26),
             ),
             const SizedBox(width: 20),
@@ -5497,31 +3489,13 @@ class ReceiptSettingsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 16,
-                      color: kBlack87,
-                    ),
-                  ),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: kBlack87)),
                   const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                  Text(description, style: const TextStyle(fontSize: 11, color: Colors.grey, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: kGrey400,
-              size: 14,
-            ),
+            const Icon(Icons.arrow_forward_ios_rounded, color: kGrey400, size: 14),
           ],
         ),
       ),
@@ -5540,32 +3514,17 @@ class ReceiptSettingsPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: kBlack87,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kBlack87)),
           Row(
             children: [
               Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isActive ? Colors.green : Colors.red,
-                  shape: BoxShape.circle,
-                ),
+                width: 6, height: 6,
+                decoration: BoxDecoration(color: isActive ? Colors.green : Colors.red, shape: BoxShape.circle),
               ),
               const SizedBox(width: 8),
               Text(
                 status,
-                style: TextStyle(
-                  color: isActive ? Colors.green : Colors.red,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: TextStyle(color: isActive ? Colors.green : Colors.red, fontSize: 11, fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -5575,24 +3534,14 @@ class ReceiptSettingsPage extends StatelessWidget {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 2.0,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 2.0));
   }
 }
 
 class ReceiptCustomizationPage extends StatefulWidget {
   final VoidCallback onBack;
   const ReceiptCustomizationPage({super.key, required this.onBack});
-  @override
-  State<ReceiptCustomizationPage> createState() =>
-      _ReceiptCustomizationPageState();
+  @override State<ReceiptCustomizationPage> createState() => _ReceiptCustomizationPageState();
 }
 
 class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
@@ -5692,31 +3641,16 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
         final data = storeDoc.data() as Map<String, dynamic>?;
         if (data != null) {
           setState(() {
-            _invoiceNumberCtrl.text =
-                (data['nextInvoiceNumber'] ?? data['invoiceCounter'] ?? 100001)
-                    .toString();
-            _quotationNumberCtrl.text =
-                (data['nextQuotationNumber'] ??
-                        data['quotationCounter'] ??
-                        100001)
-                    .toString();
-            _purchaseNumberCtrl.text =
-                (data['nextPurchaseNumber'] ??
-                        data['purchaseCounter'] ??
-                        100001)
-                    .toString();
-            _expenseNumberCtrl.text =
-                (data['nextExpenseNumber'] ?? data['expenseCounter'] ?? 100001)
-                    .toString();
-            _receiptNumberCtrl.text =
-                (data['nextPaymentReceiptNumber'] ?? 100001).toString();
+            _invoiceNumberCtrl.text = (data['nextInvoiceNumber'] ?? data['invoiceCounter'] ?? 100001).toString();
+            _quotationNumberCtrl.text = (data['nextQuotationNumber'] ?? data['quotationCounter'] ?? 100001).toString();
+            _purchaseNumberCtrl.text = (data['nextPurchaseNumber'] ?? data['purchaseCounter'] ?? 100001).toString();
+            _expenseNumberCtrl.text = (data['nextExpenseNumber'] ?? data['expenseCounter'] ?? 100001).toString();
+            _receiptNumberCtrl.text = (data['nextPaymentReceiptNumber'] ?? 100001).toString();
             _invoicePrefixCtrl.text = data['invoicePrefix']?.toString() ?? '';
-            _quotationPrefixCtrl.text =
-                data['quotationPrefix']?.toString() ?? '';
+            _quotationPrefixCtrl.text = data['quotationPrefix']?.toString() ?? '';
             _purchasePrefixCtrl.text = data['purchasePrefix']?.toString() ?? '';
             _expensePrefixCtrl.text = data['expensePrefix']?.toString() ?? '';
-            _receiptPrefixCtrl.text =
-                data['paymentReceiptPrefix']?.toString() ?? '';
+            _receiptPrefixCtrl.text = data['paymentReceiptPrefix']?.toString() ?? '';
           });
         }
       }
@@ -5751,9 +3685,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
       final expenseNum = int.tryParse(_expenseNumberCtrl.text) ?? 100001;
       final receiptNum = int.tryParse(_receiptNumberCtrl.text) ?? 100001;
 
-      debugPrint(
-        '💾 Saving document numbers: Invoice=$invoiceNum, Quotation=$quotationNum, Purchase=$purchaseNum, Expense=$expenseNum, Receipt=$receiptNum',
-      );
+      debugPrint('💾 Saving document numbers: Invoice=$invoiceNum, Quotation=$quotationNum, Purchase=$purchaseNum, Expense=$expenseNum, Receipt=$receiptNum');
 
       await FirebaseFirestore.instance.collection('store').doc(storeId).update({
         'invoiceSettings.template': _selectedTemplateIndex,
@@ -5809,22 +3741,11 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          "Design Engine",
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            letterSpacing: 2.0,
-          ),
-        ),
+        title: const Text("Design Engine", style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2.0)),
         backgroundColor: kPrimaryColor,
         centerTitle: true,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: widget.onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack),
       ),
       body: Column(
         children: [
@@ -5846,138 +3767,42 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
                     }
                     setState(() => _showLogo = v);
                   }),
-                  _buildToggleItem(
-                    "Show Business Address",
-                    _showLocation,
-                    (v) => setState(() => _showLocation = v),
-                  ),
-                  _buildToggleItem(
-                    "Show Contact Email",
-                    _showEmail,
-                    (v) => setState(() => _showEmail = v),
-                  ),
-                  _buildToggleItem(
-                    "Show Phone Number",
-                    _showPhone,
-                    (v) => setState(() => _showPhone = v),
-                  ),
-                  _buildToggleItem(
-                    "Show Taxation (GST/VAT)",
-                    _showTaxId,
-                    (v) => setState(() => _showTaxId = v),
-                  ),
+                  _buildToggleItem("Show Business Address", _showLocation, (v) => setState(() => _showLocation = v)),
+                  _buildToggleItem("Show Contact Email", _showEmail, (v) => setState(() => _showEmail = v)),
+                  _buildToggleItem("Show Phone Number", _showPhone, (v) => setState(() => _showPhone = v)),
+                  _buildToggleItem("Show Taxation (GST/VAT)", _showTaxId, (v) => setState(() => _showTaxId = v)),
                 ]),
 
                 const SizedBox(height: 32),
 
                 _buildSettingsSection("Visibility Controls", [
-                  _buildToggleItem(
-                    "Customer Information",
-                    _showCustomer,
-                    (v) => setState(() => _showCustomer = v),
-                  ),
-                  _buildToggleItem(
-                    "Measuring Units",
-                    _showUnits,
-                    (v) => setState(() => _showUnits = v),
-                  ),
-                  _buildToggleItem(
-                    "Show MRP Column",
-                    _showMRP,
-                    (v) => setState(() => _showMRP = v),
-                  ),
-                  _buildToggleItem(
-                    "Show Payment Mode",
-                    _showPayMode,
-                    (v) => setState(() => _showPayMode = v),
-                  ),
-                  _buildToggleItem(
-                    "Display Savings Alert",
-                    _showSavings,
-                    (v) => setState(() => _showSavings = v),
-                  ),
+                  _buildToggleItem("Customer Information", _showCustomer, (v) => setState(() => _showCustomer = v)),
+                  _buildToggleItem("Measuring Units", _showUnits, (v) => setState(() => _showUnits = v)),
+                  _buildToggleItem("Show MRP Column", _showMRP, (v) => setState(() => _showMRP = v)),
+                  _buildToggleItem("Show Payment Mode", _showPayMode, (v) => setState(() => _showPayMode = v)),
+                  _buildToggleItem("Display Savings Alert", _showSavings, (v) => setState(() => _showSavings = v)),
                 ]),
 
                 const SizedBox(height: 32),
 
                 // Document Prefixes
                 _buildSettingsSection("Document Prefixes", [
-                  _buildPrefixField(
-                    _invoicePrefixCtrl,
-                    "Invoice Prefix",
-                    "e.g. INV",
-                    Icons.receipt_long_rounded,
-                    kPrimaryColor,
-                  ),
-                  _buildPrefixField(
-                    _quotationPrefixCtrl,
-                    "Quotation Prefix",
-                    "e.g. QT",
-                    Icons.request_quote_rounded,
-                    Colors.orange,
-                  ),
-                  _buildPrefixField(
-                    _purchasePrefixCtrl,
-                    "Purchase Prefix",
-                    "e.g. PO",
-                    Icons.shopping_cart_rounded,
-                    Colors.green,
-                  ),
-                  _buildPrefixField(
-                    _expensePrefixCtrl,
-                    "Expense Prefix",
-                    "e.g. EXP",
-                    Icons.account_balance_wallet_rounded,
-                    Colors.purple,
-                  ),
-                  _buildPrefixField(
-                    _receiptPrefixCtrl,
-                    "Payment Receipt Prefix",
-                    "e.g. PR",
-                    Icons.payment_rounded,
-                    Colors.teal,
-                  ),
+                  _buildPrefixField(_invoicePrefixCtrl, "Invoice Prefix", "e.g. INV", Icons.receipt_long_rounded, kPrimaryColor),
+                  _buildPrefixField(_quotationPrefixCtrl, "Quotation Prefix", "e.g. QT", Icons.request_quote_rounded, Colors.orange),
+                  _buildPrefixField(_purchasePrefixCtrl, "Purchase Prefix", "e.g. PO", Icons.shopping_cart_rounded, Colors.green),
+                  _buildPrefixField(_expensePrefixCtrl, "Expense Prefix", "e.g. EXP", Icons.account_balance_wallet_rounded, Colors.purple),
+                  _buildPrefixField(_receiptPrefixCtrl, "Payment Receipt Prefix", "e.g. PR", Icons.payment_rounded, Colors.teal),
                 ]),
 
                 const SizedBox(height: 32),
 
                 // Current Document Numbers with Edit Option
                 _buildSettingsSection("Current Document Numbers", [
-                  _buildEditableNumberField(
-                    _invoiceNumberCtrl,
-                    "Next Invoice Number",
-                    Icons.receipt_long_rounded,
-                    kPrimaryColor,
-                    _liveInvoiceNumber,
-                  ),
-                  _buildEditableNumberField(
-                    _quotationNumberCtrl,
-                    "Next Quotation Number",
-                    Icons.request_quote_rounded,
-                    Colors.orange,
-                    _liveQuotationNumber,
-                  ),
-                  _buildEditableNumberField(
-                    _purchaseNumberCtrl,
-                    "Next Purchase Number",
-                    Icons.shopping_cart_rounded,
-                    Colors.green,
-                    _livePurchaseNumber,
-                  ),
-                  _buildEditableNumberField(
-                    _expenseNumberCtrl,
-                    "Next Expense Number",
-                    Icons.account_balance_wallet_rounded,
-                    Colors.purple,
-                    _liveExpenseNumber,
-                  ),
-                  _buildEditableNumberField(
-                    _receiptNumberCtrl,
-                    "Next Receipt Number",
-                    Icons.payment_rounded,
-                    Colors.teal,
-                    _liveReceiptNumber,
-                  ),
+                  _buildEditableNumberField(_invoiceNumberCtrl, "Next Invoice Number", Icons.receipt_long_rounded, kPrimaryColor, _liveInvoiceNumber),
+                  _buildEditableNumberField(_quotationNumberCtrl, "Next Quotation Number", Icons.request_quote_rounded, Colors.orange, _liveQuotationNumber),
+                  _buildEditableNumberField(_purchaseNumberCtrl, "Next Purchase Number", Icons.shopping_cart_rounded, Colors.green, _livePurchaseNumber),
+                  _buildEditableNumberField(_expenseNumberCtrl, "Next Expense Number", Icons.account_balance_wallet_rounded, Colors.purple, _liveExpenseNumber),
+                  _buildEditableNumberField(_receiptNumberCtrl, "Next Receipt Number", Icons.payment_rounded, Colors.teal, _liveReceiptNumber),
                 ]),
                 const SizedBox(height: 40),
               ],
@@ -5990,15 +3815,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 2.0,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 2.0));
   }
 
   Widget _buildTemplateGrid() {
@@ -6023,36 +3840,15 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
             decoration: BoxDecoration(
               color: sel ? col : kWhite,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: sel ? col : kGrey200,
-                width: sel ? 1.5 : 1,
-              ),
-              boxShadow: sel
-                  ? [
-                      BoxShadow(
-                        color: col.withOpacity(0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : [],
+              border: Border.all(color: sel ? col : kGrey200, width: sel ? 1.5 : 1),
+              boxShadow: sel ? [BoxShadow(color: col.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4))] : [],
             ),
             child: Column(
               children: [
-                Icon(
-                  Icons.description_outlined,
-                  color: sel ? kWhite : kGrey400,
-                  size: 28,
-                ),
+                Icon(Icons.description_outlined, color: sel ? kWhite : kGrey400, size: 28),
                 const SizedBox(height: 8),
-                Text(
-                  items[i]['t'] as String,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: sel ? kWhite : kBlack87,
-                  ),
-                ),
+                Text(items[i]['t'] as String,
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: sel ? kWhite : kBlack87)),
               ],
             ),
           ),
@@ -6061,35 +3857,20 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
     );
   }
 
-  Widget _buildPrefixField(
-    TextEditingController ctrl,
-    String label,
-    String hint,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildPrefixField(TextEditingController ctrl, String label, String hint, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(10),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withAlpha(25),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: color.withAlpha(25), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
@@ -6097,22 +3878,11 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: kBlack54,
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBlack54)),
                 const SizedBox(height: 4),
                 TextField(
                   controller: ctrl,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: color,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: color),
                   textCapitalization: TextCapitalization.characters,
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
@@ -6121,11 +3891,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
                     isDense: true,
                     border: InputBorder.none,
                     hintText: hint,
-                    hintStyle: const TextStyle(
-                      fontSize: 13,
-                      color: kGrey400,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    hintStyle: const TextStyle(fontSize: 13, color: kGrey400, fontWeight: FontWeight.w400),
                     contentPadding: EdgeInsets.zero,
                   ),
                   onChanged: (_) => setState(() {}),
@@ -6136,18 +3902,9 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
           if (ctrl.text.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withAlpha(20),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '${ctrl.text}100001',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              decoration: BoxDecoration(color: color.withAlpha(20), borderRadius: BorderRadius.circular(8)),
+              child: Text('${ctrl.text}100001',
+                  style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w700)),
             ),
         ],
       ),
@@ -6160,14 +3917,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
       children: [
         Padding(
           padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w800,
-              color: kBlack87,
-            ),
-          ),
+          child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: kBlack87)),
         ),
         Container(
           decoration: BoxDecoration(
@@ -6214,18 +3964,11 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
     );
   }
 
-  Widget _buildEditableNumberField(
-    TextEditingController ctrl,
-    String label,
-    IconData icon,
-    Color color,
-    String liveValue,
-  ) {
+
+  Widget _buildEditableNumberField(TextEditingController ctrl, String label, IconData icon, Color color, String liveValue) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: kGrey100)),
-      ),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGrey100))),
       child: Row(
         children: [
           Container(
@@ -6241,42 +3984,17 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: kBlack54,
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kBlack54)),
                 const SizedBox(height: 4),
                 _loadingLiveNumbers
-                    ? const SizedBox(
-                        width: 80,
-                        height: 24,
-                        child: Center(
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    : Text(
-                        liveValue,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: color,
-                        ),
-                      ),
+                    ? const SizedBox(width: 80, height: 24, child: Center(child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))))
+                    : Text(liveValue, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
               ],
             ),
           ),
           // Edit button
           GestureDetector(
-            onTap: () =>
-                _showEditNumberDialog(ctrl, label, icon, color, liveValue),
+            onTap: () => _showEditNumberDialog(ctrl, label, icon, color, liveValue),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -6288,14 +4006,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
                 children: const [
                   Icon(Icons.edit_rounded, size: 14, color: kPrimaryColor),
                   SizedBox(width: 4),
-                  Text(
-                    "Edit",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: kPrimaryColor,
-                    ),
-                  ),
+                  Text("Edit", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kPrimaryColor)),
                 ],
               ),
             ),
@@ -6305,13 +4016,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
     );
   }
 
-  void _showEditNumberDialog(
-    TextEditingController ctrl,
-    String label,
-    IconData icon,
-    Color color,
-    String currentValue,
-  ) {
+  void _showEditNumberDialog(TextEditingController ctrl, String label, IconData icon, Color color, String currentValue) {
     final editCtrl = TextEditingController(text: currentValue);
 
     showDialog(
@@ -6329,56 +4034,41 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
+            Expanded(child: Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Enter the next number to use:",
-              style: TextStyle(fontSize: 12, color: kBlack54),
-            ),
+            const Text("Enter the next number to use:", style: TextStyle(fontSize: 12, color: kBlack54)),
             const SizedBox(height: 12),
             TextField(
-              controller: editCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              autofocus: true,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: color,
+               controller: editCtrl,
+               keyboardType: TextInputType.number,
+               inputFormatters: [
+                 FilteringTextInputFormatter.digitsOnly,
+               ],
+               autofocus: true,
+               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: color),
+              decoration: InputDecoration(
+                
+                
+                
+                
               ),
-              decoration: InputDecoration(),
             ),
             const SizedBox(height: 8),
             Text(
               "💡 This will be the next number used for new documents.",
-              style: TextStyle(
-                fontSize: 10,
-                color: kBlack54,
-                fontStyle: FontStyle.italic,
-              ),
+              style: TextStyle(fontSize: 10, color: kBlack54, fontStyle: FontStyle.italic),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Cancel",
-              style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600),
-            ),
+            child: const Text("Cancel", style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -6390,23 +4080,15 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
                 await _saveSettings();
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please enter a valid number"),
-                    backgroundColor: Colors.red,
-                  ),
+                  const SnackBar(content: Text("Please enter a valid number"), backgroundColor: Colors.red),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: color,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: const Text(
-              "Save",
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.w800),
-            ),
+            child: const Text("Save", style: TextStyle(color: kWhite, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -6416,27 +4098,19 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
   Widget _buildInputField(TextEditingController ctrl, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: kGrey100)),
-      ),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGrey100))),
       child: TextFormField(
         controller: ctrl,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w700,
-          color: kBlack87,
-        ),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kBlack87),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(
-            fontSize: 11,
-            color: kBlack54,
-            fontWeight: FontWeight.w600,
-          ),
+          labelStyle: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600),
+          
         ),
       ),
     );
   }
+
 
   Widget _buildActionFooter() {
     return SafeArea(
@@ -6445,13 +4119,7 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
         decoration: BoxDecoration(
           color: kWhite,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: SizedBox(
           width: double.infinity,
@@ -6461,18 +4129,11 @@ class _ReceiptCustomizationPageState extends State<ReceiptCustomizationPage> {
               backgroundColor: kPrimaryColor,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: Text(
               _saving ? "Syncing..." : "Save configuration",
-              style: const TextStyle(
-                color: kWhite,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-                fontSize: 13,
-              ),
+              style: const TextStyle(color: kWhite, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 13),
             ),
           ),
         ),
@@ -6501,71 +4162,21 @@ class _LanguagePageState extends State<LanguagePage> {
   // Languages list - English available, others coming soon
   // International languages first, then Indian languages
   final List<Map<String, dynamic>> _languages = [
-    {
-      'code': 'en',
-      'name': 'English',
-      'nativeName': 'English',
-      'available': true,
-    },
-    {
-      'code': 'ar',
-      'name': 'Arabic',
-      'nativeName': 'العربية',
-      'available': false,
-    },
-    {
-      'code': 'es',
-      'name': 'Spanish',
-      'nativeName': 'Español',
-      'available': false,
-    },
+    {'code': 'en', 'name': 'English', 'nativeName': 'English', 'available': true},
+    {'code': 'ar', 'name': 'Arabic', 'nativeName': 'العربية', 'available': false},
+    {'code': 'es', 'name': 'Spanish', 'nativeName': 'Español', 'available': false},
     {'code': 'hi', 'name': 'Hindi', 'nativeName': 'हिन्दी', 'available': false},
     {'code': 'ta', 'name': 'Tamil', 'nativeName': 'தமிழ்', 'available': false},
-    {
-      'code': 'fr',
-      'name': 'French',
-      'nativeName': 'Français',
-      'available': false,
-    },
-    {
-      'code': 'de',
-      'name': 'German',
-      'nativeName': 'Deutsch',
-      'available': false,
-    },
+    {'code': 'fr', 'name': 'French', 'nativeName': 'Français', 'available': false},
+    {'code': 'de', 'name': 'German', 'nativeName': 'Deutsch', 'available': false},
     {'code': 'zh', 'name': 'Chinese', 'nativeName': '中文', 'available': false},
     {'code': 'ja', 'name': 'Japanese', 'nativeName': '日本語', 'available': false},
     {'code': 'ko', 'name': 'Korean', 'nativeName': '한국어', 'available': false},
-    {
-      'code': 'ru',
-      'name': 'Russian',
-      'nativeName': 'Русский',
-      'available': false,
-    },
-    {
-      'code': 'pt',
-      'name': 'Portuguese',
-      'nativeName': 'Português',
-      'available': false,
-    },
-    {
-      'code': 'bn',
-      'name': 'Bengali',
-      'nativeName': 'বাংলা',
-      'available': false,
-    },
-    {
-      'code': 'mr',
-      'name': 'Marathi',
-      'nativeName': 'मराठी',
-      'available': false,
-    },
-    {
-      'code': 'te',
-      'name': 'Telugu',
-      'nativeName': 'తెలుగు',
-      'available': false,
-    },
+    {'code': 'ru', 'name': 'Russian', 'nativeName': 'Русский', 'available': false},
+    {'code': 'pt', 'name': 'Portuguese', 'nativeName': 'Português', 'available': false},
+    {'code': 'bn', 'name': 'Bengali', 'nativeName': 'বাংলা', 'available': false},
+    {'code': 'mr', 'name': 'Marathi', 'nativeName': 'मराठी', 'available': false},
+    {'code': 'te', 'name': 'Telugu', 'nativeName': 'తెలుగు', 'available': false},
   ];
 
   @override
@@ -6595,38 +4206,18 @@ class _LanguagePageState extends State<LanguagePage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Language',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('Language', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: widget.onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Padding(
             padding: EdgeInsets.only(bottom: 12, left: 4),
-            child: Text(
-              'Select language',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: kBlack54,
-                letterSpacing: 1.5,
-                fontFamily: 'NotoSans',
-              ),
-            ),
+            child: Text('Select language', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5, fontFamily: 'NotoSans')),
           ),
           Container(
             decoration: BoxDecoration(
@@ -6644,29 +4235,15 @@ class _LanguagePageState extends State<LanguagePage> {
                 return Column(
                   children: [
                     ListTile(
-                      onTap: isComingSoon
-                          ? null
-                          : () => _saveLanguage(lang['name']!),
+                      onTap: isComingSoon ? null : () => _saveLanguage(lang['name']!),
                       leading: Container(
-                        width: 40,
-                        height: 40,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? kPrimaryColor.withAlpha(25)
-                              : kGreyBg,
+                          color: isSelected ? kPrimaryColor.withAlpha(25) : kGreyBg,
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
-                          child: Text(
-                            lang['code']!,
-                            style: TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 12,
-                              color: isComingSoon
-                                  ? kBlack54
-                                  : (isSelected ? kPrimaryColor : kBlack54),
-                            ),
-                          ),
+                          child: Text(lang['code']!, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: isComingSoon ? kBlack54 : (isSelected ? kPrimaryColor : kBlack54))),
                         ),
                       ),
                       title: Row(
@@ -6674,59 +4251,26 @@ class _LanguagePageState extends State<LanguagePage> {
                           Text(
                             lang['name'],
                             style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                               fontSize: 14,
                               fontFamily: 'NotoSans',
-                              color: isComingSoon
-                                  ? kBlack54
-                                  : (isSelected ? kPrimaryColor : kBlack87),
+                              color: isComingSoon ? kBlack54 : (isSelected ? kPrimaryColor : kBlack87),
                             ),
                           ),
                           if (isComingSoon) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: kPrimaryColor.withAlpha(20),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'Launching Soon',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: kPrimaryColor,
-                                ),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: kPrimaryColor.withAlpha(20), borderRadius: BorderRadius.circular(4)),
+                              child: const Text('Launching Soon', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kPrimaryColor)),
                             ),
                           ],
                         ],
                       ),
-                      subtitle: Text(
-                        lang['nativeName']!,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isComingSoon
-                              ? kBlack54
-                              : (isSelected ? kPrimaryColor : kBlack54),
-                          fontFamily: 'Lato',
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: kPrimaryColor,
-                              size: 22,
-                            )
-                          : null,
+                      subtitle: Text(lang['nativeName']!, style: TextStyle(fontSize: 12, color: isComingSoon ? kBlack54 : (isSelected ? kPrimaryColor : kBlack54), fontFamily: 'Lato')),
+                      trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: kPrimaryColor, size: 22) : null,
                     ),
-                    if (index < _languages.length - 1)
-                      const Divider(height: 1, indent: 60, color: kGrey100),
+                    if (index < _languages.length - 1) const Divider(height: 1, indent: 60, color: kGrey100),
                   ],
                 );
               }).toList(),
@@ -6754,24 +4298,9 @@ class _ThemePageState extends State<ThemePage> {
   String _selectedTheme = 'Light';
 
   final List<Map<String, dynamic>> _themes = [
-    {
-      'name': 'Light',
-      'icon': Icons.light_mode_rounded,
-      'color': Colors.orange,
-      'available': true,
-    },
-    {
-      'name': 'Dark',
-      'icon': Icons.dark_mode_rounded,
-      'color': Colors.indigo,
-      'available': false,
-    },
-    {
-      'name': 'Modern',
-      'icon': Icons.auto_awesome_rounded,
-      'color': Colors.purple,
-      'available': false,
-    },
+    {'name': 'Light', 'icon': Icons.light_mode_rounded, 'color': Colors.orange, 'available': true},
+    {'name': 'Dark', 'icon': Icons.dark_mode_rounded, 'color': Colors.indigo, 'available': false},
+    {'name': 'Modern', 'icon': Icons.auto_awesome_rounded, 'color': Colors.purple, 'available': false},
   ];
 
   @override
@@ -6782,22 +4311,11 @@ class _ThemePageState extends State<ThemePage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'App Theme',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('App Theme', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: widget.onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: widget.onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -6813,38 +4331,17 @@ class _ThemePageState extends State<ThemePage> {
             ),
             child: Row(
               children: const [
-                Icon(
-                  Icons.rocket_launch_rounded,
-                  color: kPrimaryColor,
-                  size: 24,
-                ),
+                Icon(Icons.rocket_launch_rounded, color: kPrimaryColor, size: 24),
                 SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'App Theme will launch soon!',
-                    style: TextStyle(
-                      color: kPrimaryColor,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
+                  child: Text('App Theme will launch soon!', style: TextStyle(color: kPrimaryColor, fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
                 ),
               ],
             ),
           ),
           const Padding(
             padding: EdgeInsets.only(bottom: 12, left: 4),
-            child: Text(
-              'Select Theme',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: kBlack54,
-                letterSpacing: 1.5,
-                fontFamily: 'NotoSans',
-              ),
-            ),
+            child: Text('Select Theme', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5, fontFamily: 'NotoSans')),
           ),
           Container(
             decoration: BoxDecoration(
@@ -6861,72 +4358,39 @@ class _ThemePageState extends State<ThemePage> {
                 return Column(
                   children: [
                     ListTile(
-                      onTap: isAvailable
-                          ? () => setState(() => _selectedTheme = theme['name'])
-                          : null,
+                      onTap: isAvailable ? () => setState(() => _selectedTheme = theme['name']) : null,
                       leading: Container(
-                        width: 40,
-                        height: 40,
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: (theme['color'] as Color).withAlpha(
-                            isAvailable ? 25 : 15,
-                          ),
+                          color: (theme['color'] as Color).withAlpha(isAvailable ? 25 : 15),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Icon(
-                          theme['icon'],
-                          color: isAvailable ? theme['color'] : kGrey400,
-                          size: 22,
-                        ),
+                        child: Icon(theme['icon'], color: isAvailable ? theme['color'] : kGrey400, size: 22),
                       ),
                       title: Row(
                         children: [
                           Text(
                             theme['name'],
                             style: TextStyle(
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w600,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                               fontSize: 14,
                               fontFamily: 'NotoSans',
-                              color: isAvailable
-                                  ? (isSelected ? kPrimaryColor : kBlack87)
-                                  : kGrey400,
+                              color: isAvailable ? (isSelected ? kPrimaryColor : kBlack87) : kGrey400,
                             ),
                           ),
                           if (!isAvailable) ...[
                             const SizedBox(width: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: kPrimaryColor.withAlpha(20),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: const Text(
-                                'Launching Soon',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
-                                  color: kPrimaryColor,
-                                ),
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(color: kPrimaryColor.withAlpha(20), borderRadius: BorderRadius.circular(4)),
+                              child: const Text('Launching Soon', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kPrimaryColor)),
                             ),
                           ],
                         ],
                       ),
-                      trailing: isSelected && isAvailable
-                          ? const Icon(
-                              Icons.check_circle_rounded,
-                              color: kPrimaryColor,
-                              size: 22,
-                            )
-                          : null,
+                      trailing: isSelected && isAvailable ? const Icon(Icons.check_circle_rounded, color: kPrimaryColor, size: 22) : null,
                     ),
-                    if (index < _themes.length - 1)
-                      const Divider(height: 1, indent: 60, color: kGrey100),
+                    if (index < _themes.length - 1) const Divider(height: 1, indent: 60, color: kGrey100),
                   ],
                 );
               }).toList(),
@@ -6955,38 +4419,18 @@ class HelpPage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Help & Support',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('Help & Support', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           const Padding(
             padding: EdgeInsets.only(bottom: 12, left: 4),
-            child: Text(
-              'Resources',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: kBlack54,
-                letterSpacing: 1.5,
-                fontFamily: 'NotoSans',
-              ),
-            ),
+            child: Text('Resources', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5, fontFamily: 'NotoSans')),
           ),
           Container(
             decoration: BoxDecoration(
@@ -6999,114 +4443,36 @@ class HelpPage extends StatelessWidget {
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.help_center_rounded,
-                      color: Colors.blue,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: Colors.blue.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.help_center_rounded, color: Colors.blue, size: 20),
                   ),
-                  title: const Text(
-                    'FAQs',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Frequently asked questions',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: kGrey400,
-                  ),
+                  title: const Text('FAQs', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('Frequently asked questions', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                   onTap: () => onNavigate('FAQs'),
                 ),
                 const Divider(height: 1, indent: 60, color: kGrey100),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.play_circle_rounded,
-                      color: Colors.red,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: Colors.red.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.play_circle_rounded, color: Colors.red, size: 20),
                   ),
-                  title: const Text(
-                    'Video Tutorials',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Learn with step-by-step videos',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: kGrey400,
-                  ),
+                  title: const Text('Video Tutorials', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('Learn with step-by-step videos', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                   onTap: () => onNavigate('VideoTutorials'),
                 ),
                 const Divider(height: 1, indent: 60, color: kGrey100),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.upcoming_rounded,
-                      color: Colors.purple,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: Colors.purple.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.upcoming_rounded, color: Colors.purple, size: 20),
                   ),
-                  title: const Text(
-                    'Upcoming Features',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'What\'s coming next',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: kGrey400,
-                  ),
+                  title: const Text('Upcoming Features', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('What\'s coming next', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                   onTap: () => onNavigate('UpcomingFeatures'),
                 ),
               ],
@@ -7115,16 +4481,7 @@ class HelpPage extends StatelessWidget {
           const SizedBox(height: 24),
           const Padding(
             padding: EdgeInsets.only(bottom: 12, left: 4),
-            child: Text(
-              'Contact Us',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: kBlack54,
-                letterSpacing: 1.5,
-                fontFamily: 'NotoSans',
-              ),
-            ),
+            child: Text('Contact Us', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5, fontFamily: 'NotoSans')),
           ),
           Container(
             decoration: BoxDecoration(
@@ -7137,75 +4494,23 @@ class HelpPage extends StatelessWidget {
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.email_rounded,
-                      color: Colors.green,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: Colors.green.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.email_rounded, color: Colors.green, size: 20),
                   ),
-                  title: const Text(
-                    'Email Support',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'support@maxbillup.com',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: kGrey400,
-                  ),
+                  title: const Text('Email Support', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('support@maxbillup.com', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                 ),
                 const Divider(height: 1, indent: 60, color: kGrey100),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: Colors.teal.withAlpha(25),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(
-                      Icons.chat_rounded,
-                      color: Colors.teal,
-                      size: 20,
-                    ),
+                    decoration: BoxDecoration(color: Colors.teal.withAlpha(25), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.chat_rounded, color: Colors.teal, size: 20),
                   ),
-                  title: const Text(
-                    'Live Chat',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      fontFamily: 'NotoSans',
-                    ),
-                  ),
-                  subtitle: const Text(
-                    'Chat with our team',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: kGrey400,
-                  ),
+                  title: const Text('Live Chat', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('Chat with our team', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                 ),
               ],
             ),
@@ -7232,46 +4537,20 @@ class FAQsPage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'FAQs',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('FAQs', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildFAQItem(
-            'How do I add products?',
-            'Go to Inventory > Add Product. Fill in the product details like name, price, and stock quantity.',
-          ),
-          _buildFAQItem(
-            'How do I print receipts?',
-            'Connect a Bluetooth thermal printer in Settings > Printer Setup. Then enable auto-print in the same settings.',
-          ),
-          _buildFAQItem(
-            'How do I import products from Excel?',
-            'Go to Inventory > Import. Download the template, fill in your products, and upload the Excel file.',
-          ),
-          _buildFAQItem(
-            'How do I view sales reports?',
-            'Navigate to Reports from the bottom menu to see daily, weekly, and monthly sales summaries.',
-          ),
-          _buildFAQItem(
-            'How do I manage staff permissions?',
-            'Go to Settings > User Management. Add staff members and configure their access permissions.',
-          ),
+          _buildFAQItem('How do I add products?', 'Go to Inventory > Add Product. Fill in the product details like name, price, and stock quantity.'),
+          _buildFAQItem('How do I print receipts?', 'Connect a Bluetooth thermal printer in Settings > Printer Setup. Then enable auto-print in the same settings.'),
+          _buildFAQItem('How do I import products from Excel?', 'Go to Inventory > Import. Download the template, fill in your products, and upload the Excel file.'),
+          _buildFAQItem('How do I view sales reports?', 'Navigate to Reports from the bottom menu to see daily, weekly, and monthly sales summaries.'),
+          _buildFAQItem('How do I manage staff permissions?', 'Go to Settings > User Management. Add staff members and configure their access permissions.'),
         ],
       ),
     );
@@ -7286,25 +4565,10 @@ class FAQsPage extends StatelessWidget {
         border: Border.all(color: kGrey200),
       ),
       child: ExpansionTile(
-        title: Text(
-          question,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: Text(question, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         children: [
-          Text(
-            answer,
-            style: const TextStyle(
-              fontSize: 13,
-              color: kBlack54,
-              fontFamily: 'Lato',
-              height: 1.5,
-            ),
-          ),
+          Text(answer, style: const TextStyle(fontSize: 13, color: kBlack54, fontFamily: 'Lato', height: 1.5)),
         ],
       ),
     );
@@ -7327,67 +4591,26 @@ class UpcomingFeaturesPage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Upcoming Features',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('Upcoming Features', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildFeatureItem(
-            'Dark Mode',
-            'Coming Soon',
-            Icons.dark_mode_rounded,
-            Colors.indigo,
-          ),
-          _buildFeatureItem(
-            'Multi-Store Support',
-            'Q2 2026',
-            Icons.store_rounded,
-            Colors.blue,
-          ),
-          _buildFeatureItem(
-            'Advanced Analytics',
-            'Q2 2026',
-            Icons.analytics_rounded,
-            Colors.green,
-          ),
-          _buildFeatureItem(
-            'E-commerce Integration',
-            'Q3 2026',
-            Icons.shopping_cart_rounded,
-            Colors.orange,
-          ),
-          _buildFeatureItem(
-            'Supplier Management',
-            'Q3 2026',
-            Icons.local_shipping_rounded,
-            Colors.purple,
-          ),
+          _buildFeatureItem('Dark Mode', 'Coming Soon', Icons.dark_mode_rounded, Colors.indigo),
+          _buildFeatureItem('Multi-Store Support', 'Q2 2026', Icons.store_rounded, Colors.blue),
+          _buildFeatureItem('Advanced Analytics', 'Q2 2026', Icons.analytics_rounded, Colors.green),
+          _buildFeatureItem('E-commerce Integration', 'Q3 2026', Icons.shopping_cart_rounded, Colors.orange),
+          _buildFeatureItem('Supplier Management', 'Q3 2026', Icons.local_shipping_rounded, Colors.purple),
         ],
       ),
     );
   }
 
-  Widget _buildFeatureItem(
-    String title,
-    String timeline,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildFeatureItem(String title, String timeline, IconData icon, Color color) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -7400,10 +4623,7 @@ class UpcomingFeaturesPage extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withAlpha(25),
-              borderRadius: BorderRadius.circular(12),
-            ),
+            decoration: BoxDecoration(color: color.withAlpha(25), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 16),
@@ -7411,33 +4631,15 @@ class UpcomingFeaturesPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'NotoSans',
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
                 const SizedBox(height: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
                     color: kPrimaryColor.withAlpha(25),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Text(
-                    timeline,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kPrimaryColor,
-                      fontFamily: 'Lato',
-                    ),
-                  ),
+                  child: Text(timeline, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kPrimaryColor, fontFamily: 'Lato')),
                 ),
               ],
             ),
@@ -7464,51 +4666,20 @@ class VideoTutorialsPage extends StatelessWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Video Tutorials',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        title: const Text('Video Tutorials', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 16, fontFamily: 'NotoSans')),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: kWhite, size: 18),
-          onPressed: onBack,
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: onBack),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _buildVideoItem(
-            'Getting Started',
-            '5 min',
-            Icons.play_circle_filled_rounded,
-          ),
-          _buildVideoItem(
-            'Adding Products',
-            '3 min',
-            Icons.play_circle_filled_rounded,
-          ),
-          _buildVideoItem(
-            'Making Sales',
-            '4 min',
-            Icons.play_circle_filled_rounded,
-          ),
-          _buildVideoItem(
-            'Printer Setup',
-            '2 min',
-            Icons.play_circle_filled_rounded,
-          ),
-          _buildVideoItem(
-            'Reports & Analytics',
-            '6 min',
-            Icons.play_circle_filled_rounded,
-          ),
+          _buildVideoItem('Getting Started', '5 min', Icons.play_circle_filled_rounded),
+          _buildVideoItem('Adding Products', '3 min', Icons.play_circle_filled_rounded),
+          _buildVideoItem('Making Sales', '4 min', Icons.play_circle_filled_rounded),
+          _buildVideoItem('Printer Setup', '2 min', Icons.play_circle_filled_rounded),
+          _buildVideoItem('Reports & Analytics', '6 min', Icons.play_circle_filled_rounded),
         ],
       ),
     );
@@ -7525,39 +4696,16 @@ class VideoTutorialsPage extends StatelessWidget {
       child: ListTile(
         contentPadding: const EdgeInsets.all(12),
         leading: Container(
-          width: 80,
-          height: 50,
+          width: 80, height: 50,
           decoration: BoxDecoration(
             color: Colors.red.withAlpha(25),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: const Icon(
-            Icons.play_circle_filled_rounded,
-            color: Colors.red,
-            size: 32,
-          ),
+          child: const Icon(Icons.play_circle_filled_rounded, color: Colors.red, size: 32),
         ),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'NotoSans',
-          ),
-        ),
-        subtitle: Text(
-          duration,
-          style: const TextStyle(
-            fontSize: 11,
-            color: kBlack54,
-            fontFamily: 'Lato',
-          ),
-        ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios_rounded,
-          size: 14,
-          color: kGrey400,
-        ),
+        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+        subtitle: Text(duration, style: const TextStyle(fontSize: 11, color: kBlack54, fontFamily: 'Lato')),
+        trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
       ),
     );
   }
@@ -7590,12 +4738,7 @@ class _SwitchTile extends StatelessWidget {
   final Function(bool) onChanged;
   final bool showDivider;
 
-  const _SwitchTile(
-    this.title,
-    this.value,
-    this.onChanged, {
-    this.showDivider = true,
-  });
+  const _SwitchTile(this.title, this.value, this.onChanged, {this.showDivider = true});
 
   @override
   Widget build(BuildContext context) {
@@ -7605,22 +4748,12 @@ class _SwitchTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    fontFamily: 'Lato',
-                  ),
-                ),
-              ),
+              Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato'))),
               AppMiniSwitch(value: value, onChanged: onChanged),
             ],
           ),
         ),
-        if (showDivider)
-          const Divider(height: 1, indent: 16, endIndent: 16, color: kGrey100),
+        if (showDivider) const Divider(height: 1, indent: 16, endIndent: 16, color: kGrey100),
       ],
     );
   }
@@ -7661,6 +4794,10 @@ class _FocusAwareFieldState extends State<_FocusAwareField> {
 
   @override
   Widget build(BuildContext context) {
-    return Focus(focusNode: _focusNode, child: widget.builder(_isFocused));
+    return Focus(
+      focusNode: _focusNode,
+      child: widget.builder(_isFocused),
+    );
   }
 }
+

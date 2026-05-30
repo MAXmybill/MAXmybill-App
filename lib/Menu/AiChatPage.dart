@@ -6,7 +6,11 @@ class AiChatPage extends StatefulWidget {
   final String uid;
   final String role;
 
-  const AiChatPage({super.key, this.uid = '', this.role = 'staff'});
+  const AiChatPage({
+    super.key,
+    this.uid = '',
+    this.role = 'staff',
+  });
 
   @override
   State<AiChatPage> createState() => _AiChatPageState();
@@ -51,22 +55,10 @@ class _AiChatPageState extends State<AiChatPage> {
 
   String _topicFromText(String input) {
     final query = input.toLowerCase();
-    if (query.contains('sales') ||
-        query.contains('customer') ||
-        query.contains('repeat'))
-      return 'sales';
-    if (query.contains('credit') ||
-        query.contains('due') ||
-        query.contains('collection'))
-      return 'credit';
-    if (query.contains('expense') ||
-        query.contains('stock') ||
-        query.contains('purchase'))
-      return 'expense';
-    if (query.contains('staff') ||
-        query.contains('billing') ||
-        query.contains('bill'))
-      return 'staff';
+    if (query.contains('sales') || query.contains('customer') || query.contains('repeat')) return 'sales';
+    if (query.contains('credit') || query.contains('due') || query.contains('collection')) return 'credit';
+    if (query.contains('expense') || query.contains('stock') || query.contains('purchase')) return 'expense';
+    if (query.contains('staff') || query.contains('billing') || query.contains('bill')) return 'staff';
     if (query.contains('report')) return 'report';
     return 'general';
   }
@@ -117,7 +109,12 @@ class _AiChatPageState extends State<AiChatPage> {
     if (_awaitingHelpfulFeedback || _isResettingChat) return;
     setState(() {
       _awaitingHelpfulFeedback = true;
-      _messages.add(const _ChatMessage(text: 'Was I helpful?', isBot: true));
+      _messages.add(
+        const _ChatMessage(
+          text: 'Was I helpful?',
+          isBot: true,
+        ),
+      );
     });
     _scrollToBottom();
   }
@@ -228,9 +225,17 @@ class _AiChatPageState extends State<AiChatPage> {
     }
 
     setState(() {
-      _messages.add(_ChatMessage(text: answer, isBot: false));
       _messages.add(
-        const _ChatMessage(text: 'Please tap Yes or No below.', isBot: true),
+        _ChatMessage(
+          text: answer,
+          isBot: false,
+        ),
+      );
+      _messages.add(
+        const _ChatMessage(
+          text: 'Please tap Yes or No below.',
+          isBot: true,
+        ),
       );
     });
     _scrollToBottom();
@@ -279,11 +284,7 @@ class _AiChatPageState extends State<AiChatPage> {
         ),
         title: const Text(
           'MAXX AI',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: kWhite, fontWeight: FontWeight.bold, fontSize: 16),
         ),
       ),
       body: Column(
@@ -300,15 +301,11 @@ class _AiChatPageState extends State<AiChatPage> {
                 final textColor = msg.isBot ? kBlack87 : kWhite;
 
                 return Align(
-                  alignment: msg.isBot
-                      ? Alignment.centerLeft
-                      : Alignment.centerRight,
+                  alignment:
+                      msg.isBot ? Alignment.centerLeft : Alignment.centerRight,
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     constraints: BoxConstraints(
                       maxWidth: MediaQuery.of(context).size.width * 0.78,
                     ),
@@ -391,10 +388,7 @@ class _AiChatPageState extends State<AiChatPage> {
                           onTap: () => _sendMessage(prompt),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             decoration: BoxDecoration(
                               color: kWhite,
                               borderRadius: BorderRadius.circular(10),
@@ -415,10 +409,7 @@ class _AiChatPageState extends State<AiChatPage> {
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 14,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFF3CD),
                       borderRadius: BorderRadius.circular(12),
@@ -426,11 +417,7 @@ class _AiChatPageState extends State<AiChatPage> {
                     ),
                     child: const Row(
                       children: [
-                        Icon(
-                          Icons.auto_awesome,
-                          color: Color(0xFFE6AE00),
-                          size: 18,
-                        ),
+                        Icon(Icons.auto_awesome, color: Color(0xFFE6AE00), size: 18),
                         SizedBox(width: 8),
                         Text(
                           'Chat box coming soon',
@@ -458,3 +445,4 @@ class _ChatMessage {
 
   const _ChatMessage({required this.text, required this.isBot});
 }
+

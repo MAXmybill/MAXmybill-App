@@ -3,14 +3,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:maxmybill/Menu/KnowledgePage.dart';
 
 class NotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  static final GlobalKey<NavigatorState> navigatorKey =
-      GlobalKey<NavigatorState>();
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   static Map<String, dynamic>? _pendingKnowledgePayload;
 
   // Singleton pattern
@@ -52,6 +52,16 @@ class NotificationService {
   /// Initialize Firebase Messaging
   Future<void> initialize() async {
     try {
+      // Check if device has internet connectivity before attempting FCM
+      final connectivity = Connectivity();
+      final result = await connectivity.checkConnectivity();
+      
+      // Skip FCM initialization if offline
+      if (result.isEmpty || result.contains(ConnectivityResult.none)) {
+        debugPrint('⚠️ No internet connection, skipping FCM initialization for offline mode');
+        return;
+      }
+
       // Request permission for notifications
       NotificationSettings settings = await _messaging.requestPermission(
         alert: true,
@@ -92,7 +102,8 @@ class NotificationService {
         debugPrint('❌ User declined notification permission');
       }
     } catch (e) {
-      debugPrint('❌ Error initializing notifications: $e');
+      debugPrint('⚠️ FCM initialization skipped (likely offline): $e');
+      // Don't rethrow - allow app to continue in offline mode
     }
   }
 
@@ -109,7 +120,8 @@ class NotificationService {
 
       debugPrint('✅ FCM token saved to Firestore');
     } catch (e) {
-      debugPrint('❌ Error saving FCM token: $e');
+      debugPrint('⚠️ Could not save FCM token (likely offline): $e');
+      // Don't rethrow - app should continue even if token can't be saved
     }
   }
 
@@ -152,9 +164,7 @@ class NotificationService {
         'sent': false,
       });
 
-      debugPrint(
-        '✅ Notification queued for ${tokensSnapshot.docs.length} devices',
-      );
+      debugPrint('✅ Notification queued for ${tokensSnapshot.docs.length} devices');
     } catch (e) {
       debugPrint('❌ Error sending notification: $e');
     }
@@ -166,7 +176,8 @@ class NotificationService {
       await _messaging.subscribeToTopic('knowledge_updates');
       debugPrint('✅ Subscribed to knowledge updates');
     } catch (e) {
-      debugPrint('❌ Error subscribing to topic: $e');
+      debugPrint('⚠️ Could not subscribe to topic (likely offline): $e');
+      // Don't rethrow - app should continue even if subscription fails
     }
   }
 
@@ -176,7 +187,9 @@ class NotificationService {
       await _messaging.unsubscribeFromTopic('knowledge_updates');
       debugPrint('✅ Unsubscribed from knowledge updates');
     } catch (e) {
-      debugPrint('❌ Error unsubscribing from topic: $e');
+      debugPrint('⚠️ Could not unsubscribe from topic (likely offline): $e');
+      // Don't rethrow - app should continue even if unsubscription fails
     }
   }
 }
+

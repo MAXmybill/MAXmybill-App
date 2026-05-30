@@ -70,7 +70,7 @@ class _QuotationPageState extends State<QuotationPage> {
 
     _itemDiscountControllers = List.generate(
       widget.cartItems.length,
-      (_) => TextEditingController(),
+          (_) => TextEditingController(),
     );
     _itemDiscounts = List.filled(widget.cartItems.length, 0.0);
     _isItemDiscountPercentage = List.filled(widget.cartItems.length, false);
@@ -80,11 +80,7 @@ class _QuotationPageState extends State<QuotationPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
@@ -101,15 +97,13 @@ class _QuotationPageState extends State<QuotationPage> {
   double get _discountAmount {
     if (_isBillWise) {
       if (_cashDiscountAmount > 0) return _cashDiscountAmount;
-      if (_percentageDiscount > 0)
-        return widget.totalAmount * (_percentageDiscount / 100);
+      if (_percentageDiscount > 0) return widget.totalAmount * (_percentageDiscount / 100);
     } else {
       double totalItemDiscount = 0;
       for (int i = 0; i < widget.cartItems.length; i++) {
         if (i >= _isItemDiscountPercentage.length) break;
         if (_isItemDiscountPercentage[i]) {
-          totalItemDiscount +=
-              widget.cartItems[i].total * (_itemDiscounts[i] / 100);
+          totalItemDiscount += widget.cartItems[i].total * (_itemDiscounts[i] / 100);
         } else {
           totalItemDiscount += _itemDiscounts[i];
         }
@@ -123,6 +117,7 @@ class _QuotationPageState extends State<QuotationPage> {
     if (widget.totalAmount == 0) return 0.0;
     return (_discountAmount / widget.totalAmount) * 100;
   }
+
 
   void _updateItemDiscount(int index, String value) {
     setState(() {
@@ -187,28 +182,15 @@ class _QuotationPageState extends State<QuotationPage> {
         final data = storeDoc.data() as Map<String, dynamic>?;
         return {
           'businessName': data?['businessName'] as String?,
-          'location':
-              data?['location'] as String? ??
-              data?['businessLocation'] as String? ??
-              data?['businessAddress'] as String?,
+          'location': data?['location'] as String? ?? data?['businessLocation'] as String? ?? data?['businessAddress'] as String?,
           'businessPhone': data?['businessPhone'] as String?,
           'gstin': data?['gstin'] as String?,
         };
       }
-      return {
-        'businessName': null,
-        'location': null,
-        'businessPhone': null,
-        'gstin': null,
-      };
+      return {'businessName': null, 'location': null, 'businessPhone': null, 'gstin': null};
     } catch (e) {
       debugPrint('Error fetching business details: $e');
-      return {
-        'businessName': null,
-        'location': null,
-        'businessPhone': null,
-        'gstin': null,
-      };
+      return {'businessName': null, 'location': null, 'businessPhone': null, 'gstin': null};
     }
   }
 
@@ -220,9 +202,7 @@ class _QuotationPageState extends State<QuotationPage> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: kPrimaryColor),
-        ),
+        builder: (context) => const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
       );
 
       // 2. Identity Verification & Store Fetch
@@ -231,9 +211,7 @@ class _QuotationPageState extends State<QuotationPage> {
 
       if (storeId == null) {
         if (mounted) Navigator.pop(context); // Close loading
-        throw Exception(
-          'Identity Error: Store ID not found. Please setup your profile in Settings.',
-        );
+        throw Exception('Identity Error: Store ID not found. Please setup your profile in Settings.');
       }
 
       final storeDoc = await firestoreService.getCurrentStoreDoc();
@@ -241,12 +219,11 @@ class _QuotationPageState extends State<QuotationPage> {
       final staffName = storeData?['ownerName'] ?? 'Staff';
 
       // Generate quotation number with prefix using the service or reuse existing
-      final quotationNumber = widget.editQuotationId != null
+      final quotationNumber = widget.editQuotationId != null 
           ? (widget.initialQuotationData?['quotationNumber'] ?? 'N/A')
           : await () async {
               final prefix = await NumberGeneratorService.getQuotationPrefix();
-              final number =
-                  await NumberGeneratorService.generateQuotationNumber();
+              final number = await NumberGeneratorService.generateQuotationNumber();
               return prefix.isNotEmpty ? '$prefix$number' : number;
             }();
 
@@ -260,65 +237,51 @@ class _QuotationPageState extends State<QuotationPage> {
           });
         } else if (item.taxAmount > 0 && item.taxName != null) {
           final pct = item.taxPercentage ?? 0;
-          final label = pct > 0
-              ? '${item.taxName!} @${pct % 1 == 0 ? pct.toInt() : pct}%'
-              : item.taxName!;
+          final label = pct > 0 ? '${item.taxName!} @${pct % 1 == 0 ? pct.toInt() : pct}%' : item.taxName!;
           taxMap[label] = (taxMap[label] ?? 0.0) + item.taxAmount;
         }
       }
-      final taxList = taxMap.entries
-          .map((e) => {'name': e.key, 'amount': e.value})
-          .toList();
+      final taxList = taxMap.entries.map((e) => {'name': e.key, 'amount': e.value}).toList();
       final totalTax = taxMap.values.fold(0.0, (a, b) => a + b);
 
       // Calculate subtotal (without tax) and total with tax
       final subtotalAmount = widget.cartItems.fold(0.0, (sum, item) {
-        if (item.taxType == 'Tax Included in Price' ||
-            item.taxType == 'Price includes Tax') {
+        if (item.taxType == 'Tax Included in Price' || item.taxType == 'Price includes Tax') {
           return sum + (item.basePrice * item.quantity);
         } else {
           return sum + item.total;
         }
       });
-      final totalWithTax = widget.cartItems.fold(
-        0.0,
-        (sum, item) => sum + item.totalWithTax,
-      );
+      final totalWithTax = widget.cartItems.fold(0.0, (sum, item) => sum + item.totalWithTax);
 
       // 3. Prepare Data
-      final List<Map<String, dynamic>> itemsList = widget.cartItems
-          .asMap()
-          .entries
-          .map((entry) {
-            final index = entry.key;
-            final item = entry.value;
+      final List<Map<String, dynamic>> itemsList = widget.cartItems.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
 
-            double calculatedItemDiscountValue = _isBillWise
-                ? 0.0
-                : (_isItemDiscountPercentage[index]
-                      ? (item.total * (_itemDiscounts[index] / 100))
-                      : _itemDiscounts[index]);
+        double calculatedItemDiscountValue = _isBillWise
+            ? 0.0
+            : (_isItemDiscountPercentage[index]
+            ? (item.total * (_itemDiscounts[index] / 100))
+            : _itemDiscounts[index]);
 
-            return {
-              'productId': item.productId,
-              'name': item.name,
-              'price': item.price,
-              'quantity': item.quantity,
-              'total': item.total,
-              'taxes': item.taxes,
-              'taxName': item.taxName,
-              'taxPercentage': item.taxPercentage ?? 0,
-              'taxAmount': item.taxAmount,
-              'taxType': item.taxType,
-              'totalWithTax': item.totalWithTax,
-              'discount': calculatedItemDiscountValue,
-              'discountInputType': _isBillWise
-                  ? 'none'
-                  : (_isItemDiscountPercentage[index] ? 'percentage' : 'cash'),
-              'finalTotal': item.total - calculatedItemDiscountValue,
-            };
-          })
-          .toList();
+        return {
+          'productId': item.productId,
+          'name': item.name,
+          'price': item.price,
+          'quantity': item.quantity,
+          'total': item.total,
+          'taxes': item.taxes,
+          'taxName': item.taxName,
+          'taxPercentage': item.taxPercentage ?? 0,
+          'taxAmount': item.taxAmount,
+          'taxType': item.taxType,
+          'totalWithTax': item.totalWithTax,
+          'discount': calculatedItemDiscountValue,
+          'discountInputType': _isBillWise ? 'none' : (_isItemDiscountPercentage[index] ? 'percentage' : 'cash'),
+          'finalTotal': item.total - calculatedItemDiscountValue,
+        };
+      }).toList();
 
       final quotationData = {
         'quotationNumber': quotationNumber,
@@ -334,9 +297,7 @@ class _QuotationPageState extends State<QuotationPage> {
         'billWisePercDiscount': _percentageDiscount,
         'customerPhone': _selectedCustomerPhone,
         'customerName': _selectedCustomerName ?? 'Guest',
-        'customerGST': (_selectedCustomerGST?.isEmpty ?? true)
-            ? null
-            : _selectedCustomerGST,
+        'customerGST': (_selectedCustomerGST?.isEmpty ?? true) ? null : _selectedCustomerGST,
         'timestamp': FieldValue.serverTimestamp(),
         'date': DateTime.now().toIso8601String(),
         'staffId': widget.uid,
@@ -347,20 +308,11 @@ class _QuotationPageState extends State<QuotationPage> {
 
       // 4. Save to Subcollection of Store
       if (widget.editQuotationId != null) {
-        await firestoreService.updateDocument(
-          'quotations',
-          widget.editQuotationId!,
-          quotationData,
-        );
+        await firestoreService.updateDocument('quotations', widget.editQuotationId!, quotationData);
       } else {
-        final docRef = await firestoreService.addDocument(
-          'quotations',
-          quotationData,
-        );
+        final docRef = await firestoreService.addDocument('quotations', quotationData);
         // Secondary update to store the generated ID inside the document
-        await firestoreService.updateDocument('quotations', docRef.id, {
-          'quotationId': docRef.id,
-        });
+        await firestoreService.updateDocument('quotations', docRef.id, {'quotationId': docRef.id});
       }
       if (mounted) {
         Navigator.pop(context); // Remove loading indicator
@@ -385,18 +337,14 @@ class _QuotationPageState extends State<QuotationPage> {
               businessGSTIN: businessGSTIN,
               invoiceNumber: quotationNumber,
               dateTime: DateTime.now(),
-              items: widget.cartItems
-                  .map(
-                    (e) => {
-                      'name': e.name,
-                      'quantity': e.quantity,
-                      'price': e.price,
-                      'total': e.totalWithTax,
-                      'taxPercentage': e.taxPercentage ?? 0,
-                      'taxAmount': e.taxAmount,
-                    },
-                  )
-                  .toList(),
+              items: widget.cartItems.map((e) => {
+                'name': e.name,
+                'quantity': e.quantity,
+                'price': e.price,
+                'total': e.totalWithTax,
+                'taxPercentage': e.taxPercentage ?? 0,
+                'taxAmount': e.taxAmount,
+              }).toList(),
               subtotal: subtotalAmount,
               discount: _discountAmount,
               taxes: taxList,
@@ -416,12 +364,12 @@ class _QuotationPageState extends State<QuotationPage> {
       if (mounted) {
         Navigator.pop(context); // Remove loading indicator
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Submission Error: ${e.toString()}'),
-            backgroundColor: kErrorColor,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)),
-          ),
+            SnackBar(
+              content: Text('Submission Error: ${e.toString()}'),
+              backgroundColor: kErrorColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)),
+            )
         );
       }
     } finally {
@@ -431,8 +379,7 @@ class _QuotationPageState extends State<QuotationPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasCustomer =
-        _selectedCustomerName != null && _selectedCustomerName!.isNotEmpty;
+    final bool hasCustomer = _selectedCustomerName != null && _selectedCustomerName!.isNotEmpty;
 
     return Scaffold(
       backgroundColor: kGreyBg,
@@ -441,22 +388,8 @@ class _QuotationPageState extends State<QuotationPage> {
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: HeroIcon(
-            HeroIcons.arrowLeft,
-            color: kWhite,
-            size: R.sp(context, 22),
-          ),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'New Quotation',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: R.sp(context, 18),
-          ),
-        ),
+        leading: IconButton(icon: HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: R.sp(context, 22)), onPressed: () => Navigator.pop(context)),
+        title: Text('New Quotation', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: R.sp(context, 18))),
       ),
       body: Column(
         children: [
@@ -466,36 +399,20 @@ class _QuotationPageState extends State<QuotationPage> {
               onTap: _showCustomerDialog,
               borderRadius: R.radius(context, 16),
               child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: R.sp(context, 16),
-                  vertical: R.sp(context, 12),
-                ),
+                padding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 12)),
                 decoration: BoxDecoration(
                   color: kWhite,
                   borderRadius: R.radius(context, 16),
-                  border: Border.all(
-                    color: hasCustomer ? kPrimaryColor : kOrange,
-                    width: hasCustomer ? 1 : 1.5,
-                  ),
+                  border: Border.all(color: hasCustomer ? kPrimaryColor : kOrange, width: hasCustomer ? 1 : 1.5),
                 ),
                 child: Row(
                   children: [
-                    HeroIcon(
-                      hasCustomer ? HeroIcons.user : HeroIcons.userPlus,
-                      color: hasCustomer ? kPrimaryColor : kOrange,
-                      size: R.sp(context, 24),
-                    ),
+                    HeroIcon(hasCustomer ? HeroIcons.user : HeroIcons.userPlus, color: hasCustomer ? kPrimaryColor : kOrange, size: R.sp(context, 24)),
                     SizedBox(width: R.sp(context, 12)),
                     Expanded(
                       child: Text(
-                        hasCustomer
-                            ? _selectedCustomerName!
-                            : 'Assign Customer',
-                        style: TextStyle(
-                          color: hasCustomer ? kPrimaryColor : kOrange,
-                          fontSize: R.sp(context, 15),
-                          fontWeight: FontWeight.w700,
-                        ),
+                        hasCustomer ? _selectedCustomerName! : 'Assign Customer',
+                        style: TextStyle(color: hasCustomer ? kPrimaryColor : kOrange, fontSize: R.sp(context, 15), fontWeight: FontWeight.w700),
                       ),
                     ),
                     if (hasCustomer)
@@ -507,18 +424,10 @@ class _QuotationPageState extends State<QuotationPage> {
                             _selectedCustomerGST = null;
                           });
                         },
-                        child: HeroIcon(
-                          HeroIcons.xCircle,
-                          color: kErrorColor,
-                          size: R.sp(context, 20),
-                        ),
+                        child: HeroIcon(HeroIcons.xCircle, color: kErrorColor, size: R.sp(context, 20)),
                       )
                     else
-                      HeroIcon(
-                        HeroIcons.chevronRight,
-                        color: kGrey400,
-                        size: R.sp(context, 14),
-                      ),
+                      HeroIcon(HeroIcons.chevronRight, color: kGrey400, size: R.sp(context, 14)),
                   ],
                 ),
               ),
@@ -526,40 +435,19 @@ class _QuotationPageState extends State<QuotationPage> {
           ),
           Expanded(
             child: Container(
-              decoration: BoxDecoration(
-                color: kWhite,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(R.sp(context, 24)),
-                ),
-              ),
+              decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.vertical(top: Radius.circular(R.sp(context, 24)))),
               child: SingleChildScrollView(
                 padding: R.all(context, 16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Discounting Strategy',
-                      style: TextStyle(
-                        fontSize: R.sp(context, 13),
-                        fontWeight: FontWeight.w700,
-                        color: kBlack54,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                    Text('Discounting Strategy', style: TextStyle(fontSize: R.sp(context, 13), fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
                     SizedBox(height: R.sp(context, 12)),
                     Row(
                       children: [
-                        _buildToggleBtn(
-                          'Bill Wise',
-                          _isBillWise,
-                          () => setState(() => _isBillWise = true),
-                        ),
+                        _buildToggleBtn('Bill Wise', _isBillWise, () => setState(() => _isBillWise = true)),
                         SizedBox(width: R.sp(context, 10)),
-                        _buildToggleBtn(
-                          'Item Wise',
-                          !_isBillWise,
-                          () => setState(() => _isBillWise = false),
-                        ),
+                        _buildToggleBtn('Item Wise', !_isBillWise, () => setState(() => _isBillWise = false)),
                       ],
                     ),
                     SizedBox(height: R.sp(context, 20)),
@@ -567,31 +455,12 @@ class _QuotationPageState extends State<QuotationPage> {
                       _buildSummaryRow('Initial Total', widget.totalAmount),
                       SizedBox(height: R.sp(context, 24)),
                       _buildInputLabel('Fixed Cash Discount'),
-                      _buildTextField(
-                        _cashDiscountController,
-                        '0.00',
-                        _updateCashDiscount,
-                        HeroIcons.banknotes,
-                      ),
+                      _buildTextField(_cashDiscountController, '0.00', _updateCashDiscount, HeroIcons.banknotes),
                       SizedBox(height: R.sp(context, 16)),
-                      Center(
-                        child: Text(
-                          'OR',
-                          style: TextStyle(
-                            color: kGrey400,
-                            fontWeight: FontWeight.w800,
-                            fontSize: R.sp(context, 10),
-                          ),
-                        ),
-                      ),
+                      Center(child: Text('OR', style: TextStyle(color: kGrey400, fontWeight: FontWeight.w800, fontSize: R.sp(context, 10)))),
                       SizedBox(height: R.sp(context, 16)),
                       _buildInputLabel('Percentage (%) Discount'),
-                      _buildTextField(
-                        _percentageController,
-                        '0%',
-                        _updatePercentageDiscount,
-                        HeroIcons.receiptPercent,
-                      ),
+                      _buildTextField(_percentageController, '0%', _updatePercentageDiscount, HeroIcons.receiptPercent),
                     ] else ...[
                       _buildItemWiseTable(),
                     ],
@@ -602,7 +471,9 @@ class _QuotationPageState extends State<QuotationPage> {
             ),
           ),
           // Sticky bottom summary area - now outside the scrollable content
-          SafeArea(child: _buildBottomSummaryArea()),
+          SafeArea(
+            child: _buildBottomSummaryArea(),
+          ),
         ],
       ),
     );
@@ -612,68 +483,19 @@ class _QuotationPageState extends State<QuotationPage> {
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(
-            vertical: R.sp(context, 10),
-            horizontal: R.sp(context, 8),
-          ),
-          decoration: BoxDecoration(
-            color: kGreyBg,
-            borderRadius: R.radius(context, 12),
-          ),
+          padding: EdgeInsets.symmetric(vertical: R.sp(context, 10), horizontal: R.sp(context, 8)),
+          decoration: BoxDecoration(color: kGreyBg, borderRadius: R.radius(context, 12)),
           child: Row(
             children: [
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Product',
-                  style: TextStyle(
-                    fontSize: R.sp(context, 10),
-                    fontWeight: FontWeight.w800,
-                    color: kBlack54,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Qty/rate',
-                  style: TextStyle(
-                    fontSize: R.sp(context, 10),
-                    fontWeight: FontWeight.w800,
-                    color: kBlack54,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Total',
-                  style: TextStyle(
-                    fontSize: R.sp(context, 10),
-                    fontWeight: FontWeight.w800,
-                    color: kBlack54,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  'Disc',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: R.sp(context, 10),
-                    fontWeight: FontWeight.w800,
-                    color: kBlack54,
-                  ),
-                ),
-              ),
+              Expanded(flex: 3, child: Text('Product', style: TextStyle(fontSize: R.sp(context, 10), fontWeight: FontWeight.w800, color: kBlack54))),
+              Expanded(flex: 2, child: Text('Qty/rate', style: TextStyle(fontSize: R.sp(context, 10), fontWeight: FontWeight.w800, color: kBlack54))),
+              Expanded(flex: 2, child: Text('Total', style: TextStyle(fontSize: R.sp(context, 10), fontWeight: FontWeight.w800, color: kBlack54))),
+              Expanded(flex: 3, child: Text('Disc', textAlign: TextAlign.right, style: TextStyle(fontSize: R.sp(context, 10), fontWeight: FontWeight.w800, color: kBlack54))),
             ],
           ),
         ),
         SizedBox(height: R.sp(context, 4)),
-        ...widget.cartItems.asMap().entries.map(
-          (entry) => _buildItemTableRow(entry.key, entry.value),
-        ),
+        ...widget.cartItems.asMap().entries.map((entry) => _buildItemTableRow(entry.key, entry.value)),
       ],
     );
   }
@@ -681,49 +503,31 @@ class _QuotationPageState extends State<QuotationPage> {
   Widget _buildItemTableRow(int index, CartItem item) {
     final bool isPerc = _isItemDiscountPercentage[index];
     return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: R.sp(context, 8),
-        horizontal: R.sp(context, 4),
-      ),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: kGreyBg)),
-      ),
+      padding: EdgeInsets.symmetric(vertical: R.sp(context, 8), horizontal: R.sp(context, 4)),
+      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGreyBg))),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
             flex: 3,
             child: Text(
-              item.name,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: R.sp(context, 12),
-                color: kBlack87,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+                item.name,
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 12), color: kBlack87),
+                maxLines: 2, overflow: TextOverflow.ellipsis
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              '${item.quantity}x${AmountFormatter.format(item.price)}',
-              style: TextStyle(
-                fontSize: R.sp(context, 11),
-                color: kBlack54,
-                fontWeight: FontWeight.w700,
-              ),
+                '${item.quantity}x${AmountFormatter.format(item.price)}',
+                style: TextStyle(fontSize: R.sp(context, 11), color: kBlack54, fontWeight: FontWeight.w700)
             ),
           ),
           Expanded(
             flex: 2,
             child: Text(
-              AmountFormatter.format(item.total),
-              style: TextStyle(
-                fontSize: R.sp(context, 12),
-                fontWeight: FontWeight.w800,
-                color: kBlack87,
-              ),
+                AmountFormatter.format(item.total),
+                style: TextStyle(fontSize: R.sp(context, 12), fontWeight: FontWeight.w800, color: kBlack87)
             ),
           ),
           Expanded(
@@ -734,24 +538,9 @@ class _QuotationPageState extends State<QuotationPage> {
                 GestureDetector(
                   onTap: () => _toggleItemDiscountMode(index),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 6),
-                      vertical: R.sp(context, 6),
-                    ),
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withValues(
-                        alpha: (0.1 * 255).toDouble(),
-                      ),
-                      borderRadius: R.radius(context, 6),
-                    ),
-                    child: Text(
-                      isPerc ? "%" : "Amt",
-                      style: TextStyle(
-                        color: kPrimaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: R.sp(context, 10),
-                      ),
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 6), vertical: R.sp(context, 6)),
+                    decoration: BoxDecoration(color: kPrimaryColor.withValues(alpha: (0.1 * 255).toDouble()), borderRadius: R.radius(context, 6)),
+                    child: Text(isPerc ? "%" : "Amt", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold, fontSize: R.sp(context, 10))),
                   ),
                 ),
                 SizedBox(width: R.sp(context, 6)),
@@ -760,15 +549,10 @@ class _QuotationPageState extends State<QuotationPage> {
                   height: R.sp(context, 32),
                   child: TextField(
                     controller: _itemDiscountControllers[index],
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     onChanged: (v) => _updateItemDiscount(index, v),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: R.sp(context, 11),
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 11)),
                     decoration: const InputDecoration(
                       hintText: '0',
                       isDense: true,
@@ -795,39 +579,15 @@ class _QuotationPageState extends State<QuotationPage> {
           _buildFinalSummary(),
           SizedBox(height: R.sp(context, 16)),
           SizedBox(
-            width: double.infinity,
-            height: R.sp(context, 54),
+            width: double.infinity, height: R.sp(context, 54),
             child: ElevatedButton(
               onPressed: _isProcessing ? null : _generateQuotation,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: R.radius(context, 12),
-                ),
-                elevation: 0,
-                disabledBackgroundColor: kPrimaryColor.withOpacity(0.6),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)), elevation: 0, disabledBackgroundColor: kPrimaryColor.withOpacity(0.6)),
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
                 child: _isProcessing
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          color: kWhite,
-                          strokeWidth: 2.5,
-                        ),
-                      )
-                    : Text(
-                        widget.editQuotationId != null
-                            ? 'Update Quotation'
-                            : 'Generate Quotation',
-                        style: TextStyle(
-                          color: kWhite,
-                          fontSize: R.sp(context, 15),
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
+                    ? const SizedBox(height: 22, width: 22, child: CircularProgressIndicator(color: kWhite, strokeWidth: 2.5))
+                    : Text(widget.editQuotationId != null ? 'Update Quotation' : 'Generate Quotation', style: TextStyle(color: kWhite, fontSize: R.sp(context, 15), fontWeight: FontWeight.w700)),
               ),
             ),
           ),
@@ -848,100 +608,51 @@ class _QuotationPageState extends State<QuotationPage> {
             borderRadius: R.radius(context, 8),
             border: Border.all(color: isSelected ? kPrimaryColor : kGrey200),
           ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? kWhite : kBlack54,
-              fontWeight: FontWeight.w700,
-              fontSize: R.sp(context, 11),
-            ),
-          ),
+          child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: isSelected ? kWhite : kBlack54, fontWeight: FontWeight.w700, fontSize: R.sp(context, 11))),
         ),
       ),
     );
   }
 
-  Widget _buildInputLabel(String label) => Padding(
-    padding: EdgeInsets.only(bottom: R.sp(context, 6), left: R.sp(context, 4)),
-    child: Text(
-      label,
-      style: TextStyle(
-        fontWeight: FontWeight.w700,
-        fontSize: R.sp(context, 12),
-        color: kBlack87,
-      ),
-    ),
-  );
+  Widget _buildInputLabel(String label) => Padding(padding: EdgeInsets.only(bottom: R.sp(context, 6), left: R.sp(context, 4)), child: Text(label, style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 12), color: kBlack87)));
 
-  Widget _buildTextField(
-    TextEditingController ctrl,
-    String hint,
-    Function(String) onChange,
-    HeroIcons icon,
-  ) {
+  Widget _buildTextField(TextEditingController ctrl, String hint, Function(String) onChange, HeroIcons icon) {
     return SizedBox(
       height: R.sp(context, 48),
       child: ValueListenableBuilder<TextEditingValue>(
-        valueListenable: ctrl,
-        builder: (context, value, _) {
-          final bool hasText = value.text.isNotEmpty;
-          return TextField(
-            controller: ctrl,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: onChange,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: R.sp(context, 14),
-            ),
-            decoration: InputDecoration(
-              hintText: hint,
-              prefixIcon: Padding(
-                padding: R.all(context, 12),
-                child: HeroIcon(
-                  icon,
-                  color: kPrimaryColor,
-                  size: R.sp(context, 18),
-                ),
-              ),
-              filled: true,
-              fillColor: const Color(0xFFF8F9FA),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: R.sp(context, 16),
-                vertical: R.sp(context, 14),
-              ),
-              border: OutlineInputBorder(
-                borderRadius: R.radius(context, 12),
-                borderSide: BorderSide(
-                  color: hasText ? kPrimaryColor : kGrey200,
-                  width: hasText ? 1.5 : 1.0,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: R.radius(context, 12),
-                borderSide: BorderSide(
-                  color: hasText ? kPrimaryColor : kGrey200,
-                  width: hasText ? 1.5 : 1.0,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: R.radius(context, 12),
-                borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
-              ),
-              labelStyle: TextStyle(
-                color: hasText ? kPrimaryColor : kBlack54,
-                fontSize: R.sp(context, 13),
-                fontWeight: FontWeight.w600,
-              ),
-              floatingLabelStyle: TextStyle(
-                color: hasText ? kPrimaryColor : kPrimaryColor,
-                fontSize: R.sp(context, 11),
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          );
-        },
-      ),
+      valueListenable: ctrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+        controller: ctrl, keyboardType: const TextInputType.numberWithOptions(decimal: true), onChanged: onChange,
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 14)),
+        decoration: InputDecoration(
+          hintText: hint, prefixIcon: Padding(
+            padding: R.all(context, 12),
+            child: HeroIcon(icon, color: kPrimaryColor, size: R.sp(context, 18)),
+          ),
+          filled: true,
+          fillColor: const Color(0xFFF8F9FA),
+          contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 14)),
+          border: OutlineInputBorder(
+            borderRadius: R.radius(context, 12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: R.radius(context, 12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: R.radius(context, 12),
+            borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+          ),
+          labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: R.sp(context, 13), fontWeight: FontWeight.w600),
+          floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: R.sp(context, 11), fontWeight: FontWeight.w900),
+        ),
+      
+);
+      },
+    ),
     );
   }
 
@@ -949,22 +660,8 @@ class _QuotationPageState extends State<QuotationPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: kBlack54,
-            fontWeight: FontWeight.w600,
-            fontSize: R.sp(context, 13),
-          ),
-        ),
-        Text(
-          '$_currencySymbol${amount.toStringAsFixed(2)}',
-          style: TextStyle(
-            fontWeight: FontWeight.w700,
-            fontSize: R.sp(context, 15),
-            color: kBlack87,
-          ),
-        ),
+        Text(label, style: TextStyle(color: kBlack54, fontWeight: FontWeight.w600, fontSize: R.sp(context, 13))),
+        Text('$_currencySymbol${amount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 15), color: kBlack87)),
       ],
     );
   }
@@ -980,9 +677,7 @@ class _QuotationPageState extends State<QuotationPage> {
         });
       } else if (item.taxAmount > 0 && item.taxName != null) {
         final pct = item.taxPercentage ?? 0;
-        final label = pct > 0
-            ? '${item.taxName!} @${pct % 1 == 0 ? pct.toInt() : pct}%'
-            : item.taxName!;
+        final label = pct > 0 ? '${item.taxName!} @${pct % 1 == 0 ? pct.toInt() : pct}%' : item.taxName!;
         taxMap[label] = (taxMap[label] ?? 0.0) + item.taxAmount;
       }
     }
@@ -990,17 +685,13 @@ class _QuotationPageState extends State<QuotationPage> {
 
     // Calculate subtotal (without tax) and total with tax
     final subtotalAmount = widget.cartItems.fold(0.0, (sum, item) {
-      if (item.taxType == 'Tax Included in Price' ||
-          item.taxType == 'Price includes Tax') {
+      if (item.taxType == 'Tax Included in Price' || item.taxType == 'Price includes Tax') {
         return sum + (item.basePrice * item.quantity);
       } else {
         return sum + item.total;
       }
     });
-    final totalWithTax = widget.cartItems.fold(
-      0.0,
-      (sum, item) => sum + item.totalWithTax,
-    );
+    final totalWithTax = widget.cartItems.fold(0.0, (sum, item) => sum + item.totalWithTax);
     final finalTotal = totalWithTax - _discountAmount;
 
     final perc = _discountPercentage;
@@ -1010,54 +701,24 @@ class _QuotationPageState extends State<QuotationPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Subtotal',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                color: kBlack54,
-                fontSize: R.sp(context, 13),
-              ),
-            ),
-            Text(
-              '$_currencySymbol${subtotalAmount.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: R.sp(context, 14),
-                color: kBlack87,
-              ),
-            ),
-          ],
+            Text('Subtotal', style: TextStyle(fontWeight: FontWeight.w600, color: kBlack54, fontSize: R.sp(context, 13))),
+            Text('$_currencySymbol${subtotalAmount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 14), color: kBlack87))
+          ]
         ),
         SizedBox(height: R.sp(context, 8)),
 
         // Tax lines (individual breakdowns)
         if (totalTax > 0) ...[
-          ...taxMap.entries.map(
-            (entry) => Padding(
-              padding: EdgeInsets.only(bottom: R.sp(context, 4)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    entry.key,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: kBlack54,
-                      fontSize: R.sp(context, 13),
-                    ),
-                  ),
-                  Text(
-                    '$_currencySymbol${entry.value.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: R.sp(context, 14),
-                      color: kBlack87,
-                    ),
-                  ),
-                ],
-              ),
+          ...taxMap.entries.map((entry) => Padding(
+            padding: EdgeInsets.only(bottom: R.sp(context, 4)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(entry.key, style: TextStyle(fontWeight: FontWeight.w600, color: kBlack54, fontSize: R.sp(context, 13))),
+                Text('$_currencySymbol${entry.value.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 14), color: kBlack87))
+              ]
             ),
-          ),
+          )),
           SizedBox(height: R.sp(context, 4)),
         ],
 
@@ -1066,23 +727,9 @@ class _QuotationPageState extends State<QuotationPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                'Discount (${perc.toStringAsFixed(1)}%)',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: kBlack54,
-                  fontSize: R.sp(context, 13),
-                ),
-              ),
-              Text(
-                '- $_currencySymbol${_discountAmount.toStringAsFixed(2)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: kErrorColor,
-                  fontSize: R.sp(context, 14),
-                ),
-              ),
-            ],
+              Text('Discount (${perc.toStringAsFixed(1)}%)', style: TextStyle(fontWeight: FontWeight.w600, color: kBlack54, fontSize: R.sp(context, 13))),
+              Text('- $_currencySymbol${_discountAmount.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w700, color: kErrorColor, fontSize: R.sp(context, 14)))
+            ]
           ),
           SizedBox(height: R.sp(context, 8)),
         ],
@@ -1093,23 +740,9 @@ class _QuotationPageState extends State<QuotationPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Net Total',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: R.sp(context, 16),
-                color: kBlack87,
-              ),
-            ),
-            Text(
-              '$_currencySymbol${finalTotal.toStringAsFixed(2)}',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: R.sp(context, 20),
-                color: kPrimaryColor,
-              ),
-            ),
-          ],
+            Text('Net Total', style: TextStyle(fontWeight: FontWeight.w800, fontSize: R.sp(context, 16), color: kBlack87)),
+            Text('$_currencySymbol${finalTotal.toStringAsFixed(2)}', style: TextStyle(fontWeight: FontWeight.w900, fontSize: R.sp(context, 20), color: kPrimaryColor))
+          ]
         ),
       ],
     );

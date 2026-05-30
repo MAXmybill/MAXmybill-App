@@ -46,8 +46,7 @@ class _AddProductPageState extends State<AddProductPage> {
   final TextEditingController _hsnController = TextEditingController();
   final TextEditingController _barcodeController = TextEditingController();
   final TextEditingController _quantityController = TextEditingController();
-  final TextEditingController _lowStockAlertController =
-      TextEditingController();
+  final TextEditingController _lowStockAlertController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _expiryDateController = TextEditingController();
 
@@ -122,9 +121,7 @@ class _AddProductPageState extends State<AddProductPage> {
           }
         }
       });
-    } catch (e) {
-      debugPrint('Error: $e');
-    }
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   Future<void> _addNewTaxToBackend(String name, double percentage) async {
@@ -132,25 +129,13 @@ class _AddProductPageState extends State<AddProductPage> {
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId == null) return;
       final newTaxDoc = {
-        'name': name,
-        'percentage': percentage,
-        'isActive': true,
-        'productCount': 0,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+        'name': name, 'percentage': percentage, 'isActive': true, 'productCount': 0,
+        'createdAt': FieldValue.serverTimestamp(), 'updatedAt': FieldValue.serverTimestamp(),
       };
-      final docRef = await FirebaseFirestore.instance
-          .collection('store')
-          .doc(storeId)
-          .collection('taxes')
-          .add(newTaxDoc);
+      final docRef = await FirebaseFirestore.instance.collection('store').doc(storeId).collection('taxes').add(newTaxDoc);
       await _fetchTaxesFromBackend();
-      setState(() {
-        _selectedTaxIds.add(docRef.id);
-      });
-    } catch (e) {
-      debugPrint('Error: $e');
-    }
+      setState(() { _selectedTaxIds.add(docRef.id); });
+    } catch (e) { debugPrint('Error: $e'); }
   }
 
   Future<void> _checkPermission() async {
@@ -167,24 +152,15 @@ class _AddProductPageState extends State<AddProductPage> {
     final storeId = await FirestoreService().getCurrentStoreId();
     if (storeId == null) return;
     setState(() {
-      _unitsStream = FirebaseFirestore.instance
-          .collection('store')
-          .doc(storeId)
-          .collection('units')
-          .snapshots()
+      _unitsStream = FirebaseFirestore.instance.collection('store').doc(storeId).collection('units').snapshots()
           .map((snapshot) => snapshot.docs.map((doc) => doc.id).toList());
     });
   }
 
   void _generateProductCode() async {
     try {
-      final productsCollection = await FirestoreService().getStoreCollection(
-        'Products',
-      );
-      final snap = await productsCollection
-          .orderBy('productCode', descending: true)
-          .limit(1)
-          .get();
+      final productsCollection = await FirestoreService().getStoreCollection('Products');
+      final snap = await productsCollection.orderBy('productCode', descending: true).limit(1).get();
       int next = 1001;
       if (snap.docs.isNotEmpty) {
         final code = snap.docs.first['productCode'].toString();
@@ -193,21 +169,14 @@ class _AddProductPageState extends State<AddProductPage> {
       }
       setState(() => _productCodeController.text = '$next');
     } catch (e) {
-      setState(
-        () => _productCodeController.text =
-            '${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}',
-      );
+      setState(() => _productCodeController.text = '${DateTime.now().millisecondsSinceEpoch.toString().substring(8)}');
     }
   }
 
   Future<bool> _checkProductCodeExists(String code) async {
     try {
-      final productsCollection = await FirestoreService().getStoreCollection(
-        'Products',
-      );
-      final existingProduct = await productsCollection
-          .where('productCode', isEqualTo: code)
-          .get();
+      final productsCollection = await FirestoreService().getStoreCollection('Products');
+      final existingProduct = await productsCollection.where('productCode', isEqualTo: code).get();
       if (existingProduct.docs.isNotEmpty) {
         final data = existingProduct.docs.first.data() as Map<String, dynamic>?;
         final productName = data?['itemName'] ?? 'Unknown Product';
@@ -217,39 +186,28 @@ class _AddProductPageState extends State<AddProductPage> {
               content: Text('Code is already mapped with $productName'),
               backgroundColor: kErrorColor,
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           );
         }
         return true;
       }
       return false;
-    } catch (e) {
-      return false;
-    }
+    } catch (e) { return false; }
   }
 
   Future<void> _scanBarcode() async {
-    final result = await Navigator.push(
-      context,
-      CupertinoPageRoute(
-        builder: (context) => BarcodeScannerPage(
-          onBarcodeScanned: (barcode) => Navigator.pop(context, barcode),
-        ),
-      ),
-    );
-    if (result != null && mounted)
-      setState(() => _barcodeController.text = result);
+    final result = await Navigator.push(context, CupertinoPageRoute(
+      builder: (context) => BarcodeScannerPage(onBarcodeScanned: (barcode) => Navigator.pop(context, barcode)),
+    ));
+    if (result != null && mounted) setState(() => _barcodeController.text = result);
   }
 
   void _showImportExcelDialog() async {
     // Plan check - Bulk Product Upload requires paid plan
     final canBulkUpload = await PlanPermissionHelper.canUseBulkInventory();
     if (!canBulkUpload) {
-      if (mounted)
-        PlanPermissionHelper.showUpgradeDialog(context, 'Bulk Product Upload');
+      if (mounted) PlanPermissionHelper.showUpgradeDialog(context, 'Bulk Product Upload');
       return;
     }
     if (!mounted) return;
@@ -297,7 +255,11 @@ class _AddProductPageState extends State<AddProductPage> {
               // Description
               const Text(
                 'Download the template, fill it with product data, and upload it back.',
-                style: TextStyle(fontSize: 13, color: kBlack54, height: 1.5),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: kBlack54,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -309,16 +271,13 @@ class _AddProductPageState extends State<AddProductPage> {
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     // Download first, then close dialog and show result
-                    final result =
-                        await ExcelImportService.downloadProductTemplate();
+                    final result = await ExcelImportService.downloadProductTemplate();
                     if (!mounted) return;
 
                     // Close the import dialog
                     Navigator.pop(dialogContext);
 
-                    if (result != null &&
-                        !result.startsWith('Error') &&
-                        !result.toLowerCase().contains('denied')) {
+                    if (result != null && !result.startsWith('Error') && !result.toLowerCase().contains('denied')) {
                       // Show success dialog using STATE context
                       if (!mounted) return;
                       showDialog(
@@ -326,9 +285,7 @@ class _AddProductPageState extends State<AddProductPage> {
                         builder: (BuildContext successDialogContext) {
                           final fileName = result.split(RegExp(r'[/\\]')).last;
                           return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
                             title: Row(
                               children: [
@@ -336,37 +293,24 @@ class _AddProductPageState extends State<AddProductPage> {
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        kGoogleGreen,
-                                        kGoogleGreen.withValues(alpha: 0.7),
-                                      ],
+                                      colors: [kGoogleGreen, kGoogleGreen.withValues(alpha: 0.7)],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: kGoogleGreen.withValues(
-                                          alpha: 0.3,
-                                        ),
+                                        color: kGoogleGreen.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                  child: const HeroIcon(
-                                    HeroIcons.checkCircle,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
+                                  child: const HeroIcon(HeroIcons.checkCircle, color: Colors.white, size: 28),
                                 ),
                                 const SizedBox(width: 16),
                                 const Expanded(
                                   child: Text(
                                     'Success!',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
+                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
                                 ),
                               ],
@@ -377,26 +321,17 @@ class _AddProductPageState extends State<AddProductPage> {
                               children: [
                                 const Text(
                                   'Product template has been downloaded to Downloads/MAXmybill folder',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: kBlack54,
-                                    height: 1.4,
-                                  ),
+                                  style: TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
                                 ),
                                 const SizedBox(height: 16),
                                 Container(
                                   padding: const EdgeInsets.all(14),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue.shade50,
-                                        Colors.blue.shade100,
-                                      ],
+                                      colors: [Colors.blue.shade50, Colors.blue.shade100],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.blue.shade200,
-                                    ),
+                                    border: Border.all(color: Colors.blue.shade200),
                                   ),
                                   child: Row(
                                     children: [
@@ -404,21 +339,14 @@ class _AddProductPageState extends State<AddProductPage> {
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
                                           color: kPrimaryColor,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
+                                          borderRadius: BorderRadius.circular(8),
                                         ),
-                                        child: const HeroIcon(
-                                          HeroIcons.documentText,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
+                                        child: const HeroIcon(HeroIcons.documentText, color: Colors.white, size: 20),
                                       ),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
                                               fileName,
@@ -433,10 +361,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                             const SizedBox(height: 4),
                                             Text(
                                               'Excel Template',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade600,
-                                              ),
+                                              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                                             ),
                                           ],
                                         ),
@@ -446,35 +371,20 @@ class _AddProductPageState extends State<AddProductPage> {
                                 ),
                                 const SizedBox(height: 12),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: kGoogleGreen.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: kGoogleGreen.withValues(
-                                        alpha: 0.3,
-                                      ),
-                                    ),
+                                    border: Border.all(color: kGoogleGreen.withValues(alpha: 0.3)),
                                   ),
                                   child: const Row(
                                     children: [
-                                      HeroIcon(
-                                        HeroIcons.folder,
-                                        color: kGoogleGreen,
-                                        size: 18,
-                                      ),
+                                      HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
                                       SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           'Check Downloads/MAXmybill folder',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: kGoogleGreen,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                          style: TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                     ],
@@ -484,21 +394,11 @@ class _AddProductPageState extends State<AddProductPage> {
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(successDialogContext),
+                                onPressed: () => Navigator.pop(successDialogContext),
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                                 ),
-                                child: const Text(
-                                  'Close',
-                                  style: TextStyle(
-                                    color: kBlack54,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                                child: const Text('Close', style: TextStyle(color: kBlack54, fontSize: 14)),
                               ),
                             ],
                           );
@@ -507,9 +407,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     } else {
                       stateScaffoldMessenger.showSnackBar(
                         SnackBar(
-                          content: Text(
-                            result ?? 'Failed to download template',
-                          ),
+                          content: Text(result ?? 'Failed to download template'),
                           backgroundColor: kErrorColor,
                         ),
                       );
@@ -561,11 +459,8 @@ class _AddProductPageState extends State<AddProductPage> {
                     try {
                       // First, pick the Excel file (BEFORE closing import dialog)
                       print('📂 Opening file picker for products...');
-                      final fileBytes =
-                          await ExcelImportService.pickExcelFile();
-                      print(
-                        '📂 File picked: ${fileBytes != null ? '${fileBytes.length} bytes' : 'null (cancelled)'}',
-                      );
+                      final fileBytes = await ExcelImportService.pickExcelFile();
+                      print('📂 File picked: ${fileBytes != null ? '${fileBytes.length} bytes' : 'null (cancelled)'}');
 
                       // If user cancelled file picker, just return (import dialog stays open)
                       if (fileBytes == null) {
@@ -575,9 +470,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
                       // Now close the import dialog since we have a file
                       if (!mounted) return;
-                      Navigator.pop(
-                        dialogContext,
-                      ); // Close import dialog using dialog's context
+                      Navigator.pop(dialogContext); // Close import dialog using dialog's context
 
                       // File was selected, now show loading dialog
                       if (!mounted) return;
@@ -588,15 +481,12 @@ class _AddProductPageState extends State<AddProductPage> {
                       if (!mounted) return;
 
                       showDialog(
-                        context:
-                            context, // Use fresh context from mounted widget
+                        context: context, // Use fresh context from mounted widget
                         barrierDismissible: false,
                         builder: (loadingContext) => PopScope(
                           canPop: false,
                           child: Dialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
                             child: Padding(
                               padding: const EdgeInsets.all(28),
@@ -606,9 +496,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: kPrimaryColor.withValues(
-                                        alpha: 0.1,
-                                      ),
+                                      color: kPrimaryColor.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const HeroIcon(
@@ -640,9 +528,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: const LinearProgressIndicator(
                                       backgroundColor: kGrey200,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        kPrimaryColor,
-                                      ),
+                                      valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                                       minHeight: 6,
                                     ),
                                   ),
@@ -655,14 +541,8 @@ class _AddProductPageState extends State<AddProductPage> {
 
                       // Process the Excel file bytes
                       print('🔄 Processing Excel file for products...');
-                      final result =
-                          await ExcelImportService.processProductsExcel(
-                            fileBytes,
-                            widget.uid,
-                          );
-                      print(
-                        '✅ Result: ${result['success']}, Success: ${result['successCount']}, Failed: ${result['failCount']}',
-                      );
+                      final result = await ExcelImportService.processProductsExcel(fileBytes, widget.uid);
+                      print('✅ Result: ${result['success']}, Success: ${result['successCount']}, Failed: ${result['failCount']}');
 
                       // Close loading dialog
                       if (!mounted) return;
@@ -682,9 +562,7 @@ class _AddProductPageState extends State<AddProductPage> {
                           context: context,
                           barrierDismissible: false,
                           builder: (successDialogContext) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
                             title: Row(
                               children: [
@@ -692,37 +570,24 @@ class _AddProductPageState extends State<AddProductPage> {
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        kGoogleGreen,
-                                        kGoogleGreen.withValues(alpha: 0.7),
-                                      ],
+                                      colors: [kGoogleGreen, kGoogleGreen.withValues(alpha: 0.7)],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: kGoogleGreen.withValues(
-                                          alpha: 0.3,
-                                        ),
+                                        color: kGoogleGreen.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                  child: const HeroIcon(
-                                    HeroIcons.checkCircle,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
+                                  child: const HeroIcon(HeroIcons.checkCircle, color: Colors.white, size: 28),
                                 ),
                                 const SizedBox(width: 16),
                                 const Expanded(
                                   child: Text(
                                     'Import Complete!',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
                                 ),
                               ],
@@ -735,20 +600,13 @@ class _AddProductPageState extends State<AddProductPage> {
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        Colors.green.shade50,
-                                        Colors.green.shade100,
-                                      ],
+                                      colors: [Colors.green.shade50, Colors.green.shade100],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     children: [
-                                      const HeroIcon(
-                                        HeroIcons.cube,
-                                        color: kGoogleGreen,
-                                        size: 24,
-                                      ),
+                                      const HeroIcon(HeroIcons.cube, color: kGoogleGreen, size: 24),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
@@ -773,11 +631,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const HeroIcon(
-                                          HeroIcons.exclamationTriangle,
-                                          color: kOrange,
-                                          size: 24,
-                                        ),
+                                        const HeroIcon(HeroIcons.exclamationTriangle, color: kOrange, size: 24),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
@@ -795,39 +649,17 @@ class _AddProductPageState extends State<AddProductPage> {
                                 ],
                                 if (errors.isNotEmpty) ...[
                                   const SizedBox(height: 16),
-                                  const Text(
-                                    'Issues:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  const Text('Issues:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   const SizedBox(height: 8),
                                   Container(
-                                    constraints: const BoxConstraints(
-                                      maxHeight: 120,
-                                    ),
+                                    constraints: const BoxConstraints(maxHeight: 120),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: errors
-                                            .take(5)
-                                            .map(
-                                              (e) => Padding(
-                                                padding: const EdgeInsets.only(
-                                                  bottom: 4,
-                                                ),
-                                                child: Text(
-                                                  '• $e',
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: kBlack54,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: errors.take(5).map((e) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 4),
+                                          child: Text('• $e', style: const TextStyle(fontSize: 12, color: kBlack54)),
+                                        )).toList(),
                                       ),
                                     ),
                                   ),
@@ -836,11 +668,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
                                         '... and ${errors.length - 5} more',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: kBlack54,
-                                          fontStyle: FontStyle.italic,
-                                        ),
+                                        style: const TextStyle(fontSize: 11, color: kBlack54, fontStyle: FontStyle.italic),
                                       ),
                                     ),
                                 ],
@@ -849,15 +677,10 @@ class _AddProductPageState extends State<AddProductPage> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(
-                                    successDialogContext,
-                                  ); // Close success dialog
+                                  Navigator.pop(successDialogContext); // Close success dialog
                                 },
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                   backgroundColor: kPrimaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
@@ -866,10 +689,7 @@ class _AddProductPageState extends State<AddProductPage> {
                                 ),
                                 child: const Text(
                                   'Done',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ],
@@ -879,9 +699,7 @@ class _AddProductPageState extends State<AddProductPage> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                result['message'] ?? 'Import failed',
-                              ),
+                              content: Text(result['message'] ?? 'Import failed'),
                               backgroundColor: kErrorColor,
                             ),
                           );
@@ -900,9 +718,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              'Error during import: ${e.toString()}',
-                            ),
+                            content: Text('Error during import: ${e.toString()}'),
                             backgroundColor: kErrorColor,
                             duration: const Duration(seconds: 4),
                           ),
@@ -948,42 +764,30 @@ class _AddProductPageState extends State<AddProductPage> {
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          context.tr(widget.productId != null ? 'edit_product' : 'add_product'),
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: kWhite,
-            fontSize: 18,
-          ),
-        ),
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: widget.productId == null
-            ? [
-                FutureBuilder<bool>(
-                  future: _canUseBulkInventoryFuture,
-                  builder: (context, snapshot) {
-                    final isLocked = !(snapshot.data ?? false);
-                    return IconButton(
-                      icon: PremiumLockIconWrapper(
-                        isLocked: isLocked,
-                        child: HeroIcon(
-                          HeroIcons.arrowUpTray,
-                          color: isLocked ? kPremiumLockIcon : kWhite,
-                          size: 22,
-                        ),
-                      ),
-                      onPressed: () => _showImportExcelDialog(),
-                      tooltip: isLocked
-                          ? 'Import from Excel (Premium)'
-                          : 'Import from Excel',
-                    );
-                  },
+        title: Text(context.tr(widget.productId != null ? 'edit_product' : 'add_product'),
+            style: const TextStyle(fontWeight: FontWeight.w700, color: kWhite, fontSize: 18)),
+        leading: IconButton(icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20), onPressed: () => Navigator.pop(context)),
+        actions: widget.productId == null ? [
+          FutureBuilder<bool>(
+            future: _canUseBulkInventoryFuture,
+            builder: (context, snapshot) {
+              final isLocked = !(snapshot.data ?? false);
+              return IconButton(
+                icon: PremiumLockIconWrapper(
+                  isLocked: isLocked,
+                  badgeSize: 14,
+                  child: HeroIcon(
+                    HeroIcons.arrowUpTray,
+                    color: isLocked ? kPremiumLockIcon : kWhite,
+                    size: 22,
+                  ),
                 ),
-              ]
-            : null,
+                onPressed: () => _showImportExcelDialog(),
+                tooltip: isLocked ? 'Import from Excel (Premium)' : 'Import from Excel',
+              );
+            },
+          ),
+        ] : null,
       ),
       body: Form(
         key: _formKey,
@@ -1006,9 +810,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       controller: _priceController,
                       label: "Price",
                       icon: HeroIcons.banknotes,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       isRequired: true,
                       hint: "0.00",
                     ),
@@ -1082,9 +884,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   controller: _costPriceController,
                   label: "Total Cost Price",
                   icon: HeroIcons.shoppingCart,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   hint: "0.00",
                 ),
                 const SizedBox(height: 6),
@@ -1104,9 +904,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   controller: _mrpController,
                   label: "MRP",
                   icon: HeroIcons.tag,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   hint: "Maximum Retail Price",
                 ),
                 const SizedBox(height: 16),
@@ -1166,85 +964,53 @@ class _AddProductPageState extends State<AddProductPage> {
       builder: (context, value, _) {
         final bool isFilled = value.text.isNotEmpty;
         return ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextFormField(
-              controller: controller,
-              keyboardType: keyboardType,
-              maxLines: maxLines,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: kBlack87,
-              ),
-              decoration: InputDecoration(
-                labelText: label,
-                hintText: hint,
-                prefixIcon: HeroIcon(
-                  icon,
-                  color: isFilled ? (iconColor ?? kPrimaryColor) : kBlack54,
-                  size: 20,
-                ),
-                suffixIcon: suffixIcon != null
-                    ? IconButton(
-                        icon: HeroIcon(
-                          suffixIcon,
-                          color: kPrimaryColor,
-                          size: 20,
-                        ),
-                        onPressed: onSuffixTap,
-                      )
-                    : null,
-
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kErrorColor),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              validator: isRequired
-                  ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-                  : null,
-            );
-          },
-        );
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            prefixIcon: HeroIcon(icon, color: isFilled ? (iconColor ?? kPrimaryColor) : kBlack54, size: 20),
+            suffixIcon: suffixIcon != null
+                ? IconButton(icon: HeroIcon(suffixIcon, color: kPrimaryColor, size: 20), onPressed: onSuffixTap)
+                : null,
+            
+            
+            
+            
+            
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kErrorColor),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+          validator: isRequired ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+        
+);
+      },
+    );
       },
     );
   }
@@ -1269,14 +1035,9 @@ class _AddProductPageState extends State<AddProductPage> {
             height: 48,
             width: 48,
             decoration: BoxDecoration(
-              color: _isFavorite
-                  ? kPrimaryColor.withValues(alpha: 0.1)
-                  : kWhite,
+              color: _isFavorite ? kPrimaryColor.withValues(alpha: 0.1) : kWhite,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _isFavorite ? kPrimaryColor : kGrey200,
-                width: 1.5,
-              ),
+              border: Border.all(color: _isFavorite ? kPrimaryColor : kGrey200, width: 1.5),
             ),
             child: HeroIcon(
               HeroIcons.heart,
@@ -1338,18 +1099,8 @@ class _AddProductPageState extends State<AddProductPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      "Track Stock",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                        color: kBlack87,
-                      ),
-                    ),
-                    _buildKnobSwitch(
-                      _stockEnabled,
-                      (v) => setState(() => _stockEnabled = v),
-                    ),
+                    const Text("Track Stock", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: kBlack87)),
+                    _buildKnobSwitch(_stockEnabled, (v) => setState(() => _stockEnabled = v)),
                   ],
                 ),
               ),
@@ -1361,9 +1112,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   controller: _quantityController,
                   label: "Initial Stock",
                   icon: HeroIcons.archiveBox,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   isRequired: true,
                   hint: "0.00",
                 ),
@@ -1387,9 +1136,7 @@ class _AddProductPageState extends State<AddProductPage> {
                   controller: _lowStockAlertController,
                   label: "Low Stock Alert",
                   icon: HeroIcons.bellAlert,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   hint: "0.00",
                   iconColor: kOrange,
                 ),
@@ -1400,20 +1147,14 @@ class _AddProductPageState extends State<AddProductPage> {
                 child: _wrapDropdown(
                   "Alert Type",
                   DropdownButton<String>(
-                    value: ['Count', 'Percentage'].contains(_lowStockAlertType)
-                        ? _lowStockAlertType
-                        : 'Count',
+                    value: ['Count', 'Percentage'].contains(_lowStockAlertType) ? _lowStockAlertType : 'Count',
                     isExpanded: true,
                     isDense: true,
                     items: const [
                       DropdownMenuItem(value: 'Count', child: Text('Count')),
-                      DropdownMenuItem(
-                        value: 'Percentage',
-                        child: Text('Percentage'),
-                      ),
+                      DropdownMenuItem(value: 'Percentage', child: Text('Percentage')),
                     ],
-                    onChanged: (val) =>
-                        setState(() => _lowStockAlertType = val!),
+                    onChanged: (val) => setState(() => _lowStockAlertType = val!),
                   ),
                 ),
               ),
@@ -1436,14 +1177,7 @@ class _AddProductPageState extends State<AddProductPage> {
         children: [
           HeroIcon(HeroIcons.arrowPath, color: kGoogleGreen, size: 18),
           SizedBox(width: 12),
-          Text(
-            "Infinity Stock Enabled",
-            style: TextStyle(
-              color: kGoogleGreen,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
-            ),
-          ),
+          Text("Infinity Stock Enabled", style: TextStyle(color: kGoogleGreen, fontWeight: FontWeight.w800, fontSize: 12)),
         ],
       ),
     );
@@ -1458,48 +1192,25 @@ class _AddProductPageState extends State<AddProductPage> {
           builder: (context, snapshot) {
             List<String> categories = ['General'];
             if (snapshot.hasData) {
-              categories.addAll(
-                snapshot.data!.docs
-                    .map(
-                      (doc) =>
-                          (doc.data() as Map<String, dynamic>)['name']
-                              as String,
-                    )
-                    .where((name) => name != 'General')
-                    .toList(),
-              );
+              categories.addAll(snapshot.data!.docs
+                  .map((doc) => (doc.data() as Map<String, dynamic>)['name'] as String)
+                  .where((name) => name != 'General')
+                  .toList());
             }
             return _wrapDropdown(
               "Category",
               DropdownButton<String>(
-                value: categories.contains(_selectedCategory)
-                    ? _selectedCategory
-                    : categories.first,
+                value: categories.contains(_selectedCategory) ? _selectedCategory : categories.first,
                 isExpanded: true,
                 isDense: true,
                 items: [
-                  ...categories.map(
-                    (e) => DropdownMenuItem(value: e, child: Text(e)),
-                  ),
-                  const DropdownMenuItem(
-                    value: '__create_new__',
-                    child: Text(
-                      '+ New Category',
-                      style: TextStyle(
-                        color: kPrimaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                  ...categories.map((e) => DropdownMenuItem(value: e, child: Text(e))),
+                  const DropdownMenuItem(value: '__create_new__', child: Text('+ New Category', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold))),
                 ],
                 onChanged: (val) async {
                   if (val == '__create_new__') {
-                    final newCategory = await showDialog<String>(
-                      context: context,
-                      builder: (ctx) => AddCategoryPopup(uid: widget.uid),
-                    );
-                    if (newCategory != null && newCategory.isNotEmpty)
-                      setState(() => _selectedCategory = newCategory);
+                    final newCategory = await showDialog<String>(context: context, builder: (ctx) => AddCategoryPopup(uid: widget.uid));
+                    if (newCategory != null && newCategory.isNotEmpty) setState(() => _selectedCategory = newCategory);
                   } else {
                     setState(() => _selectedCategory = val!);
                   }
@@ -1517,29 +1228,14 @@ class _AddProductPageState extends State<AddProductPage> {
       stream: _getUnitsWithMetadata(),
       builder: (context, snapshot) {
         // Default units that cannot be deleted
-        final defaultUnits = [
-          'Piece',
-          'Kg',
-          'Liter',
-          'Box',
-          'Nos',
-          'Meter',
-          'Feet',
-          'Gram',
-          'ML',
-        ];
+        final defaultUnits = ['Piece', 'Kg', 'Liter', 'Box', 'Nos', 'Meter', 'Feet', 'Gram', 'ML'];
         final customUnits = snapshot.data ?? [];
-        final allUnits = [
-          ...defaultUnits,
-          ...customUnits.map((u) => u['name'] as String),
-        ];
+        final allUnits = [...defaultUnits, ...customUnits.map((u) => u['name'] as String)];
 
         return _wrapDropdown(
           "Measurement Unit",
           DropdownButton<String>(
-            value: allUnits.contains(_selectedStockUnit)
-                ? _selectedStockUnit
-                : allUnits.first,
+            value: allUnits.contains(_selectedStockUnit) ? _selectedStockUnit : allUnits.first,
             isExpanded: true,
             isDense: true,
             items: allUnits.map((unit) {
@@ -1554,11 +1250,7 @@ class _AddProductPageState extends State<AddProductPage> {
                         onTap: () => _showDeleteUnitDialog(unit),
                         child: const Padding(
                           padding: EdgeInsets.only(left: 8),
-                          child: HeroIcon(
-                            HeroIcons.trash,
-                            color: kErrorColor,
-                            size: 18,
-                          ),
+                          child: HeroIcon(HeroIcons.trash, color: kErrorColor, size: 18),
                         ),
                       ),
                   ],
@@ -1584,11 +1276,7 @@ class _AddProductPageState extends State<AddProductPage> {
         .doc(storeId)
         .collection('units')
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => {'name': doc.id, 'id': doc.id})
-              .toList(),
-        );
+        .map((snapshot) => snapshot.docs.map((doc) => {'name': doc.id, 'id': doc.id}).toList());
   }
 
   void _showDeleteUnitDialog(String unitName) {
@@ -1596,18 +1284,10 @@ class _AddProductPageState extends State<AddProductPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          "Delete Unit?",
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
-        content: Text(
-          'Are you sure you want to delete "$unitName"? Products using this unit will not be affected.',
-        ),
+        title: const Text("Delete Unit?", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        content: Text('Are you sure you want to delete "$unitName"? Products using this unit will not be affected.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               final storeId = await FirestoreService().getCurrentStoreId();
@@ -1630,46 +1310,29 @@ class _AddProductPageState extends State<AddProductPage> {
                     content: Text('Unit "$unitName" deleted'),
                     backgroundColor: kGoogleGreen,
                     behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 );
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: kErrorColor),
-            child: const Text(
-              "Delete",
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-            ),
-          ),
+            child: const Text("Delete", style: TextStyle(color: kWhite, fontWeight: FontWeight.bold)),
+          )
         ],
       ),
     );
   }
 
   Widget _buildTaxDropdown() {
-    final selectedTaxes = _fetchedTaxes
-        .where((t) => _selectedTaxIds.contains(t['id']))
-        .toList();
-    final combinedPercentage = selectedTaxes.fold<double>(
-      0.0,
-      (sum, t) => sum + (t['percentage'] as double),
-    );
+    final selectedTaxes = _fetchedTaxes.where((t) => _selectedTaxIds.contains(t['id'])).toList();
+    final combinedPercentage = selectedTaxes.fold<double>(0.0, (sum, t) => sum + (t['percentage'] as double));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Text(
-              "Tax Rates",
-              style: TextStyle(
-                color: kBlack54,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const Text("Tax Rates", style: TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.w600)),
             const Spacer(),
             if (combinedPercentage > 0)
               Container(
@@ -1680,21 +1343,13 @@ class _AddProductPageState extends State<AddProductPage> {
                 ),
                 child: Text(
                   'Total: ${combinedPercentage.toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                    color: kPrimaryColor,
-                  ),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kPrimaryColor),
                 ),
               ),
             const SizedBox(width: 8),
             InkWell(
               onTap: _showAddTaxDialog,
-              child: const HeroIcon(
-                HeroIcons.plusCircle,
-                color: kPrimaryColor,
-                size: 22,
-              ),
+              child: const HeroIcon(HeroIcons.plusCircle, color: kPrimaryColor, size: 22),
             ),
           ],
         ),
@@ -1702,14 +1357,8 @@ class _AddProductPageState extends State<AddProductPage> {
         if (_fetchedTaxes.isEmpty)
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: kGreyBg,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'No taxes defined. Tap + to add.',
-              style: TextStyle(color: kBlack54, fontSize: 12),
-            ),
+            decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(10)),
+            child: const Text('No taxes defined. Tap + to add.', style: TextStyle(color: kBlack54, fontSize: 12)),
           )
         else
           Wrap(
@@ -1741,9 +1390,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 checkmarkColor: kWhite,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(
-                    color: isSelected ? kPrimaryColor : kGrey200,
-                  ),
+                  side: BorderSide(color: isSelected ? kPrimaryColor : kGrey200),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               );
@@ -1754,21 +1401,14 @@ class _AddProductPageState extends State<AddProductPage> {
   }
 
   Widget _buildTaxTypeSelector() {
-    final items = [
-      'Tax Included in Price',
-      'Add Tax at Billing',
-      'No Tax Applied',
-      'Exempt from Tax',
-    ];
+    final items = ['Tax Included in Price', 'Add Tax at Billing', 'No Tax Applied', 'Exempt from Tax'];
     return _wrapDropdown(
       "Tax Treatment",
       DropdownButton<String>(
         value: items.contains(_selectedTaxType) ? _selectedTaxType : items[1],
         isExpanded: true,
         isDense: true,
-        items: items
-            .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-            .toList(),
+        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
         onChanged: (v) => setState(() => _selectedTaxType = v!),
       ),
     );
@@ -1795,18 +1435,14 @@ class _AddProductPageState extends State<AddProductPage> {
           firstDate: today,
           lastDate: lastDate,
           builder: (context, child) => Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: const ColorScheme.light(primary: kPrimaryColor),
-            ),
+            data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: kPrimaryColor)),
             child: child!,
           ),
         );
         if (picked != null) {
           setState(() {
             _selectedExpiryDate = picked;
-            _expiryDateController.text = DateFormat(
-              'dd/MM/yyyy',
-            ).format(picked);
+            _expiryDateController.text = DateFormat('dd/MM/yyyy').format(picked);
           });
         }
       },
@@ -1827,21 +1463,13 @@ class _AddProductPageState extends State<AddProductPage> {
       decoration: InputDecoration(
         labelText: label,
         labelStyle: const TextStyle(color: kBlack54, fontSize: 13),
+        
+        
+        
 
-        suffixIcon: onAdd != null
-            ? IconButton(
-                icon: const HeroIcon(
-                  HeroIcons.plusCircle,
-                  color: kPrimaryColor,
-                  size: 22,
-                ),
-                onPressed: onAdd,
-              )
-            : null,
-        floatingLabelStyle: const TextStyle(
-          color: kPrimaryColor,
-          fontWeight: FontWeight.w800,
-        ),
+        
+        suffixIcon: onAdd != null ? IconButton(icon: const HeroIcon(HeroIcons.plusCircle, color: kPrimaryColor, size: 22), onPressed: onAdd) : null,
+        floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800),
       ),
       child: DropdownButtonHideUnderline(child: child),
     );
@@ -1853,88 +1481,51 @@ class _AddProductPageState extends State<AddProductPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          "New Unit",
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
+        title: const Text("New Unit", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
         content: ValueListenableBuilder<TextEditingValue>(
-          valueListenable: unitController,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextField(
-              controller: unitController,
-              style: const TextStyle(fontWeight: FontWeight.w600),
-              decoration: InputDecoration(
-                hintText: "e.g. Dozen, Box",
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            );
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+      valueListenable: unitController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+          controller: unitController,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+          decoration: InputDecoration(hintText: "e.g. Dozen, Box",
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
           ),
+        
+);
+      },
+    ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               if (unitController.text.trim().isEmpty) return;
               final storeId = await FirestoreService().getCurrentStoreId();
               if (storeId != null) {
-                await FirebaseFirestore.instance
-                    .collection('store')
-                    .doc(storeId)
-                    .collection('units')
-                    .doc(unitController.text.trim())
-                    .set({'createdAt': FieldValue.serverTimestamp()});
+                await FirebaseFirestore.instance.collection('store').doc(storeId).collection('units').doc(unitController.text.trim()).set({'createdAt': FieldValue.serverTimestamp()});
               }
-              if (mounted) {
-                setState(() => _selectedStockUnit = unitController.text.trim());
-                Navigator.pop(ctx);
-              }
+              if (mounted) { setState(() => _selectedStockUnit = unitController.text.trim()); Navigator.pop(ctx); }
             },
             style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-            child: const Text(
-              "Add",
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-            ),
-          ),
+            child: const Text("Add", style: TextStyle(color: kWhite, fontWeight: FontWeight.bold)),
+          )
         ],
       ),
     );
@@ -1947,137 +1538,77 @@ class _AddProductPageState extends State<AddProductPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          "New Tax Rate",
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-        ),
+        title: const Text("New Tax Rate", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: nameC,
-              builder: (context, value, _) {
-                final bool hasText = value.text.isNotEmpty;
-                return TextField(
-                  controller: nameC,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                  decoration: InputDecoration(
-                    hintText: "Tax Name (e.g. VAT)",
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kBlack54,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kPrimaryColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                );
-              },
-            ),
+      valueListenable: nameC,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(controller: nameC, style: const TextStyle(fontWeight: FontWeight.w600), decoration: InputDecoration(hintText: "Tax Name (e.g. VAT)",
+          filled: true,
+          fillColor: const Color(0xFFF8F9FA),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+          ),
+          labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+          floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+        ),
+);
+      },
+    ),
             const SizedBox(height: 12),
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: rateC,
-              builder: (context, value, _) {
-                final bool hasText = value.text.isNotEmpty;
-                return TextField(
-                  controller: rateC,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: "Percentage (%)",
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kBlack54,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kPrimaryColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                );
-              },
-            ),
+      valueListenable: rateC,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(controller: rateC, style: const TextStyle(fontWeight: FontWeight.w600), keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(hintText: "Percentage (%)",
+          filled: true,
+          fillColor: const Color(0xFFF8F9FA),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+          ),
+          labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+          floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+        ),
+);
+      },
+    ),
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () {
-              if (nameC.text.isNotEmpty && rateC.text.isNotEmpty) {
+              if(nameC.text.isNotEmpty && rateC.text.isNotEmpty) {
                 _addNewTaxToBackend(nameC.text, double.parse(rateC.text));
                 Navigator.pop(ctx);
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor),
-            child: const Text(
-              "Create",
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.bold),
-            ),
-          ),
+            child: const Text("Create", style: TextStyle(color: kWhite, fontWeight: FontWeight.bold)),
+          )
         ],
       ),
     );
@@ -2088,33 +1619,16 @@ class _AddProductPageState extends State<AddProductPage> {
       top: false,
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-        decoration: const BoxDecoration(
-          color: kWhite,
-          border: Border(top: BorderSide(color: kGrey200)),
-        ),
+        decoration: const BoxDecoration(color: kWhite, border: Border(top: BorderSide(color: kGrey200))),
         child: SizedBox(
           width: double.infinity,
           height: 56,
           child: ElevatedButton(
             onPressed: _isLoading ? null : _saveProduct,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kPrimaryColor,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
             child: _isLoading
                 ? const CircularProgressIndicator(color: kWhite)
-                : Text(
-                    context.tr(widget.productId != null ? 'update' : 'add'),
-                    style: const TextStyle(
-                      color: kWhite,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                : Text(context.tr(widget.productId != null ? 'update' : 'add'), style: const TextStyle(color: kWhite, fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
           ),
         ),
       ),
@@ -2138,33 +1652,15 @@ class _AddProductPageState extends State<AddProductPage> {
     _stockEnabled = d['stockEnabled'] ?? true;
 
     // Validate stockUnit - must be one of the valid values
-    final defaultUnits = [
-      'Piece',
-      'Kg',
-      'Liter',
-      'Box',
-      'Nos',
-      'Meter',
-      'Feet',
-      'Gram',
-      'ML',
-    ];
+    final defaultUnits = ['Piece', 'Kg', 'Liter', 'Box', 'Nos', 'Meter', 'Feet', 'Gram', 'ML'];
     final loadedStockUnit = d['stockUnit']?.toString() ?? 'Piece';
-    _selectedStockUnit = defaultUnits.contains(loadedStockUnit)
-        ? loadedStockUnit
-        : 'Piece';
+    _selectedStockUnit = defaultUnits.contains(loadedStockUnit) ? loadedStockUnit : 'Piece';
 
     // Validate taxType - must be one of the valid values (support both old and new naming)
     final loadedTaxType = d['taxType']?.toString() ?? 'Add Tax at Billing';
     final validTaxTypes = [
-      'Tax Included in Price',
-      'Add Tax at Billing',
-      'No Tax Applied',
-      'Exempt from Tax',
-      'Price includes Tax',
-      'Price is without Tax',
-      'Zero Rated Tax',
-      'Exempt Tax', // Legacy support
+      'Tax Included in Price', 'Add Tax at Billing', 'No Tax Applied', 'Exempt from Tax',
+      'Price includes Tax', 'Price is without Tax', 'Zero Rated Tax', 'Exempt Tax' // Legacy support
     ];
     if (validTaxTypes.contains(loadedTaxType)) {
       // Map old names to new names
@@ -2192,10 +1688,7 @@ class _AddProductPageState extends State<AddProductPage> {
     _isFavorite = d['isFavorite'] ?? false;
     if (d['expiryDate'] != null) {
       _selectedExpiryDate = DateTime.tryParse(d['expiryDate'].toString());
-      if (_selectedExpiryDate != null)
-        _expiryDateController.text = DateFormat(
-          'dd/MM/yyyy',
-        ).format(_selectedExpiryDate!);
+      if (_selectedExpiryDate != null) _expiryDateController.text = DateFormat('dd/MM/yyyy').format(_selectedExpiryDate!);
     }
   }
 
@@ -2205,31 +1698,15 @@ class _AddProductPageState extends State<AddProductPage> {
 
     // Build taxes array from selected tax IDs
     final List<Map<String, dynamic>> selectedTaxes = _selectedTaxIds
-        .map(
-          (id) =>
-              _fetchedTaxes.firstWhere((t) => t['id'] == id, orElse: () => {}),
-        )
+        .map((id) => _fetchedTaxes.firstWhere((t) => t['id'] == id, orElse: () => {}))
         .where((t) => t.isNotEmpty)
-        .map(
-          (t) => {
-            'id': t['id'],
-            'name': t['name'],
-            'percentage': t['percentage'],
-          },
-        )
+        .map((t) => {'id': t['id'], 'name': t['name'], 'percentage': t['percentage']})
         .toList();
 
     // Backward-compatible single tax fields (combined values)
-    final String combinedTaxName = selectedTaxes
-        .map((t) => t['name'])
-        .join(' + ');
-    final double combinedTaxPercentage = selectedTaxes.fold<double>(
-      0.0,
-      (sum, t) => sum + ((t['percentage'] ?? 0.0) as num).toDouble(),
-    );
-    final String? firstTaxId = selectedTaxes.isNotEmpty
-        ? selectedTaxes.first['id']
-        : null;
+    final String combinedTaxName = selectedTaxes.map((t) => t['name']).join(' + ');
+    final double combinedTaxPercentage = selectedTaxes.fold<double>(0.0, (sum, t) => sum + ((t['percentage'] ?? 0.0) as num).toDouble());
+    final String? firstTaxId = selectedTaxes.isNotEmpty ? selectedTaxes.first['id'] : null;
 
     final pData = {
       'itemName': _itemNameController.text.trim(),
@@ -2239,9 +1716,7 @@ class _AddProductPageState extends State<AddProductPage> {
       'category': _selectedCategory ?? 'General',
       'productCode': _productCodeController.text.trim(),
       'stockEnabled': _stockEnabled,
-      'currentStock': _stockEnabled
-          ? (double.tryParse(_quantityController.text) ?? 0.0)
-          : 0.0,
+      'currentStock': _stockEnabled ? (double.tryParse(_quantityController.text) ?? 0.0) : 0.0,
       'lowStockAlert': double.tryParse(_lowStockAlertController.text) ?? 0.0,
       'lowStockAlertType': _lowStockAlertType,
       'hsn': _hsnController.text.trim(),
@@ -2259,14 +1734,8 @@ class _AddProductPageState extends State<AddProductPage> {
       'isFavorite': _isFavorite,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    if (widget.productId != null)
-      await FirestoreService().updateDocument(
-        'Products',
-        widget.productId!,
-        pData,
-      );
-    else
-      await FirestoreService().addDocument('Products', pData);
+    if (widget.productId != null) await FirestoreService().updateDocument('Products', widget.productId!, pData);
+    else await FirestoreService().addDocument('Products', pData);
     if (mounted) Navigator.pop(context);
   }
 }

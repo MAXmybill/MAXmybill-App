@@ -28,17 +28,16 @@ class CommonBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     // Calculate width for 5 items
     final itemWidth = screenWidth / 5;
-    final indicatorWidth =
-        itemWidth * 0.45; // Refined width for enterprise look
+    final indicatorWidth = itemWidth * 0.45; // Refined width for enterprise look
 
     return Container(
       decoration: BoxDecoration(
         color: kWhite,
         // Add rounded top-left and top-right corners with 24 radius
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(R.sp(context, 24)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(R.sp(context, 24))),
+        border: Border(
+          top: BorderSide(color: Colors.grey.shade300, width: 1),
         ),
-        border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
       ),
       child: SafeArea(
         child: Container(
@@ -70,36 +69,11 @@ class CommonBottomNav extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildNavItem(
-                    context,
-                    0,
-                    HeroIcons.squares2x2,
-                    context.tr('menu'),
-                  ),
-                  _buildNavItem(
-                    context,
-                    1,
-                    HeroIcons.chartBar,
-                    context.tr('Growth+'),
-                  ),
-                  _buildNavItem(
-                    context,
-                    2,
-                    HeroIcons.plusCircle,
-                    context.tr('new_sale'),
-                  ),
-                  _buildNavItem(
-                    context,
-                    3,
-                    HeroIcons.archiveBox,
-                    context.tr("Items"),
-                  ),
-                  _buildNavItem(
-                    context,
-                    4,
-                    HeroIcons.cog6Tooth,
-                    context.tr('settings'),
-                  ),
+                  _buildNavItem(context, 0, HeroIcons.squares2x2, context.tr('menu')),
+                  _buildNavItem(context, 1, HeroIcons.chartBar, context.tr('Growth+')),
+                  _buildNavItem(context, 2, HeroIcons.plusCircle, context.tr('new_sale')),
+                  _buildNavItem(context, 3, HeroIcons.archiveBox, context.tr("Items")),
+                  _buildNavItem(context, 4, HeroIcons.cog6Tooth, context.tr('settings')),
                 ],
               ),
             ],
@@ -109,12 +83,7 @@ class CommonBottomNav extends StatelessWidget {
     );
   }
 
-  Widget _buildNavItem(
-    BuildContext context,
-    int index,
-    HeroIcons icon,
-    String label,
-  ) {
+  Widget _buildNavItem(BuildContext context, int index, HeroIcons icon, String label) {
     final isSelected = currentIndex == index;
 
     return Expanded(

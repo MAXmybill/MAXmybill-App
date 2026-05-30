@@ -22,8 +22,7 @@ class SupportPage extends StatefulWidget {
   State<SupportPage> createState() => _SupportPageState();
 }
 
-class _SupportPageState extends State<SupportPage>
-    with SingleTickerProviderStateMixin {
+class _SupportPageState extends State<SupportPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
@@ -43,13 +42,13 @@ class _SupportPageState extends State<SupportPage>
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId != null && mounted) {
         setState(() => _storeId = storeId);
-
+        
         // Fetch store name
         final storeDoc = await FirebaseFirestore.instance
             .collection('store')
             .doc(storeId)
             .get();
-
+        
         if (mounted && storeDoc.exists) {
           final data = storeDoc.data() as Map<String, dynamic>;
           setState(() => _storeName = data['businessName'] ?? 'Store');
@@ -88,13 +87,15 @@ class _SupportPageState extends State<SupportPage>
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('User not authenticated')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('User not authenticated')),
+        );
         return;
       }
 
-      await FirebaseFirestore.instance.collection('support_requests').add({
+      await FirebaseFirestore.instance
+          .collection('support_requests')
+          .add({
         'uid': widget.uid,
         'storeId': _storeId,
         'storeName': _storeName,
@@ -111,16 +112,14 @@ class _SupportPageState extends State<SupportPage>
         _subjectController.clear();
         _messageController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Support request submitted successfully'),
-          ),
+          const SnackBar(content: Text('Support request submitted successfully')),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
       }
     } finally {
       if (mounted) {
@@ -142,23 +141,13 @@ class _SupportPageState extends State<SupportPage>
           shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
           ),
-          title: const Text(
-            'Help & Support',
-            style: TextStyle(
-              color: colors.kWhite,
-              fontWeight: FontWeight.w700,
-              fontSize: 18,
-            ),
-          ),
+          title: const Text('Help & Support',
+              style: TextStyle(color: colors.kWhite, fontWeight: FontWeight.w700, fontSize: 18)),
           backgroundColor: colors.kPrimaryColor,
           elevation: 0,
           centerTitle: false,
           leading: IconButton(
-            icon: const HeroIcon(
-              HeroIcons.arrowLeft,
-              color: colors.kWhite,
-              size: 20,
-            ),
+            icon: const HeroIcon(HeroIcons.arrowLeft, color: colors.kWhite, size: 20),
             onPressed: widget.onBack,
           ),
           bottom: TabBar(
@@ -174,7 +163,10 @@ class _SupportPageState extends State<SupportPage>
         ),
         body: TabBarView(
           controller: _tabController,
-          children: [_buildNewRequestTab(), _buildMyRequestsTab()],
+          children: [
+            _buildNewRequestTab(),
+            _buildMyRequestsTab(),
+          ],
         ),
       ),
     );
@@ -192,9 +184,7 @@ class _SupportPageState extends State<SupportPage>
             decoration: BoxDecoration(
               color: colors.kPrimaryColor.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colors.kPrimaryColor.withValues(alpha: 0.2),
-              ),
+              border: Border.all(color: colors.kPrimaryColor.withValues(alpha: 0.2)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,10 +250,7 @@ class _SupportPageState extends State<SupportPage>
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: colors.kPrimaryColor),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             maxLines: 1,
           ),
@@ -296,10 +283,7 @@ class _SupportPageState extends State<SupportPage>
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(color: colors.kPrimaryColor),
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 12,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             ),
             maxLines: 6,
           ),
@@ -315,16 +299,10 @@ class _SupportPageState extends State<SupportPage>
                       height: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colors.kWhite,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(colors.kWhite),
                       ),
                     )
-                  : const HeroIcon(
-                      HeroIcons.paperAirplane,
-                      size: 18,
-                      color: colors.kWhite,
-                    ),
+                  : const HeroIcon(HeroIcons.paperAirplane, size: 18, color: colors.kWhite),
               label: Text(
                 _isSubmitting ? 'Submitting...' : 'Submit Request',
                 style: const TextStyle(
@@ -362,9 +340,7 @@ class _SupportPageState extends State<SupportPage>
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: colors.kPrimaryColor),
-          );
+          return const Center(child: CircularProgressIndicator(color: colors.kPrimaryColor));
         }
 
         if (snapshot.hasError) {
@@ -554,10 +530,7 @@ class _SupportPageState extends State<SupportPage>
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
@@ -593,20 +566,14 @@ class _SupportPageState extends State<SupportPage>
                     decoration: BoxDecoration(
                       color: colors.kGoogleGreen.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: colors.kGoogleGreen.withValues(alpha: 0.15),
-                      ),
+                      border: Border.all(color: colors.kGoogleGreen.withValues(alpha: 0.15)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            const HeroIcon(
-                              HeroIcons.checkCircle,
-                              size: 12,
-                              color: colors.kGoogleGreen,
-                            ),
+                            const HeroIcon(HeroIcons.checkCircle, size: 12, color: colors.kGoogleGreen),
                             const SizedBox(width: 6),
                             const Text(
                               'Admin response',
@@ -657,11 +624,7 @@ class _SupportPageState extends State<SupportPage>
                     if (responseCount > 0)
                       Row(
                         children: [
-                          const HeroIcon(
-                            HeroIcons.checkCircle,
-                            size: 12,
-                            color: colors.kGoogleGreen,
-                          ),
+                          const HeroIcon(HeroIcons.checkCircle, size: 12, color: colors.kGoogleGreen),
                           const SizedBox(width: 4),
                           Text(
                             '$responseCount response${responseCount > 1 ? 's' : ''}',
@@ -697,11 +660,7 @@ class _SupportPageState extends State<SupportPage>
 
     if (last is Map) {
       final data = Map<String, dynamic>.from(last);
-      final value =
-          data['message'] ??
-          data['text'] ??
-          data['content'] ??
-          data['response'];
+      final value = data['message'] ?? data['text'] ?? data['content'] ?? data['response'];
       if (value != null && value.toString().trim().isNotEmpty) {
         return value.toString().trim();
       }
@@ -765,3 +724,4 @@ class _SupportPageState extends State<SupportPage>
     }
   }
 }
+

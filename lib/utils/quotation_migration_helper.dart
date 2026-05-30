@@ -5,6 +5,7 @@ import 'package:maxmybill/utils/firestore_service.dart';
 /// Utility to migrate old quotations that have status='settled' or 'billed'
 /// but are missing the billed=true field
 class QuotationMigrationHelper {
+
   /// Run this once to update all existing settled quotations
   static Future<void> migrateSettledQuotations(BuildContext context) async {
     try {
@@ -55,9 +56,7 @@ class QuotationMigrationHelper {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Migration complete! Updated $updatedCount quotation(s)',
-            ),
+            content: Text('Migration complete! Updated $updatedCount quotation(s)'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 5),
           ),
@@ -79,10 +78,7 @@ class QuotationMigrationHelper {
   }
 
   /// Alternative: Update a single quotation by ID
-  static Future<void> migrateQuotationById(
-    String quotationId,
-    BuildContext context,
-  ) async {
+  static Future<void> migrateQuotationById(String quotationId, BuildContext context) async {
     try {
       await FirestoreService().updateDocument('quotations', quotationId, {
         'billed': true,
@@ -99,9 +95,13 @@ class QuotationMigrationHelper {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
   }
 }
+

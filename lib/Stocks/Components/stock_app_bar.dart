@@ -38,10 +38,7 @@ class StockAppBar extends StatelessWidget {
     final double tabHeight = R.sp(context, 44);
 
     return Container(
-      padding: EdgeInsets.only(
-        top: topPadding + R.sp(context, 10),
-        bottom: R.sp(context, 12),
-      ),
+      padding: EdgeInsets.only(top: topPadding + R.sp(context, 10), bottom: R.sp(context, 12)),
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(bottom: BorderSide(color: kGrey200, width: 1)),
@@ -77,7 +74,7 @@ class StockAppBar extends StatelessWidget {
                               color: kPrimaryColor.withOpacity(0.15),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
-                            ),
+                            )
                           ],
                         ),
                       ),
@@ -111,12 +108,7 @@ class StockAppBar extends StatelessWidget {
     );
   }
 
-  Widget _buildTabWithCount(
-    BuildContext context, {
-    required String label,
-    required String collection,
-    required int index,
-  }) {
+  Widget _buildTabWithCount(BuildContext context, {required String label, required String collection, required int index}) {
     return Expanded(
       child: GestureDetector(
         onTap: () => onTabChanged(index),
@@ -140,22 +132,15 @@ class StockAppBar extends StatelessWidget {
                         style: TextStyle(
                           color: isSelected ? kWhite : kBlack54,
                           fontSize: R.sp(context, 13),
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.w700,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w700,
                           letterSpacing: 0.5,
                         ),
                       ),
                       SizedBox(width: R.sp(context, 6)),
                       Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: R.sp(context, 6),
-                          vertical: R.sp(context, 2),
-                        ),
+                        padding: EdgeInsets.symmetric(horizontal: R.sp(context, 6), vertical: R.sp(context, 2)),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? kWhite.withOpacity(0.2)
-                              : kPrimaryColor.withOpacity(0.1),
+                          color: isSelected ? kWhite.withOpacity(0.2) : kPrimaryColor.withOpacity(0.1),
                           borderRadius: R.radius(context, 6),
                         ),
                         child: Text(

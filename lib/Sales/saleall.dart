@@ -91,9 +91,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
   @override
   void initState() {
     super.initState();
-    _searchCtrl.addListener(
-      () => setState(() => _query = _searchCtrl.text.toLowerCase()),
-    );
+    _searchCtrl.addListener(() => setState(() => _query = _searchCtrl.text.toLowerCase()));
     _searchFocusNode.addListener(() {
       setState(() {
         _isSearchFocused = _searchFocusNode.hasFocus;
@@ -118,25 +116,19 @@ class _SaleAllPageState extends State<SaleAllPage> {
           // Read multiple taxes (new format) or fall back to legacy
           List<Map<String, dynamic>>? itemTaxes;
           if (item['taxes'] is List && (item['taxes'] as List).isNotEmpty) {
-            itemTaxes = (item['taxes'] as List)
-                .map((t) => Map<String, dynamic>.from(t as Map))
-                .toList();
+            itemTaxes = (item['taxes'] as List).map((t) => Map<String, dynamic>.from(t as Map)).toList();
           }
-          _cart.add(
-            CartItem(
-              productId: item['productId'] ?? '',
-              name: item['name'] ?? '',
-              price: (item['price'] ?? 0.0).toDouble(),
-              cost: (item['cost'] ?? 0.0).toDouble(),
-              quantity: (item['quantity'] ?? 1).toDouble(),
-              taxes: itemTaxes,
-              taxName: item['taxName'] as String?,
-              taxPercentage: item['taxPercentage'] != null
-                  ? (item['taxPercentage'] as num).toDouble()
-                  : null,
-              taxType: item['taxType'] as String?,
-            ),
-          );
+          _cart.add(CartItem(
+            productId: item['productId'] ?? '',
+            name: item['name'] ?? '',
+            price: (item['price'] ?? 0.0).toDouble(),
+            cost: (item['cost'] ?? 0.0).toDouble(),
+            quantity: (item['quantity'] ?? 1).toDouble(),
+            taxes: itemTaxes,
+            taxName: item['taxName'] as String?,
+            taxPercentage: item['taxPercentage'] != null ? (item['taxPercentage'] as num).toDouble() : null,
+            taxType: item['taxType'] as String?,
+          ));
         }
       }
     }
@@ -171,8 +163,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
         _cart.clear();
         _cart.addAll(widget.initialCartItems!);
       });
-    } else if (widget.initialCartItems == null &&
-        oldWidget.initialCartItems != null) {
+    } else if (widget.initialCartItems == null && oldWidget.initialCartItems != null) {
       // Parent explicitly cleared the cart (e.g., from clear button)
       setState(() {
         _cart.clear();
@@ -190,21 +181,21 @@ class _SaleAllPageState extends State<SaleAllPage> {
     }
   }
 
+
   Future<void> _loadCurrencySymbol() async {
     try {
       final doc = await FirestoreService().getCurrentStoreDoc();
       if (doc != null && doc.exists && mounted) {
         final data = doc.data() as Map<String, dynamic>?;
         setState(() {
-          _currencySymbol = CurrencyService.getSymbolWithSpace(
-            data?['currency'],
-          );
+          _currencySymbol = CurrencyService.getSymbolWithSpace(data?['currency']);
         });
       }
     } catch (e) {
       debugPrint('Error loading currency: $e');
     }
   }
+
 
   Future<void> _initializeProductsStream() async {
     final collection = await FirestoreService().getStoreCollection('Products');
@@ -220,9 +211,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
   Future<void> _loadCategories() async {
     try {
-      final collection = await FirestoreService().getStoreCollection(
-        'Products',
-      );
+      final collection = await FirestoreService().getStoreCollection('Products');
       final snap = await collection.get();
 
       final categorySet = <String>{};
@@ -265,15 +254,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
       final items = data['items'] as List?;
       if (items != null) {
         for (var item in items) {
-          _cart.add(
-            CartItem(
-              productId: item['productId'] ?? '',
-              name: item['name'] ?? '',
-              price: (item['price'] ?? 0.0).toDouble(),
-              cost: (item['cost'] ?? 0.0).toDouble(),
-              quantity: (item['quantity'] ?? 1).toDouble(),
-            ),
-          );
+          _cart.add(CartItem(
+            productId: item['productId'] ?? '',
+            name: item['name'] ?? '',
+            price: (item['price'] ?? 0.0).toDouble(),
+            cost: (item['cost'] ?? 0.0).toDouble(),
+            quantity: (item['quantity'] ?? 1).toDouble(),
+          ));
         }
       }
     });
@@ -281,22 +268,16 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
   double get _total => _cart.fold(0.0, (sum, item) => sum + item.totalWithTax);
 
-  List<QueryDocumentSnapshot> _filterAndSortProducts(
-    List<QueryDocumentSnapshot> items,
-  ) {
+  List<QueryDocumentSnapshot> _filterAndSortProducts(List<QueryDocumentSnapshot> items) {
     final allCategory = context.tr('all');
-    final isShowAll =
-        _selectedCategory.isEmpty || _selectedCategory == allCategory;
+    final isShowAll = _selectedCategory.isEmpty || _selectedCategory == allCategory;
 
     var list = items.where((doc) {
       final data = doc.data() as Map<String, dynamic>;
       final name = (data['itemName'] ?? '').toString().toLowerCase();
       final barcode = (data['barcode'] ?? '').toString().toLowerCase();
       final productCode = (data['productCode'] ?? '').toString().toLowerCase();
-      if (!name.contains(_query) &&
-          !barcode.contains(_query) &&
-          !productCode.contains(_query))
-        return false;
+      if (!name.contains(_query) && !barcode.contains(_query) && !productCode.contains(_query)) return false;
       if (_showFavoritesOnly) return data['isFavorite'] == true;
       if (isShowAll) return true;
       return (data['category'] ?? 'General').toString() == _selectedCategory;
@@ -333,18 +314,14 @@ class _SaleAllPageState extends State<SaleAllPage> {
     return null; // Let CartItem handle legacy fields via taxName/taxPercentage
   }
 
-  void _showWeightInputDialog(
-    String id,
-    String name,
-    double price,
-    double cost,
-    bool stockEnabled,
-    double stock, {
-    String? taxName,
-    double? taxPercentage,
-    String? taxType,
-    List<Map<String, dynamic>>? taxes,
-  }) {
+  double _reservedQuantityForProduct(String productId) {
+    return _cart
+        .where((item) => item.productId == productId)
+        .fold(0.0, (sum, item) => sum + item.quantity);
+  }
+
+  void _showWeightInputDialog(String id, String name, double price, double cost, bool stockEnabled, double stock,
+      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes}) {
     final gramController = TextEditingController();
     final kgController = TextEditingController();
 
@@ -360,11 +337,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 color: kPrimaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: HeroIcon(
-                HeroIcons.scale,
-                color: kPrimaryColor,
-                size: R.sp(context, 24),
-              ),
+              child: HeroIcon(HeroIcons.scale, color: kPrimaryColor, size: R.sp(context, 24)),
             ),
             SizedBox(width: R.sp(context, 12)),
             Expanded(
@@ -373,10 +346,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 children: [
                   Text(
                     'Enter Weight',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      fontSize: R.sp(context, 18),
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: R.sp(context, 18)),
                   ),
                   Text(
                     name,
@@ -398,72 +368,30 @@ class _SaleAllPageState extends State<SaleAllPage> {
           children: [
             // Gram input
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: gramController,
-              builder: (context, value, _) {
-                final bool hasText = value.text.isNotEmpty;
-                return TextField(
-                  controller: gramController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: R.sp(context, 16),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Grams',
-                    suffixText: 'g',
-                    suffixStyle: TextStyle(
-                      color: kPrimaryColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: R.sp(context, 14),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 16),
-                      vertical: R.sp(context, 14),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kBlack54,
-                      fontSize: R.sp(context, 13),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kPrimaryColor,
-                      fontSize: R.sp(context, 11),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    if (value.isNotEmpty && kgController.text.isNotEmpty) {
-                      kgController.clear();
-                    }
-                  },
-                );
-              },
-            ),
+      valueListenable: gramController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: gramController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 16)),
+                decoration: InputDecoration(
+                  labelText: 'Grams',
+                  suffixText: 'g',
+                  suffixStyle: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w700, fontSize: R.sp(context, 14)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 14)),
+                  border: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
+                  enabledBorder: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
+                  focusedBorder: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: const BorderSide(color: kPrimaryColor, width: 2.0)),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: R.sp(context, 13), fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: R.sp(context, 11), fontWeight: FontWeight.w900),
+                ),
+                onChanged: (value) { if (value.isNotEmpty && kgController.text.isNotEmpty) { kgController.clear(); } },
+        );
+      },
+    ),
             SizedBox(height: R.sp(context, 12)),
             // OR text
             Text(
@@ -477,72 +405,30 @@ class _SaleAllPageState extends State<SaleAllPage> {
             SizedBox(height: R.sp(context, 12)),
             // Kilogram input
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: kgController,
-              builder: (context, value, _) {
-                final bool hasText = value.text.isNotEmpty;
-                return TextField(
-                  controller: kgController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: R.sp(context, 16),
-                  ),
-                  decoration: InputDecoration(
-                    labelText: 'Kilograms',
-                    suffixText: 'kg',
-                    suffixStyle: TextStyle(
-                      color: kPrimaryColor,
-                      fontWeight: FontWeight.w700,
-                      fontSize: R.sp(context, 14),
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 16),
-                      vertical: R.sp(context, 14),
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: R.radius(context, 12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kBlack54,
-                      fontSize: R.sp(context, 13),
-                      fontWeight: FontWeight.w600,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kPrimaryColor,
-                      fontSize: R.sp(context, 11),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  onChanged: (value) {
-                    if (value.isNotEmpty && gramController.text.isNotEmpty) {
-                      gramController.clear();
-                    }
-                  },
-                );
-              },
-            ),
+      valueListenable: kgController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: kgController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 16)),
+                decoration: InputDecoration(
+                  labelText: 'Kilograms',
+                  suffixText: 'kg',
+                  suffixStyle: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w700, fontSize: R.sp(context, 14)),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 14)),
+                  border: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
+                  enabledBorder: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
+                  focusedBorder: OutlineInputBorder(borderRadius: R.radius(context, 12), borderSide: const BorderSide(color: kPrimaryColor, width: 2.0)),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: R.sp(context, 13), fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: R.sp(context, 11), fontWeight: FontWeight.w900),
+                ),
+                onChanged: (value) { if (value.isNotEmpty && gramController.text.isNotEmpty) { gramController.clear(); } },
+        );
+      },
+    ),
             SizedBox(height: R.sp(context, 16)),
             // Price info
             Container(
@@ -581,7 +467,10 @@ class _SaleAllPageState extends State<SaleAllPage> {
             onPressed: () => Navigator.pop(ctx),
             child: const Text(
               'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w700, color: kBlack54),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: kBlack54,
+              ),
             ),
           ),
           ElevatedButton(
@@ -636,19 +525,8 @@ class _SaleAllPageState extends State<SaleAllPage> {
               }
 
               Navigator.pop(ctx);
-              _addToCart(
-                id,
-                name,
-                price,
-                cost,
-                stockEnabled,
-                stock,
-                finalQuantity,
-                taxName: taxName,
-                taxPercentage: taxPercentage,
-                taxType: taxType,
-                taxes: taxes,
-              );
+              _addToCart(id, name, price, cost, stockEnabled, stock, finalQuantity,
+                  taxName: taxName, taxPercentage: taxPercentage, taxType: taxType, taxes: taxes);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
@@ -658,7 +536,10 @@ class _SaleAllPageState extends State<SaleAllPage> {
             ),
             child: const Text(
               'Add to Cart',
-              style: TextStyle(fontWeight: FontWeight.w700, color: kWhite),
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: kWhite,
+              ),
             ),
           ),
         ],
@@ -666,28 +547,15 @@ class _SaleAllPageState extends State<SaleAllPage> {
     );
   }
 
-  void _addToCart(
-    String id,
-    String name,
-    double price,
-    double cost,
-    bool stockEnabled,
-    double stock,
-    double quantity, {
-    String? taxName,
-    double? taxPercentage,
-    String? taxType,
-    List<Map<String, dynamic>>? taxes,
-  }) {
+  void _addToCart(String id, String name, double price, double cost, bool stockEnabled, double stock, double quantity,
+      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes}) {
     final idx = _cart.indexWhere((item) => item.productId == id);
 
     if (idx != -1) {
-      if (stockEnabled && _cart[idx].quantity + quantity > stock) {
+      if (stockEnabled && quantity > stock) {
         CommonWidgets.showSnackBar(
           context,
-          context
-              .tr('max_stock_reached')
-              .replaceFirst('{0}', stock.toInt().toString()),
+          context.tr('max_stock_reached').replaceFirst('{0}', stock.toInt().toString()),
           bgColor: kErrorColor,
         );
         return;
@@ -695,26 +563,20 @@ class _SaleAllPageState extends State<SaleAllPage> {
       _cart[idx].quantity += quantity;
     } else {
       if (stockEnabled && stock < quantity) {
-        CommonWidgets.showSnackBar(
-          context,
-          context.tr('out_of_stock'),
-          bgColor: kErrorColor,
-        );
+        CommonWidgets.showSnackBar(context, context.tr('out_of_stock'), bgColor: kErrorColor);
         return;
       }
-      _cart.add(
-        CartItem(
-          productId: id,
-          name: name,
-          price: price,
-          cost: cost,
-          quantity: quantity,
-          taxes: taxes,
-          taxName: taxName,
-          taxPercentage: taxPercentage,
-          taxType: taxType,
-        ),
-      );
+      _cart.add(CartItem(
+        productId: id,
+        name: name,
+        price: price,
+        cost: cost,
+        quantity: quantity,
+        taxes: taxes,
+        taxName: taxName,
+        taxPercentage: taxPercentage,
+        taxType: taxType,
+      ));
     }
 
     setState(() {
@@ -737,29 +599,18 @@ class _SaleAllPageState extends State<SaleAllPage> {
     await Navigator.push(
       context,
       CupertinoPageRoute(
-        builder: (ctx) =>
-            BarcodeScannerPage(onBarcodeScanned: _searchByBarcode),
+        builder: (ctx) => BarcodeScannerPage(onBarcodeScanned: _searchByBarcode),
       ),
     );
   }
 
   void _searchByBarcode(String barcode) async {
     try {
-      final collection = await FirestoreService().getStoreCollection(
-        'Products',
-      );
-      final snap = await collection
-          .where('barcode', isEqualTo: barcode)
-          .limit(1)
-          .get();
+      final collection = await FirestoreService().getStoreCollection('Products');
+      final snap = await collection.where('barcode', isEqualTo: barcode).limit(1).get();
 
       if (snap.docs.isEmpty) {
-        if (mounted)
-          CommonWidgets.showSnackBar(
-            context,
-            context.tr('product_not_found'),
-            bgColor: kOrange,
-          );
+        if (mounted) CommonWidgets.showSnackBar(context, context.tr('product_not_found'), bgColor: kOrange);
         return;
       }
 
@@ -862,7 +713,8 @@ class _SaleAllPageState extends State<SaleAllPage> {
               Expanded(
                 child: Column(
                   children: [
-                    if (!_searchFocusNode.hasFocus) _buildCategorySelector(w),
+                    if (!_searchFocusNode.hasFocus)
+                      _buildCategorySelector(w),
                     Expanded(child: _buildProductGrid(w)),
                   ],
                 ),
@@ -875,9 +727,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 onSaveOrder: () {
                   if (_cart.isEmpty) return;
                   // Get savedOrderId from widget or CartService
-                  final savedOrderId =
-                      widget.savedOrderId ??
-                      context.read<CartService>().savedOrderId;
+                  final savedOrderId = widget.savedOrderId ?? context.read<CartService>().savedOrderId;
                   CommonWidgets.showSaveOrderDialog(
                     context: context,
                     uid: widget.uid,
@@ -890,17 +740,14 @@ class _SaleAllPageState extends State<SaleAllPage> {
                       // After saving/updating, clear the cart, saved order name AND savedOrderId
                       // This allows future saves to create new orders instead of updating
                       setState(() {
-                        _savedOrderName =
-                            null; // Clear order name since cart is now empty
+                        _savedOrderName = null; // Clear order name since cart is now empty
                         _cart.clear(); // Clear the cart
                       });
                       // Notify parent that cart is now empty
                       widget.onCartChanged?.call(_cart);
                       // Update CartService with empty cart AND clear savedOrderId
                       context.read<CartService>().updateCart([]);
-                      context.read<CartService>().setSavedOrderId(
-                        null,
-                      ); // Clear savedOrderId to allow new saves
+                      context.read<CartService>().setSavedOrderId(null); // Clear savedOrderId to allow new saves
                     },
                   );
                 },
@@ -960,87 +807,55 @@ class _SaleAllPageState extends State<SaleAllPage> {
           Expanded(
             child: Container(
               height: R.sp(context, 46),
-              decoration: BoxDecoration(borderRadius: R.radius(context, 12)),
-              child: ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _searchCtrl,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextField(
-                    controller: _searchCtrl,
-                    focusNode: _searchFocusNode,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: R.sp(context, 14),
-                      color: kBlack87,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: context.tr('search'),
-                      hintStyle: TextStyle(
-                        color: kBlack54,
-                        fontSize: R.sp(context, 14),
-                      ),
-                      prefixIcon: Padding(
-                        padding: R.all(context, 12),
-                        child: HeroIcon(
-                          HeroIcons.magnifyingGlass,
-                          color: kPrimaryColor,
-                          size: R.sp(context, 20),
-                        ),
-                      ),
-                      suffixIcon: _searchFocusNode.hasFocus
-                          ? IconButton(
-                              icon: HeroIcon(
-                                HeroIcons.xMark,
-                                color: kPrimaryColor,
-                                size: R.sp(context, 20),
-                              ),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                _searchFocusNode.unfocus();
-                              },
-                            )
-                          : null,
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: R.sp(context, 16),
-                        vertical: R.sp(context, 14),
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: R.radius(context, 12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: R.radius(context, 12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: R.radius(context, 12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: R.sp(context, 13),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: R.sp(context, 11),
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
+              decoration: BoxDecoration(
+                borderRadius: R.radius(context, 12),
               ),
+              child: ValueListenableBuilder<TextEditingValue>(
+      valueListenable: _searchCtrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: _searchCtrl,
+                focusNode: _searchFocusNode,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 14), color: kBlack87),
+                decoration: InputDecoration(
+                  hintText: context.tr('search'),
+                  hintStyle: TextStyle(color: kBlack54, fontSize: R.sp(context, 14)),
+                  prefixIcon: Padding(
+                    padding: R.all(context, 12),
+                    child: HeroIcon(HeroIcons.magnifyingGlass, color: kPrimaryColor, size: R.sp(context, 20)),
+                  ),
+                  suffixIcon: _searchFocusNode.hasFocus
+                      ? IconButton(
+                    icon: HeroIcon(HeroIcons.xMark, color: kPrimaryColor, size: R.sp(context, 20)),
+                    onPressed: () {
+                      _searchCtrl.clear();
+                      _searchFocusNode.unfocus();
+                    },
+                  )
+                      : null,
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 14)),
+                  border: OutlineInputBorder(
+                    borderRadius: R.radius(context, 12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: R.radius(context, 12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: R.radius(context, 12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: R.sp(context, 13), fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: R.sp(context, 11), fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
             ),
           ),
           SizedBox(width: R.sp(context, 12)),
@@ -1062,8 +877,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
   }
 
   Widget _buildCategorySelector(double w) {
-    if (_isLoadingCategories)
-      return const LinearProgressIndicator(minHeight: 2, color: kPrimaryColor);
+    if (_isLoadingCategories) return const LinearProgressIndicator(minHeight: 2, color: kPrimaryColor);
 
     return Container(
       color: kWhite,
@@ -1076,9 +890,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
           itemBuilder: (context, index) {
             final cat = _categories[index];
             final isAll = cat == 'All';
-            final isSelected =
-                _selectedCategory == (isAll ? context.tr('all') : cat) ||
-                (_showFavoritesOnly && cat == 'Favorite');
+            final isSelected = _selectedCategory == (isAll ? context.tr('all') : cat) || (_showFavoritesOnly && cat == 'Favorite');
 
             return GestureDetector(
               onTap: () {
@@ -1099,28 +911,24 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 decoration: BoxDecoration(
                   color: isSelected ? kPrimaryColor : kGreyBg,
                   borderRadius: R.radius(context, 10),
-                  border: Border.all(
-                    color: isSelected ? kPrimaryColor : kGrey200,
-                  ),
+                  border: Border.all(color: isSelected ? kPrimaryColor : kGrey200),
                 ),
                 child: Center(
                   child: cat == 'Favorite'
                       ? HeroIcon(
-                          HeroIcons.heart,
-                          size: R.sp(context, 16),
-                          color: isSelected ? kWhite : kPrimaryColor,
-                          style: isSelected
-                              ? HeroIconStyle.solid
-                              : HeroIconStyle.outline,
-                        )
+                    HeroIcons.heart,
+                    size: R.sp(context, 16),
+                    color: isSelected ? kWhite : kPrimaryColor,
+                    style: isSelected ? HeroIconStyle.solid : HeroIconStyle.outline,
+                  )
                       : Text(
-                          _formatCategoryName(cat),
-                          style: TextStyle(
-                            color: isSelected ? kWhite : kBlack54,
-                            fontWeight: FontWeight.w700,
-                            fontSize: R.sp(context, 12),
-                          ),
-                        ),
+                    _formatCategoryName(cat),
+                    style: TextStyle(
+                      color: isSelected ? kWhite : kBlack54,
+                      fontWeight: FontWeight.w700,
+                      fontSize: R.sp(context, 12),
+                    ),
+                  ),
                 ),
               ),
             );
@@ -1131,47 +939,27 @@ class _SaleAllPageState extends State<SaleAllPage> {
   }
 
   Widget _buildProductGrid(double w) {
-    if (_isLoadingStream || _productsStream == null)
-      return const Center(
-        child: CircularProgressIndicator(color: kPrimaryColor),
-      );
+    if (_isLoadingStream || _productsStream == null) return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
 
     return StreamBuilder<QuerySnapshot>(
       stream: _productsStream,
       builder: (ctx, snap) {
-        if (!snap.hasData)
-          return const Center(
-            child: CircularProgressIndicator(color: kPrimaryColor),
-          );
+        if (!snap.hasData) return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
 
         // Check if there are no products at all (empty database)
         if (snap.data!.docs.isEmpty) {
           return _buildEmptyState();
         }
 
-        final filtered = _filterAndSortProducts(
-          List<QueryDocumentSnapshot>.from(snap.data!.docs),
-        );
+        final filtered = _filterAndSortProducts(List<QueryDocumentSnapshot>.from(snap.data!.docs));
 
-        if (filtered.isEmpty)
-          return Center(
-            child: Text(
-              context.tr('no_results'),
-              style: const TextStyle(color: kBlack54),
-            ),
-          );
+        if (filtered.isEmpty) return Center(child: Text(context.tr('no_results'), style: const TextStyle(color: kBlack54)));
+
 
         return GridView.builder(
-          padding: EdgeInsets.fromLTRB(
-            R.sp(context, 16),
-            R.sp(context, 8),
-            R.sp(context, 16),
-            R.sp(context, 100),
-          ),
+          padding: EdgeInsets.fromLTRB(R.sp(context, 16), R.sp(context, 8), R.sp(context, 16), R.sp(context, 100)),
           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: w > 600
-                ? 220
-                : (w > 400 ? R.sp(context, 130) : R.sp(context, 115)),
+            maxCrossAxisExtent: w > 600 ? 220 : (w > 400 ? R.sp(context, 130) : R.sp(context, 115)),
             crossAxisSpacing: R.sp(context, 8),
             mainAxisSpacing: R.sp(context, 10),
             childAspectRatio: 1.0,
@@ -1195,37 +983,23 @@ class _SaleAllPageState extends State<SaleAllPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 80, height: 80,
               decoration: BoxDecoration(
                 color: kPrimaryColor.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
-              child: const HeroIcon(
-                HeroIcons.cube,
-                size: 38,
-                color: Color(0xffCC8758),
-              ),
+              child: const HeroIcon(HeroIcons.cube, size: 38, color: Color(0xffCC8758)),
             ),
             const SizedBox(height: 20),
             const Text(
               "No Products Yet",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: kBlack87,
-                fontFamily: 'NotoSans',
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kBlack87, fontFamily: 'NotoSans'),
             ),
             const SizedBox(height: 8),
             const Text(
               "Add your first product to start billing",
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: kBlack54,
-                fontFamily: 'Lato',
-              ),
+              style: TextStyle(fontSize: 13, color: kBlack54, fontFamily: 'Lato'),
             ),
             const SizedBox(height: 28),
             SizedBox(
@@ -1233,27 +1007,17 @@ class _SaleAllPageState extends State<SaleAllPage> {
               child: ElevatedButton(
                 onPressed: () => Navigator.push(
                   context,
-                  CupertinoPageRoute(
-                    builder: (_) =>
-                        StockPage(uid: widget.uid, userEmail: widget.userEmail),
-                  ),
+                  CupertinoPageRoute(builder: (_) => StockPage(uid: widget.uid, userEmail: widget.userEmail)),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 child: const Text(
                   "Add Product",
-                  style: TextStyle(
-                    color: kWhite,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'NotoSans',
-                  ),
+                  style: TextStyle(color: kWhite, fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans'),
                 ),
               ),
             ),
@@ -1294,24 +1058,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
     return Consumer<LocalStockService>(
       builder: (context, localStockService, child) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (localStockService.hasStock(id)) {
-            final cachedStock = localStockService.getStock(id);
-            if (cachedStock != firestoreStock.toInt()) {
-              localStockService.cacheStock(id, firestoreStock.toInt());
-            }
-          } else {
-            localStockService.cacheStock(id, firestoreStock.toInt());
-          }
-        });
-
-        final stock = firestoreStock;
+        final baseStock = localStockService.hasStock(id)
+            ? localStockService.getStock(id).toDouble()
+            : firestoreStock;
+        final stock = (baseStock - _reservedQuantityForProduct(id)).clamp(0.0, double.infinity);
         final isOutOfStock = stockEnabled && stock <= 0;
         final isLowStock =
-            stockEnabled &&
-            lowStockAlert > 0 &&
-            stock > 0 &&
-            stock <= lowStockAlert;
+            stockEnabled && lowStockAlert > 0 && stock > 0 && stock <= lowStockAlert;
 
         return GestureDetector(
           onTap: () {
@@ -1327,8 +1080,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
               final cost = (data['costPrice'] ?? 0.0).toDouble();
               final taxes = _parseTaxesFromData(data);
               // Only show weight dialog for kg unit items
-              if (unit.toLowerCase() == 'kg' ||
-                  unit.toLowerCase() == 'kilogram') {
+              if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
                 _showWeightInputDialog(
                   id,
                   name,
@@ -1368,19 +1120,19 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   color: isExpired
                       ? Colors.black.withOpacity(0.05)
                       : isOutOfStock
-                      ? kErrorColor.withOpacity(0.05)
-                      : isLowStock
-                      ? lowStockColor.withOpacity(0.05)
-                      : (isAnimating ? kGoogleGreen.withOpacity(0.1) : kWhite),
+                          ? kErrorColor.withOpacity(0.05)
+                          : isLowStock
+                              ? lowStockColor.withOpacity(0.05)
+                              : (isAnimating ? kGoogleGreen.withOpacity(0.1) : kWhite),
                   borderRadius: R.radius(context, 12),
                   border: Border.all(
                     color: isExpired
                         ? Colors.black.withOpacity(0.5)
                         : isOutOfStock
-                        ? kErrorColor.withOpacity(0.5)
-                        : isLowStock
-                        ? lowStockColor.withOpacity(0.5)
-                        : (isAnimating ? kGoogleGreen : kGrey200),
+                            ? kErrorColor.withOpacity(0.5)
+                            : isLowStock
+                                ? lowStockColor.withOpacity(0.5)
+                                : (isAnimating ? kGoogleGreen : kGrey200),
                     width: isAnimating ? 2 : 1,
                   ),
                 ),
@@ -1452,8 +1204,8 @@ class _SaleAllPageState extends State<SaleAllPage> {
                                     color: isOutOfStock
                                         ? kErrorColor
                                         : isLowStock
-                                        ? lowStockColor
-                                        : kGoogleGreen,
+                                            ? lowStockColor
+                                            : kGoogleGreen,
                                   ),
                                 ),
                               ],
@@ -1461,11 +1213,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                           ),
                         ),
                         if (isLowStock && !isOutOfStock)
-                          HeroIcon(
-                            HeroIcons.exclamationTriangle,
-                            size: R.sp(context, 16),
-                            color: lowStockColor,
-                          ),
+                          HeroIcon(HeroIcons.exclamationTriangle, size: R.sp(context, 16), color: lowStockColor),
                       ],
                     ),
                   ],
@@ -1489,9 +1237,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                             child: Center(
                               child: Container(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: R.sp(context, 10),
-                                  vertical: R.sp(context, 4),
-                                ),
+                                    horizontal: R.sp(context, 10), vertical: R.sp(context, 4)),
                                 decoration: BoxDecoration(
                                   color: kOrange,
                                   borderRadius: R.radius(context, 20),
@@ -1519,10 +1265,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   bottom: R.sp(context, 4),
                   right: R.sp(context, 4),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 6),
-                      vertical: R.sp(context, 3),
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 6), vertical: R.sp(context, 3)),
                     decoration: BoxDecoration(
                       color: lowStockColor,
                       borderRadius: R.radius(context, 6),
@@ -1544,10 +1287,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   bottom: R.sp(context, 4),
                   right: R.sp(context, 4),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 6),
-                      vertical: R.sp(context, 3),
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 6), vertical: R.sp(context, 3)),
                     decoration: BoxDecoration(
                       color: kErrorColor,
                       borderRadius: R.radius(context, 6),
@@ -1569,10 +1309,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   bottom: R.sp(context, 4),
                   right: R.sp(context, 4),
                   child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: R.sp(context, 6),
-                      vertical: R.sp(context, 3),
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 6), vertical: R.sp(context, 3)),
                     decoration: BoxDecoration(
                       color: Colors.black,
                       borderRadius: R.radius(context, 6),
@@ -1594,6 +1331,8 @@ class _SaleAllPageState extends State<SaleAllPage> {
     );
   }
 
+
+
   void _showExpiredProductDialog(String productName) {
     showDialog(
       context: context,
@@ -1607,20 +1346,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 color: kOrange.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: HeroIcon(
-                HeroIcons.exclamationTriangle,
-                color: kOrange,
-                size: R.sp(context, 24),
-              ),
+              child: HeroIcon(HeroIcons.exclamationTriangle, color: kOrange, size: R.sp(context, 24)),
             ),
             SizedBox(width: R.sp(context, 12)),
             Expanded(
               child: Text(
                 'Product Expired',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: R.sp(context, 18),
-                ),
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: R.sp(context, 18)),
               ),
             ),
           ],
@@ -1631,11 +1363,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
           children: [
             Text(
               productName,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: R.sp(context, 16),
-                color: kOrange,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: R.sp(context, 16), color: kOrange),
             ),
             SizedBox(height: R.sp(context, 12)),
             Text(
@@ -1647,15 +1375,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'OK',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),
     );
   }
+
 
   void _showOutOfStockDialog(String productName) {
     const Color outOfStockColor = Colors.black;
@@ -1671,11 +1397,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                 color: outOfStockColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const HeroIcon(
-                HeroIcons.shoppingCart,
-                color: outOfStockColor,
-                size: 24,
-              ),
+              child: const HeroIcon(HeroIcons.shoppingCart, color: outOfStockColor, size: 24),
             ),
             const SizedBox(width: 12),
             const Expanded(
@@ -1692,11 +1414,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
           children: [
             Text(
               productName,
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
-                color: outOfStockColor,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: outOfStockColor),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -1708,10 +1426,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text(
-              'OK',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
+            child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w700)),
           ),
         ],
       ),

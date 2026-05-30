@@ -58,16 +58,14 @@ class PrinterService {
     final savedPrinterObj = await getSavedPrinter();
     final prefs = await SharedPreferences.getInstance();
     final printerWidth = ThermalPrinterConfig.resolveWidthFromPrefs(prefs);
-    final format = printerWidth == '80mm'
-        ? PdfPageFormat.roll80
-        : PdfPageFormat.roll57;
+    final format = printerWidth == '80mm' ? PdfPageFormat.roll80 : PdfPageFormat.roll57;
 
     if (savedPrinterObj != null) {
       try {
         // Find the actual printer object from the system list to ensure it's still available
         final printers = await Printing.listPrinters();
         final printer = printers.firstWhere(
-          (p) => p.name == savedPrinterObj.name || p.url == savedPrinterObj.url,
+              (p) => p.name == savedPrinterObj.name || p.url == savedPrinterObj.url,
           orElse: () => savedPrinterObj, // Fallback to the reconstruction
         );
 
@@ -84,7 +82,9 @@ class PrinterService {
     }
 
     // Fallback: Show the system print dialog
-    await Printing.layoutPdf(onLayout: (format) async => pdf.save());
+    await Printing.layoutPdf(
+      onLayout: (format) async => pdf.save(),
+    );
   }
 
   // --- INVOICE GENERATION ---
@@ -109,9 +109,7 @@ class PrinterService {
 
     final prefs = await SharedPreferences.getInstance();
     final printerWidth = ThermalPrinterConfig.resolveWidthFromPrefs(prefs);
-    final pageFormat = printerWidth == '80mm'
-        ? PdfPageFormat.roll80
-        : PdfPageFormat.roll57;
+    final pageFormat = printerWidth == '80mm' ? PdfPageFormat.roll80 : PdfPageFormat.roll57;
 
     pdf.addPage(
       pw.Page(
@@ -134,10 +132,7 @@ class PrinterService {
                     ),
                     if (businessPhone != null) ...[
                       pw.SizedBox(height: 2),
-                      pw.Text(
-                        businessPhone,
-                        style: const pw.TextStyle(fontSize: 10),
-                      ),
+                      pw.Text(businessPhone, style: const pw.TextStyle(fontSize: 10)),
                     ],
                     if (businessAddress != null) ...[
                       pw.SizedBox(height: 2),
@@ -181,15 +176,9 @@ class PrinterService {
                 ],
               ),
               pw.SizedBox(height: 2),
-              pw.Text(
-                'Cust: $customerName',
-                style: const pw.TextStyle(fontSize: 10),
-              ),
+              pw.Text('Cust: $customerName', style: const pw.TextStyle(fontSize: 10)),
               if (customerPhone.isNotEmpty)
-                pw.Text(
-                  'Ph: $customerPhone',
-                  style: const pw.TextStyle(fontSize: 9),
-                ),
+                pw.Text('Ph: $customerPhone', style: const pw.TextStyle(fontSize: 9)),
 
               pw.SizedBox(height: 5),
               // Dashed divider using Container
@@ -197,7 +186,10 @@ class PrinterService {
                 height: 1,
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(
-                    bottom: pw.BorderSide(color: PdfColors.grey, width: 1),
+                    bottom: pw.BorderSide(
+                      color: PdfColors.grey,
+                      width: 1,
+                    ),
                   ),
                 ),
               ),
@@ -291,10 +283,7 @@ class PrinterService {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      'Subtotal',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
+                    pw.Text('Subtotal', style: const pw.TextStyle(fontSize: 10)),
                     pw.Text(
                       ' ${subtotal.toStringAsFixed(2)}',
                       style: const pw.TextStyle(fontSize: 10),
@@ -305,10 +294,7 @@ class PrinterService {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text(
-                      'Discount',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
+                    pw.Text('Discount', style: const pw.TextStyle(fontSize: 10)),
                     pw.Text(
                       '- ${discount.toStringAsFixed(2)}',
                       style: const pw.TextStyle(fontSize: 10),
@@ -378,7 +364,10 @@ class PrinterService {
                 height: 1,
                 decoration: const pw.BoxDecoration(
                   border: pw.Border(
-                    bottom: pw.BorderSide(color: PdfColors.grey, width: 1),
+                    bottom: pw.BorderSide(
+                      color: PdfColors.grey,
+                      width: 1,
+                    ),
                   ),
                 ),
               ),

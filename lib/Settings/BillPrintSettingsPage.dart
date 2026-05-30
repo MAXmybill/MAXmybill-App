@@ -23,7 +23,10 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> {
           onPressed: widget.onBack,
         ),
       ),
-      body: const Center(child: Text('Bill & Print Settings Page Content')),
+      body: const Center(
+        child: Text('Bill & Print Settings Page Content'),
+      ),
     );
   }
 }
+

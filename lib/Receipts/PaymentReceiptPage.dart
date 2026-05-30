@@ -111,28 +111,17 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
                     color: kPrimaryColor,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.receipt_long_rounded,
-                        color: kWhite,
-                        size: 22,
-                      ),
+                      const Icon(Icons.receipt_long_rounded, color: kWhite, size: 22),
                       const SizedBox(width: 12),
                       const Expanded(
-                        child: Text(
-                          'Receipt Settings',
-                          style: TextStyle(
-                            color: kWhite,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                        child: Text('Receipt Settings',
+                            style: TextStyle(
+                                color: kWhite, fontSize: 16,
+                                fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       ),
                       IconButton(
                         icon: const Icon(Icons.close_rounded, color: kWhite),
@@ -146,9 +135,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                     padding: const EdgeInsets.all(16),
                     children: [
                       _sheetSectionLabel('Header Info'),
-                      _sheetTile('Business Location', _showBusinessLocation, (
-                        v,
-                      ) {
+                      _sheetTile('Business Location', _showBusinessLocation, (v) {
                         setState(() => _showBusinessLocation = v);
                         setModalState(() => _showBusinessLocation = v);
                       }),
@@ -170,19 +157,14 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                         setState(() => _showPaymentMode = v);
                         setModalState(() => _showPaymentMode = v);
                       }),
-                      _sheetTile('Invoice Reference', _showInvoiceReference, (
-                        v,
-                      ) {
+                      _sheetTile('Invoice Reference', _showInvoiceReference, (v) {
                         setState(() => _showInvoiceReference = v);
                         setModalState(() => _showInvoiceReference = v);
                       }),
                       const SizedBox(height: 16),
                       _sheetSectionLabel('Footer'),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                         decoration: BoxDecoration(
                           color: kGreyBg,
                           borderRadius: BorderRadius.circular(12),
@@ -190,9 +172,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                         ),
                         child: TextField(
                           controller: TextEditingController(text: _footerText)
-                            ..selection = TextSelection.collapsed(
-                              offset: _footerText.length,
-                            ),
+                            ..selection = TextSelection.collapsed(offset: _footerText.length),
                           onChanged: (v) {
                             _footerText = v;
                             setState(() {});
@@ -203,11 +183,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                             hintStyle: TextStyle(color: kGrey400),
                             isDense: true,
                           ),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: kBlack87,
-                          ),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
                         ),
                       ),
                       const SizedBox(height: 24),
@@ -219,19 +195,10 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                           style: ElevatedButton.styleFrom(
                             backgroundColor: kPrimaryColor,
                             elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text(
-                            'Done',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: kWhite,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                          child: const Text('Done',
+                              style: TextStyle(fontSize: 14, color: kWhite, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -247,17 +214,12 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
   }
 
   Widget _sheetSectionLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, left: 4),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.0,
-      ),
-    ),
-  );
+        padding: const EdgeInsets.only(bottom: 10, left: 4),
+        child: Text(text,
+            style: const TextStyle(
+                fontSize: 10, fontWeight: FontWeight.w900,
+                color: kBlack54, letterSpacing: 1.0)),
+      );
 
   Widget _sheetTile(String title, bool value, Function(bool) onChanged) {
     return Container(
@@ -270,14 +232,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: kBlack87,
-          ),
-        ),
+        title: Text(title,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: kBlack87)),
         trailing: AppMiniSwitch(value: value, onChanged: onChanged),
       ),
     );
@@ -298,11 +254,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
         title: const Text(
           'Payment Receipt',
           style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            fontFamily: 'NotoSans',
-          ),
+              color: kWhite, fontWeight: FontWeight.w700,
+              fontSize: 16, fontFamily: 'NotoSans'),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: kWhite, size: 20),
@@ -341,31 +294,18 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                 labelColor: kWhite,
                 unselectedLabelColor: kBlack54,
                 labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                ),
+                    fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                 tabs: const [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.print_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('Thermal'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.picture_as_pdf_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('A4 / PDF'),
-                      ],
-                    ),
-                  ),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.print_rounded, size: 16),
+                    SizedBox(width: 8),
+                    Text('Thermal'),
+                  ])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.picture_as_pdf_rounded, size: 16),
+                    SizedBox(width: 8),
+                    Text('A4 / PDF'),
+                  ])),
                 ],
               ),
             ),
@@ -375,28 +315,14 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       body: TabBarView(
         controller: _tabController,
         children: [
-          LayoutBuilder(
-            builder: (context, _) => SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                R.paddingH(context),
-                16,
-                R.paddingH(context),
-                40,
-              ),
-              child: _buildThermalPreview(),
-            ),
-          ),
-          LayoutBuilder(
-            builder: (context, _) => SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(
-                R.paddingH(context),
-                16,
-                R.paddingH(context),
-                40,
-              ),
-              child: _buildA4Preview(),
-            ),
-          ),
+          LayoutBuilder(builder: (context, _) => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(R.paddingH(context), 16, R.paddingH(context), 40),
+            child: _buildThermalPreview(),
+          )),
+          LayoutBuilder(builder: (context, _) => SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(R.paddingH(context), 16, R.paddingH(context), 40),
+            child: _buildA4Preview(),
+          )),
         ],
       ),
       bottomNavigationBar: _buildBottomActionBar(),
@@ -408,25 +334,11 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     final dateStr = DateFormat('dd-MM-yyyy').format(widget.dateTime);
     final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
 
-    TextStyle tStyle({
-      double size = 11,
-      FontWeight weight = FontWeight.normal,
-      Color color = kBlack87,
-    }) => TextStyle(
-      fontSize: size,
-      fontWeight: weight,
-      color: color,
-      fontFamily: 'NotoSans',
-    );
+    TextStyle tStyle({double size = 11, FontWeight weight = FontWeight.normal, Color color = kBlack87}) =>
+        TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'NotoSans');
 
     // Two-column row with Expanded widgets to prevent overflow
-    Widget twoCol(
-      String label,
-      String value, {
-      bool bold = false,
-      double labelSize = 11,
-      double valueSize = 11,
-    }) {
+    Widget twoCol(String label, String value, {bool bold = false, double labelSize = 11, double valueSize = 11}) {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 3),
         child: Row(
@@ -434,40 +346,19 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
           children: [
             Expanded(
               flex: 5,
-              child: Text(
-                label,
-                style: tStyle(
-                  size: labelSize,
-                  weight: bold ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
+              child: Text(label, style: tStyle(size: labelSize, weight: bold ? FontWeight.w700 : FontWeight.w500)),
             ),
             Expanded(
               flex: 4,
-              child: Text(
-                value,
-                style: tStyle(
-                  size: valueSize,
-                  weight: bold ? FontWeight.w800 : FontWeight.w600,
-                ),
-                textAlign: TextAlign.right,
-              ),
+              child: Text(value, style: tStyle(size: valueSize, weight: bold ? FontWeight.w800 : FontWeight.w600), textAlign: TextAlign.right),
             ),
           ],
         ),
       );
     }
 
-    Widget thickLine() => Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      height: 1.5,
-      color: kBlack87,
-    );
-    Widget thinLine() => Container(
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      height: 0.8,
-      color: kBlack54,
-    );
+    Widget thickLine() => Container(margin: const EdgeInsets.symmetric(vertical: 6), height: 1.5, color: kBlack87);
+    Widget thinLine() => Container(margin: const EdgeInsets.symmetric(vertical: 5), height: 0.8, color: kBlack54);
 
     return Center(
       child: Container(
@@ -483,53 +374,26 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // ── Business Name ──
-            Text(
-              widget.businessName,
-              style: tStyle(size: 17, weight: FontWeight.w900),
-              textAlign: TextAlign.center,
-            ),
-            if (_showBusinessLocation &&
-                widget.businessLocation.isNotEmpty) ...[
+            Text(widget.businessName, style: tStyle(size: 17, weight: FontWeight.w900), textAlign: TextAlign.center),
+            if (_showBusinessLocation && widget.businessLocation.isNotEmpty) ...[
               const SizedBox(height: 3),
-              Text(
-                widget.businessLocation,
-                style: tStyle(size: 11),
-                textAlign: TextAlign.center,
-              ),
+              Text(widget.businessLocation, style: tStyle(size: 11), textAlign: TextAlign.center),
             ],
             if (_showBusinessPhone && widget.businessPhone.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Text(
-                'Tel: ${widget.businessPhone}',
-                style: tStyle(size: 11),
-                textAlign: TextAlign.center,
-              ),
+              Text('Tel: ${widget.businessPhone}', style: tStyle(size: 11), textAlign: TextAlign.center),
             ],
-            if (_showBusinessGSTIN &&
-                widget.businessGSTIN != null &&
-                widget.businessGSTIN!.isNotEmpty) ...[
+            if (_showBusinessGSTIN && widget.businessGSTIN != null && widget.businessGSTIN!.isNotEmpty) ...[
               const SizedBox(height: 2),
-              Text(
-                widget.businessGSTIN!,
-                style: tStyle(size: 11, weight: FontWeight.w600),
-                textAlign: TextAlign.center,
-              ),
+              Text(widget.businessGSTIN!, style: tStyle(size: 11, weight: FontWeight.w600), textAlign: TextAlign.center),
             ],
 
             thickLine(),
 
             // ── Title ──
-            Text(
-              'Payment Receipt',
-              style: tStyle(size: 14, weight: FontWeight.w900),
-              textAlign: TextAlign.center,
-            ),
+            Text('Payment Receipt', style: tStyle(size: 14, weight: FontWeight.w900), textAlign: TextAlign.center),
             const SizedBox(height: 4),
-            Text(
-              '#${widget.receiptNumber}',
-              style: tStyle(size: 13, weight: FontWeight.w900),
-              textAlign: TextAlign.center,
-            ),
+            Text('#${widget.receiptNumber}', style: tStyle(size: 13, weight: FontWeight.w900), textAlign: TextAlign.center),
 
             thickLine(),
 
@@ -539,40 +403,18 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
             thinLine(),
 
             // ── Received From ──
-            Text(
-              'Received From',
-              style: tStyle(size: 11, weight: FontWeight.w800),
-            ),
+            Text('Received From', style: tStyle(size: 11, weight: FontWeight.w800)),
             const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                widget.customerName,
-                style: tStyle(size: 11, weight: FontWeight.w600),
-              ),
-            ),
+            Align(alignment: Alignment.centerLeft, child: Text(widget.customerName, style: tStyle(size: 11, weight: FontWeight.w600))),
             if (_showCustomerPhone)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Contact: ${widget.customerPhone}',
-                  style: tStyle(size: 10, color: kBlack54),
-                ),
-              ),
+              Align(alignment: Alignment.centerLeft, child: Text('Contact: ${widget.customerPhone}', style: tStyle(size: 10, color: kBlack54))),
 
             thinLine(),
 
             // ── Credit Details ──
-            twoCol(
-              'Previous Credit',
-              '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}',
-            ),
+            twoCol('Previous Credit', '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}'),
             const SizedBox(height: 2),
-            twoCol(
-              widget.isManualCredit ? 'Amount Given' : 'Received',
-              '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}',
-              bold: true,
-            ),
+            twoCol(widget.isManualCredit ? 'Amount Given' : 'Received', '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}', bold: true),
             if (_showPaymentMode) ...[
               const SizedBox(height: 2),
               twoCol('Payment Mode', widget.paymentMode),
@@ -581,39 +423,20 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
             thickLine(),
 
             // ── Current Credit ──
-            twoCol(
-              'Balance Amount',
-              '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}',
-              bold: true,
-              labelSize: 13,
-              valueSize: 13,
-            ),
+            twoCol('Balance Amount', '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}', bold: true, labelSize: 13, valueSize: 13),
 
             thickLine(),
 
             // ── Invoice Reference ──
-            if (_showInvoiceReference &&
-                widget.invoiceReference != null &&
-                widget.invoiceReference!.isNotEmpty) ...[
+            if (_showInvoiceReference && widget.invoiceReference != null && widget.invoiceReference!.isNotEmpty) ...[
               const SizedBox(height: 4),
-              Text(
-                'For Invoice: ${widget.invoiceReference}',
-                style: tStyle(
-                  size: 10,
-                  color: kBlack54,
-                ).copyWith(fontStyle: FontStyle.italic),
-                textAlign: TextAlign.center,
-              ),
+              Text('For Invoice: ${widget.invoiceReference}', style: tStyle(size: 10, color: kBlack54).copyWith(fontStyle: FontStyle.italic), textAlign: TextAlign.center),
             ],
 
             const SizedBox(height: 10),
 
             // ── Footer ──
-            Text(
-              _footerText.isNotEmpty ? _footerText : 'Thank You',
-              style: tStyle(size: 13, weight: FontWeight.w700),
-              textAlign: TextAlign.center,
-            ),
+            Text(_footerText.isNotEmpty ? _footerText : 'Thank You', style: tStyle(size: 13, weight: FontWeight.w700), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -624,24 +447,18 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
-            color: kBlack87,
-            fontFamily: 'NotoSans',
-          ),
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
-            color: kBlack87,
-            fontFamily: 'NotoSans',
-          ),
-        ),
+        Text(label,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: bold ? FontWeight.w700 : FontWeight.w500,
+                color: kBlack87,
+                fontFamily: 'NotoSans')),
+        Text(value,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                color: kBlack87,
+                fontFamily: 'NotoSans')),
       ],
     );
   }
@@ -660,17 +477,20 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
           border: Border.all(color: kGrey200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 12,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top accent strip — always visible at very top
-            Container(width: double.infinity, height: 4, color: kPrimaryColor),
+            Container(
+              width: double.infinity,
+              height: 4,
+              color: kPrimaryColor,
+            ),
 
             // Header — white bg, bottom divider, dark text
             Container(
@@ -688,52 +508,29 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.businessName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: kBlack87,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
-                        if (_showBusinessLocation &&
-                            widget.businessLocation.isNotEmpty) ...[
+                        Text(widget.businessName,
+                            style: const TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w900,
+                                color: kBlack87, fontFamily: 'NotoSans')),
+                        if (_showBusinessLocation && widget.businessLocation.isNotEmpty) ...[
                           const SizedBox(height: 3),
-                          Text(
-                            widget.businessLocation,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: kBlack54,
-                              fontFamily: 'NotoSans',
-                            ),
-                          ),
+                          Text(widget.businessLocation,
+                              style: const TextStyle(
+                                  fontSize: 11, color: kBlack54, fontFamily: 'NotoSans')),
                         ],
-                        if (_showBusinessPhone &&
-                            widget.businessPhone.isNotEmpty) ...[
+                        if (_showBusinessPhone && widget.businessPhone.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            'Tel: ${widget.businessPhone}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: kBlack54,
-                              fontFamily: 'NotoSans',
-                            ),
-                          ),
+                          Text('Tel: ${widget.businessPhone}',
+                              style: const TextStyle(
+                                  fontSize: 11, color: kBlack54, fontFamily: 'NotoSans')),
                         ],
-                        if (_showBusinessGSTIN &&
-                            widget.businessGSTIN != null &&
+                        if (_showBusinessGSTIN && widget.businessGSTIN != null &&
                             widget.businessGSTIN!.isNotEmpty) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            '${widget.businessGSTIN}',
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: kBlack87,
-                              fontFamily: 'NotoSans',
-                            ),
-                          ),
+                          Text('${widget.businessGSTIN}',
+                              style: const TextStyle(
+                                  fontSize: 11, fontWeight: FontWeight.w700,
+                                  color: kBlack87, fontFamily: 'NotoSans')),
                         ],
                       ],
                     ),
@@ -742,43 +539,25 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: kPrimaryColor,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
-                          'Payment Receipt',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            color: kWhite,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        child: const Text('Payment Receipt',
+                            style: TextStyle(
+                                fontSize: 10, fontWeight: FontWeight.w900,
+                                color: kWhite, fontFamily: 'NotoSans')),
                       ),
                       const SizedBox(height: 6),
-                      Text(
-                        '#${widget.receiptNumber}',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: kBlack87,
-                          fontFamily: 'NotoSans',
-                        ),
-                      ),
+                      Text('#${widget.receiptNumber}',
+                          style: const TextStyle(
+                              fontSize: 13, fontWeight: FontWeight.w900,
+                              color: kBlack87, fontFamily: 'NotoSans')),
                       const SizedBox(height: 2),
-                      Text(
-                        dateStr,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: kBlack54,
-                          fontFamily: 'NotoSans',
-                        ),
-                      ),
+                      Text(dateStr,
+                          style: const TextStyle(
+                              fontSize: 10, color: kBlack54, fontFamily: 'NotoSans')),
                     ],
                   ),
                 ],
@@ -802,36 +581,22 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Received From',
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: kBlack54,
-                            letterSpacing: 1.2,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        const Text('Received From',
+                            style: TextStyle(
+                                fontSize: 9, fontWeight: FontWeight.w900,
+                                color: kBlack54, letterSpacing: 1.2,
+                                fontFamily: 'NotoSans')),
                         const SizedBox(height: 6),
-                        Text(
-                          widget.customerName,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w900,
-                            color: kBlack87,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        Text(widget.customerName,
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w900,
+                                color: kBlack87, fontFamily: 'NotoSans')),
                         if (_showCustomerPhone) ...[
                           const SizedBox(height: 2),
-                          Text(
-                            'Contact: ${widget.customerPhone}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: kBlack54,
-                              fontFamily: 'NotoSans',
-                            ),
-                          ),
+                          Text('Contact: ${widget.customerPhone}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: kBlack54,
+                                  fontFamily: 'NotoSans')),
                         ],
                       ],
                     ),
@@ -851,72 +616,49 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                         // Table header — keep theme colour here (perfect per user)
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 10,
-                          ),
+                              horizontal: 16, vertical: 10),
                           decoration: const BoxDecoration(
                             color: kPrimaryColor,
                             borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(8),
-                            ),
+                                top: Radius.circular(8)),
                           ),
                           child: const Row(
                             children: [
                               Expanded(
-                                child: Text(
-                                  'Payment Details',
+                                child: Text('Payment Details',
+                                    style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w900,
+                                        color: kWhite,
+                                        fontFamily: 'NotoSans')),
+                              ),
+                              Text('Amount',
                                   style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w900,
-                                    color: kWhite,
-                                    fontFamily: 'NotoSans',
-                                  ),
-                                ),
-                              ),
-                              Text(
-                                'Amount',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w900,
-                                  color: kWhite,
-                                  fontFamily: 'NotoSans',
-                                ),
-                              ),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      color: kWhite,
+                                      fontFamily: 'NotoSans')),
                             ],
                           ),
                         ),
-                        _a4Row(
-                          'Previous Credit',
-                          '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}',
-                          isAlt: false,
-                        ),
-                        _a4Row(
-                          widget.isManualCredit
-                              ? 'Amount Given'
-                              : 'Amount Received',
-                          '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}',
-                          isBold: true,
-                        ),
+                        _a4Row('Previous Credit',
+                            '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}',
+                            isAlt: false),
+                        _a4Row(widget.isManualCredit ? 'Amount Given' : 'Amount Received',
+                            '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}',
+                            isBold: true),
                         if (_showPaymentMode)
-                          _a4Row(
-                            'Payment Mode',
-                            widget.paymentMode,
-                            isAlt: true,
-                          ),
+                          _a4Row('Payment Mode', widget.paymentMode, isAlt: true),
                         Container(height: 1, color: const Color(0xFFE5E7EB)),
-                        _a4Row(
-                          'Current Credit Balance',
-                          '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}',
-                          isBold: true,
-                          isLarge: true,
-                        ),
+                        _a4Row('Current Credit Balance',
+                            '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}',
+                            isBold: true, isLarge: true),
                       ],
                     ),
                   ),
 
                   // Invoice reference — plain grey
-                  if (_showInvoiceReference &&
-                      widget.invoiceReference != null &&
+                  if (_showInvoiceReference && widget.invoiceReference != null &&
                       widget.invoiceReference!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     Container(
@@ -928,21 +670,13 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                       ),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.receipt_long_outlined,
-                            size: 16,
-                            color: kBlack54,
-                          ),
+                          const Icon(Icons.receipt_long_outlined,
+                              size: 16, color: kBlack54),
                           const SizedBox(width: 8),
-                          Text(
-                            'For Invoice: ${widget.invoiceReference}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: kBlack87,
-                              fontFamily: 'NotoSans',
-                            ),
-                          ),
+                          Text('For Invoice: ${widget.invoiceReference}',
+                              style: const TextStyle(
+                                  fontSize: 12, fontStyle: FontStyle.italic,
+                                  color: kBlack87, fontFamily: 'NotoSans')),
                         ],
                       ),
                     ),
@@ -953,37 +687,23 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                   // Footer — light grey bg, dark text, left accent border
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF7F8FA),
                       borderRadius: BorderRadius.circular(6),
-                      border: const Border(
-                        left: BorderSide(color: kPrimaryColor, width: 4),
-                      ),
+                      border: const Border(left: BorderSide(color: kPrimaryColor, width: 4)),
                     ),
                     child: Column(
                       children: [
-                        Text(
-                          _footerText.isNotEmpty ? _footerText : 'Thank You',
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: kBlack87,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        Text(_footerText.isNotEmpty ? _footerText : 'Thank You',
+                            style: const TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w700,
+                                color: kBlack87, fontFamily: 'NotoSans')),
                         const SizedBox(height: 4),
-                        const Text(
-                          'www.maxmybill.com',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: kBlack54,
-                            fontFamily: 'NotoSans',
-                          ),
-                        ),
+                        const Text('www.maxmybill.com',
+                            style: TextStyle(
+                                fontSize: 9, color: kBlack54,
+                                fontFamily: 'NotoSans')),
                       ],
                     ),
                   ),
@@ -996,37 +716,26 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     );
   }
 
-  Widget _a4Row(
-    String label,
-    String value, {
-    bool isAlt = false,
-    bool isBold = false,
-    bool isLarge = false,
-  }) {
+  Widget _a4Row(String label, String value,
+      {bool isAlt = false, bool isBold = false, bool isLarge = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       color: isAlt ? const Color(0xFFF7F8FA) : kWhite,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: isLarge ? 13 : 12,
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
-              color: kBlack87,
-              fontFamily: 'NotoSans',
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isLarge ? 14 : 12,
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
-              color: kBlack87,
-              fontFamily: 'NotoSans',
-            ),
-          ),
+          Text(label,
+              style: TextStyle(
+                  fontSize: isLarge ? 13 : 12,
+                  fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
+                  color: kBlack87,
+                  fontFamily: 'NotoSans')),
+          Text(value,
+              style: TextStyle(
+                  fontSize: isLarge ? 14 : 12,
+                  fontWeight: isBold ? FontWeight.w900 : FontWeight.w600,
+                  color: kBlack87,
+                  fontFamily: 'NotoSans')),
         ],
       ),
     );
@@ -1041,34 +750,21 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
           color: kWhite,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, -5)),
           ],
         ),
         child: Row(
           children: [
-            _buildBtn(
-              Icons.print_rounded,
-              'Print',
-              () => _handleThermalPrint(context),
-              true,
-            ),
+            _buildBtn(Icons.print_rounded, 'Print',
+                () => _handleThermalPrint(context), true),
             const SizedBox(width: 12),
-            _buildBtn(
-              Icons.picture_as_pdf_rounded,
-              'A4 / PDF',
-              () => _handleA4Print(context),
-              true,
-            ),
+            _buildBtn(Icons.picture_as_pdf_rounded, 'A4 / PDF',
+                () => _handleA4Print(context), true),
             const SizedBox(width: 12),
-            _buildBtn(
-              Icons.share_rounded,
-              'Share',
-              () => _handleShare(context),
-              false,
-            ),
+            _buildBtn(Icons.share_rounded, 'Share',
+                () => _handleShare(context), false),
           ],
         ),
       ),
@@ -1076,11 +772,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
   }
 
   Widget _buildBtn(
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-    bool isSec,
-  ) {
+      IconData icon, String label, VoidCallback onTap, bool isSec) {
     return Expanded(
       child: ElevatedButton(
         onPressed: onTap,
@@ -1101,14 +793,11 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
           children: [
             Icon(icon, size: 18),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
-                letterSpacing: 0.5,
-              ),
-            ),
+            Text(label,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    letterSpacing: 0.5)),
           ],
         ),
       ),
@@ -1133,26 +822,19 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
             context: context,
             builder: (ctx) => AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              title: const Text(
-                'Bluetooth Required',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16),
-              ),
+                  borderRadius: BorderRadius.circular(12)),
+              title: const Text('Bluetooth Required',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900, fontSize: 16)),
               content: const Text(
-                'Bluetooth is currently disabled. Please enable it to connect your printer.',
-              ),
+                  'Bluetooth is currently disabled. Please enable it to connect your printer.'),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text(
-                    'OK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                ),
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('OK',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: kPrimaryColor))),
               ],
             ),
           );
@@ -1168,21 +850,15 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
             child: Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: kPrimaryColor),
-                    SizedBox(height: 16),
-                    Text(
-                      'PRINTING...',
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  CircularProgressIndicator(color: kPrimaryColor),
+                  SizedBox(height: 16),
+                  Text('PRINTING...',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: kPrimaryColor,
-                      ),
-                    ),
-                  ],
-                ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: kPrimaryColor)),
+                ]),
               ),
             ),
           ),
@@ -1206,11 +882,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       if (selectedPrinterId == null) {
         if (context.mounted) Navigator.pop(context);
         if (context.mounted)
-          CommonWidgets.showSnackBar(
-            context,
-            'No printer configured',
-            bgColor: kOrange,
-          );
+          CommonWidgets.showSnackBar(context, 'No printer configured',
+              bgColor: kOrange);
         return;
       }
 
@@ -1242,8 +915,10 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
         for (int copy = 0; copy < numberOfCopies; copy++) {
           const chunk = 20;
           for (int i = 0; i < bytes.length; i += chunk) {
-            final end = (i + chunk < bytes.length) ? i + chunk : bytes.length;
-            await writeChar.write(bytes.sublist(i, end), withoutResponse: true);
+            final end =
+                (i + chunk < bytes.length) ? i + chunk : bytes.length;
+            await writeChar.write(bytes.sublist(i, end),
+                withoutResponse: true);
             await Future.delayed(const Duration(milliseconds: 20));
           }
           if (copy < numberOfCopies - 1) {
@@ -1264,11 +939,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     } catch (e) {
       if (context.mounted) Navigator.pop(context);
       if (context.mounted)
-        CommonWidgets.showSnackBar(
-          context,
-          'Printing failed: $e',
-          bgColor: kErrorColor,
-        );
+        CommonWidgets.showSnackBar(context, 'Printing failed: $e',
+            bgColor: kErrorColor);
     }
   }
 
@@ -1331,9 +1003,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     bytes.addAll([esc, 0x61, 0x01]); // center
     // 80mm: double-height+bold (0x30) | 58mm: just bold (0x08)
     bytes.addAll([esc, 0x21, lineWidth == 48 ? 0x30 : 0x08]);
-    bytes.addAll(
-      enc(_trunc(widget.businessName, lineWidth ~/ (lineWidth == 48 ? 2 : 1))),
-    );
+    bytes.addAll(enc(_trunc(widget.businessName, lineWidth ~/ (lineWidth == 48 ? 2 : 1))));
     bytes.add(lf);
     bytes.addAll([esc, 0x21, 0x00]); // normal
 
@@ -1347,9 +1017,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       bytes.addAll(enc('Tel: ${widget.businessPhone}'));
       bytes.add(lf);
     }
-    if (_showBusinessGSTIN &&
-        widget.businessGSTIN != null &&
-        widget.businessGSTIN!.isNotEmpty) {
+    if (_showBusinessGSTIN && widget.businessGSTIN != null && widget.businessGSTIN!.isNotEmpty) {
       bytes.addAll([esc, 0x21, 0x08]); // bold
       bytes.addAll(enc(_toThermalSafe(widget.businessGSTIN!)));
       bytes.addAll([esc, 0x21, 0x00]);
@@ -1388,10 +1056,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       bytes.add(lf);
     }
     if (_showCustomerPhone) {
-      for (final line in _wrapLine(
-        'Contact: ${widget.customerPhone}',
-        lineWidth,
-      )) {
+      for (final line in _wrapLine('Contact: ${widget.customerPhone}', lineWidth)) {
         bytes.addAll(enc(line));
         bytes.add(lf);
       }
@@ -1400,34 +1065,19 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     bytes.add(lf);
 
     // ── CREDIT DETAILS ───────────────────────────────
-    bytes.addAll(
-      enc(
-        _twoCols(
-          'Previous Credit',
-          '$tCur ${widget.previousCredit.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      ),
-    );
+    bytes.addAll(enc(_twoCols('Previous Credit',
+        '$tCur ${widget.previousCredit.toStringAsFixed(2)}', lineWidth)));
     bytes.add(lf);
 
     bytes.addAll([esc, 0x21, 0x08]); // bold
-    bytes.addAll(
-      enc(
-        _twoCols(
-          widget.isManualCredit ? 'Amount Given' : 'Received',
-          '$tCur ${widget.receivedAmount.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      ),
-    );
+    bytes.addAll(enc(_twoCols(
+        widget.isManualCredit ? 'Amount Given' : 'Received',
+        '$tCur ${widget.receivedAmount.toStringAsFixed(2)}', lineWidth)));
     bytes.addAll([esc, 0x21, 0x00]);
     bytes.add(lf);
 
     if (_showPaymentMode) {
-      bytes.addAll(
-        enc(_twoCols('Payment Mode', widget.paymentMode, lineWidth)),
-      );
+      bytes.addAll(enc(_twoCols('Payment Mode', widget.paymentMode, lineWidth)));
       bytes.add(lf);
     }
 
@@ -1437,30 +1087,19 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     // ── CURRENT CREDIT ───────────────────────────────
     // 80mm: double-height+bold (0x18) | 58mm: just bold (0x08)
     bytes.addAll([esc, 0x21, lineWidth == 48 ? 0x18 : 0x08]);
-    bytes.addAll(
-      enc(
-        _twoCols(
-          'Balance Amount',
-          '$tCur ${widget.currentCredit.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      ),
-    );
+    bytes.addAll(enc(_twoCols('Balance Amount',
+        '$tCur ${widget.currentCredit.toStringAsFixed(2)}', lineWidth)));
     bytes.addAll([esc, 0x21, 0x00]);
     bytes.add(lf);
     bytes.addAll(enc(divider));
     bytes.add(lf);
 
     // ── INVOICE REFERENCE ────────────────────────────
-    if (_showInvoiceReference &&
-        widget.invoiceReference != null &&
+    if (_showInvoiceReference && widget.invoiceReference != null &&
         widget.invoiceReference!.isNotEmpty) {
       bytes.add(lf);
       bytes.addAll([esc, 0x61, 0x01]);
-      for (final line in _wrapLine(
-        'For Invoice: ${widget.invoiceReference}',
-        lineWidth,
-      )) {
+      for (final line in _wrapLine('For Invoice: ${widget.invoiceReference}', lineWidth)) {
         bytes.addAll(enc(line));
         bytes.add(lf);
       }
@@ -1522,9 +1161,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
         if (word.length > maxWidth) {
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length)
-                ? start + maxWidth
-                : word.length;
+            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -1538,9 +1175,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
         if (word.length > maxWidth) {
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length)
-                ? start + maxWidth
-                : word.length;
+            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -1569,20 +1204,13 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
             child: Card(
               child: Padding(
                 padding: EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircularProgressIndicator(color: kPrimaryColor),
-                    SizedBox(height: 16),
-                    Text(
-                      'Generating PDF...',
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  CircularProgressIndicator(color: kPrimaryColor),
+                  SizedBox(height: 16),
+                  Text('Generating PDF...',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+                          fontSize: 12, fontWeight: FontWeight.w600)),
+                ]),
               ),
             ),
           ),
@@ -1592,24 +1220,21 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       final pdf = await _generateA4Pdf();
       final output = await getTemporaryDirectory();
       final file = File(
-        '${output.path}/payment_receipt_${widget.receiptNumber}.pdf',
-      );
+          '${output.path}/payment_receipt_${widget.receiptNumber}.pdf');
       await file.writeAsBytes(await pdf.save());
 
       if (context.mounted) Navigator.pop(context);
       if (context.mounted) {
-        await Share.shareXFiles([
-          XFile(file.path),
-        ], text: 'Payment Receipt #${widget.receiptNumber}');
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: 'Payment Receipt #${widget.receiptNumber}',
+        );
       }
     } catch (e) {
       if (context.mounted) Navigator.pop(context);
       if (context.mounted)
-        CommonWidgets.showSnackBar(
-          context,
-          'Error generating PDF: $e',
-          bgColor: kErrorColor,
-        );
+        CommonWidgets.showSnackBar(context, 'Error generating PDF: $e',
+            bgColor: kErrorColor);
     }
   }
 
@@ -1638,18 +1263,12 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
               // ── HEADER — white bg, top accent border ──
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 24,
-                ),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 24),
                 decoration: pw.BoxDecoration(
                   color: PdfColors.white,
                   border: pw.Border(
                     top: pw.BorderSide(color: primaryPdf, width: 5),
-                    bottom: const pw.BorderSide(
-                      color: PdfColors.grey300,
-                      width: 0.5,
-                    ),
+                    bottom: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                   ),
                 ),
                 child: pw.Row(
@@ -1660,50 +1279,26 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            widget.businessName,
-                            style: pw.TextStyle(
-                              font: ttfBold,
-                              fontSize: 22,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.black,
-                            ),
-                          ),
-                          if (_showBusinessLocation &&
-                              widget.businessLocation.isNotEmpty) ...[
-                            pw.SizedBox(height: 4),
-                            pw.Text(
-                              widget.businessLocation,
-                              style: const pw.TextStyle(
-                                fontSize: 11,
-                                color: PdfColors.grey700,
-                              ),
-                            ),
-                          ],
-                          if (_showBusinessPhone &&
-                              widget.businessPhone.isNotEmpty) ...[
-                            pw.SizedBox(height: 2),
-                            pw.Text(
-                              'Tel: ${widget.businessPhone}',
-                              style: const pw.TextStyle(
-                                fontSize: 11,
-                                color: PdfColors.grey700,
-                              ),
-                            ),
-                          ],
-                          if (_showBusinessGSTIN &&
-                              widget.businessGSTIN != null &&
-                              widget.businessGSTIN!.isNotEmpty) ...[
-                            pw.SizedBox(height: 2),
-                            pw.Text(
-                              '${widget.businessGSTIN}',
+                          pw.Text(widget.businessName,
                               style: pw.TextStyle(
-                                font: ttfBold,
-                                fontSize: 11,
-                                fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.black,
-                              ),
-                            ),
+                                  font: ttfBold, fontSize: 22,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: PdfColors.black)),
+                          if (_showBusinessLocation && widget.businessLocation.isNotEmpty) ...[
+                            pw.SizedBox(height: 4),
+                            pw.Text(widget.businessLocation,
+                                style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                          ],
+                          if (_showBusinessPhone && widget.businessPhone.isNotEmpty) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text('Tel: ${widget.businessPhone}',
+                                style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                          ],
+                          if (_showBusinessGSTIN && widget.businessGSTIN != null && widget.businessGSTIN!.isNotEmpty) ...[
+                            pw.SizedBox(height: 2),
+                            pw.Text('${widget.businessGSTIN}',
+                                style: pw.TextStyle(font: ttfBold, fontSize: 11,
+                                    fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                           ],
                         ],
                       ),
@@ -1713,49 +1308,25 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
                         pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: pw.BoxDecoration(
-                            color: primaryPdf,
-                            borderRadius: pw.BorderRadius.circular(4),
-                          ),
-                          child: pw.Text(
-                            'Payment Receipt',
-                            style: pw.TextStyle(
-                              font: ttfBold,
-                              color: PdfColors.white,
-                              fontSize: 11,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
+                              color: primaryPdf,
+                              borderRadius: pw.BorderRadius.circular(4)),
+                          child: pw.Text('Payment Receipt',
+                              style: pw.TextStyle(
+                                  font: ttfBold, color: PdfColors.white,
+                                  fontSize: 11, fontWeight: pw.FontWeight.bold)),
                         ),
                         pw.SizedBox(height: 8),
-                        pw.Text(
-                          '#${widget.receiptNumber}',
-                          style: pw.TextStyle(
-                            font: ttfBold,
-                            fontSize: 14,
-                            fontWeight: pw.FontWeight.bold,
-                            color: PdfColors.black,
-                          ),
-                        ),
+                        pw.Text('#${widget.receiptNumber}',
+                            style: pw.TextStyle(
+                                font: ttfBold, fontSize: 14,
+                                fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                         pw.SizedBox(height: 2),
-                        pw.Text(
-                          dateStr,
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
-                        pw.Text(
-                          timeStr,
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
+                        pw.Text(dateStr,
+                            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(timeStr,
+                            style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                       ],
                     ),
                   ],
@@ -1775,42 +1346,27 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                         width: double.infinity,
                         padding: const pw.EdgeInsets.all(16),
                         decoration: pw.BoxDecoration(
-                          color: greyBg,
-                          border: pw.Border.all(color: PdfColors.grey300),
-                          borderRadius: pw.BorderRadius.circular(8),
-                        ),
+                            color: greyBg,
+                            border: pw.Border.all(color: PdfColors.grey300),
+                            borderRadius: pw.BorderRadius.circular(8)),
                         child: pw.Column(
                           crossAxisAlignment: pw.CrossAxisAlignment.start,
                           children: [
-                            pw.Text(
-                              'Received From',
-                              style: pw.TextStyle(
-                                font: ttfBold,
-                                fontSize: 9,
-                                fontWeight: pw.FontWeight.bold,
-                                color: PdfColors.grey600,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
+                            pw.Text('Received From',
+                                style: pw.TextStyle(
+                                    font: ttfBold, fontSize: 9,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: PdfColors.grey600,
+                                    letterSpacing: 1.2)),
                             pw.SizedBox(height: 6),
-                            pw.Text(
-                              widget.customerName,
-                              style: pw.TextStyle(
-                                font: ttfBold,
-                                fontSize: 16,
-                                fontWeight: pw.FontWeight.bold,
-                              ),
-                            ),
+                            pw.Text(widget.customerName,
+                                style: pw.TextStyle(
+                                    font: ttfBold, fontSize: 16,
+                                    fontWeight: pw.FontWeight.bold)),
                             if (_showCustomerPhone) ...[
                               pw.SizedBox(height: 2),
-                              pw.Text(
-                                'Contact: ${widget.customerPhone}',
-                                style: pw.TextStyle(
-                                  font: ttf,
-                                  fontSize: 12,
-                                  color: PdfColors.grey700,
-                                ),
-                              ),
+                              pw.Text('Contact: ${widget.customerPhone}',
+                                  style: pw.TextStyle(font: ttf, fontSize: 12, color: PdfColors.grey700)),
                             ],
                           ],
                         ),
@@ -1822,18 +1378,14 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                       pw.Container(
                         width: double.infinity,
                         decoration: pw.BoxDecoration(
-                          border: pw.Border.all(color: PdfColors.grey300),
-                          borderRadius: pw.BorderRadius.circular(8),
-                        ),
+                            border: pw.Border.all(color: PdfColors.grey300),
+                            borderRadius: pw.BorderRadius.circular(8)),
                         child: pw.Column(
                           children: [
                             // Table header
                             pw.Container(
                               width: double.infinity,
-                              padding: const pw.EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 12,
-                              ),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                               decoration: pw.BoxDecoration(
                                 color: primaryPdf,
                                 borderRadius: const pw.BorderRadius.only(
@@ -1842,99 +1394,60 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                                 ),
                               ),
                               child: pw.Row(
-                                mainAxisAlignment:
-                                    pw.MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                                 children: [
-                                  pw.Text(
-                                    'Payment Details',
-                                    style: pw.TextStyle(
-                                      font: ttfBold,
-                                      fontSize: 12,
-                                      fontWeight: pw.FontWeight.bold,
-                                      color: PdfColors.white,
-                                    ),
-                                  ),
-                                  pw.Text(
-                                    'Amount',
-                                    style: pw.TextStyle(
-                                      font: ttfBold,
-                                      fontSize: 12,
-                                      fontWeight: pw.FontWeight.bold,
-                                      color: PdfColors.white,
-                                    ),
-                                  ),
+                                  pw.Text('Payment Details',
+                                      style: pw.TextStyle(
+                                          font: ttfBold, fontSize: 12,
+                                          fontWeight: pw.FontWeight.bold,
+                                          color: PdfColors.white)),
+                                  pw.Text('Amount',
+                                      style: pw.TextStyle(
+                                          font: ttfBold, fontSize: 12,
+                                          fontWeight: pw.FontWeight.bold,
+                                          color: PdfColors.white)),
                                 ],
                               ),
                             ),
-                            _pdfFullRow(
-                              'Previous Credit',
-                              '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}',
-                              ttf,
-                              ttfBold,
-                              isAlt: false,
-                            ),
-                            _pdfFullRow(
-                              widget.isManualCredit
-                                  ? 'Amount Given'
-                                  : 'Amount Received',
-                              '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}',
-                              ttf,
-                              ttfBold,
-                              isBold: true,
-                            ),
+                            _pdfFullRow('Previous Credit',
+                                '${widget.currency}${widget.previousCredit.toStringAsFixed(2)}',
+                                ttf, ttfBold, isAlt: false),
+                            _pdfFullRow(widget.isManualCredit ? 'Amount Given' : 'Amount Received',
+                                '${widget.currency}${widget.receivedAmount.toStringAsFixed(2)}',
+                                ttf, ttfBold, isBold: true),
                             if (_showPaymentMode)
-                              _pdfFullRow(
-                                'Payment Mode',
-                                widget.paymentMode,
-                                ttf,
-                                ttfBold,
-                                isAlt: true,
-                              ),
+                              _pdfFullRow('Payment Mode', widget.paymentMode,
+                                  ttf, ttfBold, isAlt: true),
                             pw.Container(height: 1, color: PdfColors.grey300),
-                            _pdfFullRow(
-                              'Current Credit Balance',
-                              '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}',
-                              ttf,
-                              ttfBold,
-                              isBold: true,
-                              isLarge: true,
-                            ),
+                            _pdfFullRow('Current Credit Balance',
+                                '${widget.currency}${widget.currentCredit.toStringAsFixed(2)}',
+                                ttf, ttfBold, isBold: true, isLarge: true),
                           ],
                         ),
                       ),
 
-                      if (_showInvoiceReference &&
-                          widget.invoiceReference != null &&
+                      if (_showInvoiceReference && widget.invoiceReference != null &&
                           widget.invoiceReference!.isNotEmpty) ...[
                         pw.SizedBox(height: 20),
                         pw.Container(
                           width: double.infinity,
                           padding: const pw.EdgeInsets.all(14),
                           decoration: pw.BoxDecoration(
-                            color: greyBg,
-                            border: pw.Border.all(color: PdfColors.grey300),
-                            borderRadius: pw.BorderRadius.circular(8),
-                          ),
+                              color: greyBg,
+                              border: pw.Border.all(color: PdfColors.grey300),
+                              borderRadius: pw.BorderRadius.circular(8)),
                           child: pw.Row(
                             children: [
-                              pw.Text(
-                                'For Invoice:  ',
-                                style: pw.TextStyle(
-                                  font: ttfBold,
-                                  fontSize: 11,
-                                  fontWeight: pw.FontWeight.bold,
-                                  color: PdfColors.grey700,
-                                ),
-                              ),
-                              pw.Text(
-                                widget.invoiceReference!,
-                                style: pw.TextStyle(
-                                  font: ttf,
-                                  fontSize: 11,
-                                  fontStyle: pw.FontStyle.italic,
-                                  color: PdfColors.grey800,
-                                ),
-                              ),
+                              pw.Text('For Invoice:  ',
+                                  style: pw.TextStyle(
+                                      font: ttfBold, fontSize: 11,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: PdfColors.grey700)),
+                              pw.Text(widget.invoiceReference!,
+                                  style: pw.TextStyle(
+                                      font: ttf, fontSize: 11,
+                                      fontStyle: pw.FontStyle.italic,
+                                      color: PdfColors.grey800)),
                             ],
                           ),
                         ),
@@ -1951,17 +1464,11 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
               // ── FOOTER — light grey, dark text, left accent ──
               pw.Container(
                 width: double.infinity,
-                padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 16,
-                ),
+                padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                 decoration: pw.BoxDecoration(
                   color: const PdfColor.fromInt(0xFFF7F8FA),
                   border: pw.Border(
-                    top: const pw.BorderSide(
-                      color: PdfColors.grey300,
-                      width: 0.5,
-                    ),
+                    top: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
                     left: pw.BorderSide(color: primaryPdf, width: 5),
                   ),
                 ),
@@ -1971,12 +1478,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                     pw.Expanded(
                       child: pw.Text(
                         _footerText.isNotEmpty ? _footerText : 'Thank You',
-                        style: pw.TextStyle(
-                          font: ttfBold,
-                          fontSize: 13,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
-                        ),
+                        style: pw.TextStyle(font: ttfBold, fontSize: 13,
+                            fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                         textAlign: pw.TextAlign.center,
                       ),
                     ),
@@ -1984,22 +1487,11 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text(
-                            'Generated by Maxmybill',
-                            style: const pw.TextStyle(
-                              fontSize: 8,
-                              color: PdfColors.grey600,
-                            ),
-                          ),
-                          pw.Text(
-                            'www.maxmybill.com',
-                            style: pw.TextStyle(
-                              font: ttfBold,
-                              fontSize: 8,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.grey700,
-                            ),
-                          ),
+                          pw.Text('Generated by Maxmybill',
+                              style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                          pw.Text('www.maxmybill.com',
+                              style: pw.TextStyle(font: ttfBold, fontSize: 8,
+                                  fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                         ],
                       ),
                   ],
@@ -2014,15 +1506,8 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     return pdf;
   }
 
-  pw.Widget _pdfFullRow(
-    String label,
-    String value,
-    pw.Font ttf,
-    pw.Font ttfBold, {
-    bool isAlt = false,
-    bool isBold = false,
-    bool isLarge = false,
-  }) {
+  pw.Widget _pdfFullRow(String label, String value, pw.Font ttf, pw.Font ttfBold,
+      {bool isAlt = false, bool isBold = false, bool isLarge = false}) {
     // Use plain grey for alt rows, white for everything else — no theme tint
     final bg = isAlt ? const PdfColor.fromInt(0xFFF7F8FA) : PdfColors.white;
     return pw.Container(
@@ -2031,24 +1516,18 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            label,
-            style: pw.TextStyle(
-              font: isBold ? ttfBold : ttf,
-              fontSize: isLarge ? 13 : 11,
-              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-              color: PdfColors.black,
-            ),
-          ),
-          pw.Text(
-            value,
-            style: pw.TextStyle(
-              font: isBold ? ttfBold : ttf,
-              fontSize: isLarge ? 15 : 11,
-              fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
-              color: PdfColors.grey800,
-            ),
-          ),
+          pw.Text(label,
+              style: pw.TextStyle(
+                  font: isBold ? ttfBold : ttf,
+                  fontSize: isLarge ? 13 : 11,
+                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  color: PdfColors.black)),
+          pw.Text(value,
+              style: pw.TextStyle(
+                  font: isBold ? ttfBold : ttf,
+                  fontSize: isLarge ? 15 : 11,
+                  fontWeight: isBold ? pw.FontWeight.bold : pw.FontWeight.normal,
+                  color: PdfColors.grey800)),
         ],
       ),
     );
@@ -2056,9 +1535,9 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
 
   // ── SHARE (text) ──────────────────────────────────
   Future<void> _handleShare(BuildContext context) async {
-    final dateStr = DateFormat('dd-MM-yyyy hh:mm a').format(widget.dateTime);
-    final text =
-        '''
+    final dateStr =
+        DateFormat('dd-MM-yyyy hh:mm a').format(widget.dateTime);
+    final text = '''
 PAYMENT RECEIPT
 
 Receipt No: ${widget.receiptNumber}
@@ -2082,9 +1561,7 @@ ${widget.invoiceReference != null ? 'For Invoice: ${widget.invoiceReference}' : 
 
 Thank You
 ''';
-    await Share.share(
-      text,
-      subject: 'Payment Receipt - ${widget.receiptNumber}',
-    );
+    await Share.share(text,
+        subject: 'Payment Receipt - ${widget.receiptNumber}');
   }
 }

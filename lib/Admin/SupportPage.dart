@@ -18,8 +18,7 @@ class SupportPage extends StatefulWidget {
   State<SupportPage> createState() => _SupportPageState();
 }
 
-class _SupportPageState extends State<SupportPage>
-    with SingleTickerProviderStateMixin {
+class _SupportPageState extends State<SupportPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _responseController = TextEditingController();
   bool _isSubmitting = false;
@@ -45,15 +44,8 @@ class _SupportPageState extends State<SupportPage>
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Support Request',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-            letterSpacing: 0.5,
-          ),
-        ),
+        title: const Text('Support Request',
+            style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.5)),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
@@ -63,19 +55,13 @@ class _SupportPageState extends State<SupportPage>
         ),
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('support_requests')
-            .doc(widget.requestId)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('support_requests').doc(widget.requestId).snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
 
-          final requestData =
-              snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          final requestData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
           return SingleChildScrollView(
             child: Column(
@@ -99,42 +85,17 @@ class _SupportPageState extends State<SupportPage>
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'From Store',
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: kBlack54,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              Text('From Store', style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                               const SizedBox(height: 4),
-                              Text(
-                                requestData['storeName'] ?? 'Unknown Store',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                  color: kBlack87,
-                                ),
-                              ),
+                              Text(requestData['storeName'] ?? 'Unknown Store', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kBlack87)),
                             ],
                           ),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                _formatDate(requestData['createdAt']),
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  color: kBlack54,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              Text(_formatDate(requestData['createdAt']), style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                               const SizedBox(height: 4),
-                              _buildStatusBadge(
-                                requestData['status'] ?? 'pending',
-                              ),
+                              _buildStatusBadge(requestData['status'] ?? 'pending'),
                             ],
                           ),
                         ],
@@ -143,49 +104,19 @@ class _SupportPageState extends State<SupportPage>
                       const Divider(height: 1, color: kGrey100),
                       const SizedBox(height: 16),
                       // Subject
-                      Text(
-                        'Subject',
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: kBlack54,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      Text('Subject', style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       const SizedBox(height: 6),
-                      Text(
-                        requestData['subject'] ?? 'No subject',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: kBlack87,
-                        ),
-                      ),
+                      Text(requestData['subject'] ?? 'No subject', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87)),
                       const SizedBox(height: 16),
                       // Message
-                      Text(
-                        'Message',
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: kBlack54,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      Text('Message', style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                       const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: kGreyBg,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(8)),
                         child: Text(
                           requestData['message'] ?? 'No message',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: kBlack87,
-                            height: 1.6,
-                          ),
+                          style: const TextStyle(fontSize: 13, color: kBlack87, height: 1.6),
                         ),
                       ),
                       if (requestData['category'] != null) ...[
@@ -193,25 +124,15 @@ class _SupportPageState extends State<SupportPage>
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
                                 color: kPrimaryColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                  color: kPrimaryColor.withValues(alpha: 0.2),
-                                ),
+                                border: Border.all(color: kPrimaryColor.withValues(alpha: 0.2)),
                               ),
                               child: Text(
                                 requestData['category'] ?? 'General',
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w900,
-                                  color: kPrimaryColor,
-                                  letterSpacing: 0.5,
-                                ),
+                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: 0.5),
                               ),
                             ),
                           ],
@@ -238,32 +159,10 @@ class _SupportPageState extends State<SupportPage>
                     dividerColor: Colors.transparent,
                     labelColor: kWhite,
                     unselectedLabelColor: kBlack54,
-                    labelStyle: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 11,
-                      letterSpacing: 0.5,
-                    ),
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                     tabs: const [
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            HeroIcon(HeroIcons.chatBubbleLeftRight, size: 14),
-                            SizedBox(width: 6),
-                            Text('Current', style: TextStyle(fontSize: 10)),
-                          ],
-                        ),
-                      ),
-                      Tab(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            HeroIcon(HeroIcons.clock, size: 14),
-                            SizedBox(width: 6),
-                            Text('History', style: TextStyle(fontSize: 10)),
-                          ],
-                        ),
-                      ),
+                      Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.chatBubbleLeftRight, size: 14), SizedBox(width: 6), Text('Current', style: TextStyle(fontSize: 10))])),
+                      Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.clock, size: 14), SizedBox(width: 6), Text('History', style: TextStyle(fontSize: 10))])),
                     ],
                   ),
                 ),
@@ -296,18 +195,14 @@ class _SupportPageState extends State<SupportPage>
       children: [
         // Admin Response Section
         Expanded(
-          child:
-              requestData['adminResponse'] != null &&
-                  requestData['adminResponse'].toString().isNotEmpty
+          child: requestData['adminResponse'] != null && requestData['adminResponse'].toString().isNotEmpty
               ? Container(
                   margin: const EdgeInsets.all(16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: kWhite,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: kGoogleGreen.withValues(alpha: 0.2),
-                    ),
+                    border: Border.all(color: kGoogleGreen.withValues(alpha: 0.2)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,38 +211,16 @@ class _SupportPageState extends State<SupportPage>
                         children: [
                           Container(
                             padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: kGoogleGreen.withValues(alpha: 0.1),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const HeroIcon(
-                              HeroIcons.checkCircle,
-                              size: 20,
-                              color: kGoogleGreen,
-                            ),
+                            decoration: BoxDecoration(color: kGoogleGreen.withValues(alpha: 0.1), shape: BoxShape.circle),
+                            child: const HeroIcon(HeroIcons.checkCircle, size: 20, color: kGoogleGreen),
                           ),
                           const SizedBox(width: 12),
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Admin Response',
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: kBlack54,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
+                              const Text('Admin Response', style: TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
                               if (requestData['respondedAt'] != null)
-                                Text(
-                                  _formatDate(requestData['respondedAt']),
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    color: kGoogleGreen,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
+                                Text(_formatDate(requestData['respondedAt']), style: const TextStyle(fontSize: 10, color: kGoogleGreen, fontWeight: FontWeight.w700)),
                             ],
                           ),
                         ],
@@ -355,17 +228,10 @@ class _SupportPageState extends State<SupportPage>
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: kGrey50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                        decoration: BoxDecoration(color: kGrey50, borderRadius: BorderRadius.circular(8)),
                         child: Text(
                           requestData['adminResponse'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: kBlack87,
-                            height: 1.6,
-                          ),
+                          style: const TextStyle(fontSize: 13, color: kBlack87, height: 1.6),
                         ),
                       ),
                     ],
@@ -377,20 +243,9 @@ class _SupportPageState extends State<SupportPage>
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        HeroIcon(
-                          HeroIcons.chatBubbleOvalLeftEllipsis,
-                          size: 48,
-                          color: kGrey300,
-                        ),
+                        HeroIcon(HeroIcons.chatBubbleOvalLeftEllipsis, size: 48, color: kGrey300),
                         const SizedBox(height: 12),
-                        const Text(
-                          'No response yet',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: kBlack54,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text('No response yet', style: TextStyle(fontSize: 13, color: kBlack54, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -425,10 +280,7 @@ class _SupportPageState extends State<SupportPage>
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2,
-                      ),
+                      borderSide: const BorderSide(color: kPrimaryColor, width: 2),
                     ),
                     contentPadding: const EdgeInsets.all(12),
                   ),
@@ -438,27 +290,13 @@ class _SupportPageState extends State<SupportPage>
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const HeroIcon(
-                          HeroIcons.checkCircle,
-                          size: 18,
-                          color: kWhite,
-                        ),
-                        label: const Text(
-                          'Supported',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
-                            color: Colors.white,
-                          ),
-                        ),
+                        icon: const HeroIcon(HeroIcons.checkCircle, size: 18, color: kWhite),
+                        label: const Text('Supported', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5,color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kGoogleGreen,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: _isSubmitting
                             ? null
@@ -468,27 +306,13 @@ class _SupportPageState extends State<SupportPage>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
-                        icon: const HeroIcon(
-                          HeroIcons.clock,
-                          size: 18,
-                          color: kWhite,
-                        ),
-                        label: const Text(
-                          'In Progress',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 12,
-                            letterSpacing: 0.5,
-                            color: Colors.white,
-                          ),
-                        ),
+                        icon: const HeroIcon(HeroIcons.clock, size: 18, color: kWhite),
+                        label: const Text('In Progress', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5,color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         onPressed: _isSubmitting
                             ? null
@@ -514,9 +338,7 @@ class _SupportPageState extends State<SupportPage>
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: kPrimaryColor),
-          );
+          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -526,14 +348,7 @@ class _SupportPageState extends State<SupportPage>
               children: [
                 HeroIcon(HeroIcons.clock, size: 48, color: kGrey300),
                 const SizedBox(height: 12),
-                const Text(
-                  'No support history',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: kBlack54,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text('No support history', style: TextStyle(fontSize: 13, color: kBlack54, fontWeight: FontWeight.w600)),
               ],
             ),
           );
@@ -580,14 +395,7 @@ class _SupportPageState extends State<SupportPage>
               children: [
                 HeroIcon(HeroIcons.clock, size: 48, color: kGrey300),
                 const SizedBox(height: 12),
-                const Text(
-                  'No support history for this request',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: kBlack54,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                const Text('No support history for this request', style: TextStyle(fontSize: 13, color: kBlack54, fontWeight: FontWeight.w600)),
               ],
             ),
           );
@@ -617,80 +425,34 @@ class _SupportPageState extends State<SupportPage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        data['subject'] ?? 'No subject',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          color: kBlack87,
-                        ),
-                      ),
+                      Text(data['subject'] ?? 'No subject', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: kBlack87)),
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: statusColor.withValues(alpha: 0.2),
-                          ),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.2)),
                         ),
                         child: Text(
                           status.replaceAll('_', ' ').toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w900,
-                            color: statusColor,
-                            letterSpacing: 0.5,
-                          ),
+                          style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: statusColor, letterSpacing: 0.5),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    _formatDate(data['createdAt']),
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: kBlack54,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (data['adminResponse'] != null &&
-                      data['adminResponse'].toString().isNotEmpty) ...[
+                  Text(_formatDate(data['createdAt']), style: const TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w600)),
+                  if (data['adminResponse'] != null && data['adminResponse'].toString().isNotEmpty) ...[
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: kGrey50,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      decoration: BoxDecoration(color: kGrey50, borderRadius: BorderRadius.circular(8)),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Response:',
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w900,
-                              color: kBlack54,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                          const Text('Response:', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5)),
                           const SizedBox(height: 4),
-                          Text(
-                            data['adminResponse'] ?? '',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: kBlack87,
-                            ),
-                          ),
+                          Text(data['adminResponse'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: kBlack87)),
                         ],
                       ),
                     ),
@@ -718,12 +480,7 @@ class _SupportPageState extends State<SupportPage>
       ),
       child: Text(
         status.replaceAll('_', ' ').toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: color,
-          letterSpacing: 0.5,
-        ),
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.5),
       ),
     );
   }
@@ -763,7 +520,7 @@ class _SupportPageState extends State<SupportPage>
             'status': status,
             'respondedAt': Timestamp.now(),
             'by': 'admin',
-          },
+          }
         ]);
       }
 

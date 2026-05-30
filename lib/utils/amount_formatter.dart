@@ -42,11 +42,7 @@ class AmountFormatter {
   }
 
   /// Formats amount with currency symbol
-  static String formatWithSymbol(
-    dynamic value, {
-    int maxDecimals = 4,
-    String? symbol,
-  }) {
+  static String formatWithSymbol(dynamic value, {int maxDecimals = 4, String? symbol}) {
     final currencySymbol = symbol ?? CurrencyService().symbol;
     return '$currencySymbol${format(value, maxDecimals: maxDecimals)}';
   }
@@ -99,16 +95,13 @@ class AmountFormatter {
 /// Extension on double for easy formatting
 extension AmountExtension on double {
   /// Format with full precision (no rounding)
-  String toAmount({int maxDecimals = 4}) =>
-      AmountFormatter.format(this, maxDecimals: maxDecimals);
+  String toAmount({int maxDecimals = 4}) => AmountFormatter.format(this, maxDecimals: maxDecimals);
 
   /// Format with Rs prefix
-  String toAmountRs({int maxDecimals = 4}) =>
-      AmountFormatter.formatWithRs(this, maxDecimals: maxDecimals);
+  String toAmountRs({int maxDecimals = 4}) => AmountFormatter.formatWithRs(this, maxDecimals: maxDecimals);
 
   /// Format with ₹ symbol
-  String toAmountSymbol({int maxDecimals = 4}) =>
-      AmountFormatter.formatWithSymbol(this, maxDecimals: maxDecimals);
+  String toAmountSymbol({int maxDecimals = 4}) => AmountFormatter.formatWithSymbol(this, maxDecimals: maxDecimals);
 
   /// Format compact (for lists)
   String toAmountCompact() => AmountFormatter.formatCompact(this);
@@ -117,14 +110,12 @@ extension AmountExtension on double {
 /// Extension on num for easy formatting
 extension NumAmountExtension on num {
   /// Format with full precision (no rounding)
-  String toAmount({int maxDecimals = 4}) =>
-      AmountFormatter.format(this, maxDecimals: maxDecimals);
+  String toAmount({int maxDecimals = 4}) => AmountFormatter.format(this, maxDecimals: maxDecimals);
 
   /// Format with Rs prefix
-  String toAmountRs({int maxDecimals = 4}) =>
-      AmountFormatter.formatWithRs(this, maxDecimals: maxDecimals);
+  String toAmountRs({int maxDecimals = 4}) => AmountFormatter.formatWithRs(this, maxDecimals: maxDecimals);
 
   /// Format with ₹ symbol
-  String toAmountSymbol({int maxDecimals = 4}) =>
-      AmountFormatter.formatWithSymbol(this, maxDecimals: maxDecimals);
+  String toAmountSymbol({int maxDecimals = 4}) => AmountFormatter.formatWithSymbol(this, maxDecimals: maxDecimals);
 }
+

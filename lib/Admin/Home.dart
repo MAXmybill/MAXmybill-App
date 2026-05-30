@@ -19,8 +19,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
+class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -43,33 +42,22 @@ class _HomePageState extends State<HomePage>
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Admin Console',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 1.0,
-          ),
-        ),
+        title: const Text('Admin Console',
+            style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0)),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
         automaticallyImplyLeading: false,
         actions: [
           IconButton(
-            icon: const HeroIcon(
-              HeroIcons.arrowRightOnRectangle,
-              color: kWhite,
-              size: 22,
-            ),
+            icon: const HeroIcon(HeroIcons.arrowRightOnRectangle, color: kWhite, size: 22),
             onPressed: () async {
               try {
                 await FirebaseAuth.instance.signOut();
                 if (mounted) {
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (context) => const LoginPage()),
-                    (route) => false,
+                        (route) => false,
                   );
                 }
               } catch (e) {
@@ -100,42 +88,11 @@ class _HomePageState extends State<HomePage>
                 dividerColor: Colors.transparent,
                 labelColor: kWhite,
                 unselectedLabelColor: kBlack54,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                ),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                 tabs: const [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        HeroIcon(HeroIcons.buildingStorefront, size: 16),
-                        SizedBox(width: 8),
-                        Text('Stores'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        HeroIcon(HeroIcons.bookOpen, size: 16),
-                        SizedBox(width: 8),
-                        Text('Knowledge'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        HeroIcon(HeroIcons.lifebuoy, size: 16),
-                        SizedBox(width: 8),
-                        Text('Support'),
-                      ],
-                    ),
-                  ),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.buildingStorefront, size: 16), SizedBox(width: 8), Text('Stores')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.bookOpen, size: 16), SizedBox(width: 8), Text('Knowledge')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.lifebuoy, size: 16), SizedBox(width: 8), Text('Support')])),
                 ],
               ),
             ),
@@ -167,16 +124,11 @@ class StoresTab extends StatelessWidget {
       stream: FirebaseFirestore.instance.collection('store').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: kPrimaryColor),
-          );
+          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
         }
 
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState(
-            HeroIcons.buildingStorefront,
-            'No stores registered yet.',
-          );
+          return _buildEmptyState(HeroIcons.buildingStorefront, 'No stores registered yet.');
         }
 
         final stores = snapshot.data!.docs;
@@ -202,13 +154,7 @@ class StoresTab extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          StoreDetailPage(storeId: store.id, storeData: data),
-                    ),
-                  ),
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => StoreDetailPage(storeId: store.id, storeData: data))),
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -217,22 +163,15 @@ class StoresTab extends StatelessWidget {
                         Row(
                           children: [
                             Container(
-                              height: 48,
-                              width: 48,
+                              height: 48, width: 48,
                               decoration: BoxDecoration(
                                 color: kPrimaryColor.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Center(
                                 child: Text(
-                                  businessName.isNotEmpty
-                                      ? businessName[0].toUpperCase()
-                                      : 'S',
-                                  style: const TextStyle(
-                                    color: kPrimaryColor,
-                                    fontWeight: FontWeight.w900,
-                                    fontSize: 18,
-                                  ),
+                                    businessName.isNotEmpty ? businessName[0].toUpperCase() : 'S',
+                                    style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 18)
                                 ),
                               ),
                             ),
@@ -241,44 +180,23 @@ class StoresTab extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    businessName,
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w700,
-                                      color: kBlack87,
-                                    ),
-                                  ),
+                                  Text(businessName, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87)),
                                   const SizedBox(height: 2),
-                                  Text(
-                                    ownerName,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: kBlack54,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
+                                  Text(ownerName, style: const TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                             ),
                             _buildPlanBadge(plan),
                           ],
                         ),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          child: Divider(height: 1, color: kGrey100),
-                        ),
+                        const Padding(padding: EdgeInsets.symmetric(vertical: 14), child: Divider(height: 1, color: kGrey100)),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             _buildStatusBadge(isActive),
-                            const HeroIcon(
-                              HeroIcons.chevronRight,
-                              size: 12,
-                              color: kGrey400,
-                            ),
+                            const HeroIcon(HeroIcons.chevronRight, size: 12, color: kGrey400),
                           ],
-                        ),
+                        )
                       ],
                     ),
                   ),
@@ -292,8 +210,7 @@ class StoresTab extends StatelessWidget {
   }
 
   Widget _buildPlanBadge(String plan) {
-    bool isPremium =
-        plan.toLowerCase() == 'MAX Pro' || plan.toLowerCase() == 'MAX Plus';
+    bool isPremium = plan.toLowerCase() == 'MAX Pro' || plan.toLowerCase() == 'MAX Plus';
     Color c = isPremium ? Colors.amber.shade800 : kBlack54;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -302,15 +219,8 @@ class StoresTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: isPremium ? Colors.amber.shade100 : kGrey200),
       ),
-      child: Text(
-        plan,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
-          color: c,
-          letterSpacing: 0.5,
-        ),
-      ),
+      child: Text(plan,
+          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: c, letterSpacing: 0.5)),
     );
   }
 
@@ -326,21 +236,10 @@ class StoresTab extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: c, shape: BoxShape.circle),
-          ),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
           const SizedBox(width: 8),
-          Text(
-            active ? 'Active' : 'Deactivated',
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              color: c,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(active ? 'Active' : 'Deactivated',
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: c, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -355,7 +254,7 @@ class KnowledgeTab extends StatelessWidget {
 
   String _getRelativeTime(dynamic timestamp) {
     if (timestamp == null) return 'now';
-
+    
     try {
       DateTime postTime;
       if (timestamp is Timestamp) {
@@ -388,21 +287,13 @@ class KnowledgeTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: kGreyBg,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('knowledge')
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('knowledge').orderBy('createdAt', descending: true).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState(
-              HeroIcons.lightBulb,
-              'Knowledge base is empty.',
-            );
+            return _buildEmptyState(HeroIcons.lightBulb, 'Knowledge base is empty.');
           }
 
           final posts = snapshot.data!.docs;
@@ -423,20 +314,9 @@ class KnowledgeTab extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => KnowledgeEditorPage(
-                          docId: posts[index].id,
-                          data: data,
-                        ),
-                      ),
-                    ),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => KnowledgeEditorPage(docId: posts[index].id, data: data))),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -444,51 +324,20 @@ class KnowledgeTab extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                _getRelativeTime(data['createdAt']),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: kBlack54,
-                                ),
-                              ),
+                              Text(_getRelativeTime(data['createdAt']), style: const TextStyle(fontSize: 11, color: kBlack54)),
                               Container(
-                                width: 28,
-                                height: 20,
-                                decoration: BoxDecoration(
-                                  color: kGreyBg,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Center(
-                                  child: HeroIcon(
-                                    HeroIcons.chevronUp,
-                                    size: 14,
-                                    color: kBlack54,
-                                  ),
-                                ),
+                                width: 28, height: 20,
+                                decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(10)),
+                                child: const Center(child: HeroIcon(HeroIcons.chevronUp, size: 14, color: kBlack54)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           // Title row
-                          Text(
-                            data['title'] ?? 'Untitled',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: kBlack87,
-                              fontSize: 13,
-                            ),
-                          ),
+                          Text(data['title'] ?? 'Untitled', style: const TextStyle(fontWeight: FontWeight.w800, color: kBlack87, fontSize: 13)),
                           const SizedBox(height: 6),
                           // Content line below
-                          Text(
-                            data['content'] ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: kBlack54,
-                              fontSize: 12,
-                            ),
-                          ),
+                          Text(data['content'] ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: kBlack54, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -500,22 +349,11 @@ class KnowledgeTab extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const KnowledgeEditorPage()),
-        ),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const KnowledgeEditorPage())),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        label: const Text(
-          'Post Article',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 12,
-            letterSpacing: 0.5,
-          ),
-        ),
+        label: const Text('Post Article', style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.5)),
         icon: const HeroIcon(HeroIcons.plus, color: kWhite, size: 20),
       ),
     );
@@ -533,20 +371,13 @@ class SupportTab extends StatelessWidget {
     return Scaffold(
       backgroundColor: kGreyBg,
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('support_requests')
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('support_requests').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState(
-              HeroIcons.lifebuoy,
-              'No support requests pending.',
-            );
+            return _buildEmptyState(HeroIcons.lifebuoy, 'No support requests pending.');
           }
 
           // Filter and sort locally to avoid composite index requirement
@@ -560,18 +391,18 @@ class SupportTab extends StatelessWidget {
           requests.sort((a, b) {
             final aData = a.data() as Map<String, dynamic>;
             final bData = b.data() as Map<String, dynamic>;
-
+            
             final aStatus = aData['status'] ?? 'pending';
             final bStatus = bData['status'] ?? 'pending';
-
+            
             // First sort by status
             int statusCompare = aStatus.compareTo(bStatus);
             if (statusCompare != 0) return statusCompare;
-
+            
             // Then sort by createdAt descending
             final aTime = aData['createdAt'] as Timestamp?;
             final bTime = bData['createdAt'] as Timestamp?;
-
+            
             if (aTime == null && bTime == null) return 0;
             if (aTime == null) return 1;
             if (bTime == null) return -1;
@@ -579,13 +410,10 @@ class SupportTab extends StatelessWidget {
           });
 
           if (requests.isEmpty) {
-            return _buildEmptyState(
-              HeroIcons.lifebuoy,
-              'No support requests pending.',
-            );
+            return _buildEmptyState(HeroIcons.lifebuoy, 'No support requests pending.');
           }
 
-          return ListView.separated(
+           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: requests.length,
             separatorBuilder: (c, i) => const SizedBox(height: 12),
@@ -593,9 +421,7 @@ class SupportTab extends StatelessWidget {
               final data = requests[index].data() as Map<String, dynamic>;
               final requestId = requests[index].id;
               final status = data['status'] ?? 'pending';
-              final statusColor = status == 'pending'
-                  ? Colors.orange
-                  : (status == 'in_progress' ? kPrimaryColor : kGoogleGreen);
+              final statusColor = status == 'pending' ? Colors.orange : (status == 'in_progress' ? kPrimaryColor : kGoogleGreen);
 
               return Container(
                 decoration: BoxDecoration(
@@ -607,20 +433,9 @@ class SupportTab extends StatelessWidget {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => SupportPage(
-                          requestId: requestId,
-                          requestData: data,
-                        ),
-                      ),
-                    ),
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => SupportPage(requestId: requestId, requestData: data))),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -628,57 +443,23 @@ class SupportTab extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                _getRelativeTime(data['createdAt']),
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: kBlack54,
-                                ),
-                              ),
+                              Text(_getRelativeTime(data['createdAt']), style: const TextStyle(fontSize: 11, color: kBlack54)),
                               Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: statusColor.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: statusColor.withOpacity(0.2),
-                                  ),
+                                  border: Border.all(color: statusColor.withOpacity(0.2)),
                                 ),
-                                child: Text(
-                                  status.replaceAll('_', ' ').toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w900,
-                                    color: statusColor,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                                child: Text(status.replaceAll('_', ' ').toUpperCase(), style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: statusColor, letterSpacing: 0.5)),
                               ),
                             ],
                           ),
                           const SizedBox(height: 8),
                           // Store/User info
-                          Text(
-                            data['storeName'] ?? 'Unknown Store',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: kBlack87,
-                              fontSize: 13,
-                            ),
-                          ),
+                          Text(data['storeName'] ?? 'Unknown Store', style: const TextStyle(fontWeight: FontWeight.w800, color: kBlack87, fontSize: 13)),
                           const SizedBox(height: 4),
-                          Text(
-                            data['subject'] ?? 'No subject',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: kBlack54,
-                              fontSize: 12,
-                            ),
-                          ),
+                          Text(data['subject'] ?? 'No subject', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: kBlack54, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -694,7 +475,7 @@ class SupportTab extends StatelessWidget {
 
   String _getRelativeTime(dynamic timestamp) {
     if (timestamp == null) return 'now';
-
+    
     try {
       DateTime postTime;
       if (timestamp is Timestamp) {
@@ -730,11 +511,7 @@ class StoreDetailPage extends StatefulWidget {
   final String storeId;
   final Map<String, dynamic> storeData;
 
-  const StoreDetailPage({
-    super.key,
-    required this.storeId,
-    required this.storeData,
-  });
+  const StoreDetailPage({super.key, required this.storeId, required this.storeData});
 
   @override
   State<StoreDetailPage> createState() => _StoreDetailPageState();
@@ -749,37 +526,19 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: Text(
-          widget.storeData['businessName'] ?? 'Store Details',
-          style: const TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 15,
-            letterSpacing: 0.5,
-          ),
-        ),
-        backgroundColor: kPrimaryColor,
-        elevation: 0,
-        centerTitle: true,
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(widget.storeData['businessName'] ?? 'Store Details',
+            style: const TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 0.5)),
+        backgroundColor: kPrimaryColor, elevation: 0, centerTitle: true,
+        leading: IconButton(icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 18), onPressed: () => Navigator.pop(context)),
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('store')
-            .doc(widget.storeId)
-            .snapshots(),
+        stream: FirebaseFirestore.instance.collection('store').doc(widget.storeId).snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
 
-          final storeData =
-              snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          final storeData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
@@ -787,173 +546,91 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Enterprise Overview Section
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: kPrimaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: kPrimaryColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildHeaderTag(storeData['plan'] ?? 'Free'),
-                          _buildHeaderTag(
-                            storeData['isActive'] == true
-                                ? 'Active'
-                                : 'Inactive',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'Preview Revenue',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        '0.00',
-                        style: TextStyle(
-                          color: kWhite,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      _buildHeaderTag(storeData['plan'] ?? 'Free'),
+                      _buildHeaderTag(storeData['isActive'] == true ? 'Active' : 'Inactive'),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
+                  const Text('Preview Revenue', style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
+                  const SizedBox(height: 4),
+                  const Text('0.00', style: TextStyle(color: kWhite, fontSize: 32, fontWeight: FontWeight.w900)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
 
-                _buildSectionLabel('REAL-TIME ANALYTICS'),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildEnterpriseStat(
-                        widget.storeId,
-                        'Products',
-                        'Products',
-                        HeroIcons.archiveBox,
-                        kPrimaryColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildEnterpriseStat(
-                        widget.storeId,
-                        'Sales',
-                        'sales',
-                        HeroIcons.banknotes,
-                        kGoogleGreen,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildEnterpriseStat(
-                        widget.storeId,
-                        'Customers',
-                        'customers',
-                        HeroIcons.users,
-                        kOrange,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+            _buildSectionLabel('REAL-TIME ANALYTICS'),
+            Row(
+              children: [
+                Expanded(child: _buildEnterpriseStat(widget.storeId, 'Products', 'Products', HeroIcons.archiveBox, kPrimaryColor)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildEnterpriseStat(widget.storeId, 'Sales', 'sales', HeroIcons.banknotes, kGoogleGreen)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildEnterpriseStat(widget.storeId, 'Customers', 'customers', HeroIcons.users, kOrange)),
+              ],
+            ),
+            const SizedBox(height: 24),
 
-                _buildSectionLabel('Business Identity'),
-                Container(
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kGrey200),
-                  ),
-                  child: Column(
-                    children: [
-                      _detailRow(
-                        HeroIcons.user,
-                        'Legal Owner',
-                        storeData['ownerName'],
-                      ),
-                      _detailRow(
-                        HeroIcons.envelope,
-                        'System Email',
-                        storeData['ownerEmail'],
-                      ),
-                      _detailRow(
-                        HeroIcons.phone,
-                        'Direct Phone',
-                        storeData['ownerPhone'] ?? storeData['businessPhone'],
-                      ),
-                      _detailRow(
-                        HeroIcons.mapPin,
-                        'Business Address',
-                        storeData['businessLocation'],
-                      ),
-                      _detailRow(
-                        HeroIcons.documentText,
-                        'Tax',
-                        storeData['gstin'],
-                      ),
-                      _detailRow(
-                        HeroIcons.briefcase,
-                        'License',
-                        storeData['licenseNumber'],
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
+            _buildSectionLabel('Business Identity'),
+            Container(
+              decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
+              child: Column(
+                children: [
+                  _detailRow(HeroIcons.user, 'Legal Owner', storeData['ownerName']),
+                  _detailRow(HeroIcons.envelope, 'System Email', storeData['ownerEmail']),
+                  _detailRow(HeroIcons.phone, 'Direct Phone', storeData['ownerPhone'] ?? storeData['businessPhone']),
+                  _detailRow(HeroIcons.mapPin, 'Business Address', storeData['businessLocation']),
+                  _detailRow(HeroIcons.documentText, 'Tax', storeData['gstin']),
+                  _detailRow(HeroIcons.briefcase, 'License', storeData['licenseNumber'], isLast: true),
 
-                _buildSectionLabel('Subscription Details'),
-                Container(
-                  decoration: BoxDecoration(
-                    color: kWhite,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kGrey200),
+
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            _buildSectionLabel('Subscription Details'),
+            Container(
+              decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
+              child: Column(
+                children: [
+                  _editableDetailRow(
+                    context,
+                    icon: HeroIcons.calendar,
+                    label: 'Subscription Start',
+                    value: _formatDate(storeData['subscriptionStartDate']),
+                    onEdit: () => _editDate(context, 'subscriptionStartDate', storeData['subscriptionStartDate']),
                   ),
-                  child: Column(
-                    children: [
-                      _editableDetailRow(
-                        context,
-                        icon: HeroIcons.calendar,
-                        label: 'Subscription Start',
-                        value: _formatDate(storeData['subscriptionStartDate']),
-                        onEdit: () => _editDate(
-                          context,
-                          'subscriptionStartDate',
-                          storeData['subscriptionStartDate'],
-                        ),
-                      ),
-                      _editableDetailRow(
-                        context,
-                        icon: HeroIcons.calendarDays,
-                        label: 'Subscription Expiry',
-                        value: _formatDate(storeData['subscriptionExpiryDate']),
-                        onEdit: () => _editDate(
-                          context,
-                          'subscriptionExpiryDate',
-                          storeData['subscriptionExpiryDate'],
-                        ),
-                      ),
-                      _editableDetailRow(
-                        context,
-                        icon: HeroIcons.academicCap,
-                        label: 'Current Plan',
-                        value: storeData['plan'] ?? 'Free',
-                        onEdit: () => _showChangePlanDialog(context, storeData),
-                        isLast: true,
-                      ),
-                    ],
+                  _editableDetailRow(
+                    context,
+                    icon: HeroIcons.calendarDays,
+                    label: 'Subscription Expiry',
+                    value: _formatDate(storeData['subscriptionExpiryDate']),
+                    onEdit: () => _editDate(context, 'subscriptionExpiryDate', storeData['subscriptionExpiryDate']),
                   ),
-                ),
-                const SizedBox(height: 40),
+                  _editableDetailRow(
+                    context,
+                    icon: HeroIcons.academicCap,
+                    label: 'Current Plan',
+                    value: storeData['plan'] ?? 'Free',
+                    onEdit: () => _showChangePlanDialog(context, storeData),
+                    isLast: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
               ],
             ),
           );
@@ -962,54 +639,21 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     );
   }
 
-  Widget _editableDetailRow(
-    BuildContext context, {
-    required HeroIcons icon,
-    required String label,
-    required String value,
-    required VoidCallback onEdit,
-    bool isLast = false,
-  }) {
+  Widget _editableDetailRow(BuildContext context, {required HeroIcons icon, required String label, required String value, required VoidCallback onEdit, bool isLast = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : const Border(bottom: BorderSide(color: kGrey100)),
-      ),
+      decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: kGrey100))),
       child: ListTile(
         dense: true,
         leading: Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: kGreyBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
+          decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(8)),
           child: HeroIcon(icon, color: kPrimaryColor, size: 18),
         ),
-        title: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 8,
-            color: kBlack54,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-          ),
-        ),
-        subtitle: Text(
-          value,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: kBlack87,
-          ),
-        ),
+        title: Text(label, style: const TextStyle(fontSize: 8, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+        subtitle: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87)),
         trailing: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.pencil,
-            size: 18,
-            color: kPrimaryColor,
-          ),
+          icon: const HeroIcon(HeroIcons.pencil, size: 18, color: kPrimaryColor),
           onPressed: onEdit,
           tooltip: 'Edit',
         ),
@@ -1017,11 +661,7 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     );
   }
 
-  void _editDate(
-    BuildContext context,
-    String fieldName,
-    dynamic currentDate,
-  ) async {
+  void _editDate(BuildContext context, String fieldName, dynamic currentDate) async {
     DateTime initialDate = DateTime.now();
 
     // Parse current date if available
@@ -1054,19 +694,14 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
 
     if (pickedDate != null && context.mounted) {
       try {
-        await FirebaseFirestore.instance
-            .collection('store')
-            .doc(widget.storeId)
-            .update({
-              fieldName: pickedDate.toIso8601String(),
-              'dateUpdatedAt': FieldValue.serverTimestamp(),
-            });
+        await FirebaseFirestore.instance.collection('store').doc(widget.storeId).update({
+          fieldName: pickedDate.toIso8601String(),
+          'dateUpdatedAt': FieldValue.serverTimestamp(),
+        });
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                '${fieldName == 'subscriptionStartDate' ? 'Start' : 'Expiry'} date updated successfully!',
-              ),
+              content: Text('${fieldName == 'subscriptionStartDate' ? 'Start' : 'Expiry'} date updated successfully!'),
               backgroundColor: kGoogleGreen,
             ),
           );
@@ -1075,20 +710,14 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
         debugPrint('Error updating date: $e');
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update date'),
-              backgroundColor: kErrorColor,
-            ),
+            const SnackBar(content: Text('Failed to update date'), backgroundColor: kErrorColor),
           );
         }
       }
     }
   }
 
-  void _showChangePlanDialog(
-    BuildContext context,
-    Map<String, dynamic> storeData,
-  ) {
+  void _showChangePlanDialog(BuildContext context, Map<String, dynamic> storeData) {
     String currentPlan = storeData['plan'] ?? 'Free';
     String selectedPlan = currentPlan;
 
@@ -1097,86 +726,48 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
           backgroundColor: kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Change Plan',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 16,
-              letterSpacing: 0.5,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text('Change Plan', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Select new plan:',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: kBlack54,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text('Select new plan:', style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w600)),
               const SizedBox(height: 12),
-              ...['Free', 'MAX One', 'MAX Plus', 'MAX Pro'].map(
-                (plan) => RadioListTile<String>(
-                  title: Text(
-                    plan,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  value: plan,
-                  groupValue: selectedPlan,
-                  activeColor: kPrimaryColor,
-                  contentPadding: EdgeInsets.zero,
-                  onChanged: (value) {
-                    setState(() => selectedPlan = value!);
-                  },
-                ),
-              ),
+              ...['Free', 'MAX One', 'MAX Plus', 'MAX Pro'].map((plan) => RadioListTile<String>(
+                title: Text(plan, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14)),
+                value: plan,
+                groupValue: selectedPlan,
+                activeColor: kPrimaryColor,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (value) {
+                  setState(() => selectedPlan = value!);
+                },
+              )),
             ],
           ),
           actions: [
             TextButton(
-              child: const Text(
-                'Cancel',
-                style: TextStyle(
-                  color: kBlack54,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
+              child: const Text('Cancel', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w900, fontSize: 12)),
               onPressed: () => Navigator.pop(context),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () async {
                 try {
-                  await FirebaseFirestore.instance
-                      .collection('store')
-                      .doc(widget.storeId)
-                      .update({
-                        'plan': selectedPlan,
-                        'planUpdatedAt': FieldValue.serverTimestamp(),
-                      });
+                  await FirebaseFirestore.instance.collection('store').doc(widget.storeId).update({
+                    'plan': selectedPlan,
+                    'planUpdatedAt': FieldValue.serverTimestamp(),
+                  });
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(
-                          'Plan updated to $selectedPlan successfully!',
-                        ),
+                        content: Text('Plan updated to $selectedPlan successfully!'),
                         backgroundColor: kGoogleGreen,
                       ),
                     );
@@ -1185,22 +776,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
                   debugPrint('Error updating plan: $e');
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to update plan'),
-                        backgroundColor: kErrorColor,
-                      ),
+                      const SnackBar(content: Text('Failed to update plan'), backgroundColor: kErrorColor),
                     );
                   }
                 }
               },
-              child: const Text(
-                'Update Plan',
-                style: TextStyle(
-                  color: kWhite,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
+              child: const Text('Update Plan', style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 12)),
             ),
           ],
         ),
@@ -1208,17 +789,10 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     );
   }
 
+
   Widget _buildSectionLabel(String text) => Padding(
     padding: const EdgeInsets.only(left: 4, bottom: 12),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.5,
-      ),
-    ),
+    child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5)),
   );
 
   String _formatDate(dynamic dateValue) {
@@ -1239,74 +813,25 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
   Widget _buildHeaderTag(String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: kWhite.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: kWhite,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.5,
-        ),
-      ),
+      decoration: BoxDecoration(color: kWhite.withOpacity(0.15), borderRadius: BorderRadius.circular(8)),
+      child: Text(label, style: const TextStyle(color: kWhite, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
     );
   }
 
-  Widget _buildEnterpriseStat(
-    String sId,
-    String label,
-    String collection,
-    HeroIcons icon,
-    Color color,
-  ) {
+  Widget _buildEnterpriseStat(String sId, String label, String collection, HeroIcons icon, Color color) {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('store')
-          .doc(sId)
-          .collection(collection)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('store').doc(sId).collection(collection).snapshots(),
       builder: (context, snapshot) {
-        String count = snapshot.hasData
-            ? '${snapshot.data!.docs.length}'
-            : '...';
+        String count = snapshot.hasData ? '${snapshot.data!.docs.length}' : '...';
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            color: kWhite,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kGrey200),
-          ),
+          decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
           child: Column(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: HeroIcon(icon, color: color, size: 20),
-              ),
+              Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.08), shape: BoxShape.circle), child: HeroIcon(icon, color: color, size: 20)),
               const SizedBox(height: 10),
-              Text(
-                count,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18,
-                  color: kBlack87,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: kBlack54,
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              Text(count, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kBlack87)),
+              Text(label, style: const TextStyle(color: kBlack54, fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
             ],
           ),
         );
@@ -1314,46 +839,15 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
     );
   }
 
-  Widget _detailRow(
-    HeroIcons icon,
-    String label,
-    String? value, {
-    bool isLast = false,
-  }) {
+  Widget _detailRow(HeroIcons icon, String label, String? value, {bool isLast = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 4),
-      decoration: BoxDecoration(
-        border: isLast
-            ? null
-            : const Border(bottom: BorderSide(color: kGrey100)),
-      ),
+      decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: kGrey100))),
       child: ListTile(
         dense: true,
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: kGreyBg,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: HeroIcon(icon, color: kPrimaryColor, size: 18),
-        ),
-        title: Text(
-          label,
-          style: const TextStyle(
-            fontSize: 8,
-            color: kBlack54,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.5,
-          ),
-        ),
-        subtitle: Text(
-          value ?? 'Not Set',
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: kBlack87,
-          ),
-        ),
+        leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(8)), child: HeroIcon(icon, color: kPrimaryColor, size: 18)),
+        title: Text(label, style: const TextStyle(fontSize: 8, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+        subtitle: Text(value ?? 'Not Set', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87)),
       ),
     );
   }
@@ -1366,14 +860,7 @@ Widget _buildEmptyState(HeroIcons icon, String msg) {
       children: [
         HeroIcon(icon, size: 64, color: kGrey300),
         const SizedBox(height: 16),
-        Text(
-          msg,
-          style: const TextStyle(
-            color: kBlack54,
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-          ),
-        ),
+        Text(msg, style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w700, fontSize: 14)),
       ],
     ),
   );

@@ -17,8 +17,8 @@ class SettleManualCreditPage extends StatefulWidget {
   final Map<String, dynamic> customerData;
   final double currentBalance;
   final String? invoiceNumber; // Optional for individual bill settlement
-  final double? billAmount; // Optional for individual bill settlement
-  final String? creditDocId; // Optional for individual bill settlement
+  final double? billAmount;     // Optional for individual bill settlement
+  final String? creditDocId;   // Optional for individual bill settlement
   final String? receiptNumber; // Pre-generated receipt number from credit_sale
 
   const SettleManualCreditPage({
@@ -57,14 +57,10 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         parsed = baseAmount;
         _amountController.value = _amountController.value.copyWith(
           text: baseAmount.toStringAsFixed(2),
-          selection: TextSelection.collapsed(
-            offset: baseAmount.toStringAsFixed(2).length,
-          ),
+          selection: TextSelection.collapsed(offset: baseAmount.toStringAsFixed(2).length),
         );
       }
-      setState(() {
-        _enteredAmount = parsed;
-      });
+      setState(() { _enteredAmount = parsed; });
     });
     _loadCurrency();
   }
@@ -79,11 +75,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
@@ -91,19 +83,14 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     final baseAmount = widget.billAmount ?? widget.currentBalance;
     if (_enteredAmount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid amount'),
-          backgroundColor: kErrorColor,
-        ),
+        const SnackBar(content: Text('Please enter a valid amount'), backgroundColor: kErrorColor),
       );
       return;
     }
     if (_enteredAmount > baseAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Amount cannot exceed the balance of $_currencySymbol${baseAmount.toStringAsFixed(2)}',
-          ),
+          content: Text('Amount cannot exceed the balance of $_currencySymbol${baseAmount.toStringAsFixed(2)}'),
           backgroundColor: kErrorColor,
         ),
       );
@@ -114,12 +101,8 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     try {
       final firestoreService = FirestoreService();
       final creditsRef = await firestoreService.getStoreCollection('credits');
-      final customersRef = await firestoreService.getStoreCollection(
-        'customers',
-      );
-      final paymentReceiptsRef = await firestoreService.getStoreCollection(
-        'paymentReceipts',
-      );
+      final customersRef = await firestoreService.getStoreCollection('customers');
+      final paymentReceiptsRef = await firestoreService.getStoreCollection('paymentReceipts');
 
       // 1. Generate/Use Payment Receipt Number
       // Use pre-stored receipt number from credit_sale if available
@@ -128,23 +111,15 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         fullReceiptNumber = widget.receiptNumber!;
       } else {
         // Fetch prefix and number together from same doc to avoid race condition
-        final storeDocForNumber = await FirestoreService().getCurrentStoreDoc(
-          forceRefresh: true,
-        );
+        final storeDocForNumber = await FirestoreService().getCurrentStoreDoc(forceRefresh: true);
         String receiptPrefix = '';
         int receiptNumInt = 100001;
         if (storeDocForNumber != null && storeDocForNumber.exists) {
           final d = storeDocForNumber.data() as Map<String, dynamic>?;
           receiptPrefix = (d?['paymentReceiptPrefix'] ?? '').toString();
-          receiptNumInt =
-              int.tryParse(
-                (d?['nextPaymentReceiptNumber'] ?? 100001).toString(),
-              ) ??
-              100001;
+          receiptNumInt = int.tryParse((d?['nextPaymentReceiptNumber'] ?? 100001).toString()) ?? 100001;
           // Increment the counter for next time
-          await storeDocForNumber.reference.update({
-            'nextPaymentReceiptNumber': receiptNumInt + 1,
-          });
+          await storeDocForNumber.reference.update({'nextPaymentReceiptNumber': receiptNumInt + 1});
         }
         final receiptNum = receiptNumInt.toString();
         fullReceiptNumber = receiptPrefix.isNotEmpty
@@ -161,7 +136,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         'method': _paymentMode,
         'timestamp': FieldValue.serverTimestamp(),
         'date': DateTime.now().toIso8601String(),
-        'note': widget.invoiceNumber != null
+        'note': widget.invoiceNumber != null 
             ? 'Settlement for Invoice #${widget.invoiceNumber}'
             : 'Manual credit settlement',
         if (widget.invoiceNumber != null) 'invoiceNumber': widget.invoiceNumber,
@@ -175,15 +150,12 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         'customerName': widget.customerData['name'] ?? 'Unknown',
         'amount': _enteredAmount,
         'paymentMethod': _paymentMode,
-        'type': widget.invoiceNumber != null
-            ? 'bill_settlement'
-            : 'manual_settlement',
-        if (widget.invoiceNumber != null)
-          'relatedInvoiceNumber': widget.invoiceNumber,
+        'type': widget.invoiceNumber != null ? 'bill_settlement' : 'manual_settlement',
+        if (widget.invoiceNumber != null) 'relatedInvoiceNumber': widget.invoiceNumber,
         if (widget.creditDocId != null) 'relatedCreditId': widget.creditDocId,
         'timestamp': FieldValue.serverTimestamp(),
         'date': DateTime.now().toIso8601String(),
-        'note': widget.invoiceNumber != null
+        'note': widget.invoiceNumber != null 
             ? 'Payment received for Invoice #${widget.invoiceNumber}'
             : 'Manual credit settlement',
       });
@@ -204,7 +176,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
               'receiptNumber': fullReceiptNumber,
             });
           } else {
-            await creditsRef.doc(widget.creditDocId).update({
+             await creditsRef.doc(widget.creditDocId).update({
               'amount': currentAmount - _enteredAmount,
               'partiallySettledAt': FieldValue.serverTimestamp(),
               'lastPartialAmount': _enteredAmount,
@@ -227,21 +199,17 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
       }
 
       // 6. Force sync ledger balance to Firestore
-      await LedgerHelper.computeClosingBalance(
-        widget.customerId,
-        syncToFirestore: true,
-      );
+      await LedgerHelper.computeClosingBalance(widget.customerId, syncToFirestore: true);
 
       // Load store data for receipt page
       final storeDoc = await FirestoreService().getCurrentStoreDoc();
       final storeData = storeDoc?.data() as Map<String, dynamic>?;
 
       if (mounted) {
-        setState(() => _isSaving = false);
-
+        setState(() => _isSaving= false);
+        
         // Navigation: Use the specific bill/manual balance as 'previousCredit' for the receipt
-        final double receiptPreviousCredit =
-            widget.billAmount ?? widget.currentBalance;
+        final double receiptPreviousCredit = widget.billAmount ?? widget.currentBalance;
 
         // Navigate to Payment Receipt Page
         Navigator.pushReplacement(
@@ -267,10 +235,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Balance settled successfully'),
-            backgroundColor: kGoogleGreen,
-          ),
+          const SnackBar(content: Text('Balance settled successfully'), backgroundColor: kGoogleGreen),
         );
       }
     } catch (e) {
@@ -292,15 +257,11 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     return Scaffold(
       backgroundColor: kGreyBg,
       appBar: AppBar(
+
         title: Text(
-          widget.invoiceNumber != null
-              ? 'Bill Settlement'
-              : 'Manual Settlement',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: R.adaptive(context, phone: 17.0, tablet: 19.0),
-          ),
+          widget.invoiceNumber != null ? 'Bill Settlement' : 'Manual Settlement',
+          style: TextStyle(color: kWhite, fontWeight: FontWeight.w700,
+              fontSize: R.adaptive(context, phone: 17.0, tablet: 19.0))
         ),
         backgroundColor: kPrimaryColor,
         elevation: 0,
@@ -310,238 +271,156 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final hPad = R.paddingH(context);
-          return SingleChildScrollView(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  maxWidth: R.maxContentWidth(context),
-                ),
+      return SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: R.maxContentWidth(context)),
+        child: Column(
+          children: [
+            // Top Summary Backdrop
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(bottom: 24, left: hPad, right: hPad, top: 10),
+              decoration: const BoxDecoration(
+                color: kPrimaryColor,
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    widget.customerData['name'] ?? 'Customer',
+                    style: TextStyle(color: kWhite,
+                        fontSize: R.sp(context, 13), fontWeight: FontWeight.w600, letterSpacing: 0.5),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$_currencySymbol${AmountFormatter.format(baseAmount)}',
+                    style: TextStyle(color: kWhite,
+                        fontSize: R.sp(context, 28), fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.invoiceNumber != null ? 'Invoice #${widget.invoiceNumber} Pending' : 'Total Manual Credit',
+                    style: TextStyle(color: kWhite.withValues(alpha: 0.8),
+                        fontSize: R.sp(context, 11), fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+
+            Transform.translate(
+              offset: const Offset(0, -20),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: hPad),
                 child: Column(
                   children: [
-                    // Top Summary Backdrop
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.only(
-                        bottom: 24,
-                        left: hPad,
-                        right: hPad,
-                        top: 10,
-                      ),
-                      decoration: const BoxDecoration(
-                        color: kPrimaryColor,
-                        borderRadius: BorderRadius.vertical(
-                          bottom: Radius.circular(32),
-                        ),
-                      ),
+                    // Amount Entry Card
+                    _buildPremiumCard(
+                      title: 'Received Amount',
+                      icon: HeroIcons.banknotes,
+                      iconColor: kGoogleGreen,
                       child: Column(
                         children: [
-                          Text(
-                            widget.customerData['name'] ?? 'Customer',
-                            style: TextStyle(
-                              color: kWhite,
-                              fontSize: R.sp(context, 13),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: hPad, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: kGreyBg,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: kGrey200),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(_currencySymbol, style: TextStyle(
+                                    fontSize: R.sp(context, 20),
+                                    fontWeight: FontWeight.w900, color: kBlack87)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _amountController,
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    style: TextStyle(
+                                        fontSize: R.sp(context, 22),
+                                        fontWeight: FontWeight.w900, color: kPrimaryColor),
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: '0',
+                                      hintStyle: TextStyle(color: kGrey400),
+                                      isDense: true,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  onPressed: () => _amountController.text = baseAmount.toStringAsFixed(2),
+                                  icon: const HeroIcon(HeroIcons.checkCircle, color: kPrimaryColor, size: 20),
+                                  tooltip: 'Full Amount',
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            '$_currencySymbol${AmountFormatter.format(baseAmount)}',
-                            style: TextStyle(
-                              color: kWhite,
-                              fontSize: R.sp(context, 28),
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.invoiceNumber != null
-                                ? 'Invoice #${widget.invoiceNumber} Pending'
-                                : 'Total Manual Credit',
-                            style: TextStyle(
-                              color: kWhite.withValues(alpha: 0.8),
-                              fontSize: R.sp(context, 11),
-                              fontWeight: FontWeight.w500,
-                            ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildQuickAmountBtn('Clear', () => _amountController.text = '0'),
+                              _buildQuickAmountBtn('Pay Full', () => _amountController.text = baseAmount.toStringAsFixed(2)),
+                              _buildQuickAmountBtn('Pay Half', () => _amountController.text = (baseAmount / 2).toStringAsFixed(2)),
+                            ],
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 16),
 
-                    Transform.translate(
-                      offset: const Offset(0, -20),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: hPad),
-                        child: Column(
-                          children: [
-                            // Amount Entry Card
-                            _buildPremiumCard(
-                              title: 'Received Amount',
-                              icon: HeroIcons.banknotes,
-                              iconColor: kGoogleGreen,
-                              child: Column(
-                                children: [
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: hPad,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: kGreyBg,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: kGrey200),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          _currencySymbol,
-                                          style: TextStyle(
-                                            fontSize: R.sp(context, 20),
-                                            fontWeight: FontWeight.w900,
-                                            color: kBlack87,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: TextField(
-                                            controller: _amountController,
-                                            keyboardType:
-                                                const TextInputType.numberWithOptions(
-                                                  decimal: true,
-                                                ),
-                                            style: TextStyle(
-                                              fontSize: R.sp(context, 22),
-                                              fontWeight: FontWeight.w900,
-                                              color: kPrimaryColor,
-                                            ),
-                                            decoration: const InputDecoration(
-                                              border: InputBorder.none,
-                                              hintText: '0',
-                                              hintStyle: TextStyle(
-                                                color: kGrey400,
-                                              ),
-                                              isDense: true,
-                                            ),
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () =>
-                                              _amountController.text =
-                                                  baseAmount.toStringAsFixed(2),
-                                          icon: const HeroIcon(
-                                            HeroIcons.checkCircle,
-                                            color: kPrimaryColor,
-                                            size: 20,
-                                          ),
-                                          tooltip: 'Full Amount',
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      _buildQuickAmountBtn(
-                                        'Clear',
-                                        () => _amountController.text = '0',
-                                      ),
-                                      _buildQuickAmountBtn(
-                                        'Pay Full',
-                                        () => _amountController.text =
-                                            baseAmount.toStringAsFixed(2),
-                                      ),
-                                      _buildQuickAmountBtn(
-                                        'Pay Half',
-                                        () => _amountController.text =
-                                            (baseAmount / 2).toStringAsFixed(2),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Payment Mode selection
-                            _buildPremiumCard(
-                              title: 'Payment Mode',
-                              icon: HeroIcons.creditCard,
-                              iconColor: kOrange,
-                              child: Row(
-                                children: [
-                                  _buildModernChip(
-                                    'Cash',
-                                    HeroIcons.banknotes,
-                                    _paymentMode == 'Cash',
-                                  ),
-                                  const SizedBox(width: 12),
-                                  _buildModernChip(
-                                    'Online',
-                                    HeroIcons.globeAlt,
-                                    _paymentMode == 'Online',
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-
-                            // Summary Card
-                            _buildPremiumCard(
-                              title: 'Settlement Summary',
-                              icon: HeroIcons.documentText,
-                              iconColor: kPrimaryColor,
-                              child: Column(
-                                children: [
-                                  _buildSummaryRow(
-                                    'Previous Balance',
-                                    baseAmount,
-                                    color: kBlack87,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  _buildSummaryRow(
-                                    'Received Amount',
-                                    _enteredAmount,
-                                    color: kGoogleGreen,
-                                    isNegative: true,
-                                  ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 8),
-                                    child: Divider(color: kGrey200),
-                                  ),
-                                  _buildSummaryRow(
-                                    'Remaining Due',
-                                    balanceDue > 0 ? balanceDue : 0.0,
-                                    color: kErrorColor,
-                                    isBold: true,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 80),
-                          ],
-                        ),
+                    // Payment Mode selection
+                    _buildPremiumCard(
+                      title: 'Payment Mode',
+                      icon: HeroIcons.creditCard,
+                      iconColor: kOrange,
+                      child: Row(
+                        children: [
+                          _buildModernChip('Cash', HeroIcons.banknotes, _paymentMode == 'Cash'),
+                          const SizedBox(width: 12),
+                          _buildModernChip('Online', HeroIcons.globeAlt, _paymentMode == 'Online'),
+                        ],
                       ),
                     ),
+                    const SizedBox(height: 16),
+
+                    // Summary Card
+                    _buildPremiumCard(
+                      title: 'Settlement Summary',
+                      icon: HeroIcons.documentText,
+                      iconColor: kPrimaryColor,
+                      child: Column(
+                        children: [
+                          _buildSummaryRow('Previous Balance', baseAmount, color: kBlack87),
+                          const SizedBox(height: 8),
+                          _buildSummaryRow('Received Amount', _enteredAmount, color: kGoogleGreen, isNegative: true),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Divider(color: kGrey200),
+                          ),
+                          _buildSummaryRow('Remaining Due', balanceDue > 0 ? balanceDue : 0.0, color: kErrorColor, isBold: true),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),
             ),
-          );
+          ],
+        ),
+          ),
+        ),
+      );
         },
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: kWhite,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -4))],
         ),
         child: SafeArea(
           child: SizedBox(
@@ -551,22 +430,12 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
               onPressed: _isSaving ? null : _handleSettle,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 elevation: 0,
               ),
               child: _isSaving
                   ? const CircularProgressIndicator(color: kWhite)
-                  : const Text(
-                      'Process Settlement',
-                      style: TextStyle(
-                        color: kWhite,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                  : const Text('Process Settlement', style: TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
             ),
           ),
         ),
@@ -574,12 +443,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     );
   }
 
-  Widget _buildPremiumCard({
-    required String title,
-    required HeroIcons icon,
-    required Color iconColor,
-    required Widget child,
-  }) {
+  Widget _buildPremiumCard({required String title, required HeroIcons icon, required Color iconColor, required Widget child}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -588,11 +452,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: kGrey200),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.015),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.015), blurRadius: 6, offset: const Offset(0, 3)),
         ],
       ),
       child: Column(
@@ -602,21 +462,11 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: iconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                 child: HeroIcon(icon, color: iconColor, size: 16),
               ),
               const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: kBlack87,
-                ),
-              ),
+              Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: kBlack87)),
             ],
           ),
           const SizedBox(height: 16),
@@ -642,14 +492,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
             children: [
               HeroIcon(icon, color: isSelected ? kWhite : kBlack54, size: 16),
               const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isSelected ? kWhite : kBlack54,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11,
-                ),
-              ),
+              Text(label, style: TextStyle(color: isSelected ? kWhite : kBlack54, fontWeight: FontWeight.w700, fontSize: 11)),
             ],
           ),
         ),
@@ -657,31 +500,14 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
     );
   }
 
-  Widget _buildSummaryRow(
-    String label,
-    double amount, {
-    required Color color,
-    bool isNegative = false,
-    bool isBold = false,
-  }) {
+  Widget _buildSummaryRow(String label, double amount, {required Color color, bool isNegative = false, bool isBold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: kBlack54,
-            fontWeight: isBold ? FontWeight.w800 : FontWeight.w600,
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: isBold ? FontWeight.w800 : FontWeight.w600)),
         Text(
           '${isNegative ? "- " : ""}$_currencySymbol${AmountFormatter.format(amount)}',
-          style: TextStyle(
-            fontSize: isBold ? 14 : 12,
-            fontWeight: isBold ? FontWeight.w900 : FontWeight.w700,
-            color: color,
-          ),
+          style: TextStyle(fontSize: isBold ? 14 : 12, fontWeight: isBold ? FontWeight.w900 : FontWeight.w700, color: color),
         ),
       ],
     );
@@ -697,14 +523,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: kGrey200),
         ),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: kBlack54,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
+        child: Text(label, style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w700)),
       ),
     );
   }

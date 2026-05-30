@@ -46,20 +46,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
   final TextEditingController _vendorNameController = TextEditingController();
   final TextEditingController _vendorPhoneController = TextEditingController();
   final TextEditingController _vendorGSTINController = TextEditingController();
-  final TextEditingController _vendorAddressController =
-      TextEditingController();
+  final TextEditingController _vendorAddressController = TextEditingController();
 
   DateTime _selectedDate = DateTime.now();
   String _selectedCategory = 'General';
   String _paymentMode = 'Cash'; // Payment mode: Cash, Online, Credit
   bool _isLoading = false;
-  List<String> _categories = [
-    'General',
-    'Salary',
-    'EB Bill',
-    'Stock Purchase',
-    'Other',
-  ];
+  List<String> _categories = ['General', 'Salary', 'EB Bill', 'Stock Purchase', 'Other'];
   String? _selectedVendor;
   List<Map<String, dynamic>> _vendors = [];
   String _currencySymbol = '';
@@ -77,27 +70,20 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
   Future<void> _loadCategories() async {
     try {
-      final stream = await FirestoreService().getCollectionStream(
-        'expenseCategories',
-      );
+      final stream = await FirestoreService().getCollectionStream('expenseCategories');
       final snapshot = await stream.first;
 
       if (mounted) {
         setState(() {
-          final loadedCategories = snapshot.docs.map((doc) {
-            final data = doc.data() as Map<String, dynamic>;
-            return (data['name'] ?? 'General').toString();
-          }).toList();
+          final loadedCategories = snapshot.docs
+              .map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return (data['name'] ?? 'General').toString();
+              })
+              .toList();
 
           if (loadedCategories.isNotEmpty) {
-            _categories = [
-              'General',
-              'Salary',
-              'EB Bill',
-              'Stock Purchase',
-              'Other',
-              ...loadedCategories,
-            ];
+            _categories = ['General', 'Salary', 'EB Bill', 'Stock Purchase', 'Other', ...loadedCategories];
           }
         });
       }
@@ -108,9 +94,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
 
   Future<void> _loadVendors() async {
     try {
-      final vendorsCollection = await FirestoreService().getStoreCollection(
-        'vendors',
-      );
+      final vendorsCollection = await FirestoreService().getStoreCollection('vendors');
       final snapshot = await vendorsCollection.get();
 
       if (mounted) {
@@ -138,10 +122,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
   void _loadCurrency() async {
     final storeId = await FirestoreService().getCurrentStoreId();
     if (storeId == null) return;
-    final doc = await FirebaseFirestore.instance
-        .collection('store')
-        .doc(storeId)
-        .get();
+    final doc = await FirebaseFirestore.instance.collection('store').doc(storeId).get();
     if (doc.exists && mounted) {
       final data = doc.data();
       setState(() {
@@ -208,17 +189,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                         itemCount: _vendors.length,
                         itemBuilder: (context, index) {
                           final vendor = _vendors[index];
-                          final totalPurchases =
-                              (vendor['totalPurchases'] ?? 0.0).toDouble();
+                          final totalPurchases = (vendor['totalPurchases'] ?? 0.0).toDouble();
                           final purchaseCount = vendor['purchaseCount'] ?? 0;
-                          final hasStats =
-                              totalPurchases > 0 || purchaseCount > 0;
+                          final hasStats = totalPurchases > 0 || purchaseCount > 0;
 
                           return ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: _primaryColor.withValues(
-                                alpha: 0.1,
-                              ),
+                              backgroundColor: _primaryColor.withValues(alpha: 0.1),
                               child: Text(
                                 (vendor['name'] ?? 'V').toString().isNotEmpty
                                     ? vendor['name'][0].toUpperCase()
@@ -234,10 +211,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                 if (hasStats)
                                   Text(
                                     '$purchaseCount bills • ${totalPurchases.toStringAsFixed(0)} total',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[600],
-                                    ),
+                                    style: TextStyle(fontSize: 11, color: Colors.grey[600]),
                                   ),
                               ],
                             ),
@@ -247,10 +221,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                                 _selectedVendor = vendor['id'];
                                 _vendorNameController.text = vendor['name'];
                                 _vendorPhoneController.text = vendor['phone'];
-                                _vendorGSTINController.text =
-                                    vendor['gstin'] ?? '';
-                                _vendorAddressController.text =
-                                    vendor['address'] ?? '';
+                                _vendorGSTINController.text = vendor['gstin'] ?? '';
+                                _vendorAddressController.text = vendor['address'] ?? '';
                               });
                             },
                           );
@@ -264,15 +236,10 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   _showAddVendorDialog();
                 },
                 icon: const HeroIcon(HeroIcons.plus, color: Colors.white),
-                label: const Text(
-                  'Add New Vendor',
-                  style: TextStyle(color: Colors.white),
-                ),
+                label: const Text('Add New Vendor', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _primaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -298,215 +265,136 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Add New Vendor',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Add New Vendor', style: TextStyle(fontWeight: FontWeight.bold)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: nameCtrl,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextField(
-                    controller: nameCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Vendor Name *',
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: nameCtrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Vendor Name *',
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 12),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: phoneCtrl,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextField(
-                    controller: phoneCtrl,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Phone Number *',
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: phoneCtrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Phone Number *',
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 12),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: gstinCtrl,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextField(
-                    controller: gstinCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'GSTIN',
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: gstinCtrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: gstinCtrl,
+                decoration: InputDecoration(
+                  labelText: 'GSTIN',
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 12),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: addressCtrl,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextField(
-                    controller: addressCtrl,
-                    maxLines: 2,
-                    decoration: InputDecoration(
-                      labelText: 'Address',
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: addressCtrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+                controller: addressCtrl,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
             ],
           ),
         ),
@@ -517,8 +405,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           ),
           ElevatedButton(
             onPressed: () async {
-              if (nameCtrl.text.trim().isEmpty ||
-                  phoneCtrl.text.trim().isEmpty) {
+              if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Name and Phone are required')),
                 );
@@ -526,17 +413,12 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               }
 
               try {
-                final vendorsCollection = await FirestoreService()
-                    .getStoreCollection('vendors');
+                final vendorsCollection = await FirestoreService().getStoreCollection('vendors');
                 final docRef = await vendorsCollection.add({
                   'name': nameCtrl.text.trim(),
                   'phone': phoneCtrl.text.trim(),
-                  'gstin': gstinCtrl.text.trim().isEmpty
-                      ? null
-                      : gstinCtrl.text.trim(),
-                  'address': addressCtrl.text.trim().isEmpty
-                      ? null
-                      : addressCtrl.text.trim(),
+                  'gstin': gstinCtrl.text.trim().isEmpty ? null : gstinCtrl.text.trim(),
+                  'address': addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
                   'createdAt': FieldValue.serverTimestamp(),
                 });
 
@@ -560,18 +442,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 }
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
+                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
                 );
               }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Save', style: TextStyle(color: Colors.white)),
           ),
@@ -586,13 +463,11 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     setState(() => _isLoading = true);
 
     try {
-      final totalAmount =
-          double.tryParse(_totalAmountController.text.trim()) ?? 0.0;
+      final totalAmount = double.tryParse(_totalAmountController.text.trim()) ?? 0.0;
       final paidAmount = _paymentMode == 'Credit'
           ? (double.tryParse(_paidAmountController.text.trim()) ?? 0.0)
           : totalAmount;
-      final gstAmount =
-          double.tryParse(_gstAmountController.text.trim()) ?? 0.0;
+      final gstAmount = double.tryParse(_gstAmountController.text.trim()) ?? 0.0;
       final creditAmount = _paymentMode == 'Credit' ? _creditAmount : 0.0;
 
       // Generate expense number with prefix
@@ -605,9 +480,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           ? _billNumberController.text.trim()
           : expenseNumber;
 
-      final expensesCollection = await FirestoreService().getStoreCollection(
-        'expenses',
-      );
+      final expensesCollection = await FirestoreService().getStoreCollection('expenses');
 
       await expensesCollection.add({
         'expenseNumber': expenseNumber,
@@ -620,22 +493,12 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         'paidAmount': paidAmount,
         'creditAmount': creditAmount,
         'gstAmount': gstAmount,
-        'gstin': _gstinController.text.trim().isEmpty
-            ? null
-            : _gstinController.text.trim(),
+        'gstin': _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
         'vendorId': _selectedVendor,
-        'vendorName': _vendorNameController.text.trim().isEmpty
-            ? null
-            : _vendorNameController.text.trim(),
-        'vendorPhone': _vendorPhoneController.text.trim().isEmpty
-            ? null
-            : _vendorPhoneController.text.trim(),
-        'vendorGSTIN': _vendorGSTINController.text.trim().isEmpty
-            ? null
-            : _vendorGSTINController.text.trim(),
-        'notes': _notesController.text.trim().isEmpty
-            ? null
-            : _notesController.text.trim(),
+        'vendorName': _vendorNameController.text.trim().isEmpty ? null : _vendorNameController.text.trim(),
+        'vendorPhone': _vendorPhoneController.text.trim().isEmpty ? null : _vendorPhoneController.text.trim(),
+        'vendorGSTIN': _vendorGSTINController.text.trim().isEmpty ? null : _vendorGSTINController.text.trim(),
+        'notes': _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         'date': Timestamp.fromDate(_selectedDate),
         'timestamp': FieldValue.serverTimestamp(),
         'createdBy': widget.uid,
@@ -686,11 +549,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              HeroIcon(
-                icon,
-                size: 18,
-                color: isSelected ? Colors.white : Colors.grey,
-              ),
+              HeroIcon(icon, size: 18, color: isSelected ? Colors.white : Colors.grey),
               const SizedBox(width: 6),
               Text(
                 mode,
@@ -716,13 +575,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
         title: Text(
-          widget.isStockPurchase
-              ? 'Add Stock Purchase'
-              : context.tr('create_expense'),
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          widget.isStockPurchase ? 'Add Stock Purchase' : context.tr('create_expense'),
+          style: const TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
         ),
         backgroundColor: _primaryColor,
         leading: IconButton(
@@ -752,15 +606,17 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   children: [
                     const Text(
                       'Category *',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
                       value: _selectedCategory,
-                      decoration: InputDecoration(),
+                      decoration: InputDecoration(
+                        
+                        
+                        
+                        
+                      ),
                       items: _categories.map((cat) {
                         return DropdownMenuItem(value: cat, child: Text(cat));
                       }).toList(),
@@ -778,228 +634,147 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               // Bill Number (renamed from Invoice Number)
               Text(
                 '${widget.isStockPurchase ? 'Purchase Bill Number' : 'Bill Number'} *',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  color: _errorColor,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _errorColor),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _billNumberController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _billNumberController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter bill number *',
-                      prefixIcon: const HeroIcon(
-                        HeroIcons.documentText,
-                        color: _primaryColor,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Bill number is required';
-                      }
-                      return null;
-                    },
-                  );
+      valueListenable: _billNumberController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _billNumberController,
+                decoration: InputDecoration(
+                  hintText: 'Enter bill number *',
+                  prefixIcon: const HeroIcon(HeroIcons.documentText, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Bill number is required';
+                  }
+                  return null;
                 },
-              ),
+              
+);
+      },
+    ),
               const SizedBox(height: 20),
 
               // Expense Name
               Text(
                 'Expense Name *',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _nameController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _nameController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter expense name *',
-                      prefixIcon: const HeroIcon(
-                        HeroIcons.tag,
-                        color: _primaryColor,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Expense name is required';
-                      }
-                      return null;
-                    },
-                  );
+      valueListenable: _nameController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  hintText: 'Enter expense name *',
+                  prefixIcon: const HeroIcon(HeroIcons.tag, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Expense name is required';
+                  }
+                  return null;
                 },
-              ),
+              
+);
+      },
+    ),
               const SizedBox(height: 20),
 
               // Total Amount
               Text(
                 'Total Amount *',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _totalAmountController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _totalAmountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '0.00 *',
-                      prefixIcon: const HeroIcon(
-                        HeroIcons.currencyRupee,
-                        color: _primaryColor,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    onChanged: (val) => setState(() {}),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Total amount is required';
-                      }
-                      if (double.tryParse(value) == null) {
-                        return 'Enter a valid amount';
-                      }
-                      return null;
-                    },
-                  );
+      valueListenable: _totalAmountController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _totalAmountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: '0.00 *',
+                  prefixIcon: const HeroIcon(HeroIcons.currencyRupee, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+                onChanged: (val) => setState(() {}),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Total amount is required';
+                  }
+                  if (double.tryParse(value) == null) {
+                    return 'Enter a valid amount';
+                  }
+                  return null;
                 },
-              ),
+              
+);
+      },
+    ),
               const SizedBox(height: 20),
 
               // Payment Mode
               Text(
                 'Payment Mode *',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               Container(
@@ -1022,90 +797,57 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 const SizedBox(height: 20),
                 Text(
                   'Paid Amount',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 ),
                 const SizedBox(height: 8),
                 ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _paidAmountController,
-                  builder: (context, value, _) {
-                    final bool hasText = value.text.isNotEmpty;
-                    return TextFormField(
-                      controller: _paidAmountController,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: '0.00 *',
-                        prefixIcon: const HeroIcon(
-                          HeroIcons.bookOpen,
-                          color: _successColor,
-                        ),
-                        filled: true,
-                        fillColor: const Color(0xFFF8F9FA),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 14,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: hasText ? kPrimaryColor : kGrey200,
-                            width: hasText ? 1.5 : 1.0,
-                          ),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(
-                            color: hasText ? kPrimaryColor : kGrey200,
-                            width: hasText ? 1.5 : 1.0,
-                          ),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
-                            color: kPrimaryColor,
-                            width: 2.0,
-                          ),
-                        ),
-                        labelStyle: TextStyle(
-                          color: hasText ? kPrimaryColor : kBlack54,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        floatingLabelStyle: TextStyle(
-                          color: hasText ? kPrimaryColor : kPrimaryColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      onChanged: (val) => setState(() {}),
-                      validator: (value) {
-                        final paid = double.tryParse(value ?? '') ?? 0.0;
-                        final total =
-                            double.tryParse(
-                              _totalAmountController.text.trim(),
-                            ) ??
-                            0.0;
-                        if (paid > total) {
-                          return 'Paid amount cannot exceed total';
-                        }
-                        return null;
-                      },
-                    );
+      valueListenable: _paidAmountController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                  controller: _paidAmountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    hintText: '0.00 *',
+                    prefixIcon: const HeroIcon(HeroIcons.bookOpen, color: _successColor),
+                    filled: true,
+                    fillColor: const Color(0xFFF8F9FA),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                    ),
+                    labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                    floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                  ),
+                  onChanged: (val) => setState(() {}),
+                  validator: (value) {
+                    final paid = double.tryParse(value ?? '') ?? 0.0;
+                    final total = double.tryParse(_totalAmountController.text.trim()) ?? 0.0;
+                    if (paid > total) {
+                      return 'Paid amount cannot exceed total';
+                    }
+                    return null;
                   },
-                ),
+                
+);
+      },
+    ),
                 const SizedBox(height: 12),
 
                 // Credit Amount Display (auto-calculated)
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: _creditAmount > 0
-                        ? Colors.orange.shade50
-                        : _successColor.withValues(alpha: 0.1),
+                    color: _creditAmount > 0 ? Colors.orange.shade50 : _successColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: _creditAmount > 0 ? Colors.orange : _successColor,
@@ -1116,21 +858,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                     children: [
                       Row(
                         children: [
-                          HeroIcon(
-                            HeroIcons.wallet,
-                            size: 20,
-                            color: _creditAmount > 0
-                                ? Colors.orange.shade700
-                                : _successColor,
-                          ),
+                          HeroIcon(HeroIcons.wallet, size: 20, color: _creditAmount > 0 ? Colors.orange.shade700 : _successColor),
                           const SizedBox(width: 8),
                           Text(
                             'Credit Amount:',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: _creditAmount > 0
-                                  ? Colors.orange.shade700
-                                  : _successColor,
+                              color: _creditAmount > 0 ? Colors.orange.shade700 : _successColor,
                             ),
                           ),
                         ],
@@ -1139,10 +873,8 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                         '$_currencySymbol${_creditAmount.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: _creditAmount > 0
-                              ? Colors.orange.shade700
-                              : _successColor,
+                         fontWeight: FontWeight.bold,
+                          color: _creditAmount > 0 ? Colors.orange.shade700 : _successColor,
                         ),
                       ),
                     ],
@@ -1154,150 +886,92 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               // GSTIN
               Text(
                 'GSTIN',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _gstinController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _gstinController,
-                    decoration: InputDecoration(
-                      hintText: 'Enter GSTIN *',
-                      prefixIcon: const HeroIcon(
-                        HeroIcons.documentText,
-                        color: _primaryColor,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: _gstinController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _gstinController,
+                decoration: InputDecoration(
+                  hintText: 'Enter GSTIN *',
+                  prefixIcon: const HeroIcon(HeroIcons.documentText, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 20),
 
               // GST Amount
               Text(
                 'GST Amount',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _gstAmountController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _gstAmountController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: '0.00 *',
-                      prefixIcon: const HeroIcon(
-                        HeroIcons.calculator,
-                        color: _primaryColor,
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: _gstAmountController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _gstAmountController,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: InputDecoration(
+                  hintText: '0.00 *',
+                  prefixIcon: const HeroIcon(HeroIcons.calculator, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 20),
 
               // Vendor Selection
               Text(
                 'Vendor (Optional)',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: _showVendorDialog,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1329,19 +1003,13 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               // Date Selection
               Text(
                 'Date *',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               GestureDetector(
                 onTap: () => _selectDate(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 16,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
@@ -1364,63 +1032,41 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               // Notes
               Text(
                 'Notes',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
-                valueListenable: _notesController,
-                builder: (context, value, _) {
-                  final bool hasText = value.text.isNotEmpty;
-                  return TextFormField(
-                    controller: _notesController,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      hintText: 'Add notes (optional) *',
-                      prefixIcon: const Icon(Icons.note, color: _primaryColor),
-                      filled: true,
-                      fillColor: const Color(0xFFF8F9FA),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                          color: hasText ? kPrimaryColor : kGrey200,
-                          width: hasText ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: kPrimaryColor,
-                          width: 2.0,
-                        ),
-                      ),
-                      labelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kBlack54,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      floatingLabelStyle: TextStyle(
-                        color: hasText ? kPrimaryColor : kPrimaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  );
-                },
-              ),
+      valueListenable: _notesController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+                controller: _notesController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Add notes (optional) *',
+                  prefixIcon: const Icon(Icons.note, color: _primaryColor),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              
+);
+      },
+    ),
               const SizedBox(height: 30),
 
               // Save Button
@@ -1450,7 +1096,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                           fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),
@@ -1463,3 +1109,4 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
     );
   }
 }
+

@@ -39,6 +39,6 @@ extension TranslationExtension on BuildContext {
     return Provider.of<LanguageProvider>(this, listen: false).translate(key);
   }
 
-  LanguageProvider get lang =>
-      Provider.of<LanguageProvider>(this, listen: false);
+  LanguageProvider get lang => Provider.of<LanguageProvider>(this, listen: false);
 }
+

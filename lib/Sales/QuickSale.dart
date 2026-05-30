@@ -1,19 +1,19 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:maxmybill/Sales/Bill.dart';
-import 'package:maxmybill/Sales/Invoice.dart';
+import 'package:maxbillup/Sales/Bill.dart';
+import 'package:maxbillup/Sales/Invoice.dart';
 import 'package:provider/provider.dart';
-import 'package:maxmybill/models/cart_item.dart';
-import 'package:maxmybill/models/sale.dart';
-import 'package:maxmybill/Sales/Quotation.dart' show QuotationPage;
-import 'package:maxmybill/Sales/components/common_widgets.dart';
-import 'package:maxmybill/utils/firestore_service.dart';
-import 'package:maxmybill/utils/translation_helper.dart';
-import 'package:maxmybill/services/number_generator_service.dart';
-import 'package:maxmybill/services/sale_sync_service.dart';
-import 'package:maxmybill/services/local_stock_service.dart';
-import 'package:maxmybill/Colors.dart';
+import 'package:maxbillup/models/cart_item.dart';
+import 'package:maxbillup/models/sale.dart';
+import 'package:maxbillup/Sales/Quotation.dart' show QuotationPage;
+import 'package:maxbillup/Sales/components/common_widgets.dart';
+import 'package:maxbillup/utils/firestore_service.dart';
+import 'package:maxbillup/utils/translation_helper.dart';
+import 'package:maxbillup/services/number_generator_service.dart';
+import 'package:maxbillup/services/sale_sync_service.dart';
+import 'package:maxbillup/services/local_stock_service.dart';
+import 'package:maxbillup/Colors.dart';
 
 class QuickSalePage extends StatefulWidget {
   final String uid;
@@ -51,15 +51,9 @@ class QuickSaleItem {
   final String productId;
   final String name;
   final double price;
-  double
-  quantity; // Changed from int to double to support decimal quantities (e.g., 0.5 kg)
+  double quantity; // Changed from int to double to support decimal quantities (e.g., 0.5 kg)
 
-  QuickSaleItem({
-    required this.productId,
-    required this.name,
-    required this.price,
-    required this.quantity,
-  });
+  QuickSaleItem({required this.productId, required this.name, required this.price, required this.quantity});
 
   double get total => price * quantity;
 }
@@ -99,16 +93,12 @@ class _QuickSalePageState extends State<QuickSalePage> {
     _selectedCustomerGST = widget.customerGST;
     if (widget.initialCartItems != null) {
       for (var item in widget.initialCartItems!) {
-        _items.add(
-          QuickSaleItem(
-            productId: item.productId.isNotEmpty
-                ? item.productId
-                : 'qs_${_productIdCounter++}',
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-          ),
-        );
+        _items.add(QuickSaleItem(
+          productId: item.productId.isNotEmpty ? item.productId : 'qs_${_productIdCounter++}',
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        ));
       }
       _counter = _items.length + 1;
     }
@@ -150,16 +140,12 @@ class _QuickSalePageState extends State<QuickSalePage> {
         setState(() {
           _items.clear();
           for (var item in newItems) {
-            _items.add(
-              QuickSaleItem(
-                productId: item.productId.isNotEmpty
-                    ? item.productId
-                    : 'qs_${_productIdCounter++}',
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-              ),
-            );
+            _items.add(QuickSaleItem(
+              productId: item.productId.isNotEmpty ? item.productId : 'qs_${_productIdCounter++}',
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            ));
           }
           _counter = _items.length + 1;
         });
@@ -188,9 +174,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
       final firestoreService = FirestoreService();
 
       // Load default tax type from store-scoped settings
-      final settingsCollection = await firestoreService.getStoreCollection(
-        'settings',
-      );
+      final settingsCollection = await firestoreService.getStoreCollection('settings');
       final settingsDoc = await settingsCollection.doc('taxSettings').get();
 
       if (settingsDoc.exists) {
@@ -200,28 +184,21 @@ class _QuickSalePageState extends State<QuickSalePage> {
       }
 
       // Only load active tax when the tax type actually applies tax
-      final taxApplied =
-          _defaultTaxType != 'No Tax Applied' &&
-          _defaultTaxType != 'Exempt from Tax';
+      final taxApplied = _defaultTaxType != 'No Tax Applied' && _defaultTaxType != 'Exempt from Tax';
 
       if (taxApplied) {
         // Load first active tax for quick sale from store-scoped taxes
-        final taxesCollection = await firestoreService.getStoreCollection(
-          'taxes',
-        );
+        final taxesCollection = await firestoreService.getStoreCollection('taxes');
         final taxesSnapshot = await taxesCollection
             .where('isActive', isEqualTo: true)
             .limit(1)
             .get();
 
         if (taxesSnapshot.docs.isNotEmpty) {
-          final taxData =
-              taxesSnapshot.docs.first.data() as Map<String, dynamic>;
+          final taxData = taxesSnapshot.docs.first.data() as Map<String, dynamic>;
           _defaultTaxPercentage = (taxData['percentage'] ?? 0.0).toDouble();
           _defaultTaxName = taxData['name'] ?? '';
-          debugPrint(
-            '📊 Quick Bill Tax loaded: $_defaultTaxName at $_defaultTaxPercentage%',
-          );
+          debugPrint('📊 Quick Bill Tax loaded: $_defaultTaxName at $_defaultTaxPercentage%');
         } else {
           _defaultTaxPercentage = 0.0;
           _defaultTaxName = '';
@@ -255,66 +232,18 @@ class _QuickSalePageState extends State<QuickSalePage> {
 
   String _getCurrencyShortForm(String code) {
     const currencyShortForms = {
-      'INR': 'Rs ',
-      'USD': '\$ ',
-      'EUR': '€ ',
-      'GBP': '£ ',
-      'JPY': '¥ ',
-      'CNY': '¥ ',
-      'AUD': 'A\$ ',
-      'CAD': 'C\$ ',
-      'CHF': 'Fr ',
-      'HKD': 'HK\$ ',
-      'SGD': 'S\$ ',
-      'SEK': 'kr ',
-      'KRW': '₩ ',
-      'NOK': 'kr ',
-      'NZD': 'NZ\$ ',
-      'MXN': 'Mex\$ ',
-      'BRL': 'R\$ ',
-      'ZAR': 'R ',
-      'RUB': '₽ ',
-      'TRY': '₺ ',
-      'PLN': 'zł ',
-      'THB': '฿ ',
-      'IDR': 'Rp ',
-      'MYR': 'RM ',
-      'PHP': '₱ ',
-      'CZK': 'Kč ',
-      'ILS': '₪ ',
-      'CLP': '\$ ',
-      'PKR': 'Rs ',
-      'AED': 'AED ',
-      'SAR': 'SR ',
-      'TWD': 'NT\$ ',
-      'DKK': 'kr ',
-      'COP': '\$ ',
-      'ARS': '\$ ',
-      'VND': '₫ ',
-      'EGP': 'E£ ',
-      'BDT': '৳ ',
-      'QAR': 'QR ',
-      'KWD': 'KD ',
-      'NGN': '₦ ',
-      'UAH': '₴ ',
-      'PEN': 'S/ ',
-      'RON': 'lei ',
-      'HUF': 'Ft ',
-      'BGN': 'лв ',
-      'HRK': 'kn ',
-      'LKR': 'Rs ',
-      'NPR': 'Rs ',
-      'KES': 'KSh ',
-      'GHS': 'GH₵ ',
-      'MMK': 'K ',
-      'OMR': 'OMR ',
-      'BHD': 'BD ',
-      'JOD': 'JD ',
-      'LBP': 'L£ ',
-      'MAD': 'MAD ',
-      'TND': 'DT ',
-      'DZD': 'DA ',
-      'IQD': 'IQD ',
+      'INR': 'Rs ', 'USD': '\$ ', 'EUR': '€ ', 'GBP': '£ ', 'JPY': '¥ ', 'CNY': '¥ ',
+      'AUD': 'A\$ ', 'CAD': 'C\$ ', 'CHF': 'Fr ', 'HKD': 'HK\$ ', 'SGD': 'S\$ ',
+      'SEK': 'kr ', 'KRW': '₩ ', 'NOK': 'kr ', 'NZD': 'NZ\$ ', 'MXN': 'Mex\$ ',
+      'BRL': 'R\$ ', 'ZAR': 'R ', 'RUB': '₽ ', 'TRY': '₺ ', 'PLN': 'zł ',
+      'THB': '฿ ', 'IDR': 'Rp ', 'MYR': 'RM ', 'PHP': '₱ ', 'CZK': 'Kč ',
+      'ILS': '₪ ', 'CLP': '\$ ', 'PKR': 'Rs ', 'AED': 'AED ', 'SAR': 'SR ',
+      'TWD': 'NT\$ ', 'DKK': 'kr ', 'COP': '\$ ', 'ARS': '\$ ', 'VND': '₫ ',
+      'EGP': 'E£ ', 'BDT': '৳ ', 'QAR': 'QR ', 'KWD': 'KD ', 'NGN': '₦ ',
+      'UAH': '₴ ', 'PEN': 'S/ ', 'RON': 'lei ', 'HUF': 'Ft ', 'BGN': 'лв ',
+      'HRK': 'kn ', 'LKR': 'Rs ', 'NPR': 'Rs ', 'KES': 'KSh ', 'GHS': 'GH₵ ',
+      'MMK': 'K ', 'OMR': 'OMR ', 'BHD': 'BD ', 'JOD': 'JD ', 'LBP': 'L£ ',
+      'MAD': 'MAD ', 'TND': 'DT ', 'DZD': 'DA ', 'IQD': 'IQD ',
     };
     return currencyShortForms[code] ?? '$code ';
   }
@@ -349,17 +278,15 @@ class _QuickSalePageState extends State<QuickSalePage> {
   }
 
   List<CartItem> get _cartItems => _items
-      .map(
-        (item) => CartItem(
-          productId: item.productId,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-          taxName: _isTaxEnabled ? _defaultTaxName : null,
-          taxPercentage: _isTaxEnabled ? _defaultTaxPercentage : null,
-          taxType: _defaultTaxType,
-        ),
-      )
+      .map((item) => CartItem(
+    productId: item.productId,
+    name: item.name,
+    price: item.price,
+    quantity: item.quantity,
+    taxName: _isTaxEnabled ? _defaultTaxName : null,
+    taxPercentage: _isTaxEnabled ? _defaultTaxPercentage : null,
+    taxType: _defaultTaxType,
+  ))
       .toList();
 
   void _notifyChange() => widget.onCartChanged?.call(_cartItems);
@@ -405,15 +332,13 @@ class _QuickSalePageState extends State<QuickSalePage> {
       }
       setState(() {
         _items.insert(
-          0,
-          QuickSaleItem(
-            productId:
-                'qs_${DateTime.now().millisecondsSinceEpoch}_${_productIdCounter++}',
-            name: 'item$_counter',
-            price: price,
-            quantity: qty,
-          ),
-        );
+            0,
+            QuickSaleItem(
+              productId: 'qs_${DateTime.now().millisecondsSinceEpoch}_${_productIdCounter++}',
+              name: 'item$_counter',
+              price: price,
+              quantity: qty,
+            ));
         _counter++;
         _input = '';
       });
@@ -444,11 +369,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
       if (_input.contains('x')) {
         final parts = _input.split('x');
         if (parts.length != 2 || parts[0].trim().isEmpty) {
-          CommonWidgets.showSnackBar(
-            context,
-            'Format: ProductCode x Quantity (e.g., 1001x5)',
-            bgColor: const Color(0xFFFF5252),
-          );
+          CommonWidgets.showSnackBar(context, 'Format: ProductCode x Quantity (e.g., 1001x5)', bgColor: const Color(0xFFFF5252));
           return;
         }
         productCode = parts[0].trim();
@@ -469,9 +390,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
       );
 
       // Lookup product by product code from Firestore
-      final productsCollection = await FirestoreService().getStoreCollection(
-        'Products',
-      );
+      final productsCollection = await FirestoreService().getStoreCollection('Products');
 
       // Try exact match first
       var querySnapshot = await productsCollection
@@ -494,13 +413,10 @@ class _QuickSalePageState extends State<QuickSalePage> {
       final productData = productDoc.data() as Map<String, dynamic>;
 
       // Get product details - itemName is the correct field
-      final String productName =
-          (productData['itemName'] ?? productData['name'] ?? 'Unknown')
-              .toString();
+      final String productName = (productData['itemName'] ?? productData['name'] ?? 'Unknown').toString();
       final double productPrice = (productData['price'] ?? 0.0).toDouble();
       final bool stockEnabled = productData['stockEnabled'] == true;
-      final double currentStock = (productData['currentStock'] ?? 0.0)
-          .toDouble();
+      final double currentStock = (productData['currentStock'] ?? 0.0).toDouble();
 
       // Check for expired product
       final expiryDateStr = productData['expiryDate'] as String?;
@@ -545,9 +461,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
 
       setState(() {
         // Check if product already exists in cart
-        int existingIndex = _items.indexWhere(
-          (item) => item.productId == productDoc.id,
-        );
+        int existingIndex = _items.indexWhere((item) => item.productId == productDoc.id);
 
         if (existingIndex != -1) {
           // Product exists, increment quantity
@@ -662,11 +576,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
   Future<void> _directPrintWithCash() async {
     if (_isProcessing) return; // Prevent double-click
     if (_items.isEmpty) {
-      CommonWidgets.showSnackBar(
-        context,
-        'Cart is empty!',
-        bgColor: const Color(0xFFFF9800),
-      );
+      CommonWidgets.showSnackBar(context, 'Cart is empty!', bgColor: const Color(0xFFFF9800));
       return;
     }
 
@@ -679,8 +589,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
       );
 
       // Generate invoice number
-      final invoiceNumber =
-          await NumberGeneratorService.generateInvoiceNumber();
+      final invoiceNumber = await NumberGeneratorService.generateInvoiceNumber();
 
       // Fetch business details
       final businessDetails = await _fetchBusinessDetails();
@@ -693,13 +602,10 @@ class _QuickSalePageState extends State<QuickSalePage> {
       final Map<String, double> taxMap = {};
       for (var item in _cartItems) {
         if (item.taxAmount > 0 && item.taxName != null) {
-          taxMap[item.taxName!] =
-              (taxMap[item.taxName!] ?? 0.0) + item.taxAmount;
+          taxMap[item.taxName!] = (taxMap[item.taxName!] ?? 0.0) + item.taxAmount;
         }
       }
-      final taxList = taxMap.entries
-          .map((e) => {'name': e.key, 'amount': e.value})
-          .toList();
+      final taxList = taxMap.entries.map((e) => {'name': e.key, 'amount': e.value}).toList();
       final totalTax = taxMap.values.fold(0.0, (a, b) => a + b);
 
       final subtotalAmount = _cartItems.fold(0.0, (acc, item) {
@@ -709,30 +615,23 @@ class _QuickSalePageState extends State<QuickSalePage> {
           return acc + item.total;
         }
       });
-      final totalWithTax = _cartItems.fold(
-        0.0,
-        (acc, item) => acc + item.totalWithTax,
-      );
+      final totalWithTax = _cartItems.fold(0.0, (acc, item) => acc + item.totalWithTax);
 
       // Base sale data
       final baseSaleData = {
         'invoiceNumber': invoiceNumber,
-        'items': _cartItems
-            .map(
-              (e) => {
-                'productId': e.productId,
-                'name': e.name,
-                'quantity': e.quantity,
-                'price': e.price,
-                'total': e.total,
-                'taxName': e.taxName,
-                'taxPercentage': e.taxPercentage ?? 0,
-                'taxAmount': e.taxAmount,
-                'taxType': e.taxType,
-                'totalWithTax': e.totalWithTax,
-              },
-            )
-            .toList(),
+        'items': _cartItems.map((e) => {
+          'productId': e.productId,
+          'name': e.name,
+          'quantity': e.quantity,
+          'price': e.price,
+          'total': e.total,
+          'taxName': e.taxName,
+          'taxPercentage': e.taxPercentage ?? 0,
+          'taxAmount': e.taxAmount,
+          'taxType': e.taxType,
+          'totalWithTax': e.totalWithTax,
+        }).toList(),
         'subtotal': subtotalAmount,
         'discount': 0.0,
         'total': totalWithTax,
@@ -751,7 +650,11 @@ class _QuickSalePageState extends State<QuickSalePage> {
       };
 
       final saleSyncService = context.read<SaleSyncService>();
-      final sale = Sale(id: invoiceNumber, data: baseSaleData, isSynced: false);
+      final sale = Sale(
+        id: invoiceNumber,
+        data: baseSaleData,
+        isSynced: false,
+      );
       final syncedNow = await saleSyncService.saveSale(sale);
 
       // Close loading dialog
@@ -778,18 +681,14 @@ class _QuickSalePageState extends State<QuickSalePage> {
               businessPhone: businessPhone ?? '',
               invoiceNumber: invoiceNumber,
               dateTime: DateTime.now(),
-              items: _cartItems
-                  .map(
-                    (e) => {
-                      'name': e.name,
-                      'quantity': e.quantity,
-                      'price': e.price,
-                      'total': e.totalWithTax,
-                      'taxPercentage': e.taxPercentage ?? 0,
-                      'taxAmount': e.taxAmount,
-                    },
-                  )
-                  .toList(),
+              items: _cartItems.map((e) => {
+                'name': e.name,
+                'quantity': e.quantity,
+                'price': e.price,
+                'total': e.totalWithTax,
+                'taxPercentage': e.taxPercentage ?? 0,
+                'taxAmount': e.taxAmount,
+              }).toList(),
               subtotal: subtotalAmount,
               discount: 0.0,
               taxes: taxList,
@@ -813,11 +712,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
       debugPrint('Error in direct print: $e');
       if (mounted) {
         Navigator.of(context, rootNavigator: true).pop();
-        CommonWidgets.showSnackBar(
-          context,
-          'Error: ${e.toString()}',
-          bgColor: kErrorColor,
-        );
+        CommonWidgets.showSnackBar(context, 'Error: ${e.toString()}', bgColor: kErrorColor);
       }
     } finally {
       if (mounted) setState(() => _isProcessing = false);
@@ -837,16 +732,12 @@ class _QuickSalePageState extends State<QuickSalePage> {
         final data = storeDoc.data() as Map<String, dynamic>?;
         debugPrint('📦 Store data: $data');
         debugPrint('🏢 Business Name: ${data?['businessName']}');
-        debugPrint(
-          '📍 Location: ${data?['location']} or ${data?['businessLocation']}',
-        );
+        debugPrint('📍 Location: ${data?['location']} or ${data?['businessLocation']}');
         debugPrint('📞 Phone: ${data?['businessPhone']}');
 
         return {
           'businessName': data?['businessName'] as String?,
-          'location':
-              data?['location'] as String? ??
-              data?['businessLocation'] as String?,
+          'location': data?['location'] as String? ?? data?['businessLocation'] as String?,
           'businessPhone': data?['businessPhone'] as String?,
         };
       }
@@ -862,10 +753,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
   Future<String?> _fetchStaffName(String uid) async {
     try {
       debugPrint('👤 Fetching staff name for uid: $uid');
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .get();
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
       final staffName = userDoc.data()?['name'];
       debugPrint('👤 Staff name: $staffName');
       return staffName;
@@ -949,17 +837,13 @@ class _QuickSalePageState extends State<QuickSalePage> {
     for (var item in _cartItems) {
       if (item.productId.isNotEmpty && !item.productId.startsWith('qs_')) {
         try {
-          final productRef = await FirestoreService().getStoreCollection(
-            'Products',
-          );
+          final productRef = await FirestoreService().getStoreCollection('Products');
           final doc = await productRef.doc(item.productId).get();
           if (doc.exists) {
             final data = doc.data() as Map<String, dynamic>;
             final currentStock = (data['currentStock'] ?? 0.0).toDouble();
             final newStock = currentStock - item.quantity;
-            await productRef.doc(item.productId).update({
-              'currentStock': newStock,
-            });
+            await productRef.doc(item.productId).update({'currentStock': newStock});
             localStockService.cacheStock(item.productId, newStock.toInt());
           }
         } catch (e) {
@@ -1140,12 +1024,8 @@ class _QuickSalePageState extends State<QuickSalePage> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _billingMode == 'item'
-                                ? kPrimaryColor
-                                : Colors.grey.shade200,
-                            borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(8),
-                            ),
+                            color: _billingMode == 'item' ? kPrimaryColor : Colors.grey.shade200,
+                            borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
                           ),
                           child: Center(
                             child: Text(
@@ -1153,9 +1033,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: _billingMode == 'item'
-                                    ? Colors.white
-                                    : Colors.black54,
+                                color: _billingMode == 'item' ? Colors.white : Colors.black54,
                               ),
                             ),
                           ),
@@ -1164,17 +1042,12 @@ class _QuickSalePageState extends State<QuickSalePage> {
                     ),
                     Expanded(
                       child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _billingMode = 'productCode'),
+                        onTap: () => setState(() => _billingMode = 'productCode'),
                         child: Container(
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           decoration: BoxDecoration(
-                            color: _billingMode == 'productCode'
-                                ? Color(0xffffab36)
-                                : Colors.grey.shade200,
-                            borderRadius: const BorderRadius.horizontal(
-                              right: Radius.circular(8),
-                            ),
+                            color: _billingMode == 'productCode' ? Color(0xffffab36): Colors.grey.shade200,
+                            borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
                           ),
                           child: Center(
                             child: Text(
@@ -1182,9 +1055,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w700,
-                                color: _billingMode == 'productCode'
-                                    ? Colors.black
-                                    : Colors.black54,
+                                color: _billingMode == 'productCode' ? Colors.black : Colors.black54,
                               ),
                             ),
                           ),
@@ -1197,260 +1068,217 @@ class _QuickSalePageState extends State<QuickSalePage> {
 
               // Input Display with hint based on mode
               Container(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF2F7CF6),
-                      width: 2,
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: const Color(0xFF2F7CF6), width: 2),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_input.isEmpty)
-                        Text(
-                          _billingMode == 'productCode'
-                              ? 'Product Code x Qty (e.g., 1001 x 5)'
-                              : 'Price x Qty',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                      Expanded(
-                        child: Text(
-                          _input,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      if (editingIndex != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 12),
-                          child: ElevatedButton(
-                            onPressed: _confirmEditQuantity,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2F7CF6),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                            ),
-                            child: Text(
-                              context.tr('update'),
-                              style: const TextStyle(fontSize: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (_input.isEmpty)
+                          Text(
+                            _billingMode == 'productCode' ? 'Product Code x Qty (e.g., 1001 x 5)' : 'Price x Qty',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey.shade400,
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Calculator Keypad
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        _numBtn('7'),
-                        const SizedBox(width: 6),
-                        _numBtn('8'),
-                        const SizedBox(width: 6),
-                        _numBtn('9'),
-                        const SizedBox(width: 6),
-                        _actBtn(Icons.backspace_outlined, _handleBackspace),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        _numBtn('4'),
-                        const SizedBox(width: 6),
-                        _numBtn('5'),
-                        const SizedBox(width: 6),
-                        _numBtn('6'),
-                        const SizedBox(width: 6),
-                        _opBtn(
-                          _billingMode == 'productCode' ? '×' : '×',
-                          _billingMode == 'productCode'
-                              ? _handleProductCodeMultiply
-                              : _handleMultiply,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
                         Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  _numBtn('1'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('2'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('3'),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  _numBtn('0'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('00'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('•'),
-                                ],
-                              ),
-                            ],
+                          child: Text(
+                            _input,
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 6),
-                        editingIndex == null
-                            ? _addBtn()
-                            : SizedBox(
-                                width:
-                                    (MediaQuery.of(context).size.width - 48) /
-                                    4,
-                                height: 118,
-                                child: GestureDetector(
-                                  onTap: _confirmEditQuantity,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2F7CF6),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'Update',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            'Qty',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
+                        if (editingIndex != null)
+                          Padding(
+                            padding: const EdgeInsets.only(left: 12),
+                            child: ElevatedButton(
+                              onPressed: _confirmEditQuantity,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2F7CF6),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              ),
+                              child: Text(context.tr('update'), style: const TextStyle(fontSize: 12)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+
+
+                // Calculator Keypad
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          _numBtn('7'),
+                          const SizedBox(width: 6),
+                          _numBtn('8'),
+                          const SizedBox(width: 6),
+                          _numBtn('9'),
+                          const SizedBox(width: 6),
+                          _actBtn(Icons.backspace_outlined, _handleBackspace),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          _numBtn('4'),
+                          const SizedBox(width: 6),
+                          _numBtn('5'),
+                          const SizedBox(width: 6),
+                          _numBtn('6'),
+                          const SizedBox(width: 6),
+                          _opBtn(_billingMode == 'productCode' ? '×' : '×', _billingMode == 'productCode' ? _handleProductCodeMultiply : _handleMultiply),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    _numBtn('1'),
+                                    const SizedBox(width: 6),
+                                    _numBtn('2'),
+                                    const SizedBox(width: 6),
+                                    _numBtn('3'),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  children: [
+                                    _numBtn('0'),
+                                    const SizedBox(width: 6),
+                                    _numBtn('00'),
+                                    const SizedBox(width: 6),
+                                    _numBtn('•'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          editingIndex == null
+                              ? _addBtn()
+                              : SizedBox(
+                                  width: (MediaQuery.of(context).size.width - 48) / 4,
+                                  height: 118,
+                                  child: GestureDetector(
+                                    onTap: _confirmEditQuantity,
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF2F7CF6),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text('Update', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
+                                            SizedBox(height: 2),
+                                            Text('Qty', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white)),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
 
-              // Action Buttons - Hide in quotation mode (parent provides floating bottom bar)
-              !widget.isQuotationMode
-                  ? CommonWidgets.buildActionButtons(
+                // Action Buttons - Hide in quotation mode (parent provides floating bottom bar)
+                !widget.isQuotationMode
+                    ? CommonWidgets.buildActionButtons(
+                  context: context,
+                  onSaveOrder: () {
+                    if (_items.isEmpty) {
+                      CommonWidgets.showSnackBar(context, 'Cart is empty!', bgColor: const Color(0xFFFF9800));
+                      return;
+                    }
+                    CommonWidgets.showSaveOrderDialog(
                       context: context,
-                      onSaveOrder: () {
-                        if (_items.isEmpty) {
-                          CommonWidgets.showSnackBar(
-                            context,
-                            'Cart is empty!',
-                            bgColor: const Color(0xFFFF9800),
-                          );
-                          return;
-                        }
-                        CommonWidgets.showSaveOrderDialog(
-                          context: context,
-                          uid: widget.uid,
-                          cartItems: _cartItems,
-                          totalBill: _totalWithTax,
-                          savedOrderId: widget.savedOrderId,
-                          savedOrderName:
-                              null, // QuickSale doesn't track order names yet
-                          savedOrderPhone: _selectedCustomerPhone,
-                          onSuccess: (orderName, orderId) {
-                            setState(() {
-                              _items.clear();
-                              _input = '';
-                              _counter = 1;
-                              editingIndex = null;
-                            });
-                            _notifyChange(); // Notify parent that cart is now empty
-                          },
-                        );
-                      },
-                      onCustomer: () {
-                        CommonWidgets.showCustomerSelectionDialog(
-                          context: context,
-                          onCustomerSelected: (phone, name, gst) {
-                            setState(() {
-                              _selectedCustomerPhone = phone;
-                              _selectedCustomerName = name;
-                              _selectedCustomerGST = gst;
-                            });
-                            // Notify parent about customer selection
-                            widget.onCustomerChanged?.call(phone, name, gst);
-                          },
-                          selectedCustomerPhone: _selectedCustomerPhone,
-                        );
-                      },
-                      customerName: _selectedCustomerName,
-                      onBill: () {
-                        if (_items.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                              builder: (context) => BillPage(
-                                uid: widget.uid,
-                                userEmail: widget.userEmail,
-                                cartItems: _cartItems,
-                                totalAmount: _totalWithTax,
-                                savedOrderId: widget.savedOrderId,
-                                customerPhone: _selectedCustomerPhone,
-                                customerName: _selectedCustomerName,
-                                customerGST: _selectedCustomerGST,
-                              ),
-                            ),
-                          );
-                        }
-                      },
+                      uid: widget.uid,
+                      cartItems: _cartItems,
                       totalBill: _totalWithTax,
-                      currencySymbol: _currencySymbol,
-                    )
-                  : const SizedBox.shrink(), // Hide buttons in quotation mode - parent provides floating bar
-            ],
+                      savedOrderId: widget.savedOrderId,
+                      savedOrderName: null, // QuickSale doesn't track order names yet
+                      savedOrderPhone: _selectedCustomerPhone,
+                      onSuccess: (orderName, orderId) {
+                        setState(() {
+                          _items.clear();
+                          _input = '';
+                          _counter = 1;
+                          editingIndex = null;
+                        });
+                        _notifyChange(); // Notify parent that cart is now empty
+                      },
+                    );
+                  },
+                  onCustomer: () {
+                    CommonWidgets.showCustomerSelectionDialog(
+                      context: context,
+                      onCustomerSelected: (phone, name, gst) {
+                        setState(() {
+                          _selectedCustomerPhone = phone;
+                          _selectedCustomerName = name;
+                          _selectedCustomerGST = gst;
+                        });
+                        // Notify parent about customer selection
+                        widget.onCustomerChanged?.call(phone, name, gst);
+                      },
+                      selectedCustomerPhone: _selectedCustomerPhone,
+                    );
+                  },
+                  customerName: _selectedCustomerName,
+                  onBill: () {
+                    if (_items.isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        CupertinoPageRoute(
+                          builder: (context) => BillPage(
+                            uid: widget.uid,
+                            userEmail: widget.userEmail,
+                            cartItems: _cartItems,
+                            totalAmount: _totalWithTax,
+                            savedOrderId: widget.savedOrderId,
+                            customerPhone: _selectedCustomerPhone,
+                            customerName: _selectedCustomerName,
+                            customerGST: _selectedCustomerGST,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  totalBill: _totalWithTax,
+                  currencySymbol: _currencySymbol,
+                )
+                    : const SizedBox.shrink(), // Hide buttons in quotation mode - parent provides floating bar
+              ],
+            ),
           ),
-        ),
-      ],
-    );
+        ],
+      );
   }
 
   // Build quotation-specific action buttons
@@ -1498,7 +1326,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
                 _selectedCustomerName ?? 'Customer',
                 style: const TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                 fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -1517,38 +1345,32 @@ class _QuickSalePageState extends State<QuickSalePage> {
           // Create Quotation Button
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: _isProcessing
-                  ? null
-                  : () {
-                      if (_items.isEmpty) {
-                        CommonWidgets.showSnackBar(
-                          context,
-                          'Please add items first',
-                          bgColor: Colors.orange,
-                        );
-                        return;
-                      }
-                      _generateQuotation();
-                    },
+              onPressed: _isProcessing ? null : () {
+                if (_items.isEmpty) {
+                  CommonWidgets.showSnackBar(
+                    context,
+                    'Please add items first',
+                    bgColor: Colors.orange,
+                  );
+                  return;
+                }
+                _generateQuotation();
+              },
               icon: _isProcessing
                   ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
+                      height: 18, width: 18,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                     )
                   : const Icon(
-                      Icons.description,
-                      color: Colors.white,
-                      size: 20,
-                    ),
+                Icons.description,
+                color: Colors.white,
+                size: 20,
+              ),
               label: const Text(
                 'Quotation',
                 style: TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.bold,
+                 fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),
               ),
@@ -1577,14 +1399,8 @@ class _QuickSalePageState extends State<QuickSalePage> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
-          child: Text(
-            num,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
+          child: Text(num,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: Colors.black87)),
         ),
       ),
     ),
@@ -1600,14 +1416,8 @@ class _QuickSalePageState extends State<QuickSalePage> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
-          child: Text(
-            op,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
+          child: Text(op,
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w500, color: Colors.black87)),
         ),
       ),
     ),
@@ -1646,9 +1456,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: _billingMode == 'productCode'
-                      ? Colors.black
-                      : Colors.white,
+                  color: _billingMode == 'productCode' ? Colors.black : Colors.white,
                 ),
               ),
               const SizedBox(height: 2),
@@ -1657,9 +1465,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: _billingMode == 'productCode'
-                      ? Colors.black
-                      : Colors.white,
+                  color: _billingMode == 'productCode' ? Colors.black : Colors.white,
                 ),
               ),
             ],
@@ -1680,59 +1486,43 @@ class _QuickSalePageState extends State<QuickSalePage> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(
-          child: Text(
-            num,
-            style: TextStyle(
-              fontSize: height * 0.38,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
+          child: Text(num,
+              style: TextStyle(fontSize: height * 0.38, fontWeight: FontWeight.w500, color: Colors.black87)),
         ),
       ),
     ),
   );
 
-  Widget _opBtnDynamic(String op, VoidCallback onTap, double height) =>
-      Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                op,
-                style: TextStyle(
-                  fontSize: height * 0.38,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ),
+  Widget _opBtnDynamic(String op, VoidCallback onTap, double height) => Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(12),
         ),
-      );
+        child: Center(
+          child: Text(op,
+              style: TextStyle(fontSize: height * 0.38, fontWeight: FontWeight.w500, color: Colors.black87)),
+        ),
+      ),
+    ),
+  );
 
-  Widget _actBtnDynamic(IconData icon, VoidCallback onTap, double height) =>
-      Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(icon, size: height * 0.38, color: Colors.black87),
-            ),
-          ),
+  Widget _actBtnDynamic(IconData icon, VoidCallback onTap, double height) => Expanded(
+    child: GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(12),
         ),
-      );
+        child: Center(child: Icon(icon, size: height * 0.38, color: Colors.black87)),
+      ),
+    ),
+  );
 
   Widget _addBtnDynamic(double height) => SizedBox(
     width: (MediaQuery.of(context).size.width - 48) / 4,
@@ -1748,23 +1538,9 @@ class _QuickSalePageState extends State<QuickSalePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                'Add',
-                style: TextStyle(
-                  fontSize: height * 0.13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              Text('Add', style: TextStyle(fontSize: height * 0.13, fontWeight: FontWeight.w600, color: Colors.white)),
               SizedBox(height: 2),
-              Text(
-                'Item',
-                style: TextStyle(
-                  fontSize: height * 0.13,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
+              Text('Item', style: TextStyle(fontSize: height * 0.13, fontWeight: FontWeight.w600, color: Colors.white)),
             ],
           ),
         ),
@@ -1772,3 +1548,4 @@ class _QuickSalePageState extends State<QuickSalePage> {
     ),
   );
 }
+

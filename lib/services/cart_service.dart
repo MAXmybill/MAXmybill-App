@@ -18,8 +18,7 @@ class CartService extends ChangeNotifier {
   String? get customerGST => _customerGST;
   bool get hasItems => _cartItems.isNotEmpty;
   int get itemCount => _cartItems.length;
-  double get totalAmount =>
-      _cartItems.fold(0.0, (sum, item) => sum + item.total);
+  double get totalAmount => _cartItems.fold(0.0, (sum, item) => sum + item.total);
 
   /// Update cart items
   void updateCart(List<CartItem> items) {
@@ -82,25 +81,25 @@ class CartService extends ChangeNotifier {
   void loadSavedOrder(String orderId, Map<String, dynamic> orderData) {
     final items = orderData['items'] as List<dynamic>?;
     if (items != null && items.isNotEmpty) {
-      _cartItems = items.map((item) {
-        List<Map<String, dynamic>>? itemTaxes;
-        if (item['taxes'] is List && (item['taxes'] as List).isNotEmpty) {
-          itemTaxes = (item['taxes'] as List)
-              .map((t) => Map<String, dynamic>.from(t as Map))
-              .toList();
-        }
-        return CartItem(
-          productId: item['productId'] ?? '',
-          name: item['name'] ?? '',
-          price: (item['price'] ?? 0.0).toDouble(),
-          cost: (item['cost'] ?? 0.0).toDouble(),
-          quantity: (item['quantity'] ?? 1).toDouble(),
-          taxes: itemTaxes,
-          taxName: item['taxName'],
-          taxPercentage: item['taxPercentage']?.toDouble(),
-          taxType: item['taxType'],
-        );
-      }).toList();
+      _cartItems = items
+          .map((item) {
+            List<Map<String, dynamic>>? itemTaxes;
+            if (item['taxes'] is List && (item['taxes'] as List).isNotEmpty) {
+              itemTaxes = (item['taxes'] as List).map((t) => Map<String, dynamic>.from(t as Map)).toList();
+            }
+            return CartItem(
+                productId: item['productId'] ?? '',
+                name: item['name'] ?? '',
+                price: (item['price'] ?? 0.0).toDouble(),
+                cost: (item['cost'] ?? 0.0).toDouble(),
+                quantity: (item['quantity'] ?? 1).toDouble(),
+                taxes: itemTaxes,
+                taxName: item['taxName'],
+                taxPercentage: item['taxPercentage']?.toDouble(),
+                taxType: item['taxType'],
+              );
+          })
+          .toList();
     }
     _savedOrderId = orderId;
     _customerPhone = orderData['customerPhone'] as String?;
@@ -109,3 +108,4 @@ class CartService extends ChangeNotifier {
     notifyListeners();
   }
 }
+

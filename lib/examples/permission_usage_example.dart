@@ -13,7 +13,11 @@ class ExampleProtectedPage extends StatefulWidget {
   final String uid;
   final String? userEmail;
 
-  const ExampleProtectedPage({super.key, required this.uid, this.userEmail});
+  const ExampleProtectedPage({
+    super.key,
+    required this.uid,
+    this.userEmail,
+  });
 
   @override
   State<ExampleProtectedPage> createState() => _ExampleProtectedPageState();
@@ -39,15 +43,16 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
 
   bool _hasPermission(String permission) {
     if (_userPermissions == null) return false;
-    final permissions =
-        _userPermissions!['permissions'] as Map<String, dynamic>;
+    final permissions = _userPermissions!['permissions'] as Map<String, dynamic>;
     return permissions[permission] == true;
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
@@ -102,7 +107,9 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
                   onPressed: _deleteProduct,
                   icon: const Icon(Icons.delete),
                   label: const Text('Delete Product'),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
                 ),
             ],
           ),
@@ -118,7 +125,10 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
                 children: [
                   const Text(
                     'Your Permissions:',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                     fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ..._buildPermissionList(),
@@ -148,7 +158,7 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
               title,
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.bold,
+               fontWeight: FontWeight.bold,
                 color: color,
               ),
             ),
@@ -163,8 +173,7 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
   List<Widget> _buildPermissionList() {
     if (_userPermissions == null) return [];
 
-    final permissions =
-        _userPermissions!['permissions'] as Map<String, dynamic>;
+    final permissions = _userPermissions!['permissions'] as Map<String, dynamic>;
     final role = _userPermissions!['role'] as String;
 
     return [
@@ -246,7 +255,10 @@ class _ExampleProtectedPageState extends State<ExampleProtectedPage> {
       if (mounted) {
         Navigator.pop(context); // Close loading
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -391,8 +403,7 @@ class PermissionAwarePage extends StatelessWidget {
           );
         }
 
-        final permissions =
-            snapshot.data!['permissions'] as Map<String, dynamic>;
+        final permissions = snapshot.data!['permissions'] as Map<String, dynamic>;
         final role = snapshot.data!['role'] as String;
         final canViewSales = permissions['viewSales'] == true;
 
@@ -420,9 +431,12 @@ class PermissionAwarePage extends StatelessWidget {
             title: Text('Sales ($role)'),
             backgroundColor: const Color(0xFF2F7CF6),
           ),
-          body: Center(child: Text('Sales content - You have access!')),
+          body: Center(
+            child: Text('Sales content - You have access!'),
+          ),
         );
       },
     );
   }
 }
+

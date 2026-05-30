@@ -50,9 +50,7 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
       final storeData = storeDoc.data() as Map<String, dynamic>;
 
       // Test 3: Try to access a collection
-      final productsRef = await FirestoreService().getStoreCollection(
-        'products',
-      );
+      final productsRef = await FirestoreService().getStoreCollection('products');
       final productsPath = productsRef.path;
 
       setState(() {
@@ -61,6 +59,7 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
         _storePath = productsPath;
         _storeData = storeData;
       });
+
     } catch (e) {
       setState(() {
         _status = '❌ ERROR: $e';
@@ -81,37 +80,22 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
           children: [
             Card(
               child: ListTile(
-                title: const Text(
-                  'Status',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
+                title: const Text('Status', style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: Text(_status, style: TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 10),
             Card(
               child: ListTile(
-                title: const Text(
-                  'Store ID',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  _storeId.isEmpty ? 'Not found' : _storeId,
-                  style: TextStyle(fontSize: 16),
-                ),
+                title: const Text('Store ID', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(_storeId.isEmpty ? 'Not found' : _storeId, style: TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 10),
             Card(
               child: ListTile(
-                title: const Text(
-                  'Products Path',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  _storePath.isEmpty ? 'Not found' : _storePath,
-                  style: TextStyle(fontSize: 14),
-                ),
+                title: const Text('Products Path', style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(_storePath.isEmpty ? 'Not found' : _storePath, style: TextStyle(fontSize: 14)),
               ),
             ),
             const SizedBox(height: 10),
@@ -121,26 +105,15 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Store Data',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
+                    const Text('Store Data', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     const SizedBox(height: 8),
                     if (_storeData.isEmpty)
                       const Text('No data')
                     else
-                      ..._storeData.entries.map(
-                        (e) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Text(
-                            '${e.key}: ${e.value}',
-                            style: TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ),
+                      ..._storeData.entries.map((e) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text('${e.key}: ${e.value}', style: TextStyle(fontSize: 14)),
+                      )),
                   ],
                 ),
               ),
@@ -158,26 +131,11 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Expected Behavior:',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('Expected Behavior:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
                     SizedBox(height: 8),
-                    Text(
-                      '✅ Store ID should show (e.g., 100001)',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    Text(
-                      '✅ Products Path should show: store/100001/products',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    Text(
-                      '✅ Store Data should show plan, businessName, etc.',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    Text('✅ Store ID should show (e.g., 100001)', style: TextStyle(color: Colors.white)),
+                    Text('✅ Products Path should show: store/100001/products', style: TextStyle(color: Colors.white)),
+                    Text('✅ Store Data should show plan, businessName, etc.', style: TextStyle(color: Colors.white)),
                   ],
                 ),
               ),
@@ -188,3 +146,4 @@ class _StoreDebugPageState extends State<StoreDebugPage> {
     );
   }
 }
+

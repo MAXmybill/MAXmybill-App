@@ -64,8 +64,7 @@ class CurrencyService {
   String get symbol => _currencySymbol;
 
   /// Current currency symbol with space
-  String get symbolWithSpace =>
-      _currencySymbol.isNotEmpty ? '$_currencySymbol ' : '';
+  String get symbolWithSpace => _currencySymbol.isNotEmpty ? '$_currencySymbol ' : '';
 
   /// Current currency code
   String get code => _currencyCode;
@@ -101,16 +100,13 @@ class CurrencyService {
   /// Returns just the amount if no currency is set
   String format(double amount, {int decimals = 2}) {
     final formattedAmount = amount.toStringAsFixed(decimals);
-    return _currencySymbol.isNotEmpty
-        ? '$_currencySymbol$formattedAmount'
-        : formattedAmount;
+    return _currencySymbol.isNotEmpty ? '$_currencySymbol$formattedAmount' : formattedAmount;
   }
 
   /// Format amount with currency symbol and space
   String formatWithSpace(double amount, {int decimals = 2}) {
     final formattedAmount = amount.toStringAsFixed(decimals);
-    return _currencySymbol.isNotEmpty
-        ? '$_currencySymbol $formattedAmount'
-        : formattedAmount;
+    return _currencySymbol.isNotEmpty ? '$_currencySymbol $formattedAmount' : formattedAmount;
   }
 }
+

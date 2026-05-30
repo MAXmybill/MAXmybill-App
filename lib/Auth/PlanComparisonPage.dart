@@ -7,114 +7,24 @@ class PlanComparisonPage extends StatelessWidget {
 
   // Feature list matching the image exactly
   static const List<Map<String, dynamic>> _features = [
-    {
-      'name': 'No. of. Users (Admin+ Users)',
-      'free': '1',
-      'lite': '1',
-      'plus': 'Admin +\n2 users',
-      'pro': 'Admin +\n9 users',
-    },
-    {
-      'name': 'POS Billing',
-      'free': true,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Purchases',
-      'free': true,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
+    {'name': 'No. of. Users (Admin+ Users)', 'free': '1', 'lite': '1', 'plus': 'Admin +\n2 users', 'pro': 'Admin +\n9 users'},
+    {'name': 'POS Billing', 'free': true, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Purchases', 'free': true, 'lite': true, 'plus': true, 'pro': true},
     {'name': 'Expenses', 'free': true, 'lite': true, 'plus': true, 'pro': true},
-    {
-      'name': 'Credit Sales',
-      'free': true,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Cloud Backup',
-      'free': true,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Unlimited Products',
-      'free': true,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Bill History',
-      'free': 'upto 15 days',
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Edit Bill',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
+    {'name': 'Credit Sales', 'free': true, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Cloud Backup', 'free': true, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Unlimited Products', 'free': true, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Bill History', 'free': 'upto 15 days', 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Edit Bill', 'free': false, 'lite': true, 'plus': true, 'pro': true},
     {'name': 'Reports', 'free': false, 'lite': true, 'plus': true, 'pro': true},
-    {
-      'name': 'Tax Reports',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Quotation / Estimation',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Import Customers',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
+    {'name': 'Tax Reports', 'free': false, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Quotation / Estimation', 'free': false, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Import Customers', 'free': false, 'lite': true, 'plus': true, 'pro': true},
     {'name': 'Support', 'free': false, 'lite': true, 'plus': true, 'pro': true},
-    {
-      'name': 'Customer Dues',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Bulk Product Upload',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Logo on Bill',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
-    {
-      'name': 'Remove Watermark',
-      'free': false,
-      'lite': true,
-      'plus': true,
-      'pro': true,
-    },
+    {'name': 'Customer Dues', 'free': false, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Bulk Product Upload', 'free': false, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Logo on Bill', 'free': false, 'lite': true, 'plus': true, 'pro': true},
+    {'name': 'Remove Watermark', 'free': false, 'lite': true, 'plus': true, 'pro': true},
   ];
 
   @override
@@ -184,7 +94,11 @@ class PlanComparisonPage extends StatelessWidget {
     return Text(
       name,
       textAlign: TextAlign.center,
-      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: color),
+      style: TextStyle(
+        fontWeight: FontWeight.w900,
+        fontSize: 10,
+        color: color,
+      ),
     );
   }
 

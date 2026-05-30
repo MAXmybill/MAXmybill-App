@@ -42,8 +42,8 @@ class SaleAppBar extends StatelessWidget {
         return selectedTabIndex == 1 ? -1.0 : 1.0;
       } else {
         if (selectedTabIndex == 0) return -1.0; // saved
-        if (selectedTabIndex == 1) return 0.0; // View All
-        return 1.0; // Quick Bill
+        if (selectedTabIndex == 1) return 0.0;  // View All
+        return 1.0;                             // Quick Bill
       }
     }
 
@@ -62,11 +62,7 @@ class SaleAppBar extends StatelessWidget {
                   borderRadius: R.radius(context, 12),
                   border: Border.all(color: kGrey200),
                 ),
-                child: HeroIcon(
-                  HeroIcons.arrowLeft,
-                  color: kBlack87,
-                  size: R.sp(context, 16),
-                ),
+                child: HeroIcon(HeroIcons.arrowLeft, color: kBlack87, size: R.sp(context, 16)),
               ),
             ),
             SizedBox(width: R.sp(context, 12)),
@@ -99,7 +95,7 @@ class SaleAppBar extends StatelessWidget {
                               color: kPrimaryColor.withOpacity(0.15),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
-                            ),
+                            )
                           ],
                         ),
                       ),
@@ -109,7 +105,9 @@ class SaleAppBar extends StatelessWidget {
                   // Tab Labels
                   Row(
                     children: [
-                      if (!hideSavedTab) ...[_buildTab(context.tr('saved'), 0)],
+                      if (!hideSavedTab) ...[
+                        _buildTab(context.tr('saved'), 0),
+                      ],
                       _buildTab(context.tr('View All'), 1),
                       _buildTab(context.tr('Quick Bill'), 2),
                     ],
@@ -158,9 +156,7 @@ class SaleAppBar extends StatelessWidget {
                     ),
                     child: Center(
                       child: Text(
-                        savedOrderCount > 99
-                            ? '99'
-                            : savedOrderCount.toString(),
+                        savedOrderCount > 99 ? '99' : savedOrderCount.toString(),
                         style: TextStyle(
                           color: isSelected ? kPrimaryColor : kWhite,
                           fontSize: R.sp(context, 9),

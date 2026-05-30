@@ -57,13 +57,10 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     // Pre-fill data if in edit mode
     if (widget.isEditMode && widget.customerData != null) {
       _nameController.text = widget.customerData!['name'] ?? '';
-      _phoneController.text =
-          widget.customerData!['phone'] ?? widget.customerId ?? '';
-      _gstinController.text =
-          widget.customerData!['gstin'] ?? widget.customerData!['gst'] ?? '';
+      _phoneController.text = widget.customerData!['phone'] ?? widget.customerId ?? '';
+      _gstinController.text = widget.customerData!['gstin'] ?? widget.customerData!['gst'] ?? '';
       _addressController.text = widget.customerData!['address'] ?? '';
-      _discountController.text = (widget.customerData!['defaultDiscount'] ?? 0)
-          .toString();
+      _discountController.text = (widget.customerData!['defaultDiscount'] ?? 0).toString();
       _selectedRating = (widget.customerData!['rating'] ?? 0) as int;
 
       // Handle DOB
@@ -117,31 +114,20 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
     try {
       final phone = _phoneController.text.trim();
-      final customersCollection = await FirestoreService().getStoreCollection(
-        'customers',
-      );
-      final defaultDiscount =
-          double.tryParse(_discountController.text.trim()) ?? 0.0;
+      final customersCollection = await FirestoreService().getStoreCollection('customers');
+      final defaultDiscount = double.tryParse(_discountController.text.trim()) ?? 0.0;
 
       if (widget.isEditMode) {
         // Update existing customer
         await customersCollection.doc(widget.customerId ?? phone).update({
           'name': _nameController.text.trim(),
           'phone': phone,
-          'gstin': _gstinController.text.trim().isEmpty
-              ? null
-              : _gstinController.text.trim(),
-          'gst': _gstinController.text.trim().isEmpty
-              ? null
-              : _gstinController.text.trim(),
-          'address': _addressController.text.trim().isEmpty
-              ? null
-              : _addressController.text.trim(),
+          'gstin': _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
+          'gst': _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
+          'address': _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
           'defaultDiscount': defaultDiscount,
           'rating': _selectedRating,
-          'dob': _selectedDOB != null
-              ? Timestamp.fromDate(_selectedDOB!)
-              : null,
+          'dob': _selectedDOB != null ? Timestamp.fromDate(_selectedDOB!) : null,
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
@@ -178,29 +164,19 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         await customersCollection.doc(phone).set({
           'name': _nameController.text.trim(),
           'phone': phone,
-          'gstin': _gstinController.text.trim().isEmpty
-              ? null
-              : _gstinController.text.trim(),
-          'gst': _gstinController.text.trim().isEmpty
-              ? null
-              : _gstinController.text.trim(),
-          'address': _addressController.text.trim().isEmpty
-              ? null
-              : _addressController.text.trim(),
+          'gstin': _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
+          'gst': _gstinController.text.trim().isEmpty ? null : _gstinController.text.trim(),
+          'address': _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
           'balance': lastDue,
           'totalSales': lastDue,
           'defaultDiscount': defaultDiscount,
           'rating': _selectedRating,
-          'dob': _selectedDOB != null
-              ? Timestamp.fromDate(_selectedDOB!)
-              : null,
+          'dob': _selectedDOB != null ? Timestamp.fromDate(_selectedDOB!) : null,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
         if (lastDue > 0) {
-          final creditsCollection = await FirestoreService().getStoreCollection(
-            'credits',
-          );
+          final creditsCollection = await FirestoreService().getStoreCollection('credits');
           await creditsCollection.add({
             'customerId': phone,
             'customerName': _nameController.text.trim(),
@@ -245,8 +221,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     // Plan check
     final canImport = await PlanPermissionHelper.canImportContacts();
     if (!canImport) {
-      if (mounted)
-        PlanPermissionHelper.showUpgradeDialog(context, 'Import Contacts');
+      if (mounted) PlanPermissionHelper.showUpgradeDialog(context, 'Import Contacts');
       return;
     }
     try {
@@ -262,19 +237,12 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         }
         return;
       }
-      final contacts = await FlutterContacts.getContacts(
-        withProperties: true,
-        withPhoto: false,
-      );
+      final contacts = await FlutterContacts.getContacts(withProperties: true, withPhoto: false);
       if (mounted) _showContactsDialog(contacts);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: kErrorColor,
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('Error: $e'), backgroundColor: kErrorColor, behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -285,55 +253,32 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Select Contact',
-          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-        ),
+        title: const Text('Select Contact', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
         content: SizedBox(
           width: double.maxFinite,
           height: 400,
           child: ListView.separated(
             itemCount: contacts.length,
-            separatorBuilder: (c, i) =>
-                const Divider(height: 1, color: kGrey100),
+            separatorBuilder: (c, i) => const Divider(height: 1, color: kGrey100),
             itemBuilder: (context, index) {
               final contact = contacts[index];
-              final phone = contact.phones.isNotEmpty
-                  ? contact.phones.first.number
-                  : '';
+              final phone = contact.phones.isNotEmpty ? contact.phones.first.number : '';
               return ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: CircleAvatar(
                   backgroundColor: _primaryColor.withValues(alpha: 0.1),
                   child: Text(
-                    contact.displayName.isNotEmpty
-                        ? contact.displayName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      color: _primaryColor,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    contact.displayName.isNotEmpty ? contact.displayName[0].toUpperCase() : '?',
+                    style: const TextStyle(color: _primaryColor,fontWeight: FontWeight.bold),
                   ),
                 ),
-                title: Text(
-                  contact.displayName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                  ),
-                ),
-                subtitle: Text(
-                  phone,
-                  style: const TextStyle(fontSize: 12, color: kBlack54),
-                ),
+                title: Text(contact.displayName, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                subtitle: Text(phone, style: const TextStyle(fontSize: 12, color: kBlack54)),
                 onTap: () {
                   Navigator.pop(context);
                   setState(() {
                     _nameController.text = contact.displayName;
-                    _phoneController.text = phone.replaceAll(
-                      RegExp(r'[^0-9+]'),
-                      '',
-                    );
+                    _phoneController.text = phone.replaceAll(RegExp(r'[^0-9+]'), '');
                   });
                 },
               );
@@ -341,13 +286,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold))),
         ],
       ),
     );
@@ -357,8 +296,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     // Plan check
     final canImport = await PlanPermissionHelper.canImportContacts();
     if (!canImport) {
-      if (mounted)
-        PlanPermissionHelper.showUpgradeDialog(context, 'Import Customers');
+      if (mounted) PlanPermissionHelper.showUpgradeDialog(context, 'Import Customers');
       return;
     }
     _showImportExcelDialog();
@@ -408,7 +346,11 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
               // Description
               const Text(
                 'Download the template, fill it with customer data, and upload it back.',
-                style: TextStyle(fontSize: 13, color: kBlack54, height: 1.5),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: kBlack54,
+                  height: 1.5,
+                ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -420,206 +362,146 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                 child: OutlinedButton.icon(
                   onPressed: () async {
                     // Download first, then close dialog and show result
-                    final result =
-                        await ExcelImportService.downloadCustomerTemplate();
+                    final result = await ExcelImportService.downloadCustomerTemplate();
                     if (!mounted) return;
 
                     // Close the import dialog
                     Navigator.pop(dialogContext);
 
-                    if (result != null &&
-                        !result.startsWith('Error') &&
-                        !result.toLowerCase().contains('denied')) {
+                    if (result != null && !result.startsWith('Error') && !result.toLowerCase().contains('denied')) {
                       // Show success dialog using STATE context
                       showDialog(
                         context: stateContext,
                         builder: (BuildContext successDialogContext) {
                           final fileName = result.split(RegExp(r'[/\\]')).last;
-                          return AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            backgroundColor: Colors.white,
-                            title: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        kGoogleGreen,
-                                        kGoogleGreen.withOpacity(0.7),
+                            return AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              backgroundColor: Colors.white,
+                              title: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [kGoogleGreen, kGoogleGreen.withOpacity(0.7)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: kGoogleGreen.withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
                                       ],
                                     ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: kGoogleGreen.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
+                                    child: const HeroIcon(HeroIcons.checkCircle, color: Colors.white, size: 28),
                                   ),
-                                  child: const HeroIcon(
-                                    HeroIcons.checkCircle,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                const Expanded(
-                                  child: Text(
-                                    'Success!',
-                                    style: TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
+                                  const SizedBox(width: 16),
+                                  const Expanded(
+                                    child: Text(
+                                      'Success!',
+                                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Customer template has been downloaded to Downloads/MAXmybill folder',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: kBlack54,
-                                    height: 1.4,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                Container(
-                                  padding: const EdgeInsets.all(14),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.blue.shade50,
-                                        Colors.blue.shade100,
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.blue.shade200,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: kPrimaryColor,
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                        ),
-                                        child: const HeroIcon(
-                                          HeroIcons.documentText,
-                                          color: Colors.white,
-                                          size: 20,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              fileName,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black87,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 2,
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'Excel Template',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: kGoogleGreen.withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: kGoogleGreen.withOpacity(0.3),
-                                    ),
-                                  ),
-                                  child: const Row(
-                                    children: [
-                                      HeroIcon(
-                                        HeroIcons.folder,
-                                        color: kGoogleGreen,
-                                        size: 18,
-                                      ),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'Check Downloads/MAXmybill folder',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: kGoogleGreen,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(successDialogContext),
-                                style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
-                                ),
-                                child: const Text(
-                                  'Close',
-                                  style: TextStyle(
-                                    color: kBlack54,
-                                    fontSize: 14,
-                                  ),
-                                ),
+                                ],
                               ),
-                            ],
-                          );
-                        },
-                      );
-                    } else {
-                      stateScaffoldMessenger.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            result ?? 'Failed to download template',
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Customer template has been downloaded to Downloads/MAXmybill folder',
+                                    style: TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Container(
+                                    padding: const EdgeInsets.all(14),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Colors.blue.shade50, Colors.blue.shade100],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: Colors.blue.shade200),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: kPrimaryColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: const HeroIcon(HeroIcons.documentText, color: Colors.white, size: 20),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                fileName,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black87,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                                maxLines: 2,
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                'Excel Template',
+                                                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(
+                                      color: kGoogleGreen.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(color: kGoogleGreen.withOpacity(0.3)),
+                                    ),
+                                    child: const Row(
+                                      children: [
+                                        HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
+                                        SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            'Check Downloads/MAXmybill folder',
+                                            style: TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(successDialogContext),
+                                  style: TextButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                  ),
+                                  child: const Text('Close', style: TextStyle(color: kBlack54, fontSize: 14)),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else {
+                        stateScaffoldMessenger.showSnackBar(
+                          SnackBar(
+                            content: Text(result ?? 'Failed to download template'),
+                            backgroundColor: kErrorColor,
                           ),
-                          backgroundColor: kErrorColor,
-                        ),
-                      );
-                    }
+                        );
+                      }
                   },
                   icon: const HeroIcon(HeroIcons.arrowDownTray, size: 20),
                   label: const Text(
@@ -667,11 +549,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                     try {
                       // First, pick the Excel file (BEFORE closing import dialog)
                       print('📂 Opening file picker...');
-                      final fileBytes =
-                          await ExcelImportService.pickExcelFile();
-                      print(
-                        '📂 File picked: ${fileBytes != null ? '${fileBytes.length} bytes' : 'null (cancelled)'}',
-                      );
+                      final fileBytes = await ExcelImportService.pickExcelFile();
+                      print('📂 File picked: ${fileBytes != null ? '${fileBytes.length} bytes' : 'null (cancelled)'}');
 
                       // If user cancelled file picker, just return (import dialog stays open)
                       if (fileBytes == null) {
@@ -681,9 +560,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
                       // Now close the import dialog since we have a file
                       if (!mounted) return;
-                      Navigator.pop(
-                        dialogContext,
-                      ); // Close import dialog using dialog's context
+                      Navigator.pop(dialogContext); // Close import dialog using dialog's context
 
                       // File was selected, now show loading dialog
                       if (!mounted) return;
@@ -694,15 +571,12 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                       if (!mounted) return;
 
                       showDialog(
-                        context:
-                            context, // Use fresh context from mounted widget
+                        context: context, // Use fresh context from mounted widget
                         barrierDismissible: false,
                         builder: (loadingContext) => PopScope(
                           canPop: false,
                           child: Dialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
                             child: Padding(
                               padding: const EdgeInsets.all(28),
@@ -712,9 +586,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: kPrimaryColor.withValues(
-                                        alpha: 0.1,
-                                      ),
+                                      color: kPrimaryColor.withValues(alpha: 0.1),
                                       shape: BoxShape.circle,
                                     ),
                                     child: const HeroIcon(
@@ -746,9 +618,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                     borderRadius: BorderRadius.circular(8),
                                     child: const LinearProgressIndicator(
                                       backgroundColor: kGrey200,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        kPrimaryColor,
-                                      ),
+                                      valueColor: AlwaysStoppedAnimation<Color>(kPrimaryColor),
                                       minHeight: 6,
                                     ),
                                   ),
@@ -761,14 +631,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
                       // Process the Excel file bytes
                       print('🔄 Processing Excel file...');
-                      final result =
-                          await ExcelImportService.processCustomersExcel(
-                            fileBytes,
-                            widget.uid,
-                          );
-                      print(
-                        '✅ Result: ${result['success']}, Success: ${result['successCount']}, Failed: ${result['failCount']}',
-                      );
+                      final result = await ExcelImportService.processCustomersExcel(fileBytes, widget.uid);
+                      print('✅ Result: ${result['success']}, Success: ${result['successCount']}, Failed: ${result['failCount']}');
 
                       // Close loading dialog
                       if (!mounted) return;
@@ -788,9 +652,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                           context: context,
                           barrierDismissible: false,
                           builder: (successDialogContext) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
                             title: Row(
                               children: [
@@ -798,37 +660,24 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        kGoogleGreen,
-                                        kGoogleGreen.withValues(alpha: 0.7),
-                                      ],
+                                      colors: [kGoogleGreen, kGoogleGreen.withValues(alpha: 0.7)],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: kGoogleGreen.withValues(
-                                          alpha: 0.3,
-                                        ),
+                                        color: kGoogleGreen.withValues(alpha: 0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
-                                  child: const HeroIcon(
-                                    HeroIcons.checkCircle,
-                                    color: Colors.white,
-                                    size: 28,
-                                  ),
+                                  child: const HeroIcon(HeroIcons.checkCircle, color: Colors.white, size: 28),
                                 ),
                                 const SizedBox(width: 16),
                                 const Expanded(
                                   child: Text(
                                     'Import Complete!',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black87,
-                                    ),
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
                                   ),
                                 ),
                               ],
@@ -841,20 +690,13 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     gradient: LinearGradient(
-                                      colors: [
-                                        Colors.green.shade50,
-                                        Colors.green.shade100,
-                                      ],
+                                      colors: [Colors.green.shade50, Colors.green.shade100],
                                     ),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Row(
                                     children: [
-                                      const HeroIcon(
-                                        HeroIcons.userPlus,
-                                        color: kGoogleGreen,
-                                        size: 24,
-                                      ),
+                                      const HeroIcon(HeroIcons.userPlus, color: kGoogleGreen, size: 24),
                                       const SizedBox(width: 12),
                                       Expanded(
                                         child: Text(
@@ -879,11 +721,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                     ),
                                     child: Row(
                                       children: [
-                                        const HeroIcon(
-                                          HeroIcons.exclamationTriangle,
-                                          color: kOrange,
-                                          size: 24,
-                                        ),
+                                        const HeroIcon(HeroIcons.exclamationTriangle, color: kOrange, size: 24),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
@@ -901,39 +739,17 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                 ],
                                 if (errors.isNotEmpty) ...[
                                   const SizedBox(height: 16),
-                                  const Text(
-                                    'Issues:',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 13,
-                                    ),
-                                  ),
+                                  const Text('Issues:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                                   const SizedBox(height: 8),
                                   Container(
-                                    constraints: const BoxConstraints(
-                                      maxHeight: 120,
-                                    ),
+                                    constraints: const BoxConstraints(maxHeight: 120),
                                     child: SingleChildScrollView(
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: errors
-                                            .take(5)
-                                            .map(
-                                              (e) => Padding(
-                                                padding: const EdgeInsets.only(
-                                                  bottom: 4,
-                                                ),
-                                                child: Text(
-                                                  '• $e',
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    color: kBlack54,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: errors.take(5).map((e) => Padding(
+                                          padding: const EdgeInsets.only(bottom: 4),
+                                          child: Text('• $e', style: const TextStyle(fontSize: 12, color: kBlack54)),
+                                        )).toList(),
                                       ),
                                     ),
                                   ),
@@ -942,11 +758,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
                                         '... and ${errors.length - 5} more',
-                                        style: const TextStyle(
-                                          fontSize: 11,
-                                          color: kBlack54,
-                                          fontStyle: FontStyle.italic,
-                                        ),
+                                        style: const TextStyle(fontSize: 11, color: kBlack54, fontStyle: FontStyle.italic),
                                       ),
                                     ),
                                 ],
@@ -955,15 +767,10 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                             actions: [
                               TextButton(
                                 onPressed: () {
-                                  Navigator.pop(
-                                    successDialogContext,
-                                  ); // Close success dialog
+                                  Navigator.pop(successDialogContext); // Close success dialog
                                 },
                                 style: TextButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 12,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                                   backgroundColor: kPrimaryColor,
                                   foregroundColor: Colors.white,
                                   shape: RoundedRectangleBorder(
@@ -972,10 +779,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                 ),
                                 child: const Text(
                                   'Done',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                                 ),
                               ),
                             ],
@@ -985,9 +789,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text(
-                                result['message'] ?? 'Import failed',
-                              ),
+                              content: Text(result['message'] ?? 'Import failed'),
                               backgroundColor: kErrorColor,
                             ),
                           );
@@ -1006,9 +808,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(
-                              'Error during import: ${e.toString()}',
-                            ),
+                            content: Text('Error during import: ${e.toString()}'),
                             backgroundColor: kErrorColor,
                             duration: const Duration(seconds: 4),
                           ),
@@ -1052,10 +852,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       builder: (context) => AlertDialog(
         backgroundColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Delete Customer?',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-        ),
+        title: const Text('Delete Customer?', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1065,11 +862,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                 color: kErrorColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: const HeroIcon(
-                HeroIcons.exclamationTriangle,
-                color: kErrorColor,
-                size: 48,
-              ),
+              child: const HeroIcon(HeroIcons.exclamationTriangle, color: kErrorColor, size: 48),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -1082,24 +875,16 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(fontWeight: FontWeight.w800, color: kBlack54),
-            ),
+            child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w800, color: kBlack54)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: kErrorColor,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text(
-              'Delete',
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.w800),
-            ),
+            child: const Text('Delete', style: TextStyle(color: kWhite, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -1107,17 +892,11 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
 
     if (confirm == true && widget.customerId != null) {
       try {
-        await FirestoreService().deleteDocument(
-          'customers',
-          widget.customerId!,
-        );
+        await FirestoreService().deleteDocument('customers', widget.customerId!);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'Customer deleted successfully',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
+              content: Text('Customer deleted successfully', style: TextStyle(fontWeight: FontWeight.w600)),
               backgroundColor: _successColor,
               behavior: SnackBarBehavior.floating,
             ),
@@ -1154,19 +933,13 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
     return double.tryParse(value?.toString() ?? '0') ?? 0;
   }
 
-  Future<void> _showDeleteBlockedDialog(
-    BuildContext context,
-    double dueAmount,
-  ) async {
+  Future<void> _showDeleteBlockedDialog(BuildContext context, double dueAmount) async {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Delete blocked',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
-        ),
+        title: const Text('Delete blocked', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1176,21 +949,13 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                 color: kOrange.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
               ),
-              child: const HeroIcon(
-                HeroIcons.exclamationTriangle,
-                color: kOrange,
-                size: 48,
-              ),
+              child: const HeroIcon(HeroIcons.exclamationTriangle, color: kOrange, size: 48),
             ),
             const SizedBox(height: 16),
             Text(
               'This customer has pending credit due of ${dueAmount.toStringAsFixed(2)}. Clear due before deleting.',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: kBlack54,
-                fontSize: 14,
-                height: 1.5,
-              ),
+              style: const TextStyle(color: kBlack54, fontSize: 14, height: 1.5),
             ),
           ],
         ),
@@ -1200,14 +965,9 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryColor,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text(
-              'OK',
-              style: TextStyle(color: kWhite, fontWeight: FontWeight.w800),
-            ),
+            child: const Text('OK', style: TextStyle(color: kWhite, fontWeight: FontWeight.w800)),
           ),
         ],
       ),
@@ -1228,138 +988,98 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
         ),
         title: Text(
           widget.isEditMode ? 'Edit Customer' : 'Add Customer',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18),
         ),
         backgroundColor: _primaryColor,
         leading: IconButton(
-          icon: const HeroIcon(
-            HeroIcons.arrowLeft,
-            color: Colors.white,
-            size: 22,
-          ),
+          icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
         elevation: 0,
-        actions: widget.isEditMode
-            ? [
-                IconButton(
-                  icon: const HeroIcon(HeroIcons.trash, color: Colors.red),
-                  onPressed: () => _confirmDeleteCustomer(context),
-                  tooltip: 'Delete Customer',
+        actions: widget.isEditMode ? [
+          IconButton(
+            icon: const HeroIcon(HeroIcons.trash, color: Colors.red),
+            onPressed: () => _confirmDeleteCustomer(context),
+            tooltip: 'Delete Customer',
+          ),
+        ] : [
+          FutureBuilder<bool>(
+            future: _canImportContactsFuture,
+            builder: (context, snapshot) {
+              final isImportLocked = !(snapshot.data ?? false);
+              return IconButton(
+                icon: PremiumLockIconWrapper(
+                  isLocked: isImportLocked,
+                  badgeSize: 14,
+                  child: HeroIcon(
+                    HeroIcons.documentArrowUp,
+                    color: isImportLocked ? kPremiumLockIcon : Colors.white,
+                    size: 22,
+                  ),
                 ),
-              ]
-            : [
-                FutureBuilder<bool>(
-                  future: _canImportContactsFuture,
-                  builder: (context, snapshot) {
-                    final isImportLocked = !(snapshot.data ?? false);
-                    return IconButton(
-                      icon: PremiumLockIconWrapper(
-                        isLocked: isImportLocked,
-                        child: HeroIcon(
-                          HeroIcons.documentArrowUp,
-                          color: isImportLocked
-                              ? kPremiumLockIcon
-                              : Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                      onPressed: () => _importFromExcel(),
-                      tooltip: isImportLocked
-                          ? 'Import from Excel (Premium)'
-                          : 'Import from Excel',
-                    );
-                  },
+                onPressed: () => _importFromExcel(),
+                tooltip: isImportLocked ? 'Import from Excel (Premium)' : 'Import from Excel',
+              );
+            },
+          ),
+          FutureBuilder<bool>(
+            future: _canImportContactsFuture,
+            builder: (context, snapshot) {
+              final isImportLocked = !(snapshot.data ?? false);
+              return PopupMenuButton<String>(
+                icon: PremiumLockIconWrapper(
+                  isLocked: isImportLocked,
+                  badgeSize: 14,
+                  child: HeroIcon(
+                    HeroIcons.ellipsisVertical,
+                    color: isImportLocked ? kPremiumLockIcon : Colors.white,
+                  ),
                 ),
-                FutureBuilder<bool>(
-                  future: _canImportContactsFuture,
-                  builder: (context, snapshot) {
-                    final isImportLocked = !(snapshot.data ?? false);
-                    return PopupMenuButton<String>(
-                      icon: PremiumLockIconWrapper(
-                        isLocked: isImportLocked,
-                        child: HeroIcon(
-                          HeroIcons.ellipsisVertical,
-                          color: isImportLocked
-                              ? kPremiumLockIcon
-                              : Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: kGrey200),
+                ),
+                onSelected: (value) {
+                  if (value == 'contacts') {
+                    _importFromContacts();
+                  } else if (value == 'excel') {
+                    _importFromExcel();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'contacts',
+                    child: Row(
+                      children: [
+                        HeroIcon(HeroIcons.users, color: isImportLocked ? kPremiumLockIcon : _primaryColor, size: 20),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text('Import from Contacts', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                         ),
-                      ),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: const BorderSide(color: kGrey200),
-                      ),
-                      onSelected: (value) {
-                        if (value == 'contacts') {
-                          _importFromContacts();
-                        } else if (value == 'excel') {
-                          _importFromExcel();
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem(
-                          value: 'contacts',
-                          child: Row(
-                            children: [
-                              HeroIcon(
-                                HeroIcons.users,
-                                color: isImportLocked
-                                    ? kPremiumLockIcon
-                                    : _primaryColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  'Import from Contacts',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              if (isImportLocked)
-                                const PremiumLockBadge(size: 16),
-                            ],
-                          ),
-                        ),
-                        PopupMenuItem(
-                          value: 'excel',
-                          child: Row(
-                            children: [
-                              HeroIcon(
-                                HeroIcons.tableCells,
-                                color: isImportLocked
-                                    ? kPremiumLockIcon
-                                    : _successColor,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              const Expanded(
-                                child: Text(
-                                  'Import from Excel',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-                              if (isImportLocked)
-                                const PremiumLockBadge(size: 16),
-                            ],
-                          ),
-                        ),
+                        if (isImportLocked) const PremiumLockBadge(size: 14),
                       ],
-                    );
-                  },
-                ),
-              ],
+                    ),
+                  ),
+                  PopupMenuItem(
+                    value: 'excel',
+                    child: Row(
+                      children: [
+                        HeroIcon(HeroIcons.tableCells, color: isImportLocked ? kPremiumLockIcon : _successColor, size: 20),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text('Import from Excel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                        ),
+                        if (isImportLocked) const PremiumLockBadge(size: 14),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -1390,9 +1110,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                   const SizedBox(height: 24),
 
                   Theme(
-                    data: Theme.of(
-                      context,
-                    ).copyWith(dividerColor: Colors.transparent),
+                    data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                     child: ExpansionTile(
                       tilePadding: EdgeInsets.zero,
                       childrenPadding: EdgeInsets.zero,
@@ -1420,22 +1138,18 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                           hint: '0',
                           icon: HeroIcons.receiptPercent,
                           iconColor: kGoogleGreen,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
                         if (!widget.isEditMode) ...[
-                          const SizedBox(height: 16),
-                          _buildModernTextField(
-                            controller: _lastDueController,
-                            label: 'Last Due',
-                            hint: '0.00',
-                            icon: HeroIcons.banknotes,
-                            iconColor: kOrange,
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                          ),
+                        const SizedBox(height: 16),
+                        _buildModernTextField(
+                          controller: _lastDueController,
+                          label: 'Last Due',
+                          hint: '0.00',
+                          icon: HeroIcons.banknotes,
+                          iconColor: kOrange,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        ),
                         ],
                         const SizedBox(height: 16),
                         _buildSectionHeader('Date of Birth'),
@@ -1443,38 +1157,25 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                         GestureDetector(
                           onTap: () => _selectDOB(context),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
                               color: kGreyBg,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: _selectedDOB != null
-                                    ? _primaryColor
-                                    : _cardBorder,
-                                width: _selectedDOB != null ? 1.5 : 1.0,
+                                  color: _selectedDOB != null ? _primaryColor : _cardBorder,
+                                  width: _selectedDOB != null ? 1.5 : 1.0
                               ),
                             ),
                             child: Row(
                               children: [
-                                const HeroIcon(
-                                  HeroIcons.cake,
-                                  color: _primaryColor,
-                                  size: 20,
-                                ),
+                                const HeroIcon(HeroIcons.cake, color: _primaryColor, size: 20),
                                 const SizedBox(width: 12),
                                 Text(
                                   _selectedDOB != null
-                                      ? DateFormat(
-                                          'dd MMM yyyy',
-                                        ).format(_selectedDOB!)
+                                      ? DateFormat('dd MMM yyyy').format(_selectedDOB!)
                                       : 'Select Date',
                                   style: TextStyle(
-                                    color: _selectedDOB != null
-                                        ? kBlack87
-                                        : kBlack54,
+                                    color: _selectedDOB != null ? kBlack87 : kBlack54,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1515,20 +1216,11 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       ),
       child: Row(
         children: [
-          const HeroIcon(
-            HeroIcons.star,
-            color: kOrange,
-            size: 20,
-            style: HeroIconStyle.solid,
-          ),
+          const HeroIcon(HeroIcons.star, color: kOrange, size: 20, style: HeroIconStyle.solid),
           const SizedBox(width: 12),
           const Text(
             'Rating:',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: kBlack87,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
           ),
           const Spacer(),
           ...List.generate(5, (index) {
@@ -1550,9 +1242,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                   HeroIcons.star,
                   size: 28,
                   color: index < _selectedRating ? kOrange : kGrey300,
-                  style: index < _selectedRating
-                      ? HeroIconStyle.solid
-                      : HeroIconStyle.outline,
+                  style: index < _selectedRating ? HeroIconStyle.solid : HeroIconStyle.outline,
                 ),
               ),
             );
@@ -1566,7 +1256,11 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                   _selectedRating = 0;
                 });
               },
-              child: const HeroIcon(HeroIcons.xMark, size: 20, color: kGrey400),
+              child: const HeroIcon(
+                HeroIcons.xMark,
+                size: 20,
+                color: kGrey400,
+              ),
             ),
           ],
         ],
@@ -1604,83 +1298,54 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
       builder: (context, value, child) {
         final bool isFilled = value.text.isNotEmpty;
         return ValueListenableBuilder<TextEditingValue>(
-          valueListenable: controller,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextFormField(
-              controller: controller,
-              keyboardType: keyboardType,
-              maxLines: maxLines,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: kBlack87,
-              ),
-              decoration: InputDecoration(
-                labelText: label,
-                hintText: hint,
-                hintStyle: const TextStyle(
-                  color: kBlack54,
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                ),
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: HeroIcon(
-                    icon,
-                    color: iconColor ?? _primaryColor,
-                    size: 20,
-                  ),
-                ),
-
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kErrorColor),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              validator: isRequired
-                  ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null
-                  : null,
-            );
-          },
-        );
+      valueListenable: controller,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+          controller: controller,
+          keyboardType: keyboardType,
+          maxLines: maxLines,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kBlack87),
+          decoration: InputDecoration(
+            labelText: label,
+            hintText: hint,
+            hintStyle: const TextStyle(color: kBlack54, fontSize: 14, fontWeight: FontWeight.normal),
+            prefixIcon: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: HeroIcon(icon, color: iconColor ?? _primaryColor, size: 20),
+            ),
+            
+            
+            
+            
+            
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kErrorColor),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+          validator: isRequired ? (v) => (v == null || v.trim().isEmpty) ? 'Required' : null : null,
+        
+);
+      },
+    );
       },
     );
   }
@@ -1711,22 +1376,19 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           ),
           child: _isLoading
               ? const SizedBox(
-                  height: 24,
-                  width: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  ),
-                )
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+          )
               : Text(
-                  widget.isEditMode ? 'Update customer' : 'Save customer',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+            widget.isEditMode ? 'Update customer' : 'Save customer',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
+          ),
         ),
       ),
     );

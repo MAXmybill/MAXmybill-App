@@ -10,6 +10,7 @@ import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/Auth/PlanComparisonPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+
 class SubscriptionPlanPage extends StatefulWidget {
   final String uid;
   final String currentPlan;
@@ -54,11 +55,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
   int get _selectedPlanRank {
     return (plans.firstWhere(
-              (p) => p['name'] == _selectedPlan,
-              orElse: () => plans[1],
-            )['rank']
-            as int?) ??
-        0;
+          (p) => p['name'] == _selectedPlan,
+          orElse: () => plans[1],
+        )['rank'] as int?) ?? 0;
   }
 
   int get _currentPlanRank {
@@ -129,7 +128,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         'Logo on Bill',
         'Remove Watermark',
       ],
-      'excluded': ['Multiple Staff Accounts'],
+      'excluded': [
+        'Multiple Staff Accounts',
+      ],
     },
     {
       'name': 'MAX Plus',
@@ -199,13 +200,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     _loadSubscriptionFromStore();
     // Default to 'MAX One' if current plan is Starter or Free or not found
     final currentPlanLower = widget.currentPlan.toLowerCase();
-    if (currentPlanLower.contains('starter') ||
-        currentPlanLower.contains('free')) {
+    if (currentPlanLower.contains('starter') || currentPlanLower.contains('free')) {
       _selectedPlan = 'MAX One';
     } else {
       // Try to find matching plan (case-insensitive)
       final matchingPlan = plans.firstWhere(
-        (p) => p['name'].toString().toLowerCase() == currentPlanLower,
+            (p) => p['name'].toString().toLowerCase() == currentPlanLower,
         orElse: () => plans[1], // Default to MAX One
       );
       _selectedPlan = matchingPlan['name'];
@@ -281,13 +281,11 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     } else {
       baseDate = now;
     }
-    DateTime expiryDate = DateTime(
-      baseDate.year,
-      baseDate.month + _selectedDuration,
-      baseDate.day,
-    );
+    DateTime expiryDate = DateTime(baseDate.year, baseDate.month + _selectedDuration, baseDate.day);
 
-    final DateTime startDate = _isExtend ? (_currentStartDate ?? now) : now;
+    final DateTime startDate = _isExtend
+        ? (_currentStartDate ?? now)
+        : now;
 
     final storeDoc = await FirestoreService().getCurrentStoreDoc();
     if (storeDoc == null) return;
@@ -316,9 +314,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           content: Text("🎉 ${context.tr('Plan Upgrade Successful')}"),
           backgroundColor: kGoogleGreen,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
 
@@ -332,14 +328,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            '${context.tr('payment_failed')}: ${response.message ?? "Unknown error"}',
-          ),
+          content: Text('${context.tr('payment_failed')}: ${response.message ?? "Unknown error"}'),
           backgroundColor: kErrorColor,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
     }
@@ -349,9 +341,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
   void _startPayment() async {
     if (_isPaymentInProgress) return;
-
+    
     setState(() => _isPaymentInProgress = true);
-
+    
     // Show immediate feedback to the user
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -363,8 +355,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         ),
       );
     }
-
+    
     // 1. FRESH SETUP: Essential to prevent background process hangs
+
 
     if (_razorpay == null) {
       setState(() => _isPaymentInProgress = false);
@@ -382,8 +375,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       orElse: () => plans[1],
     );
 
-    final int targetPrice =
-        (plan['price'][_selectedDuration.toString()] ?? 0) as int;
+    final int targetPrice = (plan['price'][_selectedDuration.toString()] ?? 0) as int;
 
     // Proration: if upgrading mid-cycle, apply credit for remaining days of current plan.
     int payablePrice = targetPrice;
@@ -393,19 +385,14 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         (p) => p['name'].toString().toLowerCase() == currentPlanLower,
         orElse: () => plans[0],
       );
-      final int currentPrice =
-          (currentPlanData['price'][_selectedDuration.toString()] ?? 0) as int;
+      final int currentPrice = (currentPlanData['price'][_selectedDuration.toString()] ?? 0) as int;
 
       final now = DateTime.now();
       final start = _currentStartDate;
       final exp = _currentExpiryDate;
 
       // If we don't have dates, skip credit (security-first and avoids wrong charges).
-      if (start != null &&
-          exp != null &&
-          exp.isAfter(now) &&
-          exp.isAfter(start) &&
-          currentPrice > 0) {
+      if (start != null && exp != null && exp.isAfter(now) && exp.isAfter(start) && currentPrice > 0) {
         final cycleDays = _daysBetween(start, exp);
         final remainingDays = _daysBetween(now, exp);
         if (cycleDays > 0 && remainingDays > 0) {
@@ -445,12 +432,11 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     // ENSURE KEY FORMAT: Razorpay loader hangs if the key has spaces or invalid prefix
     // ✅ Replace with:
     final String fallbackKey = dotenv.env['RAZORPAY_KEY'] ?? '';
-    final String baseKey =
-        (dynamicKey?.isNotEmpty == true ? dynamicKey! : fallbackKey).trim();
-    final String razorpayKey = baseKey.startsWith('rzp_')
-        ? baseKey
-        : 'rzp_live_$baseKey';
-    // SUPER-LIGHTWEIGHT OPTIONS:
+    final String baseKey = (dynamicKey?.isNotEmpty == true
+        ? dynamicKey!
+        : fallbackKey).trim();
+    final String razorpayKey = baseKey.startsWith('rzp_') ? baseKey : 'rzp_live_$baseKey';
+    // SUPER-LIGHTWEIGHT OPTIONS: 
     // Removing 'modal', 'timeout', and 'backdrop' to prevent the "Null anb" GPU errors
     var options = {
       'key': razorpayKey,
@@ -460,13 +446,16 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       'description': 'Plan: $_selectedPlan',
       'prefill': {
         'contact': contactPhone.isNotEmpty ? contactPhone : '9999999999',
-        'email': contactEmail.isNotEmpty
-            ? contactEmail
-            : 'customer@maxmybill.com',
+        'email': contactEmail.isNotEmpty ? contactEmail : 'customer@maxmybill.com',
       },
-      'theme': {'color': '#2F7CF6'},
-      'retry': {'enabled': true, 'max_count': 1},
-      'send_sms_hash': true,
+      'theme': {
+        'color': '#2F7CF6'
+      },
+      'retry': {
+        'enabled': true,
+        'max_count': 1
+      },
+      'send_sms_hash': true
     };
 
     try {
@@ -485,13 +474,11 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
   @override
   Widget build(BuildContext context) {
     final selectedPlanData = plans.firstWhere(
-      (p) => p['name'] == _selectedPlan,
+          (p) => p['name'] == _selectedPlan,
       orElse: () => plans[1], // Default to MAX One
     );
-    final currentPrice =
-        selectedPlanData['price'][_selectedDuration.toString()] ?? 0;
-    final bool isCurrentPlanActive =
-        _selectedPlan.toLowerCase() == widget.currentPlan.toLowerCase();
+    final currentPrice = selectedPlanData['price'][_selectedDuration.toString()] ?? 0;
+    final bool isCurrentPlanActive = _selectedPlan.toLowerCase() == widget.currentPlan.toLowerCase();
 
     return Scaffold(
       backgroundColor: kGreyBg,
@@ -507,12 +494,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         ),
         title: Text(
           context.tr('Subscription Plans'),
-          style: const TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 0.5,
-          ),
+          style: const TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5),
         ),
         centerTitle: true,
       ),
@@ -550,9 +532,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     title: "What's Included",
                     features: selectedPlanData['included'],
                     staffText: selectedPlanData['staffText'],
-                    color:
-                        selectedPlanData['themeColor'] as Color? ??
-                        kGoogleGreen,
+                    color: selectedPlanData['themeColor'] as Color? ?? kGoogleGreen,
                     icon: HeroIcons.checkCircle,
                   ),
                   const SizedBox(height: 40),
@@ -568,15 +548,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
   Widget _buildSectionLabel(String text) => Padding(
     padding: const EdgeInsets.only(left: 4),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.0,
-      ),
-    ),
+    child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)),
   );
 
   Widget _buildHorizontalPlanSelector() {
@@ -586,18 +558,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       child: Row(
         children: plans.map((plan) {
           final isSelected = _selectedPlan == plan['name'];
-          final isCurrent =
-              widget.currentPlan.toLowerCase() ==
-              plan['name'].toString().toLowerCase();
+          final isCurrent = widget.currentPlan.toLowerCase() == plan['name'].toString().toLowerCase();
           final themeColor = plan['themeColor'] as Color? ?? kPrimaryColor;
-
+          
           final currentPrice = plan['price'][_selectedDuration.toString()] ?? 0;
-          final String durationLabel = currentPrice == 0
-              ? "Forever"
-              : "/${_selectedDuration == 12 ? 'year' : 'month'}";
-          final String priceLabel = currentPrice == 0
-              ? "Free"
-              : "$currentPrice";
+          final String durationLabel = currentPrice == 0 ? "Forever" : "/${_selectedDuration == 12 ? 'year' : 'month'}";
+          final String priceLabel = currentPrice == 0 ? "Free" : "$currentPrice";
 
           return Expanded(
             child: GestureDetector(
@@ -605,10 +571,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                  horizontal: 2,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
                 decoration: BoxDecoration(
                   color: isSelected ? themeColor.withOpacity(0.05) : kWhite,
                   borderRadius: BorderRadius.circular(12),
@@ -616,14 +579,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     color: isSelected ? themeColor : kGrey200,
                     width: isSelected ? 2 : 1,
                   ),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: themeColor.withOpacity(0.12),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
+                  boxShadow: isSelected 
+                      ? [BoxShadow(color: themeColor.withOpacity(0.12), blurRadius: 8, offset: const Offset(0, 4))]
                       : [],
                 ),
                 child: Column(
@@ -633,33 +590,17 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     Container(
                       height: 14,
                       alignment: Alignment.center,
-                      child: isCurrent
-                          ? Text(
-                              "Current",
-                              style: TextStyle(
-                                fontSize: 7,
-                                fontWeight: FontWeight.w900,
-                                color: kGoogleGreen,
-                                letterSpacing: 0.5,
-                              ),
-                            )
-                          : (plan['popular'] == true
-                                ? Text(
-                                    "Popular",
-                                    style: TextStyle(
-                                      fontSize: 7,
-                                      fontWeight: FontWeight.w900,
-                                      color: kOrange,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  )
-                                : null),
+                      child: isCurrent 
+                        ? Text("Current", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kGoogleGreen, letterSpacing: 0.5))
+                        : (plan['popular'] == true 
+                            ? Text("Popular", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kOrange, letterSpacing: 0.5))
+                            : null),
                     ),
                     const SizedBox(height: 6),
                     HeroIcon(
-                      plan['icon'] as HeroIcons,
+                      plan['icon'] as HeroIcons, 
                       color: isSelected ? themeColor : Colors.black,
-                      size: 22,
+                      size: 22
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -718,11 +659,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           ),
           child: Row(
             children: [
-              const Icon(
-                Icons.access_time_outlined,
-                color: Colors.green,
-                size: 16,
-              ),
+              const Icon(Icons.access_time_outlined, color: Colors.green, size: 16),
               const SizedBox(width: 8),
               Expanded(
                 child: RichText(
@@ -730,10 +667,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     style: TextStyle(fontSize: 12, color: Colors.black87),
                     children: [
                       TextSpan(text: "Limited Time Offer: "),
-                      TextSpan(
-                        text: "Extra savings on yearly plans!",
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      TextSpan(text: "Extra savings on yearly plans!", style: TextStyle(fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -785,14 +719,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                   letterSpacing: 0.5,
                 ),
               ),
-              if (badge != null)
+              if (badge != null )
                 Text(
                   badge,
-                  style: const TextStyle(
-                    color: Color(0xFFE0B646),
-                    fontSize: 8,
-                    fontWeight: FontWeight.w900,
-                  ),
+                  style: const TextStyle(color: Color(0xFFE0B646), fontSize: 8, fontWeight: FontWeight.w900),
                 ),
             ],
           ),
@@ -826,12 +756,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
               const SizedBox(width: 10),
               Text(
                 title,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
+                style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 0.5),
               ),
             ],
           ),
@@ -839,13 +764,11 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           if (!isExcluded && staffText != null)
             _buildFeatureRow(staffText, kPrimaryColor, HeroIcons.users),
 
-          ...features.map(
-            (feature) => _buildFeatureRow(
+          ...features.map((feature) => _buildFeatureRow(
               feature,
               kBlack87,
-              isExcluded ? HeroIcons.minusCircle : HeroIcons.checkCircle,
-            ),
-          ),
+              isExcluded ? HeroIcons.minusCircle : HeroIcons.checkCircle
+          )),
         ],
       ),
     );
@@ -879,7 +802,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const PlanComparisonPage()),
+          MaterialPageRoute(
+            builder: (context) => const PlanComparisonPage(),
+          ),
         );
       },
       child: Container(
@@ -888,19 +813,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         decoration: BoxDecoration(
           color: kPrimaryColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: kPrimaryColor.withValues(alpha: 0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: kPrimaryColor.withValues(alpha: 0.3), width: 1.5),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const HeroIcon(
-              HeroIcons.arrowsRightLeft,
-              color: kPrimaryColor,
-              size: 22,
-            ),
+            const HeroIcon(HeroIcons.arrowsRightLeft, color: kPrimaryColor, size: 22),
             const SizedBox(width: 12),
             const Text(
               'Compare ALL Plans',
@@ -912,11 +830,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
               ),
             ),
             const SizedBox(width: 8),
-            const HeroIcon(
-              HeroIcons.chevronRight,
-              color: kPrimaryColor,
-              size: 14,
-            ),
+            const HeroIcon(HeroIcons.chevronRight, color: kPrimaryColor, size: 14),
           ],
         ),
       ),
@@ -925,17 +839,14 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
   Widget _buildCheckoutBottom(int price, bool isCurrent) {
     final currentPlanData = plans.firstWhere(
-      (p) =>
-          p['name'].toString().toLowerCase() ==
-          widget.currentPlan.toLowerCase(),
-      orElse: () => plans[0],
+            (p) => p['name'].toString().toLowerCase() == widget.currentPlan.toLowerCase(),
+        orElse: () => plans[0]
     );
     final selectedPlanData = plans.firstWhere(
-      (p) => p['name'] == _selectedPlan,
+          (p) => p['name'] == _selectedPlan,
       orElse: () => plans[1], // Default to MAX Plus
     );
-    final themeColor =
-        selectedPlanData['themeColor'] as Color? ?? kPrimaryColor;
+    final themeColor = selectedPlanData['themeColor'] as Color? ?? kPrimaryColor;
     final bool isUpgrade = selectedPlanData['rank'] > currentPlanData['rank'];
     final bool isExtend = selectedPlanData['rank'] == currentPlanData['rank'];
 
@@ -948,13 +859,8 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
       final now = DateTime.now();
       final start = _currentStartDate;
       final exp = _currentExpiryDate;
-      final int currentPrice =
-          (currentPlanData['price'][_selectedDuration.toString()] ?? 0) as int;
-      if (start != null &&
-          exp != null &&
-          exp.isAfter(now) &&
-          exp.isAfter(start) &&
-          currentPrice > 0) {
+      final int currentPrice = (currentPlanData['price'][_selectedDuration.toString()] ?? 0) as int;
+      if (start != null && exp != null && exp.isAfter(now) && exp.isAfter(start) && currentPrice > 0) {
         cycleDays = _daysBetween(start, exp);
         remainingDays = _daysBetween(now, exp);
         if (cycleDays > 0 && remainingDays > 0) {
@@ -971,9 +877,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
     if (isCurrent) {
       // Extend current plan (renew)
-      buttonText = isExtend
-          ? (_isPaymentInProgress ? "PROCESSING..." : "Extend Plan")
-          : "Active Plan";
+      buttonText = isExtend ? (_isPaymentInProgress ? "PROCESSING..." : "Extend Plan") : "Active Plan";
       isEnabled = isExtend && _subscriptionLoaded && !_isPaymentInProgress;
     } else if (isUpgrade) {
       // Block upgrades until we load subscription dates (to avoid wrong proration).
@@ -988,13 +892,9 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     }
 
     final bool isYearly = _selectedDuration == 12;
-    final double dailyPrice = payablePrice > 0
-        ? (isYearly ? payablePrice / 365.0 : payablePrice / 30.0)
-        : 0;
-    final String dailyPriceStr = dailyPrice < 10
-        ? dailyPrice.toStringAsFixed(1)
-        : dailyPrice.toStringAsFixed(0);
-
+    final double dailyPrice = payablePrice > 0 ? (isYearly ? payablePrice / 365.0 : payablePrice / 30.0) : 0;
+    final String dailyPriceStr = dailyPrice < 10 ? dailyPrice.toStringAsFixed(1) : dailyPrice.toStringAsFixed(0);
+    
     final int monthlyPrice = selectedPlanData['price']['1'] ?? 0;
     final int yearlyTotalIfMonthly = monthlyPrice * 12;
     final int savings = isYearly ? yearlyTotalIfMonthly - price : 0;
@@ -1020,20 +920,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     const Expanded(
                       child: Text(
                         "Serious business owners choose yearly",
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: kBlack87,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                        style: TextStyle(fontSize: 12, color: kBlack87, fontWeight: FontWeight.w600),
+                      )
                     ),
                     Text(
                       "Save $savings",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: kGoogleGreen,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: kGoogleGreen, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -1043,29 +935,17 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.discount_outlined,
-                      color: kGoogleGreen,
-                      size: 16,
-                    ),
+                    const Icon(Icons.discount_outlined, color: kGoogleGreen, size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        "Credit for remaining $remainingDays/$cycleDays days",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: kBlack87,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        "Credit for remaining $remainingDays/$cycleDays days", 
+                        style: const TextStyle(fontSize: 12, color: kBlack87, fontWeight: FontWeight.w600),
                       ),
                     ),
                     Text(
                       "-₹${appliedCredit.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: kGoogleGreen,
-                        fontWeight: FontWeight.w900,
-                      ),
+                      style: const TextStyle(fontSize: 12, color: kGoogleGreen, fontWeight: FontWeight.w900),
                     ),
                   ],
                 ),
@@ -1077,34 +957,12 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        isYearly ? "TOTAL (YEARLY)" : "TOTAL (MONTHLY)",
-                        style: const TextStyle(
-                          color: kBlack54,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 10,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      Text(isYearly ? "TOTAL (YEARLY)" : "TOTAL (MONTHLY)", style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.5)),
                       const SizedBox(height: 2),
-                      Text(
-                        "$payablePrice",
-                        style: TextStyle(
-                          color: themeColor,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                      Text("$payablePrice", style: TextStyle(color: themeColor, fontSize: 24, fontWeight: FontWeight.w900)),
                       if (payablePrice > 0) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          "Only $dailyPriceStr per day",
-                          style: const TextStyle(
-                            color: kBlack54,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+                        Text("Only $dailyPriceStr per day", style: const TextStyle(color: kBlack54, fontSize: 11, fontWeight: FontWeight.w700)),
                       ],
                     ],
                   ),
@@ -1130,10 +988,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                       child: Text(
                         buttonText,
                         style: TextStyle(
-                          color: isEnabled ? kWhite : kBlack54,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.0,
+                            color: isEnabled ? kWhite : kBlack54,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.0
                         ),
                       ),
                     ),

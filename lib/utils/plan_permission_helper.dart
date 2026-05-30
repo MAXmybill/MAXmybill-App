@@ -21,16 +21,10 @@ class PlanPermissionHelper {
 
   static String _normalizedPlanKey(String plan) {
     final planLower = plan.toLowerCase().trim();
-    if (planLower.contains('max pro') ||
-        planLower.contains('premium') ||
-        planLower.contains(' pro'))
-      return 'max pro';
-    if (planLower.contains('max plus') || planLower.contains(' plus'))
-      return 'max plus';
-    if (planLower.contains('max one') || planLower.contains('maxone'))
-      return 'max one';
-    if (planLower.contains('max lite') || planLower.contains(' lite'))
-      return 'max lite';
+    if (planLower.contains('max pro') || planLower.contains('premium') || planLower.contains(' pro')) return 'max pro';
+    if (planLower.contains('max plus') || planLower.contains(' plus')) return 'max plus';
+    if (planLower.contains('max one') || planLower.contains('maxone')) return 'max one';
+    if (planLower.contains('max lite') || planLower.contains(' lite')) return 'max lite';
     if (planLower.contains('starter')) return 'starter';
     if (planLower.contains('free')) return 'free';
     return planLower;
@@ -58,23 +52,17 @@ class PlanPermissionHelper {
       if (!_isPlanFree(plan)) {
         final expiryDateStr = data?['subscriptionExpiryDate']?.toString();
         if (expiryDateStr == null || expiryDateStr.isEmpty) {
-          debugPrint(
-            '🔍 _loadPlanData: Missing expiry for paid plan, returning Free',
-          );
+          debugPrint('🔍 _loadPlanData: Missing expiry for paid plan, returning Free');
           return PLAN_FREE;
         }
         try {
           final expiryDate = DateTime.parse(expiryDateStr);
           if (DateTime.now().isAfter(expiryDate)) {
-            debugPrint(
-              '🔍 _loadPlanData: Plan "$plan" is EXPIRED, returning Free',
-            );
+            debugPrint('🔍 _loadPlanData: Plan "$plan" is EXPIRED, returning Free');
             return PLAN_FREE;
           }
         } catch (e) {
-          debugPrint(
-            '🔍 _loadPlanData: Error parsing expiry date: $e - returning Free',
-          );
+          debugPrint('🔍 _loadPlanData: Error parsing expiry date: $e - returning Free');
           return PLAN_FREE;
         }
       }
@@ -133,14 +121,8 @@ class PlanPermissionHelper {
   static Future<bool> canAccessStaffManagement() async {
     final plan = await _loadPlanData();
     final planLower = _normalizedPlanKey(plan);
-    debugPrint(
-      '🔍 canAccessStaffManagement: plan="$plan", planLower="$planLower"',
-    );
-    final canAccess =
-        planLower == 'max one' ||
-        planLower == 'max lite' ||
-        planLower == 'max plus' ||
-        planLower == 'max pro';
+    debugPrint('🔍 canAccessStaffManagement: plan="$plan", planLower="$planLower"');
+    final canAccess = planLower == 'max one' || planLower == 'max lite' || planLower == 'max plus' || planLower == 'max pro';
     debugPrint('🔍 canAccessStaffManagement: canAccess=$canAccess');
     return canAccess;
   }
@@ -188,12 +170,7 @@ class PlanPermissionHelper {
   }
 
   /// Enterprise Upgrade Dialog (Redesigned UI)
-  static void showUpgradeDialog(
-    BuildContext context,
-    String featureName, {
-    String? uid,
-    String? currentPlan,
-  }) async {
+  static void showUpgradeDialog(BuildContext context, String featureName, {String? uid, String? currentPlan}) async {
     String plan = currentPlan ?? PLAN_FREE;
     if (currentPlan == null) {
       plan = await getCurrentPlan();
@@ -213,40 +190,25 @@ class PlanPermissionHelper {
             children: [
               // High-Density Icon
               Container(
-                width: R.sp(context, 64),
-                height: R.sp(context, 64),
+                width: R.sp(context, 64), height: R.sp(context, 64),
                 decoration: BoxDecoration(
                   color: kOrange.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  Icons.lock_rounded,
-                  color: kOrange,
-                  size: R.sp(context, 32),
-                ),
+                child: Icon(Icons.lock_rounded, color: kOrange, size: R.sp(context, 32)),
               ),
               SizedBox(height: R.sp(context, 24)),
               // Header
               Text(
                 "Upgrade Required",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: R.sp(context, 16),
-                  color: kBlack87,
-                  letterSpacing: 1.0,
-                ),
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: R.sp(context, 16), color: kBlack87, letterSpacing: 1.0),
               ),
               SizedBox(height: R.sp(context, 12)),
               // Content
               Text(
                 '$featureName is a premium feature. Upgrade to unlock advanced analytics, staff management, and professional branding.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: kBlack54,
-                  fontSize: R.sp(context, 13),
-                  height: 1.5,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: kBlack54, fontSize: R.sp(context, 13), height: 1.5, fontWeight: FontWeight.w500),
               ),
               SizedBox(height: R.sp(context, 32)),
               // Actions
@@ -255,14 +217,7 @@ class PlanPermissionHelper {
                   Expanded(
                     child: TextButton(
                       onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Maybe later',
-                        style: TextStyle(
-                          color: kBlack54,
-                          fontWeight: FontWeight.w800,
-                          fontSize: R.sp(context, 11),
-                        ),
-                      ),
+                      child: Text('Maybe later', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: R.sp(context, 11))),
                     ),
                   ),
                   SizedBox(width: R.sp(context, 12)),
@@ -285,21 +240,10 @@ class PlanPermissionHelper {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
                         elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: R.radius(context, 12),
-                        ),
-                        padding: EdgeInsets.symmetric(
-                          vertical: R.sp(context, 14),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)),
+                        padding: EdgeInsets.symmetric(vertical: R.sp(context, 14)),
                       ),
-                      child: Text(
-                        'Upgrade now',
-                        style: TextStyle(
-                          color: kWhite,
-                          fontWeight: FontWeight.w900,
-                          fontSize: R.sp(context, 11),
-                        ),
-                      ),
+                      child: Text('Upgrade now', style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: R.sp(context, 11))),
                     ),
                   ),
                 ],

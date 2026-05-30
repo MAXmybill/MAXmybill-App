@@ -4,14 +4,14 @@ const Color kPremiumLockBorder = Color(0xFFE7C977);
 const Color kPremiumLockIcon = kPremiumLockBorder;
 
 class PremiumLockBadge extends StatelessWidget {
-  const PremiumLockBadge({super.key, this.size = 24});
+  const PremiumLockBadge({super.key, this.size = 64});
 
   final double size;
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/diamond.png',
+      'assets/diamond.gif',
       width: size,
       height: size,
       fit: BoxFit.contain,
@@ -24,7 +24,7 @@ class PremiumLockIconWrapper extends StatelessWidget {
     super.key,
     required this.child,
     required this.isLocked,
-    this.badgeSize = 12,
+    this.badgeSize = 40,
   });
 
   final Widget child;

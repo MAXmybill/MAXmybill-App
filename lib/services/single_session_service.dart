@@ -59,9 +59,7 @@ class SingleSessionService {
       final data = snap.data();
       final activeSessionId = data?['activeSessionId']?.toString();
       final activeDeviceId = data?['activeDeviceId']?.toString();
-      if (activeDeviceId == deviceId &&
-          activeSessionId != null &&
-          activeSessionId.isNotEmpty) {
+      if (activeDeviceId == deviceId && activeSessionId != null && activeSessionId.isNotEmpty) {
         _currentSessionId = activeSessionId;
       }
     } catch (e) {
@@ -93,9 +91,7 @@ class SingleSessionService {
     // If it's already active on this same device, don't rotate sessions.
     // Rotating on every launch would cause needless writes and can lead to UX
     // issues that look like "must login every time".
-    if (activeDeviceId == deviceId &&
-        activeSessionId != null &&
-        activeSessionId.isNotEmpty) {
+    if (activeDeviceId == deviceId && activeSessionId != null && activeSessionId.isNotEmpty) {
       _currentSessionId = activeSessionId;
       await _startListening(uid: uid);
       return ActivateSessionResult(activated: true, sessionId: activeSessionId);
@@ -111,10 +107,7 @@ class SingleSessionService {
         'activeSessionUpdatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
       await _startListening(uid: uid);
-      return ActivateSessionResult(
-        activated: true,
-        sessionId: requestedSessionId,
-      );
+      return ActivateSessionResult(activated: true, sessionId: requestedSessionId);
     }
 
     // Someone else is active: create takeover request.
@@ -153,37 +146,32 @@ class SingleSessionService {
 
     final completer = Completer<bool>();
     StreamSubscription? sub;
-    sub = reqRef.snapshots().listen(
-      (snap) async {
-        if (!snap.exists) return;
-        final data = snap.data();
-        final status = data?['status']?.toString() ?? 'pending';
+    sub = reqRef.snapshots().listen((snap) async {
+      if (!snap.exists) return;
+      final data = snap.data();
+      final status = data?['status']?.toString() ?? 'pending';
 
-        if (status == 'approved') {
-          // Takeover granted: set active session now.
-          final deviceId = await getDeviceId();
-          await userRef.set({
-            'activeSessionId': requestedSessionId,
-            'activeDeviceId': deviceId,
-            'activeDeviceLabel': data?['requestedByDeviceLabel']?.toString(),
-            'activeSessionUpdatedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+      if (status == 'approved') {
+        // Takeover granted: set active session now.
+        final deviceId = await getDeviceId();
+        await userRef.set({
+          'activeSessionId': requestedSessionId,
+          'activeDeviceId': deviceId,
+          'activeDeviceLabel': data?['requestedByDeviceLabel']?.toString(),
+          'activeSessionUpdatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
 
-          _currentSessionId = requestedSessionId;
-          await _startListening(uid: uid);
-          await sub?.cancel();
-          if (!completer.isCompleted) completer.complete(true);
-        } else if (status == 'denied' ||
-            status == 'expired' ||
-            status == 'cancelled') {
-          await sub?.cancel();
-          if (!completer.isCompleted) completer.complete(false);
-        }
-      },
-      onError: (e) {
+        _currentSessionId = requestedSessionId;
+        await _startListening(uid: uid);
+        await sub?.cancel();
+        if (!completer.isCompleted) completer.complete(true);
+      } else if (status == 'denied' || status == 'expired' || status == 'cancelled') {
+        await sub?.cancel();
         if (!completer.isCompleted) completer.complete(false);
-      },
-    );
+      }
+    }, onError: (e) {
+      if (!completer.isCompleted) completer.complete(false);
+    });
 
     return completer.future;
   }
@@ -192,36 +180,30 @@ class SingleSessionService {
   Future<void> _startListening({required String uid}) async {
     await _sub?.cancel();
 
-    _sub = _firestore
-        .collection('users')
-        .doc(uid)
-        .snapshots()
-        .listen(
-          (snap) async {
-            if (!snap.exists) return;
-            final data = snap.data();
-            if (data == null) return;
+    _sub = _firestore.collection('users').doc(uid).snapshots().listen(
+      (snap) async {
+        if (!snap.exists) return;
+        final data = snap.data();
+        if (data == null) return;
 
-            final active = data['activeSessionId']?.toString();
-            final local = _currentSessionId;
+        final active = data['activeSessionId']?.toString();
+        final local = _currentSessionId;
 
-            // If this device doesn't have a session yet, don't auto-logout.
-            // This happens on app cold start before we seed from Firestore.
-            if (local == null) return;
+        // If this device doesn't have a session yet, don't auto-logout.
+        // This happens on app cold start before we seed from Firestore.
+        if (local == null) return;
 
-            // If the active session in Firestore is different than this device's
-            // session, force sign out.
-            if (active != null && active.isNotEmpty && active != local) {
-              debugPrint('SingleSessionService: session changed, signing out.');
-              await forceSignOut(
-                reason: ForceSignOutReason.loggedInOnAnotherDevice,
-              );
-            }
-          },
-          onError: (e) {
-            debugPrint('SingleSessionService: listener error: $e');
-          },
-        );
+        // If the active session in Firestore is different than this device's
+        // session, force sign out.
+        if (active != null && active.isNotEmpty && active != local) {
+          debugPrint('SingleSessionService: session changed, signing out.');
+          await forceSignOut(reason: ForceSignOutReason.loggedInOnAnotherDevice);
+        }
+      },
+      onError: (e) {
+        debugPrint('SingleSessionService: listener error: $e');
+      },
+    );
   }
 
   /// Call on manual logout.
@@ -238,7 +220,7 @@ class SingleSessionService {
     try {
       // Clear the auth cache when signing out
       await AuthCacheService.instance.clearCache();
-
+      
       await _auth.signOut();
     } catch (e) {
       debugPrint('SingleSessionService: signOut failed: $e');
@@ -273,7 +255,9 @@ class ActivateSessionResult {
   });
 }
 
-enum ForceSignOutReason { loggedInOnAnotherDevice }
+enum ForceSignOutReason {
+  loggedInOnAnotherDevice,
+}
 
 /// Simple event bus for sign-out reasons.
 class ForceSignOutBus {
@@ -281,8 +265,7 @@ class ForceSignOutBus {
 
   static final ForceSignOutBus instance = ForceSignOutBus._();
 
-  final StreamController<ForceSignOutReason> _controller =
-      StreamController<ForceSignOutReason>.broadcast();
+  final StreamController<ForceSignOutReason> _controller = StreamController<ForceSignOutReason>.broadcast();
 
   Stream<ForceSignOutReason> get stream => _controller.stream;
 
@@ -291,3 +274,4 @@ class ForceSignOutBus {
     _controller.add(reason);
   }
 }
+

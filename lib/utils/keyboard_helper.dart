@@ -17,10 +17,7 @@ class KeyboardHelper {
         ? R.radius(context, 8)
         : BorderRadius.circular(8);
     final padding = context != null
-        ? EdgeInsets.symmetric(
-            horizontal: R.sp(context, 16),
-            vertical: R.sp(context, 12),
-          )
+        ? EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 12))
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
     return InputDecoration(
@@ -56,7 +53,10 @@ class KeyboardHelper {
     required BuildContext context,
     required Widget child,
   }) {
-    return GestureDetector(onTap: () => hideKeyboard(context), child: child);
+    return GestureDetector(
+      onTap: () => hideKeyboard(context),
+      child: child,
+    );
   }
 
   /// Optimized TextField widget with better keyboard performance
@@ -82,28 +82,28 @@ class KeyboardHelper {
       builder: (context, value, _) {
         final bool hasText = value.text.isNotEmpty;
         return TextField(
-          controller: controller,
-          keyboardType: keyboardType,
-          obscureText: obscureText,
-          maxLines: maxLines,
-          maxLength: maxLength,
-          onChanged: onChanged,
-          onTap: onTap,
-          readOnly: readOnly,
-          focusNode: focusNode,
-          textInputAction: textInputAction,
-          onSubmitted: onSubmitted,
-          // Optimize keyboard appearance
-          enableInteractiveSelection: true,
-          autocorrect: false,
-          enableSuggestions: false,
-          decoration: optimizedDecoration(
-            labelText: labelText,
-            hintText: hintText,
-            prefixIcon: prefixIcon,
-            suffixIcon: suffixIcon,
-          ),
-        );
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      maxLines: maxLines,
+      maxLength: maxLength,
+      onChanged: onChanged,
+      onTap: onTap,
+      readOnly: readOnly,
+      focusNode: focusNode,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      // Optimize keyboard appearance
+      enableInteractiveSelection: true,
+      autocorrect: false,
+      enableSuggestions: false,
+      decoration: optimizedDecoration(
+        labelText: labelText,
+        hintText: hintText,
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+      ),
+    );
       },
     );
   }

@@ -13,12 +13,7 @@ class SavedOrdersPage extends StatefulWidget {
   final String? userEmail;
   final Function(String orderId, Map<String, dynamic> data)? onLoadOrder;
 
-  const SavedOrdersPage({
-    super.key,
-    required this.uid,
-    this.userEmail,
-    this.onLoadOrder,
-  });
+  const SavedOrdersPage({super.key, required this.uid, this.userEmail, this.onLoadOrder});
 
   @override
   State<SavedOrdersPage> createState() => _SavedOrdersPageState();
@@ -39,9 +34,7 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
       if (doc != null && doc.exists && mounted) {
         final data = doc.data() as Map<String, dynamic>?;
         setState(() {
-          _currencySymbol = CurrencyService.getSymbolWithSpace(
-            data?['currency'],
-          );
+          _currencySymbol = CurrencyService.getSymbolWithSpace(data?['currency']);
         });
       }
     } catch (e) {
@@ -49,11 +42,11 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
     }
   }
 
+
   void _loadOrder(String orderId, Map<String, dynamic> data) {
     // Ensure orderName is included in the data
     final orderData = Map<String, dynamic>.from(data);
-    if (!orderData.containsKey('orderName') &&
-        orderData.containsKey('customerName')) {
+    if (!orderData.containsKey('orderName') && orderData.containsKey('customerName')) {
       // Backward compatibility: use customerName as orderName if orderName doesn't exist
       orderData['orderName'] = orderData['customerName'];
     }
@@ -84,15 +77,10 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              context.tr('order_deleted'),
-              style: const TextStyle(fontWeight: FontWeight.w600),
-            ),
+            content: Text(context.tr('order_deleted'), style: const TextStyle(fontWeight: FontWeight.w600)),
             backgroundColor: kGoogleGreen,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -103,9 +91,7 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
             content: Text('Error: $e'),
             backgroundColor: kErrorColor,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -118,53 +104,26 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
       builder: (context) => AlertDialog(
         backgroundColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'DISCARD ORDER?',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 0.5,
-          ),
-        ),
+        title: const Text('DISCARD ORDER?',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 0.5)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: kErrorColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.warning_amber_rounded,
-                color: kErrorColor,
-                size: 32,
-              ),
+              decoration: BoxDecoration(color: kErrorColor.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: const Icon(Icons.warning_amber_rounded, color: kErrorColor, size: 32),
             ),
             const SizedBox(height: 16),
-            Text(
-              'Are you sure you want to permanently discard the saved order for "$name"?',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: kBlack54,
-                fontSize: 13,
-                height: 1.5,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text('Are you sure you want to permanently discard the saved order for "$name"?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: kBlack54, fontSize: 13, height: 1.5, fontWeight: FontWeight.w500)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(
-                color: kBlack54,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
+            child: const Text('Cancel', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -174,18 +133,9 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: kErrorColor,
               elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text(
-              'Discard',
-              style: TextStyle(
-                color: kWhite,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
+            child: const Text('Discard', style: TextStyle(color: kWhite, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
         ],
       ),
@@ -200,17 +150,13 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
         future: FirestoreService().getCollectionStream('savedOrders'),
         builder: (context, streamSnapshot) {
           if (!streamSnapshot.hasData) {
-            return Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamSnapshot.data,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                );
+                return Center(child: CircularProgressIndicator(color: kPrimaryColor));
               }
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return _buildEmptyState(context.tr('no_saved_orders'));
@@ -219,8 +165,7 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                 itemCount: snapshot.data!.docs.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
+                separatorBuilder: (context, index) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   return _buildSavedOrderCard(snapshot.data!.docs[index]);
                 },
@@ -239,13 +184,7 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
         children: [
           Icon(Icons.bookmark_border_rounded, size: 64, color: kGrey300),
           const SizedBox(height: 16),
-          Text(
-            message,
-            style: const TextStyle(
-              fontWeight: FontWeight.w700,
-              color: kBlack54,
-            ),
-          ),
+          Text(message, style: const TextStyle(fontWeight: FontWeight.w700, color: kBlack54)),
         ],
       ),
     );
@@ -253,22 +192,14 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
 
   Widget _buildSavedOrderCard(QueryDocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final name =
-        (data['orderName'] ?? data['customerName'] ?? '')
-            .toString()
-            .trim()
-            .isEmpty
+    final name = (data['orderName'] ?? data['customerName'] ?? '').toString().trim().isEmpty
         ? 'Guest'
         : (data['orderName'] ?? data['customerName']).toString();
     final total = (data['total'] ?? 0.0).toDouble();
     final items = data['items'] as List<dynamic>? ?? [];
     final timestamp = data['timestamp'] as Timestamp?;
-    final dateStr = timestamp != null
-        ? DateFormat('dd MMM yyyy').format(timestamp.toDate())
-        : '--';
-    final timeStr = timestamp != null
-        ? DateFormat('hh:mm a').format(timestamp.toDate())
-        : '';
+    final dateStr = timestamp != null ? DateFormat('dd MMM yyyy').format(timestamp.toDate()) : '--';
+    final timeStr = timestamp != null ? DateFormat('hh:mm a').format(timestamp.toDate()) : '';
 
     return Container(
       decoration: BoxDecoration(
@@ -289,33 +220,14 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.bookmark_rounded,
-                          size: 13,
-                          color: kPrimaryColor,
-                        ),
-                        const SizedBox(width: 5),
-                        const Text(
-                          'Saved Draft',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            color: kPrimaryColor,
-                            fontSize: 11,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      timeStr.isNotEmpty ? '$dateStr • $timeStr' : dateStr,
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        color: Colors.black,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    Row(children: [
+                      const Icon(Icons.bookmark_rounded, size: 13, color: kPrimaryColor),
+                      const SizedBox(width: 5),
+                      const Text('Saved Draft',
+                          style: TextStyle(fontWeight: FontWeight.w900, color: kPrimaryColor, fontSize: 11, letterSpacing: 0.5)),
+                    ]),
+                    Text(timeStr.isNotEmpty ? '$dateStr • $timeStr' : dateStr,
+                        style: const TextStyle(fontSize: 10.5, color: Colors.black, fontWeight: FontWeight.w500)),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -323,25 +235,13 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis),
                     ),
-                    Text(
-                      '$_currencySymbol${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w900,
-                        fontSize: 15,
-                        color: kGoogleGreen,
-                      ),
-                    ),
+                    Text('$_currencySymbol${total.toStringAsFixed(2)}',
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, color: kGoogleGreen)),
                   ],
                 ),
                 const Divider(height: 20, color: kGreyBg),
@@ -352,23 +252,9 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Items',
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w700,
-                            color: kBlack54,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        Text(
-                          '${items.length} ${items.length == 1 ? 'item' : 'items'}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 10,
-                            color: kBlack87,
-                          ),
-                        ),
+                        const Text('Items', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
+                        Text('${items.length} ${items.length == 1 ? 'item' : 'items'}',
+                            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: kBlack87)),
                       ],
                     ),
                     Row(
@@ -382,20 +268,12 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
                             onTap: () => _confirmDelete(doc.id, name),
                             child: const Padding(
                               padding: EdgeInsets.all(6),
-                              child: Icon(
-                                Icons.delete_forever_rounded,
-                                color: kErrorColor,
-                                size: 16,
-                              ),
+                              child: Icon(Icons.delete_forever_rounded, color: kErrorColor, size: 16),
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: kPrimaryColor,
-                          size: 18,
-                        ),
+                        const Icon(Icons.chevron_right_rounded, color: kPrimaryColor, size: 18),
                       ],
                     ),
                   ],
@@ -407,4 +285,5 @@ class _SavedOrdersPageState extends State<SavedOrdersPage> {
       ),
     );
   }
+
 }

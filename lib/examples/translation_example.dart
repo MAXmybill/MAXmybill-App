@@ -63,10 +63,16 @@ class TranslationExamplePage extends StatelessWidget {
           const SizedBox(height: 16),
 
           // Example 4: Buttons with translations
-          ElevatedButton(onPressed: () {}, child: Text(context.tr('save'))),
+          ElevatedButton(
+            onPressed: () {},
+            child: Text(context.tr('save')),
+          ),
           const SizedBox(height: 8),
 
-          OutlinedButton(onPressed: () {}, child: Text(context.tr('cancel'))),
+          OutlinedButton(
+            onPressed: () {},
+            child: Text(context.tr('cancel')),
+          ),
           const SizedBox(height: 24),
 
           // Example 5: Show all available languages
@@ -130,7 +136,10 @@ class TranslationExamplePage extends StatelessWidget {
             width: 150,
             child: Text(
               '$key:',
-              style: const TextStyle(fontFamily: 'MiSans', color: Colors.grey),
+              style: const TextStyle(
+                fontFamily: 'MiSans',
+                color: Colors.grey,
+              ),
             ),
           ),
           Expanded(

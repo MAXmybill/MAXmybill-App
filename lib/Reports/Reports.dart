@@ -94,7 +94,7 @@ class _ReportsPageState extends State<ReportsPage> {
   String? _currentView;
   Map<String, dynamic> _permissions = {};
   String _role = 'staff';
-  bool _permissionsLoaded = false; // Track if permissions are loaded
+  bool _permissionsLoaded = false;  // Track if permissions are loaded
 
   final ScrollController _scrollController = ScrollController();
   double _savedScrollOffset = 0.0;
@@ -118,7 +118,7 @@ class _ReportsPageState extends State<ReportsPage> {
       setState(() {
         _permissions = userData['permissions'] as Map<String, dynamic>? ?? {};
         _role = userData['role'] as String? ?? 'staff';
-        _permissionsLoaded = true; // Mark permissions as loaded
+        _permissionsLoaded = true;  // Mark permissions as loaded
       });
     }
   }
@@ -138,9 +138,8 @@ class _ReportsPageState extends State<ReportsPage> {
 
   void _navigateTo(String viewName) {
     // Capture scroll offset synchronously before setState to avoid one-frame flash
-    _savedScrollOffset = _scrollController.hasClients
-        ? _scrollController.offset
-        : 0.0;
+    _savedScrollOffset =
+    _scrollController.hasClients ? _scrollController.offset : 0.0;
     setState(() => _currentView = viewName);
   }
 
@@ -153,11 +152,10 @@ class _ReportsPageState extends State<ReportsPage> {
     // This prevents the brief flash of lock icons when navigating to this page
     final isProviderReady = planProvider.isInitialized;
     final isFullyLoaded = isProviderReady && _permissionsLoaded;
-    final isPaidPlan = isProviderReady
-        ? planProvider.canAccessReports()
-        : false;
+    final isPaidPlan = isProviderReady ? planProvider.canAccessReports() : false;
 
     if (_currentView != null) {
+
       // Wrap sub-pages with PopScope to handle Android back button
       return PopScope(
         canPop: false,
@@ -175,48 +173,27 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Widget _buildSubPage() {
     switch (_currentView) {
-      case 'Analytics':
-        return AnalyticsPage(uid: widget.uid, onBack: _reset);
-      case 'DayBook':
-        return DayBookPage(uid: widget.uid, onBack: _reset);
-      case 'Summary':
-        return IncomeSummaryPage(onBack: _reset);
-      case 'SalesSummary':
-        return SalesSummaryPage(onBack: _reset);
-      case 'SalesReport':
-        return FullSalesHistoryPage(onBack: _reset);
-      case 'ExpenseReport':
-        return ExpenseReportPage(onBack: _reset);
-      case 'TopProducts':
-        return TopProductsPage(uid: widget.uid, onBack: _reset);
-      case 'LowStock':
-        return LowStockPage(uid: widget.uid, onBack: _reset);
-      case 'ItemSales':
-        return ItemSalesPage(onBack: _reset);
-      case 'TopCategories':
-        return TopCategoriesPage(onBack: _reset);
-      case 'TopCustomers':
-        return TopCustomersPage(uid: widget.uid, onBack: _reset);
-      case 'StockReport':
-        return StockReportPage(onBack: _reset);
-      case 'StaffReport':
-        return StaffSaleReportPage(onBack: _reset);
-      case 'TaxReport':
-        return TaxReportPage(onBack: _reset);
-      case 'PaymentReport':
-        return PaymentReportPage(onBack: _reset);
-      case 'GSTReport':
-        return TaxReportPage(onBack: _reset); // Unified with Tax Report
-      default:
-        return _buildMainReportsPage(context, false, false);
+      case 'Analytics': return AnalyticsPage(uid: widget.uid, onBack: _reset);
+      case 'DayBook': return DayBookPage(uid: widget.uid, onBack: _reset);
+      case 'Summary': return IncomeSummaryPage(onBack: _reset);
+      case 'SalesSummary': return SalesSummaryPage(onBack: _reset);
+      case 'SalesReport': return FullSalesHistoryPage(onBack: _reset);
+      case 'ExpenseReport': return ExpenseReportPage(onBack: _reset);
+      case 'TopProducts': return TopProductsPage(uid: widget.uid, onBack: _reset);
+      case 'LowStock': return LowStockPage(uid: widget.uid, onBack: _reset);
+      case 'ItemSales': return ItemSalesPage(onBack: _reset);
+      case 'TopCategories': return TopCategoriesPage(onBack: _reset);
+      case 'TopCustomers': return TopCustomersPage(uid: widget.uid, onBack: _reset);
+      case 'StockReport': return StockReportPage(onBack: _reset);
+      case 'StaffReport': return StaffSaleReportPage(onBack: _reset);
+      case 'TaxReport': return TaxReportPage(onBack: _reset);
+      case 'PaymentReport': return PaymentReportPage(onBack: _reset);
+      case 'GSTReport': return TaxReportPage(onBack: _reset); // Unified with Tax Report
+      default: return _buildMainReportsPage(context, false, false);
     }
   }
 
-  Widget _buildMainReportsPage(
-    BuildContext context,
-    bool isFullyLoaded,
-    bool isPaidPlan,
-  ) {
+  Widget _buildMainReportsPage(BuildContext context, bool isFullyLoaded, bool isPaidPlan) {
     bool hasFeaturePermission(String permission) {
       // Security-first: do NOT show permission-gated tiles until permissions + plan are fully loaded.
       // This prevents staff briefly seeing report tiles before the permission check completes.
@@ -237,22 +214,10 @@ class _ReportsPageState extends State<ReportsPage> {
     bool isPremiumLocked() => !isPaidPlan;
 
     // Check if any item in a section is visible
-    bool hasAnalyticsItems =
-        hasFeaturePermission('analytics') ||
-        hasFeaturePermission('salesSummary');
-    bool hasSalesItems =
-        hasFeaturePermission('salesReport') ||
-        hasFeaturePermission('itemSalesReport') ||
-        hasFeaturePermission('topCustomer') ||
-        hasFeaturePermission('staffSalesReport');
-    bool hasInventoryItems =
-        hasFeaturePermission('stockReport') ||
-        hasFeaturePermission('lowStockProduct') ||
-        hasFeaturePermission('topProducts') ||
-        hasFeaturePermission('topCategory');
-    bool hasFinancialsItems =
-        hasFeaturePermission('expensesReport') ||
-        hasFeaturePermission('taxReport');
+    bool hasAnalyticsItems = hasFeaturePermission('analytics') || hasFeaturePermission('salesSummary');
+    bool hasSalesItems = hasFeaturePermission('salesReport') || hasFeaturePermission('itemSalesReport') || hasFeaturePermission('topCustomer') || hasFeaturePermission('staffSalesReport');
+    bool hasInventoryItems = hasFeaturePermission('stockReport') || hasFeaturePermission('lowStockProduct') || hasFeaturePermission('topProducts') || hasFeaturePermission('topCategory');
+    bool hasFinancialsItems = hasFeaturePermission('expensesReport') || hasFeaturePermission('taxReport');
 
     final bool hasAnyVisibleTile =
         hasFeaturePermission('daybook') ||
@@ -267,15 +232,8 @@ class _ReportsPageState extends State<ReportsPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: Text(
-          context.tr('reports'),
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            letterSpacing: 1.0,
-          ),
-        ),
+        title: Text(context.tr('reports'),
+            style: TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1.0)),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
@@ -288,201 +246,85 @@ class _ReportsPageState extends State<ReportsPage> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const HeroIcon(
-                      HeroIcons.lockClosed,
-                      size: 42,
-                      color: kGrey400,
-                    ),
+                    const HeroIcon(HeroIcons.lockClosed, size: 42, color: kGrey400),
                     const SizedBox(height: 12),
                     Text(
                       context.tr('No reports available'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: kBlack87,
-                      ),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: kBlack87),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      context.tr(
-                        'You do not have access to any reports. Please contact your owner.',
-                      ),
+                      context.tr('You do not have access to any reports. Please contact your owner.'),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: kBlack54,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kBlack54),
                     ),
                   ],
                 ),
               ),
             )
           : ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-              children: [
-                // Analytics Overview Section
-                if (hasAnalyticsItems)
-                  _buildSectionLabel(context.tr('analytics_overview')),
-                if (hasFeaturePermission('daybook'))
-                  _buildReportTile(
-                    context.tr('daybook_today'),
-                    HeroIcons.bookOpen,
-                    const Color(0xFFFF5722),
-                    'DayBook',
-                    subtitle: 'Daily transaction log',
-                  ),
-                if (hasFeaturePermission('topProducts'))
-                  _buildReportTile(
-                    context.tr('Product Summary'),
-                    HeroIcons.arrowTrendingUp,
-                    const Color(0xFF00796B),
-                    'TopProducts',
-                    subtitle: 'Most sold items',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('analytics'))
-                  _buildReportTile(
-                    context.tr('Business Summary'),
-                    HeroIcons.presentationChartLine,
-                    const Color(0xFF9C27B0),
-                    'Analytics',
-                    subtitle: 'MAX Plus & data trends',
-                    isLocked: isPremiumLocked(),
-                  ),
+        controller: _scrollController,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        children: [
+          // Analytics Overview Section
+          if (hasAnalyticsItems) _buildSectionLabel(context.tr('analytics_overview')),
+          if (hasFeaturePermission('daybook'))
+            _buildReportTile(context.tr('daybook_today'), HeroIcons.bookOpen, const Color(0xFFFF5722), 'DayBook', subtitle: 'Daily transaction log'),
+          if (hasFeaturePermission('topProducts'))
+            _buildReportTile(context.tr('Product Summary'), HeroIcons.arrowTrendingUp, const Color(0xFF00796B), 'TopProducts', subtitle: 'Most sold items', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('analytics'))
+            _buildReportTile(context.tr('Business Summary'), HeroIcons.presentationChartLine, const Color(0xFF9C27B0), 'Analytics', subtitle: 'MAX Plus & data trends', isLocked: isPremiumLocked()),
 
-                if (hasFeaturePermission('salesSummary'))
-                  _buildReportTile(
-                    'Business Insights',
-                    HeroIcons.documentText,
-                    kPrimaryColor,
-                    'Summary',
-                    subtitle: 'Income, expense & dues',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('salesSummary'))
-                  _buildReportTile(
-                    context.tr('Sales Report'),
-                    HeroIcons.chartPie,
-                    const Color(0xFFE91E63),
-                    'SalesSummary',
-                    subtitle: 'Sales performance',
-                    isLocked: isPremiumLocked(),
-                  ),
+          if (hasFeaturePermission('salesSummary'))
+            _buildReportTile('Business Insights', HeroIcons.documentText,   kPrimaryColor, 'Summary', subtitle: 'Income, expense & dues', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('salesSummary'))
+            _buildReportTile(context.tr('Sales Report'), HeroIcons.chartPie, const Color(0xFFE91E63), 'SalesSummary', subtitle: 'Sales performance', isLocked: isPremiumLocked()),
 
-                // Financials & Tax Section
-                if (hasFinancialsItems) ...[
-                  const SizedBox(height: 12),
-                  _buildSectionLabel(context.tr('financials_tax')),
-                ],
-                if (hasFeaturePermission('expensesReport'))
-                  _buildReportTile(
-                    context.tr('expense_report'),
-                    HeroIcons.wallet,
-                    kErrorColor,
-                    'ExpenseReport',
-                    subtitle: 'Operating costs tracking',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('taxReport'))
-                  _buildReportTile(
-                    context.tr('tax_report'),
-                    HeroIcons.receiptPercent,
-                    kGoogleGreen,
-                    'TaxReport',
-                    subtitle: 'Taxable sales compliance',
-                    isLocked: isPremiumLocked(),
-                  ),
+          // Financials & Tax Section
 
-                if (hasFeaturePermission('salesSummary'))
-                  _buildReportTile(
-                    'Payment Summary',
-                    HeroIcons.banknotes,
-                    kWarningOrange,
-                    'PaymentReport',
-                    subtitle: 'Cash & online breakdown',
-                    isLocked: isPremiumLocked(),
-                  ),
+          if (hasFinancialsItems) ...[
+            const SizedBox(height: 12),
+            _buildSectionLabel(context.tr('financials_tax')),
+          ],
+          if (hasFeaturePermission('expensesReport'))
+            _buildReportTile(context.tr('expense_report'), HeroIcons.wallet, kErrorColor, 'ExpenseReport', subtitle: 'Operating costs tracking', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('taxReport'))
+            _buildReportTile(context.tr('tax_report'), HeroIcons.receiptPercent, kGoogleGreen, 'TaxReport', subtitle: 'Taxable sales compliance', isLocked: isPremiumLocked()),
 
-                // Sales & Transactions Section
-                if (hasSalesItems) ...[
-                  const SizedBox(height: 12),
-                  _buildSectionLabel(context.tr('sales_transactions')),
-                ],
-                if (hasFeaturePermission('salesReport'))
-                  _buildReportTile(
-                    context.tr('Sales Record'),
-                    HeroIcons.shoppingCart,
-                    Colors.deepPurple,
-                    'SalesReport',
-                    subtitle: 'Detailed invoice history',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('itemSalesReport'))
-                  _buildReportTile(
-                    context.tr('item_sales_report'),
-                    HeroIcons.shoppingBag,
-                    Colors.brown,
-                    'ItemSales',
-                    subtitle: 'Sales by product',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('topCustomer'))
-                  _buildReportTile(
-                    context.tr('top_customers'),
-                    HeroIcons.trophy,
-                    const Color(0xFFFFC107),
-                    'TopCustomers',
-                    subtitle: 'Best performing Customers',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('staffSalesReport'))
-                  _buildReportTile(
-                    context.tr('staff_sale_report'),
-                    HeroIcons.user,
-                    const Color(0xFF009688),
-                    'StaffReport',
-                    subtitle: 'Performance by user',
-                    isLocked: isPremiumLocked(),
-                  ),
+          if (hasFeaturePermission('salesSummary'))
+            _buildReportTile('Payment Summary', HeroIcons.banknotes,kWarningOrange , 'PaymentReport', subtitle: 'Cash & online breakdown', isLocked: isPremiumLocked()),
 
-                // Inventory & Products Section
-                if (hasInventoryItems) ...[
-                  const SizedBox(height: 12),
-                  _buildSectionLabel(context.tr('inventory_products')),
-                ],
-                if (hasFeaturePermission('stockReport'))
-                  _buildReportTile(
-                    context.tr('stock_report'),
-                    HeroIcons.archiveBox,
-                    const Color(0xFF5C6BC0),
-                    'StockReport',
-                    subtitle: 'Full inventory valuation',
-                    isLocked: isPremiumLocked(),
-                  ),
-                if (hasFeaturePermission('lowStockProduct'))
-                  _buildReportTile(
-                    context.tr('low_stock_products'),
-                    HeroIcons.clipboardDocumentList,
-                    kOrange,
-                    'LowStock',
-                    subtitle: 'Restock action required',
-                    isLocked: isPremiumLocked(),
-                  ),
+          // Sales & Transactions Section
+          if (hasSalesItems) ...[
+            const SizedBox(height: 12),
+            _buildSectionLabel(context.tr('sales_transactions')),
+          ],
+          if (hasFeaturePermission('salesReport'))
+            _buildReportTile(context.tr('Sales Record'), HeroIcons.shoppingCart, Colors.deepPurple, 'SalesReport', subtitle: 'Detailed invoice history', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('itemSalesReport'))
+            _buildReportTile(context.tr('item_sales_report'), HeroIcons.shoppingBag,Colors.brown  , 'ItemSales', subtitle: 'Sales by product', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('topCustomer'))
+            _buildReportTile(context.tr('top_customers'), HeroIcons.trophy, const Color(0xFFFFC107), 'TopCustomers', subtitle: 'Best performing Customers', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('staffSalesReport'))
+            _buildReportTile(context.tr('staff_sale_report'), HeroIcons.user, const Color(0xFF009688) , 'StaffReport', subtitle: 'Performance by user', isLocked: isPremiumLocked()),
 
-                if (hasFeaturePermission('topCategory'))
-                  _buildReportTile(
-                    context.tr('top_categories'),
-                    HeroIcons.tag,
-                    CupertinoColors.systemPurple,
-                    'TopCategories',
-                    subtitle: 'Department performance',
-                    isLocked: isPremiumLocked(),
-                  ),
-              ],
-            ),
+          // Inventory & Products Section
+          if (hasInventoryItems) ...[
+            const SizedBox(height: 12),
+            _buildSectionLabel(context.tr('inventory_products')),
+          ],
+          if (hasFeaturePermission('stockReport'))
+            _buildReportTile(context.tr('stock_report'), HeroIcons.archiveBox, const Color(0xFF5C6BC0), 'StockReport', subtitle: 'Full inventory valuation', isLocked: isPremiumLocked()),
+          if (hasFeaturePermission('lowStockProduct'))
+            _buildReportTile(context.tr('low_stock_products'), HeroIcons.clipboardDocumentList, kOrange, 'LowStock', subtitle: 'Restock action required', isLocked: isPremiumLocked()),
+
+          if (hasFeaturePermission('topCategory'))
+            _buildReportTile(context.tr('top_categories'), HeroIcons.tag, CupertinoColors.systemPurple, 'TopCategories', subtitle: 'Department performance', isLocked: isPremiumLocked()),
+
+
+        ],
+      ),
       bottomNavigationBar: CommonBottomNav(
         uid: widget.uid,
         userEmail: widget.userEmail,
@@ -494,25 +336,11 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Widget _buildSectionLabel(String text) => Padding(
     padding: const EdgeInsets.only(left: 4, bottom: 12, top: 12),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.5,
-      ),
-    ),
+    child: Text(text,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5)),
   );
 
-  Widget _buildReportTile(
-    String title,
-    HeroIcons icon,
-    Color color,
-    String viewName, {
-    String? subtitle,
-    bool isLocked = false,
-  }) {
+  Widget _buildReportTile(String title, HeroIcons icon, Color color, String viewName, {String? subtitle, bool isLocked = false}) {
     // Get current plan from provider
     final planProvider = context.watch<PlanProvider>();
     final currentPlan = planProvider.cachedPlan;
@@ -531,8 +359,7 @@ class _ReportsPageState extends State<ReportsPage> {
           onTap: () {
             // Daybook is free (no paid plan required) but must respect staff permission.
             if (viewName == 'DayBook') {
-              if (isAdmin ||
-                  (_permissions[_getPermissionKey('daybook')] == true)) {
+              if (isAdmin || (_permissions[_getPermissionKey('daybook')] == true)) {
                 _navigateTo(viewName);
               } else {
                 PermissionHelper.showPermissionDeniedDialog(context);
@@ -554,8 +381,7 @@ class _ReportsPageState extends State<ReportsPage> {
             // For staff, check user permissions
             if (!isAdmin) {
               // Staff must have both permission AND paid plan
-              final hasPermission =
-                  _permissions[_getPermissionKey(viewName)] == true;
+              final hasPermission = _permissions[_getPermissionKey(viewName)] == true;
               if (!hasPermission) {
                 PermissionHelper.showPermissionDeniedDialog(context);
                 return;
@@ -580,8 +406,7 @@ class _ReportsPageState extends State<ReportsPage> {
             child: Row(
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 46, height: 46,
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
@@ -595,33 +420,18 @@ class _ReportsPageState extends State<ReportsPage> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          color: kBlack87,
-                        ),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: kBlack87),
                       ),
                       if (subtitle != null) ...[
                         const SizedBox(height: 2),
-                        Text(
-                          subtitle,
-                          style: const TextStyle(
-                            color: kBlack54,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        Text(subtitle, style: const TextStyle(color: kBlack54, fontSize: 11, fontWeight: FontWeight.w500)),
                       ],
                     ],
                   ),
                 ),
                 isLocked
-                    ? const PremiumLockBadge(size: 26)
-                    : const HeroIcon(
-                        HeroIcons.chevronRight,
-                        color: kGrey400,
-                        size: 14,
-                      ),
+                    ? const PremiumLockBadge(size: 40)
+                    : const HeroIcon(HeroIcons.chevronRight, color: kGrey400, size: 14),
               ],
             ),
           ),
@@ -633,32 +443,19 @@ class _ReportsPageState extends State<ReportsPage> {
   // Helper method to map view names to permission keys
   String _getPermissionKey(String viewName) {
     switch (viewName) {
-      case 'Analytics':
-        return 'analytics';
-      case 'SalesSummary':
-        return 'salesSummary';
-      case 'SalesReport':
-        return 'salesReport';
-      case 'ItemSales':
-        return 'itemSalesReport';
-      case 'TopCustomers':
-        return 'topCustomer';
-      case 'StaffReport':
-        return 'staffSalesReport';
-      case 'StockReport':
-        return 'stockReport';
-      case 'LowStock':
-        return 'lowStockProduct';
-      case 'TopProducts':
-        return 'topProducts';
-      case 'TopCategories':
-        return 'topCategory';
-      case 'ExpenseReport':
-        return 'expensesReport';
-      case 'TaxReport':
-        return 'taxReport';
-      default:
-        return viewName.toLowerCase();
+      case 'Analytics': return 'analytics';
+      case 'SalesSummary': return 'salesSummary';
+      case 'SalesReport': return 'salesReport';
+      case 'ItemSales': return 'itemSalesReport';
+      case 'TopCustomers': return 'topCustomer';
+      case 'StaffReport': return 'staffSalesReport';
+      case 'StockReport': return 'stockReport';
+      case 'LowStock': return 'lowStockProduct';
+      case 'TopProducts': return 'topProducts';
+      case 'TopCategories': return 'topCategory';
+      case 'ExpenseReport': return 'expensesReport';
+      case 'TaxReport': return 'taxReport';
+      default: return viewName.toLowerCase();
     }
   }
 }
@@ -714,28 +511,17 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
 
   String _getFilterLabel(DateFilterOption option) {
     switch (option) {
-      case DateFilterOption.today:
-        return 'Today';
-      case DateFilterOption.yesterday:
-        return 'Yesterday';
-      case DateFilterOption.thisWeek:
-        return 'Week';
-      case DateFilterOption.last7Days:
-        return '7 Days';
-      case DateFilterOption.last30Days:
-        return '30 Days';
-      case DateFilterOption.thisMonth:
-        return 'Month';
-      case DateFilterOption.lastMonth:
-        return 'Last Month';
-      case DateFilterOption.custom:
-        return 'Custom';
-      case DateFilterOption.customDate:
-        return 'Date';
-      case DateFilterOption.customPeriod:
-        return 'Range';
-      case DateFilterOption.customMonth:
-        return 'Target';
+      case DateFilterOption.today: return 'Today';
+      case DateFilterOption.yesterday: return 'Yesterday';
+      case DateFilterOption.thisWeek: return 'Week';
+      case DateFilterOption.last7Days: return '7 Days';
+      case DateFilterOption.last30Days: return '30 Days';
+      case DateFilterOption.thisMonth: return 'Month';
+      case DateFilterOption.lastMonth: return 'Last Month';
+      case DateFilterOption.custom: return 'Custom';
+      case DateFilterOption.customDate: return 'Date';
+      case DateFilterOption.customPeriod: return 'Range';
+      case DateFilterOption.customMonth: return 'Target';
     }
   }
 
@@ -752,14 +538,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
       case DateFilterOption.yesterday:
         final yesterday = now.subtract(const Duration(days: 1));
         start = DateTime(yesterday.year, yesterday.month, yesterday.day);
-        end = DateTime(
-          yesterday.year,
-          yesterday.month,
-          yesterday.day,
-          23,
-          59,
-          59,
-        );
+        end = DateTime(yesterday.year, yesterday.month, yesterday.day, 23, 59, 59);
         break;
       case DateFilterOption.thisWeek:
         start = now.subtract(Duration(days: now.weekday - 1));
@@ -788,11 +567,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
       builder: (context, child) => _applyTheme(child!),
     );
     if (picked != null) {
-      widget.onDateChanged(
-        DateFilterOption.customDate,
-        picked,
-        DateTime(picked.year, picked.month, picked.day, 23, 59, 59),
-      );
+      widget.onDateChanged(DateFilterOption.customDate, picked, DateTime(picked.year, picked.month, picked.day, 23, 59, 59));
     }
   }
 
@@ -807,11 +582,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
       builder: (context, child) => _applyTheme(child!),
     );
     if (range != null) {
-      widget.onDateChanged(
-        DateFilterOption.customPeriod,
-        range.start,
-        DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59),
-      );
+      widget.onDateChanged(DateFilterOption.customPeriod, range.start, DateTime(range.end.year, range.end.month, range.end.day, 23, 59, 59));
     }
   }
 
@@ -822,9 +593,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
     await showModalBottomSheet(
       context: context,
       backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (context) => StatefulBuilder(
         builder: (context, setModalState) => Container(
           padding: const EdgeInsets.all(20),
@@ -834,80 +603,36 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildIconBtn(
-                    HeroIcons.chevronLeft,
-                    () => setModalState(() => selectedYear--),
-                  ),
-                  Text(
-                    '$selectedYear',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                  _buildIconBtn(
-                    HeroIcons.chevronRight,
-                    selectedYear < now.year
-                        ? () => setModalState(() => selectedYear++)
-                        : null,
-                  ),
+                  _buildIconBtn(HeroIcons.chevronLeft, () => setModalState(() => selectedYear--)),
+                  Text('$selectedYear', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kPrimaryColor)),
+                  _buildIconBtn(HeroIcons.chevronRight, selectedYear < now.year ? () => setModalState(() => selectedYear++) : null),
                 ],
               ),
               const SizedBox(height: 20),
               GridView.builder(
                 shrinkWrap: true,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                  childAspectRatio: 1.4,
-                ),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 4, mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.4),
                 itemCount: 12,
                 itemBuilder: (context, index) {
                   final month = index + 1;
-                  final isDisabled =
-                      selectedYear == now.year && month > now.month;
+                  final isDisabled = selectedYear == now.year && month > now.month;
                   return InkWell(
-                    onTap: isDisabled
-                        ? null
-                        : () {
-                            final first = DateTime(selectedYear, month, 1);
-                            final last = DateTime(
-                              selectedYear,
-                              month + 1,
-                              0,
-                              23,
-                              59,
-                              59,
-                            );
-                            widget.onDateChanged(
-                              DateFilterOption.customMonth,
-                              first,
-                              last,
-                            );
-                            Navigator.pop(context);
-                          },
+                    onTap: isDisabled ? null : () {
+                      final first = DateTime(selectedYear, month, 1);
+                      final last = DateTime(selectedYear, month + 1, 0, 23, 59, 59);
+                      widget.onDateChanged(DateFilterOption.customMonth, first, last);
+                      Navigator.pop(context);
+                    },
                     child: Container(
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: isDisabled
-                            ? Colors.transparent
-                            : kPrimaryColor.withValues(alpha: 0.05),
+                        color: isDisabled ? Colors.transparent : kPrimaryColor.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDisabled
-                              ? Colors.grey.shade200
-                              : kPrimaryColor.withValues(alpha: 0.15),
-                        ),
+                        border: Border.all(color: isDisabled ? Colors.grey.shade200 : kPrimaryColor.withValues(alpha: 0.15)),
                       ),
                       child: Text(
                         DateFormat('MMM').format(DateTime(2024, month)),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          color: isDisabled ? Colors.grey : kPrimaryColor,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w900, color: isDisabled ? Colors.grey : kPrimaryColor, fontSize: 12),
                       ),
                     ),
                   );
@@ -924,9 +649,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
     showModalBottomSheet(
       context: context,
       backgroundColor: kWhite,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(12))),
       builder: (context) => Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
@@ -935,82 +658,35 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
           children: [
             const Padding(
               padding: EdgeInsets.only(left: 8.0, bottom: 12),
-              child: Text(
-                "Advanced Audit Timeframe",
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: 1.5,
-                ),
-              ),
+              child: Text("Advanced Audit Timeframe", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: 1.5)),
             ),
-            _buildModalItem(
-              DateFilterOption.last7Days,
-              HeroIcons.calendarDays,
-              () {
-                final now = DateTime.now();
-                widget.onDateChanged(
-                  DateFilterOption.last7Days,
-                  now.subtract(const Duration(days: 6)),
-                  now,
-                );
-                Navigator.pop(context);
-              },
-            ),
+            _buildModalItem(DateFilterOption.last7Days, HeroIcons.calendarDays, () {
+              final now = DateTime.now();
+              widget.onDateChanged(DateFilterOption.last7Days, now.subtract(const Duration(days: 6)), now);
+              Navigator.pop(context);
+            }),
             _buildModalItem(DateFilterOption.last30Days, HeroIcons.clock, () {
               final now = DateTime.now();
-              widget.onDateChanged(
-                DateFilterOption.last30Days,
-                now.subtract(const Duration(days: 29)),
-                now,
-              );
+              widget.onDateChanged(DateFilterOption.last30Days, now.subtract(const Duration(days: 29)), now);
               Navigator.pop(context);
             }),
             _buildModalItem(DateFilterOption.lastMonth, HeroIcons.calendar, () {
-              final lastMonth = DateTime(
-                DateTime.now().year,
-                DateTime.now().month - 1,
-                1,
-              );
-              widget.onDateChanged(
-                DateFilterOption.lastMonth,
-                lastMonth,
-                DateTime(
-                  DateTime.now().year,
-                  DateTime.now().month,
-                  0,
-                  23,
-                  59,
-                  59,
-                ),
-              );
+              final lastMonth = DateTime(DateTime.now().year, DateTime.now().month - 1, 1);
+              widget.onDateChanged(DateFilterOption.lastMonth, lastMonth, DateTime(DateTime.now().year, DateTime.now().month, 0, 23, 59, 59));
               Navigator.pop(context);
             }),
-            _buildModalItem(
-              DateFilterOption.customDate,
-              HeroIcons.calendar,
-              () {
-                Navigator.pop(context);
-                _selectCustomDate();
-              },
-            ),
-            _buildModalItem(
-              DateFilterOption.customMonth,
-              HeroIcons.squares2x2,
-              () {
-                Navigator.pop(context);
-                _selectCustomMonth();
-              },
-            ),
-            _buildModalItem(
-              DateFilterOption.customPeriod,
-              HeroIcons.calendarDays,
-              () {
-                Navigator.pop(context);
-                _selectCustomPeriod();
-              },
-            ),
+            _buildModalItem(DateFilterOption.customDate, HeroIcons.calendar, () {
+              Navigator.pop(context);
+              _selectCustomDate();
+            }),
+            _buildModalItem(DateFilterOption.customMonth, HeroIcons.squares2x2, () {
+              Navigator.pop(context);
+              _selectCustomMonth();
+            }),
+            _buildModalItem(DateFilterOption.customPeriod, HeroIcons.calendarDays, () {
+              Navigator.pop(context);
+              _selectCustomPeriod();
+            }),
             const SizedBox(height: 12),
           ],
         ),
@@ -1020,11 +696,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
 
   // --- UI HELPERS ---
 
-  Widget _buildModalItem(
-    DateFilterOption option,
-    HeroIcons icon,
-    VoidCallback onTap,
-  ) {
+  Widget _buildModalItem(DateFilterOption option, HeroIcons icon, VoidCallback onTap) {
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
       decoration: BoxDecoration(
@@ -1035,19 +707,8 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
         visualDensity: VisualDensity.compact,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: HeroIcon(icon, size: 18, color: kPrimaryColor),
-        title: Text(
-          _getFilterLabel(option),
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 14,
-            color: Colors.black87,
-          ),
-        ),
-        trailing: const HeroIcon(
-          HeroIcons.chevronRight,
-          size: 12,
-          color: Colors.grey,
-        ),
+        title: Text(_getFilterLabel(option), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black87)),
+        trailing: const HeroIcon(HeroIcons.chevronRight, size: 12, color: Colors.grey),
         onTap: onTap,
       ),
     );
@@ -1056,19 +717,9 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
   Widget _applyTheme(Widget child) {
     return Theme(
       data: Theme.of(context).copyWith(
-        colorScheme: const ColorScheme.light(
-          primary: kPrimaryColor,
-          onPrimary: kWhite,
-          onSurface: Colors.black87,
-        ),
-        textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(foregroundColor: kPrimaryColor),
-        ),
-        dialogTheme: DialogThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
+        colorScheme: const ColorScheme.light(primary: kPrimaryColor, onPrimary: kWhite, onSurface: Colors.black87),
+        textButtonTheme: TextButtonThemeData(style: TextButton.styleFrom(foregroundColor: kPrimaryColor)),
+        dialogTheme: DialogThemeData(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
       ),
       child: child,
     );
@@ -1076,14 +727,8 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
 
   Widget _buildIconBtn(HeroIcons icon, VoidCallback? onPressed) {
     return Container(
-      decoration: BoxDecoration(
-        color: kGreyBg,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: IconButton(
-        icon: HeroIcon(icon, size: 18, color: kPrimaryColor),
-        onPressed: onPressed,
-      ),
+      decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(12)),
+      child: IconButton(icon: HeroIcon(icon, size: 18, color: kPrimaryColor), onPressed: onPressed),
     );
   }
 
@@ -1098,10 +743,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
 
     return Container(
       color: kWhite,
-      padding: const EdgeInsets.symmetric(
-        vertical: 8,
-        horizontal: 16,
-      ), // Reduced vertical padding
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16), // Reduced vertical padding
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1114,26 +756,16 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
                   children: [
                     Text(
                       _getFilterLabel(widget.selectedOption),
-                      style: const TextStyle(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
-                        color: kPrimaryColor,
-                        letterSpacing: 0.8,
-                      ), // Smaller label
+                      style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: 0.8), // Smaller label
                     ),
                     const SizedBox(height: 1),
                     Text(
                       widget.startDate != null
-                          ? (widget.startDate == widget.endDate ||
-                                    widget.endDate == null
-                                ? '${DateFormat('dd MMM yyyy').format(widget.startDate!)} — ${DateFormat('dd MMM yyyy').format(widget.startDate!)}'
-                                : '${DateFormat('dd MMM yyyy').format(widget.startDate!)} — ${DateFormat('dd MMM yyyy').format(widget.endDate!)}')
+                          ? (widget.startDate == widget.endDate || widget.endDate == null
+                          ? '${DateFormat('dd MMM yyyy').format(widget.startDate!)} — ${DateFormat('dd MMM yyyy').format(widget.startDate!)}'
+                          : '${DateFormat('dd MMM yyyy').format(widget.startDate!)} — ${DateFormat('dd MMM yyyy').format(widget.endDate!)}')
                           : 'Set Period',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.black87,
-                      ), // Smaller date text
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Colors.black87), // Smaller date text
                     ),
                   ],
                 ),
@@ -1147,6 +779,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
           ),
 
           const SizedBox(height: 8), // Reduced gap between rows
+
           // 2. Executive Quick Tiling (More compact height)
           Row(
             children: [
@@ -1156,21 +789,13 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
                   child: GestureDetector(
                     onTap: () => _handleQuickSelect(opt),
                     child: Container(
-                      margin: const EdgeInsets.only(
-                        right: 5,
-                      ), // Tightened margin
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 6,
-                      ), // Reduced tile height
+                      margin: const EdgeInsets.only(right: 5), // Tightened margin
+                      padding: const EdgeInsets.symmetric(vertical: 6), // Reduced tile height
                       decoration: BoxDecoration(
                         color: isSelected ? kPrimaryColor : kGreyBg,
-                        borderRadius: BorderRadius.circular(
-                          10,
-                        ), // Slightly smaller radius for compact look
+                        borderRadius: BorderRadius.circular(10), // Slightly smaller radius for compact look
                         border: Border.all(
-                          color: isSelected
-                              ? kPrimaryColor
-                              : Colors.transparent,
+                          color: isSelected ? kPrimaryColor : Colors.transparent,
                         ),
                       ),
                       child: Center(
@@ -1200,20 +825,9 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          "All",
-                          style: TextStyle(
-                            color: Colors.black87,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
+                        Text("All", style: TextStyle(color: Colors.black87, fontSize: 10, fontWeight: FontWeight.w900)),
                         SizedBox(width: 2),
-                        HeroIcon(
-                          HeroIcons.adjustmentsHorizontal,
-                          size: 12,
-                          color: kPrimaryColor,
-                        ),
+                        HeroIcon(HeroIcons.adjustmentsHorizontal, size: 12, color: kPrimaryColor),
                       ],
                     ),
                   ),
@@ -1231,7 +845,7 @@ class _DateFilterWidgetState extends State<DateFilterWidget> {
   Widget _buildActionSquare(HeroIcons icon, VoidCallback? onPressed) {
     return Container(
       height: 32, // Reduced from 38
-      width: 32, // Reduced from 38
+      width: 32,  // Reduced from 38
       decoration: BoxDecoration(
         color: kGreyBg,
         borderRadius: BorderRadius.circular(10),
@@ -1263,12 +877,17 @@ class EmptyStateWidget extends StatelessWidget {
           SizedBox(
             height: 100,
             width: 150,
-            child: CustomPaint(painter: _EmptyChartPainter()),
+            child: CustomPaint(
+              painter: _EmptyChartPainter(),
+            ),
           ),
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(color: kTextSecondary, fontSize: 14),
+            style: const TextStyle(
+              color: kTextSecondary,
+              fontSize: 14,
+            ),
           ),
         ],
       ),
@@ -1292,7 +911,11 @@ class _EmptyChartPainter extends CustomPainter {
 
     for (int i = 0; i < heights.length; i++) {
       final x = 20 + i * (barWidth + spacing);
-      canvas.drawLine(Offset(x, baseY), Offset(x, baseY - heights[i]), paint);
+      canvas.drawLine(
+        Offset(x, baseY),
+        Offset(x, baseY - heights[i]),
+        paint,
+      );
     }
 
     // Draw sad face
@@ -1308,11 +931,7 @@ class _EmptyChartPainter extends CustomPainter {
     canvas.drawCircle(Offset(centerX, centerY), 20, facePaint);
 
     // Eyes
-    canvas.drawCircle(
-      Offset(centerX - 7, centerY - 5),
-      2,
-      facePaint..style = PaintingStyle.fill,
-    );
+    canvas.drawCircle(Offset(centerX - 7, centerY - 5), 2, facePaint..style = PaintingStyle.fill);
     canvas.drawCircle(Offset(centerX + 7, centerY - 5), 2, facePaint);
 
     // Sad mouth
@@ -1326,44 +945,26 @@ class _EmptyChartPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-AppBar _buildModernAppBar(
-  String title,
-  VoidCallback onBack, {
-  VoidCallback? onDownload,
-}) {
+AppBar _buildModernAppBar(String title, VoidCallback onBack, {VoidCallback? onDownload}) {
   return AppBar(
     // Rounded bottom corners for modern look
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
     ),
-    leading: IconButton(
-      icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white, size: 20),
-      onPressed: onBack,
-    ),
-    title: Text(
-      title,
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.w700,
-        fontSize: 18,
-      ),
-    ),
+    leading: IconButton(icon: const HeroIcon(HeroIcons.arrowLeft, color: Colors.white, size: 20), onPressed: onBack),
+    title: Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18)),
     backgroundColor: kPrimaryColor,
     elevation: 0,
     centerTitle: true,
     actions: onDownload != null
         ? [
-            IconButton(
-              icon: const HeroIcon(
-                HeroIcons.arrowDownTray,
-                color: Colors.white,
-                size: 22,
-              ),
-              onPressed: onDownload,
-              tooltip: 'Download PDF',
-            ),
-            const SizedBox(width: 8),
-          ]
+      IconButton(
+        icon: const HeroIcon(HeroIcons.arrowDownTray, color: Colors.white, size: 22),
+        onPressed: onDownload,
+        tooltip: 'Download PDF',
+      ),
+      const SizedBox(width: 8),
+    ]
         : null,
   );
 }
@@ -1390,8 +991,7 @@ class ReportPdfGenerator {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (_) =>
-            const Center(child: CircularProgressIndicator(color: Colors.white)),
+        builder: (_) => const Center(child: CircularProgressIndicator(color: Colors.white)),
       );
 
       // Load fonts for currency symbol support
@@ -1442,10 +1042,7 @@ class ReportPdfGenerator {
                           ),
                           pw.SizedBox(height: 8),
                           pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: pw.BoxDecoration(
                               color: PdfColors.blue700,
                               borderRadius: pw.BorderRadius.circular(20),
@@ -1518,8 +1115,7 @@ class ReportPdfGenerator {
                       ),
 
                       // Additional Summary Grid
-                      if (additionalSummary != null &&
-                          additionalSummary.isNotEmpty) ...[
+                      if (additionalSummary != null && additionalSummary.isNotEmpty) ...[
                         pw.Container(
                           padding: const pw.EdgeInsets.all(20),
                           child: pw.Wrap(
@@ -1532,15 +1128,11 @@ class ReportPdfGenerator {
                                 decoration: pw.BoxDecoration(
                                   color: PdfColors.grey100,
                                   borderRadius: pw.BorderRadius.circular(8),
-                                  border: pw.Border.all(
-                                    color: PdfColors.grey200,
-                                  ),
+                                  border: pw.Border.all(color: PdfColors.grey200),
                                 ),
                                 child: pw.Column(
-                                  crossAxisAlignment:
-                                      pw.CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      pw.MainAxisAlignment.center,
+                                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                  mainAxisAlignment: pw.MainAxisAlignment.center,
                                   children: [
                                     pw.Text(
                                       e.key,
@@ -1581,10 +1173,7 @@ class ReportPdfGenerator {
                 ),
                 child: pw.Table(
                   border: pw.TableBorder(
-                    horizontalInside: pw.BorderSide(
-                      color: PdfColors.grey200,
-                      width: 1,
-                    ),
+                    horizontalInside: pw.BorderSide(color: PdfColors.grey200, width: 1),
                     left: pw.BorderSide.none,
                     right: pw.BorderSide.none,
                     top: pw.BorderSide.none,
@@ -1604,10 +1193,7 @@ class ReportPdfGenerator {
                       ),
                       children: headers.map((header) {
                         return pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 14,
-                          ),
+                          padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                           child: pw.Text(
                             header,
                             style: pw.TextStyle(
@@ -1629,10 +1215,7 @@ class ReportPdfGenerator {
                         ),
                         children: entry.value.map((cell) {
                           return pw.Container(
-                            padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 10,
-                            ),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             child: pw.Text(
                               cell,
                               style: const pw.TextStyle(
@@ -1723,8 +1306,7 @@ class ReportPdfGenerator {
 
       Navigator.pop(context);
 
-      final fileName =
-          '${reportTitle.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
+      final fileName = '${reportTitle.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
       final pdfBytes = await pdf.save();
 
       if (Platform.isAndroid) {
@@ -1732,15 +1314,12 @@ class ReportPdfGenerator {
         if (!storageStatus.isGranted) {
           storageStatus = await Permission.storage.request();
           if (!storageStatus.isGranted) {
-            final manageStatus = await Permission.manageExternalStorage
-                .request();
+            final manageStatus = await Permission.manageExternalStorage.request();
             if (!manageStatus.isGranted) {
               final openSettings = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   title: Row(
                     children: [
                       Container(
@@ -1749,53 +1328,29 @@ class ReportPdfGenerator {
                           color: Colors.orange.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          Icons.warning_amber_rounded,
-                          color: Colors.orange,
-                          size: 20,
-                        ),
+                        child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'Permission Required',
-                          style: TextStyle(fontSize: 18),
-                        ),
-                      ),
+                      const Expanded(child: Text('Permission Required', style: TextStyle(fontSize: 18))),
                     ],
                   ),
                   content: const Text(
                     'Storage permission is needed to save PDF reports to Downloads folder.\n\nPlease enable storage permission in app settings.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: kTextSecondary,
-                      height: 1.5,
-                    ),
+                    style: TextStyle(fontSize: 14, color: kTextSecondary, height: 1.5),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text(
-                        'Cancel',
-                        style: TextStyle(color: Colors.grey),
-                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
                     ),
                     ElevatedButton(
                       onPressed: () => Navigator.pop(context, true),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      child: const Text(
-                        'Open Settings',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      child: const Text('Open Settings', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -1807,18 +1362,12 @@ class ReportPdfGenerator {
                     children: [
                       Icon(Icons.error_outline, color: Colors.white),
                       SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Storage permission denied. Cannot save PDF.',
-                        ),
-                      ),
+                      Expanded(child: Text('Storage permission denied. Cannot save PDF.')),
                     ],
                   ),
                   backgroundColor: Colors.red,
                   behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   duration: const Duration(seconds: 3),
                 ),
               );
@@ -1855,9 +1404,7 @@ class ReportPdfGenerator {
             await file.writeAsBytes(pdfBytes, flush: true);
             if (await file.exists()) {
               final fileSize = await file.length();
-              print(
-                '✓ PDF saved to Downloads/MAXmybill: ${file.path}, Size: $fileSize bytes',
-              );
+              print('✓ PDF saved to Downloads/MAXmybill: ${file.path}, Size: $fileSize bytes');
               savedPath = file.path;
               savedToDownloads = true;
             }
@@ -1871,9 +1418,7 @@ class ReportPdfGenerator {
                 final downloadDir = Directory('$basePath/Download');
                 if (await downloadDir.exists()) {
                   // Create MAXmybill folder
-                  final maxmybillDir = Directory(
-                    '${downloadDir.path}/MAXmybill',
-                  );
+                  final maxmybillDir = Directory('${downloadDir.path}/MAXmybill');
                   if (!await maxmybillDir.exists()) {
                     await maxmybillDir.create(recursive: true);
                   }
@@ -1883,9 +1428,7 @@ class ReportPdfGenerator {
                   if (await file.exists()) {
                     savedPath = file.path;
                     savedToDownloads = true;
-                    print(
-                      '✓ PDF saved to Downloads/MAXmybill (fallback): ${file.path}',
-                    );
+                    print('✓ PDF saved to Downloads/MAXmybill (fallback): ${file.path}');
                   }
                 }
               }
@@ -1927,9 +1470,7 @@ class ReportPdfGenerator {
           context: context,
           builder: (BuildContext dialogContext) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               backgroundColor: Colors.white,
               title: Row(
                 children: [
@@ -1937,10 +1478,7 @@ class ReportPdfGenerator {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          kIncomeGreen,
-                          kIncomeGreen.withValues(alpha: 0.7),
-                        ],
+                        colors: [kIncomeGreen, kIncomeGreen.withValues(alpha: 0.7)],
                       ),
                       borderRadius: BorderRadius.circular(12),
                       // boxShadow: [
@@ -1951,21 +1489,13 @@ class ReportPdfGenerator {
                       //   ),
                       //],
                     ),
-                    child: const Icon(
-                      Icons.check_circle_outline,
-                      color: Colors.white,
-                      size: 28,
-                    ),
+                    child: const Icon(Icons.check_circle_outline, color: Colors.white, size: 28),
                   ),
                   const SizedBox(width: 16),
                   const Expanded(
                     child: Text(
                       'Success!',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                     ),
                   ),
                 ],
@@ -1978,11 +1508,7 @@ class ReportPdfGenerator {
                     savedToDownloads
                         ? 'Your PDF report has been saved to Downloads/MAXmybill folder'
                         : 'Your PDF report has been generated successfully',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: kTextSecondary,
-                      height: 1.4,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: kTextSecondary, height: 1.4),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -2002,11 +1528,7 @@ class ReportPdfGenerator {
                             color: kPrimaryColor,
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: const Icon(
-                            Icons.picture_as_pdf,
-                            color: Colors.white,
-                            size: 20,
-                          ),
+                          child: const Icon(Icons.picture_as_pdf, color: Colors.white, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -2026,10 +1548,7 @@ class ReportPdfGenerator {
                               const SizedBox(height: 4),
                               Text(
                                 '${(pdfBytes.length / 1024).toStringAsFixed(1)} KB',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade600,
-                                ),
+                                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                               ),
                             ],
                           ),
@@ -2040,33 +1559,20 @@ class ReportPdfGenerator {
                   if (savedToDownloads) ...[
                     const SizedBox(height: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
                         color: kIncomeGreen.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: kIncomeGreen.withValues(alpha: 0.3),
-                        ),
+                        border: Border.all(color: kIncomeGreen.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.folder_outlined,
-                            color: kIncomeGreen,
-                            size: 18,
-                          ),
+                          Icon(Icons.folder_outlined, color: kIncomeGreen, size: 18),
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
                               'Check Downloads/MAXmybill folder',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: kIncomeGreen,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: TextStyle(fontSize: 14, color: kIncomeGreen, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],
@@ -2079,15 +1585,9 @@ class ReportPdfGenerator {
                 TextButton(
                   onPressed: () => Navigator.pop(dialogContext),
                   style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   ),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(color: kTextSecondary, fontSize: 14),
-                  ),
+                  child: const Text('Close', style: TextStyle(color: kTextSecondary, fontSize: 14)),
                 ),
                 ElevatedButton.icon(
                   onPressed: () async {
@@ -2099,20 +1599,12 @@ class ReportPdfGenerator {
                     );
                   },
                   icon: const Icon(Icons.share_rounded, size: 18),
-                  label: const Text(
-                    'Share PDF',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
+                  label: const Text('Share PDF', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryColor,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
                   ),
                 ),
@@ -2132,9 +1624,7 @@ class ReportPdfGenerator {
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -2152,9 +1642,7 @@ class ReportPdfGenerator {
           ),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
       );
     }
@@ -2189,30 +1677,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
   int get _durationDays {
     switch (_selectedDuration) {
-      case 'Today':
-        return 0;
-      case 'Yesterday':
-        return 1;
-      case 'Last 7 Days or Last Week':
-        return 7;
-      case 'Last 30 Days':
-        return 30;
-      case 'This Month':
-        return DateTime.now().day;
-      case 'Last 3 Months':
-        return 90;
-      default:
-        return 7;
+      case 'Today': return 0;
+      case 'Yesterday': return 1;
+      case 'Last 7 Days or Last Week': return 7;
+      case 'Last 30 Days': return 30;
+      case 'This Month': return DateTime.now().day;
+      case 'Last 3 Months': return 90;
+      default: return 7;
     }
   }
 
@@ -2220,12 +1697,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     if (dt == null) return false;
     final now = DateTime.now();
     if (_selectedDuration == 'Today') {
-      return DateFormat('yyyy-MM-dd').format(dt) ==
-          DateFormat('yyyy-MM-dd').format(now);
+      return DateFormat('yyyy-MM-dd').format(dt) == DateFormat('yyyy-MM-dd').format(now);
     } else if (_selectedDuration == 'Yesterday') {
       final yesterday = now.subtract(const Duration(days: 1));
-      return DateFormat('yyyy-MM-dd').format(dt) ==
-          DateFormat('yyyy-MM-dd').format(yesterday);
+      return DateFormat('yyyy-MM-dd').format(dt) == DateFormat('yyyy-MM-dd').format(yesterday);
     } else if (_selectedDuration == 'This Month') {
       return dt.year == now.year && dt.month == now.month;
     } else if (_selectedDuration == 'Last 3 Months') {
@@ -2247,15 +1722,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       ['Expense', '$_currencySymbol${_periodExpenseKpi.toStringAsFixed(2)}'],
       ['Tax Collected', '$_currencySymbol${_periodTax.toStringAsFixed(2)}'],
       ['Period Income', '$_currencySymbol${_periodIncome.toStringAsFixed(2)}'],
-      [
-        'Period Expense',
-        '$_currencySymbol${_periodExpense.toStringAsFixed(2)}',
-      ],
+      ['Period Expense', '$_currencySymbol${_periodExpense.toStringAsFixed(2)}'],
       ['Cash Collection', '$_currencySymbol${_totalCash.toStringAsFixed(2)}'],
-      [
-        'Online Collection',
-        '$_currencySymbol${_totalOnline.toStringAsFixed(2)}',
-      ],
+      ['Online Collection', '$_currencySymbol${_totalOnline.toStringAsFixed(2)}'],
       ['Total Refunds', '$_currencySymbol${_totalRefunds.toStringAsFixed(2)}'],
     ];
 
@@ -2265,8 +1734,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       headers: ['Metric', 'Amount'],
       rows: rows,
       summaryTitle: "Net Profit",
-      summaryValue:
-          "$_currencySymbol${(_periodIncome - _periodExpense).toStringAsFixed(2)}",
+      summaryValue: "$_currencySymbol${(_periodIncome - _periodExpense).toStringAsFixed(2)}",
       additionalSummary: {
         'Period': _selectedDuration,
         'Total Bills': '$_periodSaleCount',
@@ -2279,11 +1747,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kGreyBg,
-      appBar: _buildModernAppBar(
-        "Business Summary",
-        widget.onBack,
-        onDownload: () => _downloadPdf(context),
-      ),
+      appBar: _buildModernAppBar("Business Summary", widget.onBack, onDownload: () => _downloadPdf(context)),
       body: FutureBuilder<List<Stream<QuerySnapshot>>>(
         future: Future.wait([
           _firestoreService.getCollectionStream('sales'),
@@ -2292,12 +1756,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         ]),
         builder: (context, streamsSnapshot) {
           if (!streamsSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
 
           final salesStream = streamsSnapshot.data![0];
@@ -2313,19 +1772,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   return StreamBuilder<QuerySnapshot>(
                     stream: stockPurchaseStream,
                     builder: (context, stockSnap) {
-                      if (!salesSnap.hasData ||
-                          !expenseSnap.hasData ||
-                          !stockSnap.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: kPrimaryColor,
-                          ),
-                        );
+                      if (!salesSnap.hasData || !expenseSnap.hasData || !stockSnap.hasData) {
+                        return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
                       }
 
-                      double periodRevenue = 0,
-                          periodExpenseKpi = 0,
-                          periodTax = 0;
+                      double periodRevenue = 0, periodExpenseKpi = 0, periodTax = 0;
                       double totalOnline = 0, totalCash = 0;
                       double periodIncome = 0, periodExpense = 0;
                       int periodSaleCount = 0;
@@ -2337,42 +1788,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       // --- Process Sales ---
                       for (var doc in salesSnap.data!.docs) {
                         final data = doc.data() as Map<String, dynamic>;
-                        double amount =
-                            double.tryParse(data['total'].toString()) ?? 0.0;
-                        double tax =
-                            double.tryParse(
-                              data['totalTax']?.toString() ?? '0',
-                            ) ??
-                            0.0;
+                        double amount = double.tryParse(data['total'].toString()) ?? 0.0;
+                        double tax = double.tryParse(data['totalTax']?.toString() ?? '0') ?? 0.0;
                         if (tax == 0) {
-                          tax =
-                              double.tryParse(
-                                data['taxAmount']?.toString() ??
-                                    data['tax']?.toString() ??
-                                    '0',
-                              ) ??
-                              0.0;
+                          tax = double.tryParse(data['taxAmount']?.toString() ?? data['tax']?.toString() ?? '0') ?? 0.0;
                         }
 
                         DateTime? dt;
-                        if (data['timestamp'] != null)
-                          dt = (data['timestamp'] as Timestamp).toDate();
-                        else if (data['date'] != null)
-                          dt = DateTime.tryParse(data['date'].toString());
-                        String mode = (data['paymentMode'] ?? '')
-                            .toString()
-                            .toLowerCase();
+                        if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                        else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                        String mode = (data['paymentMode'] ?? '').toString().toLowerCase();
 
                         // Check if bill is cancelled, returned or edited
-                        final String status = (data['status'] ?? '')
-                            .toString()
-                            .toLowerCase();
+                        final String status = (data['status'] ?? '').toString().toLowerCase();
                         final bool isCancelled = status == 'cancelled';
-                        final bool isReturned =
-                            status == 'returned' ||
-                            data['hasBeenReturned'] == true;
-                        final bool isEdited =
-                            status == 'edited' || data['hasBeenEdited'] == true;
+                        final bool isReturned = status == 'returned' || data['hasBeenReturned'] == true;
+                        final bool isEdited = status == 'edited' || data['hasBeenEdited'] == true;
                         final bool isRefunded = isCancelled || isReturned;
 
                         if (dt != null) {
@@ -2382,29 +1813,15 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               periodTax += tax;
                               periodSaleCount++;
                               periodIncome += amount;
-                              weekRevenue[dt.day] =
-                                  (weekRevenue[dt.day] ?? 0) + amount;
+                              weekRevenue[dt.day] = (weekRevenue[dt.day] ?? 0) + amount;
 
                               // Handle Split payments separately
                               if (mode == 'split') {
-                                double splitCash =
-                                    double.tryParse(
-                                      data['cashReceived_split']?.toString() ??
-                                          '0',
-                                    ) ??
-                                    0;
-                                double splitOnline =
-                                    double.tryParse(
-                                      data['onlineReceived_split']
-                                              ?.toString() ??
-                                          '0',
-                                    ) ??
-                                    0;
+                                double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                                double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
                                 totalCash += splitCash;
                                 totalOnline += splitOnline;
-                              } else if (mode.contains('online') ||
-                                  mode.contains('upi') ||
-                                  mode.contains('card')) {
+                              } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
                                 totalOnline += amount;
                               } else if (!mode.contains('credit')) {
                                 // Cash payment (exclude credit from cash)
@@ -2421,20 +1838,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       // --- Process Expenses ---
                       for (var doc in expenseSnap.data!.docs) {
                         final data = doc.data() as Map<String, dynamic>;
-                        double amount =
-                            double.tryParse(data['amount'].toString()) ?? 0.0;
+                        double amount = double.tryParse(data['amount'].toString()) ?? 0.0;
                         DateTime? dt;
-                        if (data['timestamp'] != null)
-                          dt = (data['timestamp'] as Timestamp).toDate();
-                        else if (data['date'] != null)
-                          dt = DateTime.tryParse(data['date'].toString());
+                        if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                        else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                         if (dt != null) {
                           if (_isInPeriod(dt)) {
                             periodExpenseKpi += amount;
                             periodExpense += amount;
-                            weekExpense[dt.day] =
-                                (weekExpense[dt.day] ?? 0) + amount;
+                            weekExpense[dt.day] = (weekExpense[dt.day] ?? 0) + amount;
                           }
                         }
                       }
@@ -2455,17 +1868,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                         slivers: [
                           // Executive KPI Ribbon
                           SliverToBoxAdapter(
-                            child: _buildExecutiveRibbon(
-                              periodRevenue,
-                              periodSaleCount,
-                            ),
+                            child: _buildExecutiveRibbon(periodRevenue, periodSaleCount),
                           ),
 
                           SliverPadding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             sliver: SliverList(
                               delegate: SliverChildListDelegate([
                                 // 2x2 Matrix for daily stats
@@ -2473,31 +1880,16 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                 const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: _buildMetricTile(
-                                        "Expenses",
-                                        periodExpenseKpi,
-                                        kExpenseRed,
-                                        Icons.outbox_rounded,
-                                      ),
-                                    ),
+                                    Expanded(child: _buildMetricTile("Expenses", periodExpenseKpi, kExpenseRed, Icons.outbox_rounded)),
                                     const SizedBox(width: 8),
-                                    Expanded(
-                                      child: _buildMetricTile(
-                                        "Tax Coll.",
-                                        periodTax,
-                                        kWarningOrange,
-                                        Icons.description_outlined,
-                                      ),
-                                    ),
+                                    Expanded(child: _buildMetricTile("Tax Coll.", periodTax, kWarningOrange, Icons.description_outlined)),
                                   ],
                                 ),
                                 const SizedBox(height: 24),
 
                                 // Analytics Trend Section
                                 Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     _buildSectionHeader("Financial Velocity"),
                                     _buildDurationFilter(),
@@ -2505,16 +1897,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                 ),
                                 const SizedBox(height: 10),
                                 _buildChartCard(
-                                  child:
-                                      (weekRevenue.isNotEmpty ||
-                                          weekExpense.isNotEmpty)
-                                      ? _buildCombinedBarChart(
-                                          weekRevenue,
-                                          weekExpense,
-                                        )
-                                      : const EmptyStateWidget(
-                                          message: "No data found",
-                                        ),
+                                  child: (weekRevenue.isNotEmpty || weekExpense.isNotEmpty)
+                                      ? _buildCombinedBarChart(weekRevenue, weekExpense)
+                                      : const EmptyStateWidget(message: "No data found"),
                                 ),
                                 const SizedBox(height: 20),
 
@@ -2522,38 +1907,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                                 _buildSectionHeader("Settlement Channels"),
                                 const SizedBox(height: 10),
                                 _buildChartCard(
-                                  child:
-                                      (totalCash + totalOnline + totalRefunds) >
-                                          0
-                                      ? _buildDonutChart(
-                                          totalCash,
-                                          totalOnline,
-                                          totalRefunds,
-                                        )
-                                      : const EmptyStateWidget(
-                                          message: "No data found",
-                                        ),
+                                  child: (totalCash + totalOnline + totalRefunds) > 0
+                                      ? _buildDonutChart(totalCash, totalOnline, totalRefunds)
+                                      : const EmptyStateWidget(message: "No data found"),
                                 ),
                                 const SizedBox(height: 20),
 
                                 // Period Trends
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: _buildCompactTrendTile(
-                                        "Total Income",
-                                        periodIncome,
-                                        true,
-                                      ),
-                                    ),
+                                    Expanded(child: _buildCompactTrendTile("Total Income", periodIncome, true)),
                                     const SizedBox(width: 10),
-                                    Expanded(
-                                      child: _buildCompactTrendTile(
-                                        "Total Expense",
-                                        periodExpense,
-                                        false,
-                                      ),
-                                    ),
+                                    Expanded(child: _buildCompactTrendTile("Total Expense", periodExpense, false)),
                                   ],
                                 ),
                                 const SizedBox(height: 30),
@@ -2593,9 +1958,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -2603,25 +1966,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Revenue",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Revenue", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                "$_currencySymbol${revenue.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("$_currencySymbol${revenue.toStringAsFixed(2)}", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Container(
@@ -2633,22 +1980,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
             child: Column(
               children: [
-                Text(
-                  "$count",
-                  style: const TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                const Text(
-                  "Orders",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text("$count", style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 16)),
+                const Text("Orders", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -2657,12 +1990,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildMetricTile(
-    String label,
-    double value,
-    Color color,
-    IconData icon,
-  ) {
+  Widget _buildMetricTile(String label, double value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2674,10 +2002,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 12),
@@ -2685,22 +2010,8 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "${value.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
+                Text("${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               ],
             ),
           ),
@@ -2733,28 +2044,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         value: _selectedDuration,
         underline: const SizedBox(),
         icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 14),
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.bold,
-          color: kPrimaryColor,
-        ),
-        items: [
-          'Today',
-          'Yesterday',
-          'Last 7 Days or Last Week',
-          'Last 30 Days',
-          'This Month',
-          'Last 3 Months',
-        ].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: kPrimaryColor),
+        items: ['Today', 'Yesterday', 'Last 7 Days or Last Week', 'Last 30 Days', 'This Month', 'Last 3 Months'].map((v) => DropdownMenuItem(value: v, child: Text(v))).toList(),
         onChanged: (v) => setState(() => _selectedDuration = v!),
       ),
     );
   }
 
-  Widget _buildCombinedBarChart(
-    Map<int, double> revenue,
-    Map<int, double> expenses,
-  ) {
+  Widget _buildCombinedBarChart(Map<int, double> revenue, Map<int, double> expenses) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2770,49 +2067,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           height: 140,
           child: BarChart(
             BarChartData(
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) => FlLine(
-                  color: kBorderColor.withValues(alpha: 0.15),
-                  strokeWidth: 1,
-                ),
-              ),
+              gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withValues(alpha: 0.15), strokeWidth: 1)),
               borderData: FlBorderData(show: false),
               titlesData: FlTitlesData(
-                topTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
-                ),
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
                     reservedSize: 30,
-                    getTitlesWidget: (v, m) => Text(
-                      v >= 1000
-                          ? '${(v / 1000).toStringAsFixed(0)}k'
-                          : v.toStringAsFixed(0),
-                      style: const TextStyle(
-                        fontSize: 8,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    getTitlesWidget: (v, m) => Text(v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0), style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold)),
                   ),
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    getTitlesWidget: (v, m) => Text(
-                      v.toInt().toString(),
-                      style: const TextStyle(
-                        fontSize: 8,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    getTitlesWidget: (v, m) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold)),
                   ),
                 ),
               ),
@@ -2840,42 +2110,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     sectionsSpace: 3,
                     centerSpaceRadius: 30,
                     sections: [
-                      if (cash > 0)
-                        PieChartSectionData(
-                          color: kChartGreen,
-                          value: cash,
-                          title: '',
-                          radius: 15,
-                        ),
-                      if (online > 0)
-                        PieChartSectionData(
-                          color: kChartBlue,
-                          value: online,
-                          title: '',
-                          radius: 15,
-                        ),
-                      if (refunds > 0)
-                        PieChartSectionData(
-                          color: kChartPurple,
-                          value: refunds,
-                          title: '',
-                          radius: 15,
-                        ),
-                      if (total == 0)
-                        PieChartSectionData(
-                          color: kBorderColor,
-                          value: 1,
-                          title: '',
-                          radius: 15,
-                        ),
+                      if (cash > 0) PieChartSectionData(color: kChartGreen, value: cash, title: '', radius: 15),
+                      if (online > 0) PieChartSectionData(color: kChartBlue, value: online, title: '', radius: 15),
+                      if (refunds > 0) PieChartSectionData(color: kChartPurple, value: refunds, title: '', radius: 15),
+                      if (total == 0) PieChartSectionData(color: kBorderColor, value: 1, title: '', radius: 15),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.pie_chart_outline_rounded,
-                  color: kTextSecondary,
-                  size: 18,
-                ),
+                const Icon(Icons.pie_chart_outline_rounded, color: kTextSecondary, size: 18),
               ],
             ),
           ),
@@ -2903,26 +2145,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildLegendRow(Color color, String label, double value) {
     return Row(
       children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Text(
-          "${value.toStringAsFixed(0)}",
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900),
-        ),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 14, color: kTextSecondary, fontWeight: FontWeight.bold))),
+        Text("${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
       ],
     );
   }
@@ -2930,23 +2156,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildSmallLegend(Color color, String label) {
     return Row(
       children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(1),
-          ),
-        ),
+        Container(width: 6, height: 6, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1))),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: kTextSecondary,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kTextSecondary)),
       ],
     );
   }
@@ -2965,41 +2177,18 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Icon(
-                isPositive
-                    ? Icons.trending_up_rounded
-                    : Icons.trending_down_rounded,
-                size: 14,
-                color: isPositive ? kIncomeGreen : kExpenseRed,
-              ),
+              Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold)),
+              Icon(isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded, size: 14, color: isPositive ? kIncomeGreen : kExpenseRed),
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            "${value.toStringAsFixed(0)}",
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.5,
-            ),
-          ),
+          Text("${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
         ],
       ),
     );
   }
 
-  List<BarChartGroupData> _generateChartGroups(
-    Map<int, double> revenue,
-    Map<int, double> expenses,
-  ) {
+  List<BarChartGroupData> _generateChartGroups(Map<int, double> revenue, Map<int, double> expenses) {
     List<int> days = revenue.keys.toList()..addAll(expenses.keys.toList());
     days = days.toSet().toList()..sort();
     return days.map((day) {
@@ -3057,22 +2246,11 @@ class _DayBookPageState extends State<DayBookPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
-
   String _txnFilter = 'All';
-  final List<String> _txnFilterOptions = [
-    'All',
-    'Cash',
-    'Online',
-    'Split',
-    'Credit',
-  ];
+  final List<String> _txnFilterOptions = ['All', 'Cash', 'Online', 'Split', 'Credit'];
 
   // Payment mode colors for differentiation
   static const Map<String, Color> _paymentModeColors = {
@@ -3107,10 +2285,7 @@ class _DayBookPageState extends State<DayBookPage> {
   void _downloadPdf(BuildContext context) {
     if (_dayBookData.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No data available to download'),
-          backgroundColor: Colors.orange,
-        ),
+        const SnackBar(content: Text('No data available to download'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -3140,8 +2315,7 @@ class _DayBookPageState extends State<DayBookPage> {
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
-      reportTitle:
-          'Executive Daybook - ${DateFormat('dd MMMM yyyy').format(_selectedDate)}',
+      reportTitle: 'Executive Daybook - ${DateFormat('dd MMMM yyyy').format(_selectedDate)}',
       headers: ['Particulars', 'Time', 'Name', 'Payment', 'Amount'],
       rows: rows,
       summaryTitle: "Day Summary",
@@ -3149,23 +2323,21 @@ class _DayBookPageState extends State<DayBookPage> {
       additionalSummary: {
         'Total Trans.': '${_dayBookData.length}',
         'Date': DateFormat('dd MMM yyyy').format(_selectedDate),
-        'Status': 'Closed',
+        'Status': 'Closed'
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final String selectedDateStr = DateFormat(
-      'yyyy-MM-dd',
-    ).format(_selectedDate);
+    final String selectedDateStr = DateFormat('yyyy-MM-dd').format(_selectedDate);
 
     return Scaffold(
       backgroundColor: kGreyBg,
       appBar: _buildModernAppBar(
-        "DayBook",
-        widget.onBack,
-        onDownload: () => _downloadPdf(context),
+          "DayBook",
+          widget.onBack,
+          onDownload: () => _downloadPdf(context)
       ),
       body: FutureBuilder<List<Stream<QuerySnapshot>>>(
         future: Future.wait([
@@ -3178,12 +2350,7 @@ class _DayBookPageState extends State<DayBookPage> {
         ]),
         builder: (context, streamsSnapshot) {
           if (!streamsSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamsSnapshot.data![0],
@@ -3203,708 +2370,412 @@ class _DayBookPageState extends State<DayBookPage> {
                               return StreamBuilder<QuerySnapshot>(
                                 stream: streamsSnapshot.data![5],
                                 builder: (context, purchasePaymentsSnapshot) {
-                                  if (!salesSnapshot.hasData ||
-                                      !expenseSnapshot.hasData ||
-                                      !purchaseSnapshot.hasData ||
-                                      !creditsSnapshot.hasData ||
-                                      !purchaseCreditsSnapshot.hasData ||
-                                      !purchasePaymentsSnapshot.hasData) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(
-                                        color: kPrimaryColor,
-                                      ),
-                                    );
+                              if (!salesSnapshot.hasData || !expenseSnapshot.hasData || !purchaseSnapshot.hasData || !creditsSnapshot.hasData || !purchaseCreditsSnapshot.hasData || !purchasePaymentsSnapshot.hasData) {
+                                return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+                              }
+
+                              // Filter data for selected date
+                              final filteredSales = salesSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              final filteredExpenses = expenseSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              final filteredPurchases = purchaseSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              // Filter credits for selected date
+                              final filteredCredits = creditsSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              // Filter purchase credits for selected date
+                              final filteredPurchaseCredits = purchaseCreditsSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              // Filter purchase credit settlements (from Credit Tracker) for selected date
+                              final filteredPurchasePayments = purchasePaymentsSnapshot.data!.docs.where((doc) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                DateTime? dt;
+                                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                if (dt == null) return false;
+                                return DateFormat('yyyy-MM-dd').format(dt) == selectedDateStr;
+                              }).toList();
+
+                              // Calculate comprehensive stats
+                              int totalSalesCount = 0, totalExpensesCount = 0, totalPurchasesCount = 0;
+                              double totalSalesAmount = 0, totalExpensesAmount = 0, totalPurchasesAmount = 0;
+                              double saleCreditGiven = 0, saleCreditReceived = 0;
+                              double purchaseCreditAdded = 0, purchaseCreditPaid = 0;
+                              double additionCredit = 0; // Manual credit additions from customer profile
+
+                              // Payment breakdown
+                              double paymentOutCash = 0, paymentOutOnline = 0;
+                              double paymentInCash = 0, paymentInOnline = 0;
+
+                              // Build transaction rows
+                              List<Map<String, dynamic>> allTransactions = [];
+                              final Set<String> seenTxnIds = {}; // prevent duplicates
+
+                              // Process Sales
+                              for (var doc in filteredSales) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final String status = (data['status'] ?? '').toString().toLowerCase();
+                                if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
+                                  continue;
+                                }
+
+                                // Deduplicate by doc ID
+                                if (seenTxnIds.contains(doc.id)) continue;
+                                seenTxnIds.add(doc.id);
+
+                                double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+                                String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
+
+                                totalSalesCount++;
+                                totalSalesAmount += total;
+
+                                // Track cash in — handle each payment mode correctly
+                                if (mode.contains('split')) {
+                                  // Split: read individual cash & online amounts saved in Firestore
+                                  final splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                                  final splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
+                                  final splitCredit = double.tryParse(data['creditIssued_split']?.toString() ?? '0') ?? 0;
+                                  paymentInCash += splitCash;
+                                  paymentInOnline += splitOnline;
+                                  if (splitCredit > 0) saleCreditGiven += splitCredit;
+                                } else if (mode.contains('cash')) {
+                                  paymentInCash += total;
+                                } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                                  paymentInOnline += total;
+                                } else if (mode.contains('credit')) {
+                                  // Credit sale — use creditAmount (new field) or derive from partials
+                                  final partialCash = double.tryParse(data['cashReceived_partial']?.toString() ?? '0') ?? 0;
+                                  double creditIssued;
+                                  if (data['creditAmount'] != null) {
+                                    // New field — always present for credit sales
+                                    creditIssued = (double.tryParse(data['creditAmount'].toString()) ?? total);
+                                  } else if (data['creditIssued_partial'] != null) {
+                                    // Partial credit sale (old format)
+                                    creditIssued = (double.tryParse(data['creditIssued_partial'].toString()) ?? (total - partialCash));
+                                  } else {
+                                    // Full credit sale (old format — no partial fields saved)
+                                    creditIssued = total;
+                                  }
+                                  if (partialCash > 0) paymentInCash += partialCash;
+                                  saleCreditGiven += creditIssued;
+                                }
+
+                                // cashIn = actual cash/online received (not the credit portion)
+                                double cashInAmount;
+                                if (mode.contains('split')) {
+                                  final splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                                  final splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
+                                  cashInAmount = splitCash + splitOnline;
+                                } else if (mode.contains('credit')) {
+                                  cashInAmount = double.tryParse(data['cashReceived_partial']?.toString() ?? '0') ?? 0;
+                                } else {
+                                  cashInAmount = total;
+                                }
+
+                                allTransactions.add({
+                                  'category': mode.contains('credit') ? 'Sale On Credit' : 'Sale',
+                                  'particulars': data['invoiceNumber']?.toString() ?? 'N/A',
+                                  'name': data['customerName']?.toString() ?? 'Guest',
+                                  'total': total,
+                                  'cashIn': cashInAmount,
+                                  'cashOut': 0.0,
+                                  'timestamp': data['timestamp'],
+                                  'paymentMode': mode,
+                                });
+                              }
+
+                              // Process Credits (for Sale Credit Received and Manual Additions)
+                              for (var doc in filteredCredits) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final type = (data['type'] ?? '').toString().toLowerCase();
+                                final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                                final method = (data['method'] ?? 'Cash').toString().toLowerCase();
+
+                                // Skip entries that are payment-log entries created alongside a sale
+                                // ('sale_payment' = Cash/Online sale log, 'credit_sale' = credit sale log)
+                                // These are already fully counted from the 'sales' collection above.
+                                if (type == 'sale_payment' || type == 'credit_sale') continue;
+
+                                // 'payment_received', 'credit_payment', 'settlement' = customer repaid credit
+                                if (type.contains('payment_received') || type.contains('credit_payment') || type == 'settlement') {
+                                  // Customer paid back credit
+                                  saleCreditReceived += amount;
+
+                                  // Track payment method
+                                  if (method.contains('cash')) {
+                                    paymentInCash += amount;
+                                  } else if (method.contains('online') || method.contains('upi') || method.contains('card')) {
+                                    paymentInOnline += amount;
                                   }
 
-                                  // Filter data for selected date
-                                  final filteredSales = salesSnapshot.data!.docs
-                                      .where((doc) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        DateTime? dt;
-                                        if (data['timestamp'] != null)
-                                          dt = (data['timestamp'] as Timestamp)
-                                              .toDate();
-                                        else if (data['date'] != null)
-                                          dt = DateTime.tryParse(
-                                            data['date'].toString(),
-                                          );
-                                        if (dt == null) return false;
-                                        return DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(dt) ==
-                                            selectedDateStr;
-                                      })
-                                      .toList();
+                                  allTransactions.add({
+                                    'category': 'Credit Collected',
+                                    'particulars': data['invoiceNumber']?.toString() ?? 'Payment',
+                                    'name': data['customerName']?.toString() ?? 'Customer',
+                                    'total': amount,
+                                    'cashIn': amount,
+                                    'cashOut': 0.0,
+                                    'timestamp': data['timestamp'],
+                                    'paymentMode': method,
+                                  });
+                                } else if (type == 'add_credit') {
+                                  // Manual credit addition from customer profile (store gives credit OUT to customer)
+                                  additionCredit += amount;
 
-                                  final filteredExpenses = expenseSnapshot
-                                      .data!
-                                      .docs
-                                      .where((doc) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        DateTime? dt;
-                                        if (data['timestamp'] != null)
-                                          dt = (data['timestamp'] as Timestamp)
-                                              .toDate();
-                                        else if (data['date'] != null)
-                                          dt = DateTime.tryParse(
-                                            data['date'].toString(),
-                                          );
-                                        if (dt == null) return false;
-                                        return DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(dt) ==
-                                            selectedDateStr;
-                                      })
-                                      .toList();
-
-                                  final filteredPurchases = purchaseSnapshot
-                                      .data!
-                                      .docs
-                                      .where((doc) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        DateTime? dt;
-                                        if (data['timestamp'] != null)
-                                          dt = (data['timestamp'] as Timestamp)
-                                              .toDate();
-                                        else if (data['date'] != null)
-                                          dt = DateTime.tryParse(
-                                            data['date'].toString(),
-                                          );
-                                        if (dt == null) return false;
-                                        return DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(dt) ==
-                                            selectedDateStr;
-                                      })
-                                      .toList();
-
-                                  // Filter credits for selected date
-                                  final filteredCredits = creditsSnapshot
-                                      .data!
-                                      .docs
-                                      .where((doc) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        DateTime? dt;
-                                        if (data['timestamp'] != null)
-                                          dt = (data['timestamp'] as Timestamp)
-                                              .toDate();
-                                        else if (data['date'] != null)
-                                          dt = DateTime.tryParse(
-                                            data['date'].toString(),
-                                          );
-                                        if (dt == null) return false;
-                                        return DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(dt) ==
-                                            selectedDateStr;
-                                      })
-                                      .toList();
-
-                                  // Filter purchase credits for selected date
-                                  final filteredPurchaseCredits =
-                                      purchaseCreditsSnapshot.data!.docs.where((
-                                        doc,
-                                      ) {
-                                        final data =
-                                            doc.data() as Map<String, dynamic>;
-                                        DateTime? dt;
-                                        if (data['timestamp'] != null)
-                                          dt = (data['timestamp'] as Timestamp)
-                                              .toDate();
-                                        else if (data['date'] != null)
-                                          dt = DateTime.tryParse(
-                                            data['date'].toString(),
-                                          );
-                                        if (dt == null) return false;
-                                        return DateFormat(
-                                              'yyyy-MM-dd',
-                                            ).format(dt) ==
-                                            selectedDateStr;
-                                      }).toList();
-
-                                  // Filter purchase credit settlements (from Credit Tracker) for selected date
-                                  final filteredPurchasePayments =
-                                      purchasePaymentsSnapshot.data!.docs.where(
-                                        (doc) {
-                                          final data =
-                                              doc.data()
-                                                  as Map<String, dynamic>;
-                                          DateTime? dt;
-                                          if (data['timestamp'] != null)
-                                            dt =
-                                                (data['timestamp'] as Timestamp)
-                                                    .toDate();
-                                          else if (data['date'] != null)
-                                            dt = DateTime.tryParse(
-                                              data['date'].toString(),
-                                            );
-                                          if (dt == null) return false;
-                                          return DateFormat(
-                                                'yyyy-MM-dd',
-                                              ).format(dt) ==
-                                              selectedDateStr;
-                                        },
-                                      ).toList();
-
-                                  // Calculate comprehensive stats
-                                  int totalSalesCount = 0,
-                                      totalExpensesCount = 0,
-                                      totalPurchasesCount = 0;
-                                  double totalSalesAmount = 0,
-                                      totalExpensesAmount = 0,
-                                      totalPurchasesAmount = 0;
-                                  double saleCreditGiven = 0,
-                                      saleCreditReceived = 0;
-                                  double purchaseCreditAdded = 0,
-                                      purchaseCreditPaid = 0;
-                                  double additionCredit =
-                                      0; // Manual credit additions from customer profile
-
-                                  // Payment breakdown
-                                  double paymentOutCash = 0,
-                                      paymentOutOnline = 0;
-                                  double paymentInCash = 0, paymentInOnline = 0;
-
-                                  // Build transaction rows
-                                  List<Map<String, dynamic>> allTransactions =
-                                      [];
-                                  final Set<String> seenTxnIds =
-                                      {}; // prevent duplicates
-
-                                  // Process Sales
-                                  for (var doc in filteredSales) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    final String status = (data['status'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    if (status == 'cancelled' ||
-                                        status == 'returned' ||
-                                        data['hasBeenReturned'] == true) {
-                                      continue;
-                                    }
-
-                                    // Deduplicate by doc ID
-                                    if (seenTxnIds.contains(doc.id)) continue;
-                                    seenTxnIds.add(doc.id);
-
-                                    double total =
-                                        double.tryParse(
-                                          data['total']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    String mode =
-                                        (data['paymentMode'] ?? 'Cash')
-                                            .toString()
-                                            .toLowerCase();
-
-                                    totalSalesCount++;
-                                    totalSalesAmount += total;
-
-                                    // Track cash in — handle each payment mode correctly
-                                    if (mode.contains('split')) {
-                                      // Split: read individual cash & online amounts saved in Firestore
-                                      final splitCash =
-                                          double.tryParse(
-                                            data['cashReceived_split']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      final splitOnline =
-                                          double.tryParse(
-                                            data['onlineReceived_split']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      final splitCredit =
-                                          double.tryParse(
-                                            data['creditIssued_split']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      paymentInCash += splitCash;
-                                      paymentInOnline += splitOnline;
-                                      if (splitCredit > 0)
-                                        saleCreditGiven += splitCredit;
-                                    } else if (mode.contains('cash')) {
-                                      paymentInCash += total;
-                                    } else if (mode.contains('online') ||
-                                        mode.contains('upi') ||
-                                        mode.contains('card')) {
-                                      paymentInOnline += total;
-                                    } else if (mode.contains('credit')) {
-                                      // Credit sale — use creditAmount (new field) or derive from partials
-                                      final partialCash =
-                                          double.tryParse(
-                                            data['cashReceived_partial']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      double creditIssued;
-                                      if (data['creditAmount'] != null) {
-                                        // New field — always present for credit sales
-                                        creditIssued =
-                                            (double.tryParse(
-                                              data['creditAmount'].toString(),
-                                            ) ??
-                                            total);
-                                      } else if (data['creditIssued_partial'] !=
-                                          null) {
-                                        // Partial credit sale (old format)
-                                        creditIssued =
-                                            (double.tryParse(
-                                              data['creditIssued_partial']
-                                                  .toString(),
-                                            ) ??
-                                            (total - partialCash));
-                                      } else {
-                                        // Full credit sale (old format — no partial fields saved)
-                                        creditIssued = total;
-                                      }
-                                      if (partialCash > 0)
-                                        paymentInCash += partialCash;
-                                      saleCreditGiven += creditIssued;
-                                    }
-
-                                    // cashIn = actual cash/online received (not the credit portion)
-                                    double cashInAmount;
-                                    if (mode.contains('split')) {
-                                      final splitCash =
-                                          double.tryParse(
-                                            data['cashReceived_split']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      final splitOnline =
-                                          double.tryParse(
-                                            data['onlineReceived_split']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                      cashInAmount = splitCash + splitOnline;
-                                    } else if (mode.contains('credit')) {
-                                      cashInAmount =
-                                          double.tryParse(
-                                            data['cashReceived_partial']
-                                                    ?.toString() ??
-                                                '0',
-                                          ) ??
-                                          0;
-                                    } else {
-                                      cashInAmount = total;
-                                    }
-
-                                    allTransactions.add({
-                                      'category': mode.contains('credit')
-                                          ? 'Sale On Credit'
-                                          : 'Sale',
-                                      'particulars':
-                                          data['invoiceNumber']?.toString() ??
-                                          'N/A',
-                                      'name':
-                                          data['customerName']?.toString() ??
-                                          'Guest',
-                                      'total': total,
-                                      'cashIn': cashInAmount,
-                                      'cashOut': 0.0,
-                                      'timestamp': data['timestamp'],
-                                      'paymentMode': mode,
-                                    });
+                                  // Track as Money OUT — store is giving credit to customer
+                                  if (method.contains('cash')) {
+                                    paymentOutCash += amount;
+                                  } else if (method.contains('online') || method.contains('upi') || method.contains('card')) {
+                                    paymentOutOnline += amount;
                                   }
 
-                                  // Process Credits (for Sale Credit Received and Manual Additions)
-                                  for (var doc in filteredCredits) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    final type = (data['type'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    final amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    final method = (data['method'] ?? 'Cash')
-                                        .toString()
-                                        .toLowerCase();
+                                  allTransactions.add({
+                                    'category': 'Manual Credit',
+                                    'particulars': data['note']?.toString() ?? 'Manual Credit Entry',
+                                    'name': data['customerName']?.toString() ?? 'Customer',
+                                    'total': amount,
+                                    'cashIn': 0.0,
+                                    'cashOut': amount,
+                                    'timestamp': data['timestamp'],
+                                    'paymentMode': method.isNotEmpty ? method : 'credit',
+                                  });
+                                }
+                              }
 
-                                    // Skip entries that are payment-log entries created alongside a sale
-                                    // ('sale_payment' = Cash/Online sale log, 'credit_sale' = credit sale log)
-                                    // These are already fully counted from the 'sales' collection above.
-                                    if (type == 'sale_payment' ||
-                                        type == 'credit_sale')
-                                      continue;
+                              // Process Purchase Credits
+                              for (var doc in filteredPurchaseCredits) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final type = (data['type'] ?? '').toString().toLowerCase();
+                                final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                                final status = (data['status'] ?? '').toString().toLowerCase();
+                                final paidAmount = double.tryParse(data['paidAmount']?.toString() ?? '0') ?? 0;
 
-                                    // 'payment_received', 'credit_payment', 'settlement' = customer repaid credit
-                                    if (type.contains('payment_received') ||
-                                        type.contains('credit_payment') ||
-                                        type == 'settlement') {
-                                      // Customer paid back credit
-                                      saleCreditReceived += amount;
+                                // Deduplicate by doc ID
+                                if (seenTxnIds.contains(doc.id)) continue;
+                                seenTxnIds.add(doc.id);
 
-                                      // Track payment method
-                                      if (method.contains('cash')) {
-                                        paymentInCash += amount;
-                                      } else if (method.contains('online') ||
-                                          method.contains('upi') ||
-                                          method.contains('card')) {
-                                        paymentInOnline += amount;
-                                      }
+                                if (type.contains('purchase') || type.contains('expense') || type.isEmpty || doc.reference.path.contains('purchaseCreditNotes')) {
+                                  // Purchase on credit
+                                  purchaseCreditAdded += amount;
 
-                                      allTransactions.add({
-                                        'category': 'Credit Collected',
-                                        'particulars':
-                                            data['invoiceNumber']?.toString() ??
-                                            'Payment',
-                                        'name':
-                                            data['customerName']?.toString() ??
-                                            'Customer',
-                                        'total': amount,
-                                        'cashIn': amount,
-                                        'cashOut': 0.0,
-                                        'timestamp': data['timestamp'],
-                                        'paymentMode': method,
-                                      });
-                                    } else if (type == 'add_credit') {
-                                      // Manual credit addition from customer profile (store gives credit OUT to customer)
-                                      additionCredit += amount;
-
-                                      // Track as Money OUT — store is giving credit to customer
-                                      if (method.contains('cash')) {
-                                        paymentOutCash += amount;
-                                      } else if (method.contains('online') ||
-                                          method.contains('upi') ||
-                                          method.contains('card')) {
-                                        paymentOutOnline += amount;
-                                      }
-
-                                      allTransactions.add({
-                                        'category': 'Manual Credit',
-                                        'particulars':
-                                            data['note']?.toString() ??
-                                            'Manual Credit Entry',
-                                        'name':
-                                            data['customerName']?.toString() ??
-                                            'Customer',
-                                        'total': amount,
-                                        'cashIn': 0.0,
-                                        'cashOut': amount,
-                                        'timestamp': data['timestamp'],
-                                        'paymentMode': method.isNotEmpty
-                                            ? method
-                                            : 'credit',
-                                      });
-                                    }
-                                  }
-
-                                  // Process Purchase Credits
-                                  for (var doc in filteredPurchaseCredits) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    final type = (data['type'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    final amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    final status = (data['status'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    final paidAmount =
-                                        double.tryParse(
-                                          data['paidAmount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-
-                                    // Deduplicate by doc ID
-                                    if (seenTxnIds.contains(doc.id)) continue;
-                                    seenTxnIds.add(doc.id);
-
-                                    if (type.contains('purchase') ||
-                                        type.contains('expense') ||
-                                        type.isEmpty ||
-                                        doc.reference.path.contains(
-                                          'purchaseCreditNotes',
-                                        )) {
-                                      // Purchase on credit
-                                      purchaseCreditAdded += amount;
-
-                                      // If there's a paid amount, track it as purchase credit paid
-                                      if (paidAmount > 0) {
-                                        purchaseCreditPaid += paidAmount;
-                                        paymentOutCash +=
-                                            paidAmount; // Assume cash payment
-
-                                        allTransactions.add({
-                                          'category': 'Purchase Credit Paid',
-                                          'particulars':
-                                              data['invoiceNumber']
-                                                  ?.toString() ??
-                                              data['creditNoteNumber']
-                                                  ?.toString() ??
-                                              '--',
-                                          'name':
-                                              data['supplierName']
-                                                  ?.toString() ??
-                                              'Supplier',
-                                          'total': paidAmount,
-                                          'cashIn': 0.0,
-                                          'cashOut': paidAmount,
-                                          'timestamp': data['timestamp'],
-                                          'paymentMode': 'cash',
-                                        });
-                                      }
-
-                                      if (amount > paidAmount) {
-                                        allTransactions.add({
-                                          'category': 'Purchase Credit',
-                                          'particulars':
-                                              data['invoiceNumber']
-                                                  ?.toString() ??
-                                              data['creditNoteNumber']
-                                                  ?.toString() ??
-                                              '--',
-                                          'name':
-                                              data['supplierName']
-                                                  ?.toString() ??
-                                              'Supplier',
-                                          'total': amount - paidAmount,
-                                          'cashIn': 0.0,
-                                          'cashOut': 0.0,
-                                          'timestamp': data['timestamp'],
-                                          'paymentMode': 'credit',
-                                        });
-                                      }
-                                    }
-                                  }
-
-                                  // Process Purchase Credit Settlements (from Credit Tracker "Settle" action)
-                                  for (var doc in filteredPurchasePayments) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    final amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    final mode = (data['paymentMode'] ?? 'Cash')
-                                        .toString()
-                                        .toLowerCase();
-
-                                    if (seenTxnIds.contains(doc.id)) continue;
-                                    seenTxnIds.add(doc.id);
-
-                                    purchaseCreditPaid += amount;
-
-                                    if (mode.contains('cash')) {
-                                      paymentOutCash += amount;
-                                    } else if (mode.contains('online') ||
-                                        mode.contains('upi') ||
-                                        mode.contains('card')) {
-                                      paymentOutOnline += amount;
-                                    }
+                                  // If there's a paid amount, track it as purchase credit paid
+                                  if (paidAmount > 0) {
+                                    purchaseCreditPaid += paidAmount;
+                                    paymentOutCash += paidAmount; // Assume cash payment
 
                                     allTransactions.add({
                                       'category': 'Purchase Credit Paid',
-                                      'particulars':
-                                          data['creditNoteNumber']
-                                              ?.toString() ??
-                                          '--',
-                                      'name':
-                                          data['supplierName']?.toString() ??
-                                          'Supplier',
-                                      'total': amount,
+                                      'particulars': data['invoiceNumber']?.toString() ?? data['creditNoteNumber']?.toString() ?? '--',
+                                      'name': data['supplierName']?.toString() ?? 'Supplier',
+                                      'total': paidAmount,
                                       'cashIn': 0.0,
-                                      'cashOut': amount,
+                                      'cashOut': paidAmount,
                                       'timestamp': data['timestamp'],
-                                      'paymentMode': mode,
+                                      'paymentMode': 'cash',
                                     });
                                   }
 
-                                  // Process Expenses
-                                  for (var doc in filteredExpenses) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    double amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    String mode =
-                                        (data['paymentMode'] ?? 'Cash')
-                                            .toString()
-                                            .toLowerCase();
-
-                                    totalExpensesCount++;
-                                    totalExpensesAmount += amount;
-
-                                    // Track cash out
-                                    if (mode.contains('cash')) {
-                                      paymentOutCash += amount;
-                                    } else if (mode.contains('online') ||
-                                        mode.contains('upi') ||
-                                        mode.contains('card')) {
-                                      paymentOutOnline += amount;
-                                    }
-
+                                  if (amount > paidAmount) {
                                     allTransactions.add({
-                                      'category': 'Expense',
-                                      'particulars':
-                                          data['expenseType']?.toString() ??
-                                          data['category']?.toString() ??
-                                          'Expense',
-                                      'name':
-                                          data['expenseName']?.toString() ??
-                                          data['name']?.toString() ??
-                                          data['title']?.toString() ??
-                                          'Expense',
-                                      'total': amount,
+                                      'category': 'Purchase Credit',
+                                      'particulars': data['invoiceNumber']?.toString() ?? data['creditNoteNumber']?.toString() ?? '--',
+                                      'name': data['supplierName']?.toString() ?? 'Supplier',
+                                      'total': amount - paidAmount,
                                       'cashIn': 0.0,
-                                      'cashOut': amount,
+                                      'cashOut': 0.0,
                                       'timestamp': data['timestamp'],
-                                      'paymentMode': mode,
+                                      'paymentMode': 'credit',
                                     });
                                   }
+                                }
+                              }
 
-                                  // Process Purchases
-                                  for (var doc in filteredPurchases) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    double amount =
-                                        double.tryParse(
-                                          data['totalAmount']?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
-                                    String mode =
-                                        (data['paymentMode'] ?? 'Cash')
-                                            .toString()
-                                            .toLowerCase();
+                              // Process Purchase Credit Settlements (from Credit Tracker "Settle" action)
+                              for (var doc in filteredPurchasePayments) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                                final mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
 
-                                    // Skip credit-mode purchases — they are handled by purchaseCreditNotes loop
-                                    if (mode.contains('credit')) continue;
+                                if (seenTxnIds.contains(doc.id)) continue;
+                                seenTxnIds.add(doc.id);
 
-                                    // Deduplicate by doc ID
-                                    if (seenTxnIds.contains(doc.id)) continue;
-                                    seenTxnIds.add(doc.id);
+                                purchaseCreditPaid += amount;
 
-                                    totalPurchasesCount++;
-                                    totalPurchasesAmount += amount;
+                                if (mode.contains('cash')) {
+                                  paymentOutCash += amount;
+                                } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                                  paymentOutOnline += amount;
+                                }
 
-                                    // Track cash out
-                                    if (mode.contains('cash')) {
-                                      paymentOutCash += amount;
-                                    } else if (mode.contains('online') ||
-                                        mode.contains('upi') ||
-                                        mode.contains('card')) {
-                                      paymentOutOnline += amount;
-                                    }
+                                allTransactions.add({
+                                  'category': 'Purchase Credit Paid',
+                                  'particulars': data['creditNoteNumber']?.toString() ?? '--',
+                                  'name': data['supplierName']?.toString() ?? 'Supplier',
+                                  'total': amount,
+                                  'cashIn': 0.0,
+                                  'cashOut': amount,
+                                  'timestamp': data['timestamp'],
+                                  'paymentMode': mode,
+                                });
+                              }
 
-                                    allTransactions.add({
-                                      'category': 'Purchase',
-                                      'particulars':
-                                          data['invoiceNumber']?.toString() ??
-                                          '--',
-                                      'name':
-                                          data['supplierName']?.toString() ??
-                                          'Supplier',
-                                      'total': amount,
-                                      'cashIn': 0.0,
-                                      'cashOut': amount,
-                                      'timestamp': data['timestamp'],
-                                      'paymentMode': mode,
-                                    });
-                                  }
+                              // Process Expenses
+                              for (var doc in filteredExpenses) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                double amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                                String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
 
-                                  // Sort transactions by time
-                                  allTransactions.sort((a, b) {
-                                    DateTime? dtA, dtB;
-                                    if (a['timestamp'] != null &&
-                                        a['timestamp'] is Timestamp)
-                                      dtA = (a['timestamp'] as Timestamp)
-                                          .toDate();
-                                    if (b['timestamp'] != null &&
-                                        b['timestamp'] is Timestamp)
-                                      dtB = (b['timestamp'] as Timestamp)
-                                          .toDate();
-                                    if (dtA == null || dtB == null) return 0;
-                                    return dtA.compareTo(dtB);
-                                  });
+                                totalExpensesCount++;
+                                totalExpensesAmount += amount;
 
-                                  // Update state for PDF download
-                                  _dayBookData = allTransactions;
-                                  _dayBookTotal = totalSalesAmount;
+                                // Track cash out
+                                if (mode.contains('cash')) {
+                                  paymentOutCash += amount;
+                                } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                                  paymentOutOnline += amount;
+                                }
 
-                                  return Column(
-                                    children: [
-                                      // Date Selector
-                                      _buildDayBookDateSelector(),
-                                      Expanded(
-                                        child: SingleChildScrollView(
-                                          physics:
-                                              const BouncingScrollPhysics(),
-                                          padding: const EdgeInsets.only(
-                                            bottom: 100,
+                                allTransactions.add({
+                                  'category': 'Expense',
+                                  'particulars': data['expenseType']?.toString() ?? data['category']?.toString() ?? 'Expense',
+                                  'name': data['expenseName']?.toString() ?? data['name']?.toString() ?? data['title']?.toString() ?? 'Expense',
+                                  'total': amount,
+                                  'cashIn': 0.0,
+                                  'cashOut': amount,
+                                  'timestamp': data['timestamp'],
+                                  'paymentMode': mode,
+                                });
+                              }
+
+                              // Process Purchases
+                              for (var doc in filteredPurchases) {
+                                final data = doc.data() as Map<String, dynamic>;
+                                double amount = double.tryParse(data['totalAmount']?.toString() ?? '0') ?? 0;
+                                String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
+
+                                // Skip credit-mode purchases — they are handled by purchaseCreditNotes loop
+                                if (mode.contains('credit')) continue;
+
+                                // Deduplicate by doc ID
+                                if (seenTxnIds.contains(doc.id)) continue;
+                                seenTxnIds.add(doc.id);
+
+                                totalPurchasesCount++;
+                                totalPurchasesAmount += amount;
+
+                                // Track cash out
+                                if (mode.contains('cash')) {
+                                  paymentOutCash += amount;
+                                } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                                  paymentOutOnline += amount;
+                                }
+
+                                allTransactions.add({
+                                  'category': 'Purchase',
+                                  'particulars': data['invoiceNumber']?.toString() ?? '--',
+                                  'name': data['supplierName']?.toString() ?? 'Supplier',
+                                  'total': amount,
+                                  'cashIn': 0.0,
+                                  'cashOut': amount,
+                                  'timestamp': data['timestamp'],
+                                  'paymentMode': mode,
+                                });
+                              }
+
+                              // Sort transactions by time
+                              allTransactions.sort((a, b) {
+                                DateTime? dtA, dtB;
+                                if (a['timestamp'] != null && a['timestamp'] is Timestamp) dtA = (a['timestamp'] as Timestamp).toDate();
+                                if (b['timestamp'] != null && b['timestamp'] is Timestamp) dtB = (b['timestamp'] as Timestamp).toDate();
+                                if (dtA == null || dtB == null) return 0;
+                                return dtA.compareTo(dtB);
+                              });
+
+                              // Update state for PDF download
+                              _dayBookData = allTransactions;
+                              _dayBookTotal = totalSalesAmount;
+
+                              return Column(
+                                children: [
+                                  // Date Selector
+
+                                  _buildDayBookDateSelector(),
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      physics: const BouncingScrollPhysics(),
+                                      padding: const EdgeInsets.only(bottom: 100),
+                                      child: Column(
+                                        children: [
+                                          // Summary Cards
+                                          _buildDayBookSummaryCards(
+                                            totalSalesCount, totalSalesAmount,
+                                            totalExpensesCount, totalExpensesAmount,
+                                            totalPurchasesCount, totalPurchasesAmount,
+                                            saleCreditGiven, saleCreditReceived,
+                                            purchaseCreditAdded, purchaseCreditPaid,
+                                            additionCredit,
+                                            paymentInCash, paymentInOnline,
+                                            paymentOutCash, paymentOutOnline,
                                           ),
-                                          child: Column(
-                                            children: [
-                                              // Summary Cards
-                                              _buildDayBookSummaryCards(
-                                                totalSalesCount,
-                                                totalSalesAmount,
-                                                totalExpensesCount,
-                                                totalExpensesAmount,
-                                                totalPurchasesCount,
-                                                totalPurchasesAmount,
-                                                saleCreditGiven,
-                                                saleCreditReceived,
-                                                purchaseCreditAdded,
-                                                purchaseCreditPaid,
-                                                additionCredit,
-                                                paymentInCash,
-                                                paymentInOnline,
-                                                paymentOutCash,
-                                                paymentOutOnline,
-                                              ),
 
-                                              const SizedBox(height: 20),
+                                          const SizedBox(height: 20),
 
-                                              // Payment Breakdown
-                                              _buildDayBookPaymentBreakdown(
-                                                paymentOutCash,
-                                                paymentOutOnline,
-                                                paymentInCash,
-                                                paymentInOnline,
-                                              ),
-
-                                              const SizedBox(height: 20),
-
-                                              // Transaction Timeline
-                                              _buildDayBookTransactionTable(
-                                                allTransactions,
-                                              ),
-
-                                              const SizedBox(height: 30),
-                                            ],
+                                          // Payment Breakdown
+                                          _buildDayBookPaymentBreakdown(
+                                            paymentOutCash, paymentOutOnline,
+                                            paymentInCash, paymentInOnline,
                                           ),
-                                        ),
+
+                                          const SizedBox(height: 20),
+
+                                          // Transaction Timeline
+                                          _buildDayBookTransactionTable(allTransactions),
+
+                                          const SizedBox(height: 30),
+                                        ],
                                       ),
-                                    ],
-                                  );
+                                    ),
+                                  ),
+                                ],
+                              );
                                 }, // purchasePaymentsSnapshot builder end
-                              ); // StreamBuilder purchasePayments end
+                              );   // StreamBuilder purchasePayments end
                             },
                           );
                         },
@@ -3928,9 +2799,7 @@ class _DayBookPageState extends State<DayBookPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         children: [
@@ -3938,25 +2807,9 @@ class _DayBookPageState extends State<DayBookPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Net Cashflow",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
+                const Text("Net Cashflow", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 const SizedBox(height: 2),
-                Text(
-                  "$_currencySymbol${total.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    color: kPrimaryColor,
-                    letterSpacing: -1,
-                  ),
-                ),
+                Text("$_currencySymbol${total.toStringAsFixed(2)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
               ],
             ),
           ),
@@ -3969,22 +2822,8 @@ class _DayBookPageState extends State<DayBookPage> {
             ),
             child: Column(
               children: [
-                Text(
-                  "$count",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
-                    color: kPrimaryColor,
-                  ),
-                ),
-                const Text(
-                  "Invoices",
-                  style: TextStyle(
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                    color: kTextSecondary,
-                  ),
-                ),
+                Text("$count", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: kPrimaryColor)),
+                const Text("Invoices", style: TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: kTextSecondary)),
               ],
             ),
           ),
@@ -3995,7 +2834,7 @@ class _DayBookPageState extends State<DayBookPage> {
 
   Widget _buildCompactAnalytics(Map<int, double> data) {
     final Map<int, double> activeHours = {};
-    for (int i = 7; i <= 22; i++) {
+    for(int i = 7; i <= 22; i++) {
       activeHours[i] = data[i] ?? 0.0;
     }
     final bool hasData = activeHours.values.any((v) => v > 0);
@@ -4011,15 +2850,7 @@ class _DayBookPageState extends State<DayBookPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Hourly Performance",
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              color: kTextSecondary,
-              letterSpacing: 1.2,
-            ),
-          ),
+          const Text("Hourly Performance", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2)),
           const SizedBox(height: 20),
           SizedBox(
             height: 120,
@@ -4039,32 +2870,20 @@ class _DayBookPageState extends State<DayBookPage> {
         show: true,
         drawVerticalLine: false,
         horizontalInterval: 5000,
-        getDrawingHorizontalLine: (v) =>
-            FlLine(color: kBorderColor.withOpacity(0.15), strokeWidth: 1),
+        getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withOpacity(0.15), strokeWidth: 1),
       ),
       borderData: FlBorderData(show: false),
       titlesData: FlTitlesData(
         topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        rightTitles: const AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 28,
             getTitlesWidget: (v, m) {
               if (v == 0) return const SizedBox();
-              String text = v >= 1000
-                  ? '${(v / 1000).toStringAsFixed(0)}k'
-                  : v.toStringAsFixed(0);
-              return Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 8,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.bold,
-                ),
-              );
+              String text = v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0);
+              return Text(text, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
             },
           ),
         ),
@@ -4078,18 +2897,7 @@ class _DayBookPageState extends State<DayBookPage> {
               String suffix = h >= 12 ? ' PM' : ' AM';
               int displayHour = h > 12 ? h - 12 : (h == 0 ? 12 : h);
               if (h == 12) displayHour = 12;
-              return SideTitleWidget(
-                meta: m,
-                space: 4,
-                child: Text(
-                  '$displayHour$suffix',
-                  style: const TextStyle(
-                    fontSize: 7,
-                    color: kTextSecondary,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              );
+              return SideTitleWidget(meta: m, space: 4, child: Text('$displayHour$suffix', style: const TextStyle(fontSize: 7, color: kTextSecondary, fontWeight: FontWeight.w900)));
             },
           ),
         ),
@@ -4104,10 +2912,8 @@ class _DayBookPageState extends State<DayBookPage> {
               toY: e.value,
               color: kChartColorsList[colorIndex],
               width: 8,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(2),
-              ),
-            ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+            )
           ],
         );
       }).toList(),
@@ -4117,23 +2923,15 @@ class _DayBookPageState extends State<DayBookPage> {
   Widget _buildHighDensityLedgerRow(Map<String, dynamic> data, bool isLast) {
     double saleTotal = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
     double discount = double.tryParse(data['discount']?.toString() ?? '0') ?? 0;
-    double tax =
-        double.tryParse(
-          data['totalTax']?.toString() ?? data['taxAmount']?.toString() ?? '0',
-        ) ??
-        0;
+    double tax = double.tryParse(data['totalTax']?.toString() ?? data['taxAmount']?.toString() ?? '0') ?? 0;
     String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
     String status = (data['status'] ?? '').toString().toLowerCase();
     bool isCancelled = status == 'cancelled';
     bool isReturned = status == 'returned' || data['hasBeenReturned'] == true;
 
     Color modeColor = kIncomeGreen;
-    if (mode.contains('online') ||
-        mode.contains('upi') ||
-        mode.contains('card'))
-      modeColor = kPrimaryColor;
-    else if (mode.contains('credit'))
-      modeColor = kWarningOrange;
+    if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) modeColor = kPrimaryColor;
+    else if (mode.contains('credit')) modeColor = kWarningOrange;
 
     Color statusColor = kIncomeGreen;
     String statusText = 'Completed';
@@ -4146,8 +2944,7 @@ class _DayBookPageState extends State<DayBookPage> {
     }
 
     DateTime? dt;
-    if (data['timestamp'] != null)
-      dt = (data['timestamp'] as Timestamp).toDate();
+    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
     final timeStr = dt != null ? DateFormat('hh:mm a').format(dt) : '--:--';
     final dateStr = dt != null ? DateFormat('dd MMM').format(dt) : '--/--';
 
@@ -4164,11 +2961,7 @@ class _DayBookPageState extends State<DayBookPage> {
       decoration: BoxDecoration(
         color: kSurfaceColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCancelled || isReturned
-              ? statusColor.withOpacity(0.3)
-              : kBorderColor.withOpacity(0.4),
-        ),
+        border: Border.all(color: isCancelled || isReturned ? statusColor.withOpacity(0.3) : kBorderColor.withOpacity(0.4)),
         // boxShadow: [
         //   BoxShadow(
         //     color: Colors.black.withOpacity(0.02),
@@ -4193,10 +2986,7 @@ class _DayBookPageState extends State<DayBookPage> {
               children: [
                 // Invoice Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: modeColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
@@ -4208,11 +2998,7 @@ class _DayBookPageState extends State<DayBookPage> {
                       const SizedBox(width: 6),
                       Text(
                         '#${data['invoiceNumber'] ?? 'N/A'}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                          color: modeColor,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: modeColor),
                       ),
                     ],
                   ),
@@ -4220,10 +3006,7 @@ class _DayBookPageState extends State<DayBookPage> {
                 const SizedBox(width: 12),
                 // Time Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: kBackgroundColor,
                     borderRadius: BorderRadius.circular(6),
@@ -4231,30 +3014,16 @@ class _DayBookPageState extends State<DayBookPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.access_time_rounded,
-                        size: 12,
-                        color: kTextSecondary,
-                      ),
+                      Icon(Icons.access_time_rounded, size: 12, color: kTextSecondary),
                       const SizedBox(width: 4),
-                      Text(
-                        timeStr,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      Text(timeStr, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary)),
                     ],
                   ),
                 ),
                 const Spacer(),
                 // Status Badge
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
@@ -4262,12 +3031,7 @@ class _DayBookPageState extends State<DayBookPage> {
                   ),
                   child: Text(
                     statusText,
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      color: statusColor,
-                      letterSpacing: 0.5,
-                    ),
+                    style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: statusColor, letterSpacing: 0.5),
                   ),
                 ),
               ],
@@ -4289,11 +3053,7 @@ class _DayBookPageState extends State<DayBookPage> {
                         color: kPrimaryColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.person_rounded,
-                        size: 16,
-                        color: kPrimaryColor,
-                      ),
+                      child: const Icon(Icons.person_rounded, size: 16, color: kPrimaryColor),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -4302,22 +3062,14 @@ class _DayBookPageState extends State<DayBookPage> {
                         children: [
                           Text(
                             customerName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                              color: Colors.black87,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black87),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           if (customerPhone.isNotEmpty)
                             Text(
                               customerPhone,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: kTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600),
                             ),
                         ],
                       ),
@@ -4341,36 +3093,19 @@ class _DayBookPageState extends State<DayBookPage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(
-                              Icons.shopping_bag_outlined,
-                              size: 14,
-                              color: kTextSecondary,
-                            ),
+                            const Icon(Icons.shopping_bag_outlined, size: 14, color: kTextSecondary),
                             const SizedBox(width: 6),
                             Text(
                               '$itemCount ITEM${itemCount > 1 ? 'S' : ''}',
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w900,
-                                color: kTextSecondary,
-                                letterSpacing: 0.5,
-                              ),
+                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         ...items.take(3).map((item) {
                           String itemName = item['name']?.toString() ?? 'Item';
-                          int qty =
-                              int.tryParse(
-                                item['quantity']?.toString() ?? '0',
-                              ) ??
-                              0;
-                          double itemPrice =
-                              double.tryParse(
-                                item['total']?.toString() ?? '0',
-                              ) ??
-                              0;
+                          int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+                          double itemPrice = double.tryParse(item['total']?.toString() ?? '0') ?? 0;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 4),
                             child: Row(
@@ -4387,22 +3122,14 @@ class _DayBookPageState extends State<DayBookPage> {
                                 Expanded(
                                   child: Text(
                                     '$itemName × $qty',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87,
-                                    ),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 Text(
                                   ' ${itemPrice.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                    color: kPrimaryColor,
-                                  ),
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kPrimaryColor),
                                 ),
                               ],
                             ),
@@ -4413,12 +3140,7 @@ class _DayBookPageState extends State<DayBookPage> {
                             padding: const EdgeInsets.only(top: 4),
                             child: Text(
                               '+${itemCount - 3} more items...',
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                                color: kTextSecondary,
-                                fontStyle: FontStyle.italic,
-                              ),
+                              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary, fontStyle: FontStyle.italic),
                             ),
                           ),
                       ],
@@ -4489,12 +3211,7 @@ class _DayBookPageState extends State<DayBookPage> {
               children: [
                 const Text(
                   'Total Amount',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                    letterSpacing: 0.8,
-                  ),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.8),
                 ),
                 Text(
                   '$_currencySymbol${saleTotal.toStringAsFixed(2)}',
@@ -4503,9 +3220,7 @@ class _DayBookPageState extends State<DayBookPage> {
                     fontWeight: FontWeight.w900,
                     color: isCancelled || isReturned ? Colors.grey : modeColor,
                     letterSpacing: -0.5,
-                    decoration: isCancelled || isReturned
-                        ? TextDecoration.lineThrough
-                        : null,
+                    decoration: isCancelled || isReturned ? TextDecoration.lineThrough : null,
                   ),
                 ),
               ],
@@ -4516,12 +3231,7 @@ class _DayBookPageState extends State<DayBookPage> {
     );
   }
 
-  Widget _buildDetailTile({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildDetailTile({required IconData icon, required String label, required String value, required Color color}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
@@ -4537,25 +3247,13 @@ class _DayBookPageState extends State<DayBookPage> {
             children: [
               Icon(icon, size: 10, color: color),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 8,
-                  fontWeight: FontWeight.w900,
-                  color: color,
-                  letterSpacing: 0.3,
-                ),
-              ),
+              Text(label, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: color, letterSpacing: 0.3)),
             ],
           ),
           const SizedBox(height: 2),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -4566,15 +3264,14 @@ class _DayBookPageState extends State<DayBookPage> {
 
   // --- MODERN DAYBOOK UI COMPONENTS ---
 
-  // =====================================================
-  //  COMPLETELY REDESIGNED UI BODY SECTION
-  //  AppBar (_buildModernAppBar) is NOT changed.
-  // =====================================================
+// =====================================================
+//  COMPLETELY REDESIGNED UI BODY SECTION
+//  AppBar (_buildModernAppBar) is NOT changed.
+// =====================================================
 
-  // ─── DATE SELECTOR ───────────────────────────────────
+// ─── DATE SELECTOR ───────────────────────────────────
   Widget _buildDayBookDateSelector() {
-    final isToday =
-        DateFormat('yyyy-MM-dd').format(_selectedDate) ==
+    final isToday = DateFormat('yyyy-MM-dd').format(_selectedDate) ==
         DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     return Padding(
@@ -4613,18 +3310,13 @@ class _DayBookPageState extends State<DayBookPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.calendar_today_rounded,
-                      size: 16,
-                      color: kPrimaryColor,
-                    ),
+                    Icon(Icons.calendar_today_rounded,
+                        size: 16, color: kPrimaryColor),
                     const SizedBox(width: 8),
                     Text(
                       isToday
                           ? 'Today — ${DateFormat('dd MMM yyyy').format(_selectedDate)}'
-                          : DateFormat(
-                              'EEE, dd MMM yyyy',
-                            ).format(_selectedDate),
+                          : DateFormat('EEE, dd MMM yyyy').format(_selectedDate),
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w800,
@@ -4633,11 +3325,8 @@ class _DayBookPageState extends State<DayBookPage> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 18,
-                      color: kPrimaryColor,
-                    ),
+                    const Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 18, color: kPrimaryColor),
                   ],
                 ),
               ),
@@ -4650,12 +3339,11 @@ class _DayBookPageState extends State<DayBookPage> {
             icon: Icons.chevron_right_rounded,
             onTap: _selectedDate.isBefore(DateTime.now())
                 ? () {
-                    setState(() {
-                      _selectedDate = _selectedDate.add(
-                        const Duration(days: 1),
-                      );
-                    });
-                  }
+              setState(() {
+                _selectedDate =
+                    _selectedDate.add(const Duration(days: 1));
+              });
+            }
                 : null,
           ),
         ],
@@ -4663,7 +3351,8 @@ class _DayBookPageState extends State<DayBookPage> {
     );
   }
 
-  Widget _buildNavArrowButton({required IconData icon, VoidCallback? onTap}) {
+  Widget _buildNavArrowButton(
+      {required IconData icon, VoidCallback? onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
@@ -4674,38 +3363,34 @@ class _DayBookPageState extends State<DayBookPage> {
           color: onTap != null ? kPrimaryColor.withOpacity(0.1) : kBorderColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: onTap != null
-                ? kPrimaryColor.withOpacity(0.3)
-                : kBorderColor,
-          ),
+              color: onTap != null
+                  ? kPrimaryColor.withOpacity(0.3)
+                  : kBorderColor),
         ),
-        child: Icon(
-          icon,
-          color: onTap != null ? kPrimaryColor : kTextSecondary,
-          size: 22,
-        ),
+        child: Icon(icon,
+            color: onTap != null ? kPrimaryColor : kTextSecondary, size: 22),
       ),
     );
   }
 
-  // ─── SUMMARY CARDS ────────────────────────────────────
+// ─── SUMMARY CARDS ────────────────────────────────────
   Widget _buildDayBookSummaryCards(
-    int salesCount,
-    double salesAmount,
-    int expensesCount,
-    double expensesAmount,
-    int purchasesCount,
-    double purchasesAmount,
-    double saleCreditGiven,
-    double saleCreditReceived,
-    double purchaseCreditAdded,
-    double purchaseCreditPaid,
-    double additionCredit,
-    double paymentInCash,
-    double paymentInOnline,
-    double paymentOutCash,
-    double paymentOutOnline,
-  ) {
+      int salesCount,
+      double salesAmount,
+      int expensesCount,
+      double expensesAmount,
+      int purchasesCount,
+      double purchasesAmount,
+      double saleCreditGiven,
+      double saleCreditReceived,
+      double purchaseCreditAdded,
+      double purchaseCreditPaid,
+      double additionCredit,
+      double paymentInCash,
+      double paymentInOnline,
+      double paymentOutCash,
+      double paymentOutOnline,
+      ) {
     // Net cashflow based on actual cash received/paid (excludes credit given which hasn't been received yet)
     final actualMoneyIn = paymentInCash + paymentInOnline;
     final actualMoneyOut = paymentOutCash + paymentOutOnline;
@@ -4721,7 +3406,9 @@ class _DayBookPageState extends State<DayBookPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
-              color: isPositive ? kGoogleGreen : kGoogleRed,
+              color: isPositive
+                  ? kGoogleGreen
+                  : kGoogleRed,
               borderRadius: BorderRadius.circular(18),
               // boxShadow: [
               //   BoxShadow(
@@ -4757,9 +3444,7 @@ class _DayBookPageState extends State<DayBookPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isPositive
-                            ? 'Actual Cash Flow (In)'
-                            : 'Actual Cash Flow (Out)',
+                        isPositive ? 'Actual Cash Flow (In)' : 'Actual Cash Flow (Out)',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -4793,9 +3478,7 @@ class _DayBookPageState extends State<DayBookPage> {
                 // Count badge
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                      horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(10),
@@ -4896,39 +3579,25 @@ class _DayBookPageState extends State<DayBookPage> {
             child: Column(
               children: [
                 _buildCreditDetailRow(
-                  'Sale On Credit',
-                  saleCreditGiven,
-                  Icons.arrow_upward_rounded,
-                  kGoogleGreen,
-                ),
+                    'Sale On Credit', saleCreditGiven,
+                    Icons.arrow_upward_rounded, kGoogleGreen),
                 _divider(),
                 _buildCreditDetailRow(
-                  'Credit Collected',
-                  saleCreditReceived,
-                  Icons.arrow_downward_rounded,
-                  kGoogleGreen,
-                ),
+                    'Credit Collected', saleCreditReceived,
+                    Icons.arrow_downward_rounded, kGoogleGreen),
                 _divider(),
                 _buildCreditDetailRow(
-                  'Manual Credit',
-                  additionCredit,
-                  Icons.add_card_outlined,
-                  kWarningOrange,
-                ),
+                    'Manual Credit', additionCredit,
+                    Icons.add_card_outlined, kWarningOrange),
                 _divider(),
                 _buildCreditDetailRow(
-                  'Purchase Credit',
-                  purchaseCreditAdded,
-                  Icons.add_rounded,
-                  kGoogleRed,
-                ),
+                    'Purchase Credit', purchaseCreditAdded,
+                    Icons.add_rounded, kGoogleRed),
                 _divider(),
                 _buildCreditDetailRow(
-                  'Purchase Credit Paid',
-                  purchaseCreditPaid,
-                  Icons.check_rounded,
-                  kGoogleRed,
-                ),
+                  'Purchase Credit Paid', purchaseCreditPaid,
+                  Icons.check_rounded, kGoogleRed,
+                )
               ],
             ),
           ),
@@ -4955,6 +3624,7 @@ class _DayBookPageState extends State<DayBookPage> {
         color: kSurfaceColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: iconColor.withOpacity(0.15)),
+
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -4965,17 +3635,13 @@ class _DayBookPageState extends State<DayBookPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    color: iconBg, borderRadius: BorderRadius.circular(10)),
                 child: Icon(icon, color: iconColor, size: 18),
               ),
               if (count > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 3,
-                  ),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                   decoration: BoxDecoration(
                     color: iconColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -5015,11 +3681,7 @@ class _DayBookPageState extends State<DayBookPage> {
   }
 
   Widget _buildCreditDetailRow(
-    String label,
-    double amount,
-    IconData icon,
-    Color color,
-  ) {
+      String label, double amount, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
       child: Row(
@@ -5056,13 +3718,9 @@ class _DayBookPageState extends State<DayBookPage> {
     );
   }
 
-  // ─── PAYMENT BREAKDOWN ────────────────────────────────
+// ─── PAYMENT BREAKDOWN ────────────────────────────────
   Widget _buildDayBookPaymentBreakdown(
-    double outCash,
-    double outOnline,
-    double inCash,
-    double inOnline,
-  ) {
+      double outCash, double outOnline, double inCash, double inOnline) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -5087,14 +3745,10 @@ class _DayBookPageState extends State<DayBookPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: kPrimaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.payments_outlined,
-                    color: kPrimaryColor,
-                    size: 20,
-                  ),
+                      color: kPrimaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.payments_outlined,
+                      color: kPrimaryColor, size: 20),
                 ),
                 const SizedBox(width: 10),
                 const Text(
@@ -5148,23 +3802,17 @@ class _DayBookPageState extends State<DayBookPage> {
           children: [
             Icon(icon, color: color, size: 16),
             const SizedBox(width: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: color,
-                letterSpacing: 0.4,
-              ),
-            ),
+            Text(title,
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: color,
+                    letterSpacing: 0.4)),
             const Spacer(),
             Text(
               '$_currencySymbol${total.toStringAsFixed(2)}',
               style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
+                  fontSize: 14, fontWeight: FontWeight.w900, color: color),
             ),
           ],
         ),
@@ -5201,27 +3849,22 @@ class _DayBookPageState extends State<DayBookPage> {
     return Row(
       children: [
         Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+            width: 8, height: 8,
+            decoration:
+            BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 5),
         Text(
           '$label  $_currencySymbol${amount.toStringAsFixed(0)}',
           style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: kTextSecondary,
-          ),
+              fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary),
         ),
       ],
     );
   }
 
-  // ─── TRANSACTION TIMELINE TABLE ───────────────────────
+// ─── TRANSACTION TIMELINE TABLE ───────────────────────
   Widget _buildDayBookTransactionTable(
-    List<Map<String, dynamic>> transactions,
-  ) {
+      List<Map<String, dynamic>> transactions) {
     final filteredTransactions = transactions.where((txn) {
       if (_txnFilter == 'All') return true;
       final pm = (txn['paymentMode'] ?? '').toString().toLowerCase();
@@ -5260,7 +3903,8 @@ class _DayBookPageState extends State<DayBookPage> {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: kPrimaryColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -5291,9 +3935,7 @@ class _DayBookPageState extends State<DayBookPage> {
                     duration: const Duration(milliseconds: 200),
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 6,
-                    ),
+                        horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
                       color: selected ? kPrimaryColor : kSurfaceColor,
                       borderRadius: BorderRadius.circular(20),
@@ -5326,21 +3968,17 @@ class _DayBookPageState extends State<DayBookPage> {
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Column(
                   children: [
-                    Icon(
-                      Icons.inbox_rounded,
-                      size: 52,
-                      color: kTextSecondary.withOpacity(0.25),
-                    ),
+                    Icon(Icons.inbox_rounded,
+                        size: 52, color: kTextSecondary.withOpacity(0.25)),
                     const SizedBox(height: 12),
                     Text(
                       _txnFilter == 'All'
                           ? 'No transactions for this date'
                           : 'No $_txnFilter transactions',
                       style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: kTextSecondary),
                     ),
                   ],
                 ),
@@ -5360,13 +3998,14 @@ class _DayBookPageState extends State<DayBookPage> {
     );
   }
 
-  // ─── SINGLE TRANSACTION CARD ──────────────────────────
+// ─── SINGLE TRANSACTION CARD ──────────────────────────
   Widget _buildDayBookTransactionCard(Map<String, dynamic> txn) {
     final category = txn['category'].toString();
     final paymentMode = (txn['paymentMode'] ?? 'cash').toString();
 
     DateTime? dt;
-    if (txn['timestamp'] != null) dt = (txn['timestamp'] as Timestamp).toDate();
+    if (txn['timestamp'] != null)
+      dt = (txn['timestamp'] as Timestamp).toDate();
     final timeStr = dt != null ? DateFormat('hh:mm a').format(dt) : 'N/A';
 
     // Per-category theming
@@ -5408,12 +4047,7 @@ class _DayBookPageState extends State<DayBookPage> {
         categoryIcon = Icons.point_of_sale_rounded;
     }
 
-    final isIncome =
-        category == 'Sale' ||
-        category == 'Credit Collected' ||
-        category == 'Credit Received' ||
-        category == 'Sale On Credit' ||
-        category == 'Manual Credit';
+    final isIncome = category == 'Sale' || category == 'Credit Collected' || category == 'Credit Received' || category == 'Sale On Credit' || category == 'Manual Credit';
     final amount = (txn['total'] as double);
 
     return Container(
@@ -5445,10 +4079,9 @@ class _DayBookPageState extends State<DayBookPage> {
                 Text(
                   txn['name'].toString(),
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black87,
-                  ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -5456,10 +4089,9 @@ class _DayBookPageState extends State<DayBookPage> {
                 Text(
                   txn['particulars'].toString(),
                   style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: kTextSecondary,
-                  ),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: kTextSecondary),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -5469,9 +4101,7 @@ class _DayBookPageState extends State<DayBookPage> {
                     // Category tag
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
+                          horizontal: 7, vertical: 3),
                       decoration: BoxDecoration(
                         color: accent.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(6),
@@ -5480,11 +4110,10 @@ class _DayBookPageState extends State<DayBookPage> {
                       child: Text(
                         category,
                         style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          color: accent,
-                          letterSpacing: 0.5,
-                        ),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: accent,
+                            letterSpacing: 0.5),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -5492,10 +4121,9 @@ class _DayBookPageState extends State<DayBookPage> {
                     Text(
                       paymentMode,
                       style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: kTextSecondary),
                     ),
                   ],
                 ),
@@ -5510,10 +4138,9 @@ class _DayBookPageState extends State<DayBookPage> {
               Text(
                 timeStr,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: kTextSecondary,
-                ),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: kTextSecondary),
               ),
               const SizedBox(height: 6),
               Text(
@@ -5530,6 +4157,7 @@ class _DayBookPageState extends State<DayBookPage> {
       ),
     );
   }
+
 }
 
 // ==========================================
@@ -5564,11 +4192,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
@@ -5588,12 +4212,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
 
   // Store calculated data for PDF download
   double _grossSale = 0, _discount = 0, _netSale = 0, _productCost = 0;
-  double _cash = 0,
-      _online = 0,
-      _creditNote = 0,
-      _credit = 0,
-      _unsettled = 0,
-      _refunds = 0;
+  double _cash = 0, _online = 0, _creditNote = 0, _credit = 0, _unsettled = 0, _refunds = 0;
   int _saleCount = 0;
 
   void _downloadPdf(BuildContext context) {
@@ -5604,10 +4223,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
       ['Product Cost', '$_currencySymbol${_productCost.toStringAsFixed(2)}'],
       ['Cash', '$_currencySymbol${_cash.toStringAsFixed(2)}'],
       ['Online', '$_currencySymbol${_online.toStringAsFixed(2)}'],
-      [
-        'Credit Note/Refunds',
-        '$_currencySymbol${_creditNote.toStringAsFixed(2)}',
-      ],
+      ['Credit Note/Refunds', '$_currencySymbol${_creditNote.toStringAsFixed(2)}'],
       ['Credit', '$_currencySymbol${_credit.toStringAsFixed(2)}'],
       ['Unsettled', '$_currencySymbol${_unsettled.toStringAsFixed(2)}'],
     ];
@@ -5618,11 +4234,9 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
       headers: ['Metric', 'Amount'],
       rows: rows,
       summaryTitle: "Net Profit",
-      summaryValue:
-          "$_currencySymbol${(_netSale - _productCost).toStringAsFixed(2)}",
+      summaryValue: "$_currencySymbol${(_netSale - _productCost).toStringAsFixed(2)}",
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
         'Total Bills': '$_saleCount',
         'Refunds': '$_currencySymbol${_refunds.toStringAsFixed(2)}',
       },
@@ -5633,11 +4247,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kGreyBg,
-      appBar: _buildModernAppBar(
-        "Sales Report",
-        widget.onBack,
-        onDownload: () => _downloadPdf(context),
-      ),
+      appBar: _buildModernAppBar("Sales Report", widget.onBack, onDownload: () => _downloadPdf(context)),
       body: FutureBuilder<List<Stream<QuerySnapshot>>>(
         future: Future.wait([
           _firestoreService.getCollectionStream('sales'),
@@ -5645,12 +4255,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
         ]),
         builder: (context, streamsSnapshot) {
           if (!streamsSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamsSnapshot.data![0],
@@ -5659,21 +4264,12 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                 stream: streamsSnapshot.data![1],
                 builder: (context, expenseSnapshot) {
                   if (!salesSnapshot.hasData || !expenseSnapshot.hasData) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: kPrimaryColor),
-                    );
+                    return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
                   }
 
                   // --- Calculation Logic ---
-                  double grossSale = 0,
-                      discount = 0,
-                      netSale = 0,
-                      productCost = 0;
-                  double cash = 0,
-                      online = 0,
-                      creditNote = 0,
-                      credit = 0,
-                      unsettled = 0;
+                  double grossSale = 0, discount = 0, netSale = 0, productCost = 0;
+                  double cash = 0, online = 0, creditNote = 0, credit = 0, unsettled = 0;
                   double refunds = 0; // Track cancelled/returned bills
                   Map<int, double> hourlyRevenue = {};
                   int saleCount = 0;
@@ -5681,20 +4277,12 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                   for (var doc in salesSnapshot.data!.docs) {
                     final data = doc.data() as Map<String, dynamic>;
                     DateTime? dt;
-                    if (data['timestamp'] != null)
-                      dt = (data['timestamp'] as Timestamp).toDate();
-                    else if (data['date'] != null)
-                      dt = DateTime.tryParse(data['date'].toString());
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                     if (_isInDateRange(dt)) {
-                      double total =
-                          double.tryParse(data['total']?.toString() ?? '0') ??
-                          0;
-                      double discountAmt =
-                          double.tryParse(
-                            data['discount']?.toString() ?? '0',
-                          ) ??
-                          0;
+                      double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+                      double discountAmt = double.tryParse(data['discount']?.toString() ?? '0') ?? 0;
                       // Compute sale-level total cost: prefer item-level total cost (unit cost * qty) so
                       // profit reflects the Total Cost Price. If item-level costs are not available,
                       // fall back to the sale document's `productCost` (which may already be the total).
@@ -5702,19 +4290,9 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                       if (data['items'] != null && data['items'] is List) {
                         try {
                           for (var it in (data['items'] as List)) {
-                            double unitCost =
-                                double.tryParse(
-                                  it['cost']?.toString() ??
-                                      it['costPrice']?.toString() ??
-                                      it['purchasePrice']?.toString() ??
-                                      '0',
-                                ) ??
-                                0;
-                            double qty =
-                                double.tryParse(
-                                  it['quantity']?.toString() ?? '0',
-                                ) ??
-                                0;
+                            double unitCost = double.tryParse(
+                                it['cost']?.toString() ?? it['costPrice']?.toString() ?? it['purchasePrice']?.toString() ?? '0') ?? 0;
+                            double qty = double.tryParse(it['quantity']?.toString() ?? '0') ?? 0;
                             saleCost += unitCost * qty;
                           }
                         } catch (e) {
@@ -5724,24 +4302,14 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                       }
                       // Fallback: use sale-level productCost if item-level data didn't provide totals.
                       if (saleCost == 0) {
-                        saleCost =
-                            double.tryParse(
-                              data['productCost']?.toString() ?? '0',
-                            ) ??
-                            0;
+                        saleCost = double.tryParse(data['productCost']?.toString() ?? '0') ?? 0;
                       }
-                      String mode = (data['paymentMode'] ?? 'Cash')
-                          .toString()
-                          .toLowerCase();
+                      String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
 
                       // Check if bill is cancelled or returned
-                      final String status = (data['status'] ?? '')
-                          .toString()
-                          .toLowerCase();
+                      final String status = (data['status'] ?? '').toString().toLowerCase();
                       final bool isCancelled = status == 'cancelled';
-                      final bool isReturned =
-                          status == 'returned' ||
-                          data['hasBeenReturned'] == true;
+                      final bool isReturned = status == 'returned' || data['hasBeenReturned'] == true;
                       final bool isRefunded = isCancelled || isReturned;
 
                       if (isRefunded) {
@@ -5759,30 +4327,15 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                       // Handle Split payments separately
                       if (mode == 'split') {
                         // For split payments, get the individual amounts
-                        double splitCash =
-                            double.tryParse(
-                              data['cashReceived_split']?.toString() ?? '0',
-                            ) ??
-                            0;
-                        double splitOnline =
-                            double.tryParse(
-                              data['onlineReceived_split']?.toString() ?? '0',
-                            ) ??
-                            0;
-                        double splitCredit =
-                            double.tryParse(
-                              data['creditIssued_split']?.toString() ?? '0',
-                            ) ??
-                            0;
+                        double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                        double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
+                        double splitCredit = double.tryParse(data['creditIssued_split']?.toString() ?? '0') ?? 0;
                         cash += splitCash;
                         online += splitOnline;
                         credit += splitCredit;
-                      } else if (mode.contains('online') ||
-                          mode.contains('upi') ||
-                          mode.contains('card')) {
+                      } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
                         online += total;
-                      } else if (mode.contains('credit') &&
-                          mode.contains('note')) {
+                      } else if (mode.contains('credit') && mode.contains('note')) {
                         creditNote += total;
                       } else if (mode.contains('credit')) {
                         credit += total;
@@ -5793,9 +4346,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                         cash += total;
                       }
 
-                      if (dt != null)
-                        hourlyRevenue[dt.hour] =
-                            (hourlyRevenue[dt.hour] ?? 0) + total;
+                      if (dt != null) hourlyRevenue[dt.hour] = (hourlyRevenue[dt.hour] ?? 0) + total;
                     }
                   }
 
@@ -5831,10 +4382,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                         ),
                       ),
                       SliverPadding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         sliver: SliverList(
                           delegate: SliverChildListDelegate([
                             // Bill Count & Average strip
@@ -5842,21 +4390,11 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                             const SizedBox(height: 16),
 
                             // Profit Performance Card
-                            _buildExecutiveProfitCard(
-                              profit,
-                              netSale,
-                              productCost,
-                            ),
+                            _buildExecutiveProfitCard(profit, netSale, productCost),
                             const SizedBox(height: 16),
 
                             // Sales Breakdown
-                            _buildSalesBreakdownSection(
-                              netSale,
-                              grossSale,
-                              productCost,
-                              discount,
-                              saleCount,
-                            ),
+                            _buildSalesBreakdownSection(netSale, grossSale, productCost, discount, saleCount),
 
                             const SizedBox(height: 20),
                             _buildSectionLabel("Revenue Timeline"),
@@ -5866,14 +4404,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                             const SizedBox(height: 20),
                             _buildSectionLabel("Payment Structure"),
                             const SizedBox(height: 8),
-                            _buildPaymentStructureCard(
-                              netSale,
-                              cash,
-                              online,
-                              creditNote,
-                              credit,
-                              unsettled,
-                            ),
+                            _buildPaymentStructureCard(netSale, cash, online, creditNote, credit, unsettled),
                             const SizedBox(height: 30),
                           ]),
                         ),
@@ -5923,33 +4454,14 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                     color: kPrimaryColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.receipt_long_rounded,
-                    color: kPrimaryColor,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.receipt_long_rounded, color: kPrimaryColor, size: 16),
                 ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Total Bills",
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: kTextSecondary,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    Text(
-                      "$count",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: kTextPrimary,
-                      ),
-                    ),
+                    const Text("Total Bills", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
+                    Text("$count", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kTextPrimary)),
                   ],
                 ),
               ],
@@ -5963,22 +4475,10 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
-                      "Avg Bill Value",
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: kTextSecondary,
-                        letterSpacing: 1,
-                      ),
-                    ),
+                    const Text("Avg Bill Value", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
                     Text(
                       "${CurrencyService().symbol}${avg.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                        color: kTextPrimary,
-                      ),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kTextPrimary),
                     ),
                   ],
                 ),
@@ -5989,11 +4489,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                     color: kIncomeGreen.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.trending_up_rounded,
-                    color: kIncomeGreen,
-                    size: 16,
-                  ),
+                  child: const Icon(Icons.trending_up_rounded, color: kIncomeGreen, size: 16),
                 ),
               ],
             ),
@@ -6048,53 +4544,25 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
             children: [
               Row(
                 children: [
-                  const Text(
-                    "Estimated Profit",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
+                  const Text("Estimated Profit", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2)),
                   const SizedBox(width: 6),
                   InkWell(
                     onTap: () {
                       showDialog(
                         context: context,
                         builder: (ctx) => AlertDialog(
-                          title: const Row(
-                            children: [
-                              Icon(Icons.info_outline, color: kIncomeGreen),
-                              SizedBox(width: 8),
-                              Expanded(child: Text('About Estimated Profit')),
-                            ],
-                          ),
-                          content: const Text(
-                            'Profit is calculated based on the Total Cost Price',
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(ctx),
-                              child: const Text('OK'),
-                            ),
-                          ],
+                          title: const Row(children: [Icon(Icons.info_outline, color: kIncomeGreen), SizedBox(width: 8), Expanded(child: Text('About Estimated Profit'))]),
+                          content: const Text('Profit is calculated based on the Total Cost Price'),
+                          actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
                         ),
                       );
                     },
-                    child: const Icon(
-                      Icons.info_outline,
-                      color: kTextSecondary,
-                      size: 13,
-                    ),
+                    child: const Icon(Icons.info_outline, color: kTextSecondary, size: 13),
                   ),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: performanceColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -6104,14 +4572,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                   children: [
                     Icon(performanceIcon, size: 14, color: performanceColor),
                     const SizedBox(width: 4),
-                    Text(
-                      performanceLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: performanceColor,
-                      ),
-                    ),
+                    Text(performanceLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: performanceColor)),
                   ],
                 ),
               ),
@@ -6126,34 +4587,15 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: kIncomeGreen,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: kIncomeGreen, borderRadius: BorderRadius.circular(2))),
                         const SizedBox(width: 6),
-                        const Text(
-                          "Net Sale",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text("Net Sale", style: TextStyle(fontSize: 11, color: kTextSecondary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${CurrencyService().symbol}${netSale.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: kIncomeGreen,
-                        letterSpacing: -0.5,
-                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: kIncomeGreen, letterSpacing: -0.5),
                     ),
                   ],
                 ),
@@ -6165,34 +4607,15 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: kExpenseRed,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: kExpenseRed, borderRadius: BorderRadius.circular(2))),
                         const SizedBox(width: 6),
-                        const Text(
-                          "Cost Value",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text("Cost Value", style: TextStyle(fontSize: 11, color: kTextSecondary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${CurrencyService().symbol}${cost.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: kExpenseRed,
-                        letterSpacing: -0.5,
-                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: kExpenseRed, letterSpacing: -0.5),
                     ),
                   ],
                 ),
@@ -6224,9 +4647,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: (isPositive ? kIncomeGreen : kExpenseRed).withValues(
-                alpha: 0.06,
-              ),
+              color: (isPositive ? kIncomeGreen : kExpenseRed).withValues(alpha: 0.06),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
@@ -6235,30 +4656,20 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                 Row(
                   children: [
                     Icon(
-                      isPositive
-                          ? Icons.arrow_upward_rounded
-                          : Icons.arrow_downward_rounded,
+                      isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                       size: 16,
                       color: isPositive ? kIncomeGreen : kExpenseRed,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       "Profit: ${CurrencyService().symbol}${profit.toStringAsFixed(0)}",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                        color: isPositive ? kIncomeGreen : kExpenseRed,
-                      ),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: isPositive ? kIncomeGreen : kExpenseRed),
                     ),
                   ],
                 ),
                 Text(
                   "${margin.abs().toStringAsFixed(1)}% margin",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w900,
-                    color: isPositive ? kIncomeGreen : kExpenseRed,
-                  ),
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: isPositive ? kIncomeGreen : kExpenseRed),
                 ),
               ],
             ),
@@ -6268,13 +4679,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
     );
   }
 
-  Widget _buildSalesBreakdownSection(
-    double net,
-    double gross,
-    double cost,
-    double disc,
-    int count,
-  ) {
+  Widget _buildSalesBreakdownSection(double net, double gross, double cost, double disc, int count) {
     final base = gross > 0 ? gross : net;
 
     return Column(
@@ -6282,48 +4687,18 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
       children: [
         _buildSectionLabel("Sales Breakdown"),
         const SizedBox(height: 8),
-        _buildBreakdownRow(
-          "Gross Sales",
-          gross,
-          kIncomeGreen,
-          Icons.arrow_upward_rounded,
-          100,
-        ),
+        _buildBreakdownRow("Gross Sales", gross, kIncomeGreen, Icons.arrow_upward_rounded, 100),
         const SizedBox(height: 6),
-        _buildBreakdownRow(
-          "Net Revenue",
-          net,
-          kIncomeGreen,
-          Icons.arrow_upward_rounded,
-          base > 0 ? (net / base * 100) : 0,
-        ),
+        _buildBreakdownRow("Net Revenue", net, kIncomeGreen, Icons.arrow_upward_rounded, base > 0 ? (net / base * 100) : 0),
         const SizedBox(height: 6),
-        _buildBreakdownRow(
-          "Cost Value",
-          cost,
-          kExpenseRed,
-          Icons.arrow_downward_rounded,
-          base > 0 ? (cost / base * 100) : 0,
-        ),
+        _buildBreakdownRow("Cost Value", cost, kExpenseRed, Icons.arrow_downward_rounded, base > 0 ? (cost / base * 100) : 0),
         const SizedBox(height: 6),
-        _buildBreakdownRow(
-          "Discounts",
-          disc,
-          kWarningOrange,
-          Icons.arrow_downward_rounded,
-          base > 0 ? (disc / base * 100) : 0,
-        ),
+        _buildBreakdownRow("Discounts", disc, kWarningOrange, Icons.arrow_downward_rounded, base > 0 ? (disc / base * 100) : 0),
       ],
     );
   }
 
-  Widget _buildBreakdownRow(
-    String label,
-    double value,
-    Color color,
-    IconData icon,
-    double percent,
-  ) {
+  Widget _buildBreakdownRow(String label, double value, Color color, IconData icon, double percent) {
     final pct = percent.isFinite ? percent.clamp(0, 100).toDouble() : 0.0;
 
     return Container(
@@ -6345,22 +4720,11 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kTextPrimary,
-              ),
-            ),
+            child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextPrimary)),
           ),
           Text(
             "${CurrencyService().symbol}${value.toStringAsFixed(0)}",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color),
           ),
           const SizedBox(width: 8),
           Container(
@@ -6371,11 +4735,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
             ),
             child: Text(
               "${pct.toStringAsFixed(0)}%",
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: color),
             ),
           ),
         ],
@@ -6418,33 +4778,12 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
+                  Container(width: 10, height: 10, decoration: BoxDecoration(color: kPrimaryColor, borderRadius: BorderRadius.circular(2))),
                   const SizedBox(width: 6),
-                  const Text(
-                    "Hourly Revenue",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: kTextSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  const Text("Hourly Revenue", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
                 ],
               ),
-              Text(
-                "Peak: $peakLabel",
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Text("Peak: $peakLabel", style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 14),
@@ -6453,92 +4792,65 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
             child: !hasData
                 ? const EmptyStateWidget(message: "No data found")
                 : BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: false,
-                        getDrawingHorizontalLine: (v) => FlLine(
-                          color: kBorderColor.withValues(alpha: 0.4),
-                          strokeWidth: 1,
-                        ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 22,
-                            getTitlesWidget: (v, m) {
-                              int h = v.toInt();
-                              if (h % 4 != 0) return const SizedBox();
-                              String label =
-                                  '${h > 12 ? h - 12 : (h == 0 ? 12 : h)}${h >= 12 ? 'pm' : 'am'}';
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  label,
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    color: kTextSecondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 36,
-                            getTitlesWidget: (v, m) {
-                              if (v == 0) return const SizedBox();
-                              String label;
-                              if (v >= 1000) {
-                                label = '${(v / 1000).toStringAsFixed(0)}K';
-                              } else {
-                                label = v.toStringAsFixed(0);
-                              }
-                              return Text(
-                                label,
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  color: kTextSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      barGroups: data.entries.map((e) {
-                        final isPeak = e.key == peakHour && peakVal > 0;
-                        return BarChartGroupData(
-                          x: e.key,
-                          barRods: [
-                            BarChartRodData(
-                              toY: e.value,
-                              color: isPeak
-                                  ? kIncomeGreen
-                                  : kPrimaryColor.withValues(alpha: 0.6),
-                              width: 8,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(4),
-                                topRight: Radius.circular(4),
-                              ),
-                            ),
-                          ],
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withValues(alpha: 0.4), strokeWidth: 1),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: FlTitlesData(
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 22,
+                      getTitlesWidget: (v, m) {
+                        int h = v.toInt();
+                        if (h % 4 != 0) return const SizedBox();
+                        String label = '${h > 12 ? h - 12 : (h == 0 ? 12 : h)}${h >= 12 ? 'pm' : 'am'}';
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(label, style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.w700)),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 36,
+                      getTitlesWidget: (v, m) {
+                        if (v == 0) return const SizedBox();
+                        String label;
+                        if (v >= 1000) {
+                          label = '${(v / 1000).toStringAsFixed(0)}K';
+                        } else {
+                          label = v.toStringAsFixed(0);
+                        }
+                        return Text(label, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w600));
+                      },
+                    ),
+                  ),
+                ),
+                barGroups: data.entries.map((e) {
+                  final isPeak = e.key == peakHour && peakVal > 0;
+                  return BarChartGroupData(
+                    x: e.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: e.value,
+                        color: isPeak ? kIncomeGreen : kPrimaryColor.withValues(alpha: 0.6),
+                        width: 8,
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
+                      )
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           // Summary below chart
@@ -6546,37 +4858,18 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
                     color: kPrimaryColor.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: kPrimaryColor.withValues(alpha: 0.12),
-                    ),
+                    border: Border.all(color: kPrimaryColor.withValues(alpha: 0.12)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Total Revenue",
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      const Text("Total Revenue", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kTextSecondary)),
                       const SizedBox(height: 2),
-                      Text(
-                        "${CurrencyService().symbol}${totalRev.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: kPrimaryColor,
-                        ),
-                      ),
+                      Text("${CurrencyService().symbol}${totalRev.toStringAsFixed(0)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kPrimaryColor)),
                     ],
                   ),
                 ),
@@ -6584,37 +4877,18 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 8,
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                   decoration: BoxDecoration(
                     color: kIncomeGreen.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: kIncomeGreen.withValues(alpha: 0.12),
-                    ),
+                    border: Border.all(color: kIncomeGreen.withValues(alpha: 0.12)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Peak Hour",
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      const Text("Peak Hour", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kTextSecondary)),
                       const SizedBox(height: 2),
-                      Text(
-                        "${CurrencyService().symbol}${peakVal.toStringAsFixed(0)}",
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: kIncomeGreen,
-                        ),
-                      ),
+                      Text("${CurrencyService().symbol}${peakVal.toStringAsFixed(0)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kIncomeGreen)),
                     ],
                   ),
                 ),
@@ -6626,14 +4900,7 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
     );
   }
 
-  Widget _buildPaymentStructureCard(
-    double net,
-    double cash,
-    double online,
-    double cn,
-    double credit,
-    double unsettled,
-  ) {
+  Widget _buildPaymentStructureCard(double net, double cash, double online, double cn, double credit, double unsettled) {
     final double total = cash + online + cn + credit + unsettled;
     final bool hasData = total > 0;
     return Container(
@@ -6654,31 +4921,13 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
               const Expanded(
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.pie_chart_outline_rounded,
-                      color: kTextSecondary,
-                      size: 14,
-                    ),
+                    Icon(Icons.pie_chart_outline_rounded, color: kTextSecondary, size: 14),
                     SizedBox(width: 6),
-                    Text(
-                      "Payment Breakdown",
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text("Payment Breakdown", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
-              Text(
-                "${CurrencyService().symbol}${net.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: kTextPrimary,
-                ),
-              ),
+              Text("${CurrencyService().symbol}${net.toStringAsFixed(0)}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kTextPrimary)),
             ],
           ),
           const SizedBox(height: 14),
@@ -6703,70 +4952,20 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                             sectionsSpace: 3,
                             centerSpaceRadius: 32,
                             sections: [
-                              if (cash > 0)
-                                PieChartSectionData(
-                                  color: kIncomeGreen,
-                                  value: cash,
-                                  title: '',
-                                  radius: 14,
-                                ),
-                              if (online > 0)
-                                PieChartSectionData(
-                                  color: kChartBlue,
-                                  value: online,
-                                  title: '',
-                                  radius: 14,
-                                ),
-                              if (cn > 0)
-                                PieChartSectionData(
-                                  color: kChartPurple,
-                                  value: cn,
-                                  title: '',
-                                  radius: 14,
-                                ),
-                              if (credit > 0)
-                                PieChartSectionData(
-                                  color: kWarningOrange,
-                                  value: credit,
-                                  title: '',
-                                  radius: 14,
-                                ),
-                              if (unsettled > 0)
-                                PieChartSectionData(
-                                  color: kChartAmber,
-                                  value: unsettled,
-                                  title: '',
-                                  radius: 14,
-                                ),
-                              if (net == 0)
-                                PieChartSectionData(
-                                  color: kBorderColor.withValues(alpha: 0.3),
-                                  value: 1,
-                                  title: '',
-                                  radius: 14,
-                                ),
+                              if (cash > 0) PieChartSectionData(color: kIncomeGreen, value: cash, title: '', radius: 14),
+                              if (online > 0) PieChartSectionData(color: kChartBlue, value: online, title: '', radius: 14),
+                              if (cn > 0) PieChartSectionData(color: kChartPurple, value: cn, title: '', radius: 14),
+                              if (credit > 0) PieChartSectionData(color: kWarningOrange, value: credit, title: '', radius: 14),
+                              if (unsettled > 0) PieChartSectionData(color: kChartAmber, value: unsettled, title: '', radius: 14),
+                              if (net == 0) PieChartSectionData(color: kBorderColor.withValues(alpha: 0.3), value: 1, title: '', radius: 14),
                             ],
                           ),
                         ),
                         Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              "${CurrencyService().symbol}${net.toStringAsFixed(0)}",
-                              style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w900,
-                                color: kTextPrimary,
-                              ),
-                            ),
-                            const Text(
-                              "Total",
-                              style: TextStyle(
-                                fontSize: 8,
-                                color: kTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            Text("${CurrencyService().symbol}${net.toStringAsFixed(0)}", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextPrimary)),
+                            const Text("Total", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w600)),
                           ],
                         ),
                       ],
@@ -6783,16 +4982,10 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                       _buildLegendRow(kChartBlue, 'Online', online, net),
                       _buildLegendRow(kChartPurple, 'Refunds', cn, net),
                       _buildLegendRow(kWarningOrange, 'Credit', credit, net),
-                      if (unsettled > 0)
-                        _buildLegendRow(
-                          kChartAmber,
-                          'Unsettled',
-                          unsettled,
-                          net,
-                        ),
+                      if (unsettled > 0) _buildLegendRow(kChartAmber, 'Unsettled', unsettled, net),
                     ],
                   ),
-                ),
+                )
               ],
             ),
             const SizedBox(height: 12),
@@ -6808,29 +5001,14 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
                 children: [
                   Row(
                     children: [
-                      const Icon(
-                        Icons.account_balance_wallet_rounded,
-                        size: 14,
-                        color: kIncomeGreen,
-                      ),
+                      const Icon(Icons.account_balance_wallet_rounded, size: 14, color: kIncomeGreen),
                       const SizedBox(width: 6),
-                      Text(
-                        "Cash + Online collected",
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: kIncomeGreen,
-                        ),
-                      ),
+                      Text("Cash + Online collected", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kIncomeGreen)),
                     ],
                   ),
                   Text(
                     "${CurrencyService().symbol}${(cash + online).toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: kIncomeGreen,
-                    ),
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kIncomeGreen),
                   ),
                 ],
               ),
@@ -6841,53 +5019,18 @@ class _SalesSummaryPageState extends State<SalesSummaryPage> {
     );
   }
 
-  Widget _buildLegendRow(
-    Color color,
-    String label,
-    double value,
-    double total,
-  ) {
+  Widget _buildLegendRow(Color color, String label, double value, double total) {
     final pct = total > 0 ? (value / total * 100) : 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
+          Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: kTextSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            "${value.toStringAsFixed(0)}",
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: kTextPrimary,
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600))),
+          Text("${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextPrimary)),
           const SizedBox(width: 6),
-          Text(
-            "${pct.toStringAsFixed(0)}%",
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
+          Text("${pct.toStringAsFixed(0)}%", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color)),
         ],
       ),
     );
@@ -6924,12 +5067,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
     'customer': 'Customer',
   };
 
-  static const List<String> _statusOptions = [
-    'All',
-    'Active',
-    'Cancelled',
-    'Returned',
-  ];
+  static const List<String> _statusOptions = ['All', 'Active', 'Cancelled', 'Returned'];
 
   void _onDateChanged(DateFilterOption option, DateTime start, DateTime end) {
     setState(() {
@@ -6951,8 +5089,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       final d = doc.data() as Map<String, dynamic>;
       final String status = (d['status'] ?? '').toString().toLowerCase();
       final bool isCancelled = status == 'cancelled';
-      final bool isReturned =
-          status == 'returned' || d['hasBeenReturned'] == true;
+      final bool isReturned = status == 'returned' || d['hasBeenReturned'] == true;
 
       // Status filter
       if (_statusFilter == 'Active' && (isCancelled || isReturned)) continue;
@@ -6961,10 +5098,8 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
 
       // Date filter
       DateTime? dt;
-      if (d['timestamp'] != null)
-        dt = (d['timestamp'] as Timestamp).toDate();
-      else if (d['date'] != null)
-        dt = DateTime.tryParse(d['date'].toString());
+      if (d['timestamp'] != null) dt = (d['timestamp'] as Timestamp).toDate();
+      else if (d['date'] != null) dt = DateTime.tryParse(d['date'].toString());
       if (!_isInDateRange(dt)) continue;
 
       // Search filter
@@ -6973,8 +5108,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
         final customer = (d['customerName'] ?? '').toString().toLowerCase();
         final invoice = (d['invoiceNumber'] ?? '').toString().toLowerCase();
         final mode = (d['paymentMode'] ?? '').toString().toLowerCase();
-        if (!customer.contains(q) && !invoice.contains(q) && !mode.contains(q))
-          continue;
+        if (!customer.contains(q) && !invoice.contains(q) && !mode.contains(q)) continue;
       }
 
       result.add({...d, '_dt': dt});
@@ -6995,9 +5129,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
           cmp = aInv.compareTo(bInv);
           break;
         case 'customer':
-          cmp = (a['customerName'] ?? '').toString().compareTo(
-            (b['customerName'] ?? '').toString(),
-          );
+          cmp = (a['customerName'] ?? '').toString().compareTo((b['customerName'] ?? '').toString());
           break;
         case 'date':
         default:
@@ -7020,10 +5152,8 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
     for (var doc in docs) {
       final d = doc.data() as Map<String, dynamic>;
       DateTime? dt;
-      if (d['timestamp'] != null)
-        dt = (d['timestamp'] as Timestamp).toDate();
-      else if (d['date'] != null)
-        dt = DateTime.tryParse(d['date'].toString());
+      if (d['timestamp'] != null) dt = (d['timestamp'] as Timestamp).toDate();
+      else if (d['date'] != null) dt = DateTime.tryParse(d['date'].toString());
       if (!_isInDateRange(dt)) continue;
 
       final status = (d['status'] ?? '').toString().toLowerCase();
@@ -7053,29 +5183,22 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
 
   void _downloadPdf(BuildContext context, List<Map<String, dynamic>> rows) {
     double totalSales = 0;
-    final pdfRows = rows
-        .where((d) {
-          final status = (d['status'] ?? '').toString().toLowerCase();
-          return status != 'cancelled' &&
-              status != 'returned' &&
-              d['hasBeenReturned'] != true;
-        })
-        .map((d) {
-          final dt = d['_dt'] as DateTime?;
-          final dateStr = dt != null
-              ? DateFormat('dd MMM yyyy').format(dt)
-              : 'N/A';
-          final total = double.tryParse(d['total']?.toString() ?? '0') ?? 0;
-          totalSales += total;
-          return [
-            (d['invoiceNumber']?.toString() ?? 'N/A'),
-            dateStr,
-            (d['customerName']?.toString() ?? 'Guest'),
-            (d['paymentMode']?.toString() ?? 'Cash'),
-            total.toStringAsFixed(2),
-          ];
-        })
-        .toList();
+    final pdfRows = rows.where((d) {
+      final status = (d['status'] ?? '').toString().toLowerCase();
+      return status != 'cancelled' && status != 'returned' && d['hasBeenReturned'] != true;
+    }).map((d) {
+      final dt = d['_dt'] as DateTime?;
+      final dateStr = dt != null ? DateFormat('dd MMM yyyy').format(dt) : 'N/A';
+      final total = double.tryParse(d['total']?.toString() ?? '0') ?? 0;
+      totalSales += total;
+      return [
+        (d['invoiceNumber']?.toString() ?? 'N/A'),
+        dateStr,
+        (d['customerName']?.toString() ?? 'Guest'),
+        (d['paymentMode']?.toString() ?? 'Cash'),
+        total.toStringAsFixed(2),
+      ];
+    }).toList();
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
@@ -7101,12 +5224,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Sales Record", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -7116,12 +5234,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Sales Record", widget.onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(
-                    color: kPrimaryColor,
-                    strokeWidth: 2,
-                  ),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
               );
             }
 
@@ -7133,23 +5246,15 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
             final Map<String, double> dailySales = {};
             for (var d in filtered) {
               final status = (d['status'] ?? '').toString().toLowerCase();
-              if (status == 'cancelled' ||
-                  status == 'returned' ||
-                  d['hasBeenReturned'] == true)
-                continue;
+              if (status == 'cancelled' || status == 'returned' || d['hasBeenReturned'] == true) continue;
               final dt = d['_dt'] as DateTime?;
               if (dt != null) {
                 final key = DateFormat('dd/MM').format(dt);
-                dailySales[key] =
-                    (dailySales[key] ?? 0) +
-                    (double.tryParse(d['total']?.toString() ?? '0') ?? 0);
+                dailySales[key] = (dailySales[key] ?? 0) + (double.tryParse(d['total']?.toString() ?? '0') ?? 0);
               }
             }
-            final trendEntries = dailySales.entries.toList()
-              ..sort((a, b) => a.key.compareTo(b.key));
-            final displayTrend = trendEntries.length > 7
-                ? trendEntries.sublist(trendEntries.length - 7)
-                : trendEntries;
+            final trendEntries = dailySales.entries.toList()..sort((a, b) => a.key.compareTo(b.key));
+            final displayTrend = trendEntries.length > 7 ? trendEntries.sublist(trendEntries.length - 7) : trendEntries;
             final bool hasTrendData = displayTrend.any((e) => e.value > 0);
 
             return Scaffold(
@@ -7193,9 +5298,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                           SliverToBoxAdapter(
                             child: hasTrendData
                                 ? _buildTrendAreaChart(displayTrend)
-                                : const EmptyStateWidget(
-                                    message: "No data found",
-                                  ),
+                                : const EmptyStateWidget(message: "No data found"),
                           ),
                         ],
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -7208,11 +5311,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                                 _buildSectionHeader("Invoice Ledger"),
                                 Text(
                                   "${filtered.length} RECORDS",
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: kPrimaryColor,
-                                  ),
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kPrimaryColor),
                                 ),
                               ],
                             ),
@@ -7220,14 +5319,8 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
                         filtered.isEmpty
-                            ? const SliverFillRemaining(
-                                child: EmptyStateWidget(
-                                  message: "No records found",
-                                ),
-                              )
-                            : SliverToBoxAdapter(
-                                child: _buildSalesTable(filtered),
-                              ),
+                            ? const SliverFillRemaining(child: EmptyStateWidget(message: "No records found"))
+                            : SliverToBoxAdapter(child: _buildSalesTable(filtered)),
                         const SliverToBoxAdapter(child: SizedBox(height: 40)),
                       ],
                     ),
@@ -7244,15 +5337,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
   // ─── UI Components ────────────────────────────────────────────────────────
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2));
   }
 
   Widget _buildHeader(double total, int active, int cancelled, int returned) {
@@ -7262,9 +5347,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -7272,25 +5355,9 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Net Sales Value",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Net Sales Value", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                "$symbol${total.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("$symbol${total.toStringAsFixed(2)}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Row(
@@ -7320,22 +5387,8 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       ),
       child: Column(
         children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              color: kTextSecondary,
-              fontSize: 7,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 14)),
+          Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -7346,9 +5399,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5))),
       ),
       child: Column(
         children: [
@@ -7361,37 +5412,14 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                     onChanged: (v) => setState(() => _searchQuery = v),
                     decoration: InputDecoration(
                       hintText: 'Search invoice, customer, mode...',
-                      hintStyle: const TextStyle(
-                        fontSize: 11,
-                        color: kTextSecondary,
-                      ),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        size: 16,
-                        color: kTextSecondary,
-                      ),
+                      hintStyle: const TextStyle(fontSize: 11, color: kTextSecondary),
+                      prefixIcon: const Icon(Icons.search_rounded, size: 16, color: kTextSecondary),
                       filled: true,
                       fillColor: kBackgroundColor,
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 0,
-                        horizontal: 8,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: kBorderColor.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(
-                          color: kBorderColor.withValues(alpha: 0.4),
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: kPrimaryColor),
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withValues(alpha: 0.4))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withValues(alpha: 0.4))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kPrimaryColor)),
                     ),
                   ),
                 ),
@@ -7401,11 +5429,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
               const SizedBox(width: 4),
               IconButton(
                 onPressed: () => setState(() => _isDescending = !_isDescending),
-                icon: Icon(
-                  _isDescending ? Icons.south_rounded : Icons.north_rounded,
-                  size: 18,
-                  color: kPrimaryColor,
-                ),
+                icon: Icon(_isDescending ? Icons.south_rounded : Icons.north_rounded, size: 18, color: kPrimaryColor),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
               ),
@@ -7427,18 +5451,11 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                   child: GestureDetector(
                     onTap: () => setState(() => _statusFilter = s),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 5,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                       decoration: BoxDecoration(
                         color: selected ? chipColor : kBackgroundColor,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: selected
-                              ? chipColor
-                              : kBorderColor.withValues(alpha: 0.4),
-                        ),
+                        border: Border.all(color: selected ? chipColor : kBorderColor.withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         s,
@@ -7463,23 +5480,13 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
     return InkWell(
       onTap: () => showModalBottomSheet(
         context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
         builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text(
-                "Sort By",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 10,
-                  letterSpacing: 1,
-                  color: kTextSecondary,
-                ),
-              ),
+              child: Text("Sort By", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1, color: kTextSecondary)),
             ),
             _sortTile(ctx, Icons.calendar_today_rounded, 'Date', 'date'),
             _sortTile(ctx, Icons.attach_money_rounded, 'Amount', 'amount'),
@@ -7491,59 +5498,25 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: kPrimaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
         child: Row(
           children: [
             const Icon(Icons.tune_rounded, size: 14, color: kPrimaryColor),
             const SizedBox(width: 6),
-            Text(
-              _sortLabels[_sortBy] ?? _sortBy,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
-            ),
+            Text(_sortLabels[_sortBy] ?? _sortBy, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor)),
           ],
         ),
       ),
     );
   }
 
-  ListTile _sortTile(
-    BuildContext ctx,
-    IconData icon,
-    String label,
-    String key,
-  ) {
+  ListTile _sortTile(BuildContext ctx, IconData icon, String label, String key) {
     final bool selected = _sortBy == key;
     return ListTile(
       dense: true,
-      leading: Icon(
-        icon,
-        color: selected ? kPrimaryColor : kTextSecondary,
-        size: 20,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: selected ? kPrimaryColor : Colors.black87,
-        ),
-      ),
-      trailing: selected
-          ? Icon(
-              _isDescending
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              size: 16,
-              color: kPrimaryColor,
-            )
-          : null,
+      leading: Icon(icon, color: selected ? kPrimaryColor : kTextSecondary, size: 20),
+      title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: selected ? kPrimaryColor : Colors.black87)),
+      trailing: selected ? Icon(_isDescending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, size: 16, color: kPrimaryColor) : null,
       selected: selected,
       selectedTileColor: kPrimaryColor.withValues(alpha: 0.06),
       onTap: () {
@@ -7578,106 +5551,74 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
         height: 130,
         child: hasData
             ? LineChart(
-                LineChartData(
-                  minY: 0,
-                  maxY: maxVal * 1.2,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (v) => FlLine(
-                      color: kBorderColor.withValues(alpha: 0.2),
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 36,
-                        getTitlesWidget: (v, m) {
-                          if (v == 0) return const SizedBox();
-                          final text = v >= 1000
-                              ? '${(v / 1000).toStringAsFixed(0)}k'
-                              : v.toStringAsFixed(0);
-                          return Text(
-                            text,
-                            style: const TextStyle(
-                              fontSize: 8,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 24,
-                        getTitlesWidget: (v, m) {
-                          final index = v.toInt();
-                          if (index < 0 || index >= trend.length)
-                            return const SizedBox();
-                          return SideTitleWidget(
-                            meta: m,
-                            space: 8,
-                            child: Text(
-                              trend[index].key,
-                              style: const TextStyle(
-                                fontSize: 8,
-                                color: kTextSecondary,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: trend
-                          .asMap()
-                          .entries
-                          .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-                          .toList(),
-                      isCurved: true,
-                      curveSmoothness: 0.35,
-                      color: kIncomeGreen,
-                      barWidth: 2.5,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) =>
-                            FlDotCirclePainter(
-                              radius: 3,
-                              color: Colors.white,
-                              strokeWidth: 2,
-                              strokeColor: kIncomeGreen,
-                            ),
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            kIncomeGreen.withValues(alpha: 0.15),
-                            kIncomeGreen.withValues(alpha: 0),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
+          LineChartData(
+            minY: 0,
+            maxY: maxVal * 1.2,
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withValues(alpha: 0.2), strokeWidth: 1),
+            ),
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 36,
+                  getTitlesWidget: (v, m) {
+                    if (v == 0) return const SizedBox();
+                    final text = v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0);
+                    return Text(text, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
+                  },
                 ),
-              )
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 24,
+                  getTitlesWidget: (v, m) {
+                    final index = v.toInt();
+                    if (index < 0 || index >= trend.length) return const SizedBox();
+                    return SideTitleWidget(
+                      meta: m,
+                      space: 8,
+                      child: Text(trend[index].key, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w900)),
+                    );
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            lineBarsData: [
+              LineChartBarData(
+                spots: trend.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
+                isCurved: true,
+                curveSmoothness: 0.35,
+                color: kIncomeGreen,
+                barWidth: 2.5,
+                isStrokeCapRound: true,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                    radius: 3,
+                    color: Colors.white,
+                    strokeWidth: 2,
+                    strokeColor: kIncomeGreen,
+                  ),
+                ),
+                belowBarData: BarAreaData(
+                  show: true,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [kIncomeGreen.withValues(alpha: 0.15), kIncomeGreen.withValues(alpha: 0)],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
             : const EmptyStateWidget(message: "No data found"),
       ),
     );
@@ -7688,9 +5629,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withValues(alpha: 0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withValues(alpha: 0.5))),
       ),
       child: Column(
         children: [
@@ -7700,69 +5639,12 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: const Row(
               children: [
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Invoice",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 1, child: Text("Invoice", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
                 SizedBox(width: 4),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Customer",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Date",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Mode",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Amount",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: Text("Customer", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 2, child: Text("Date", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 1, child: Text("Mode", textAlign: TextAlign.center, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 2, child: Text("Amount", textAlign: TextAlign.right, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
               ],
             ),
           ),
@@ -7775,33 +5657,23 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
 
   Widget _buildSalesRow(Map<String, dynamic> data, int index) {
     final symbol = CurrencyService().symbol;
-    final double total =
-        double.tryParse(data['total']?.toString() ?? '0') ?? 0.0;
+    final double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0.0;
     final String status = (data['status'] ?? '').toString().toLowerCase();
     final bool isCancelled = status == 'cancelled';
-    final bool isReturned =
-        status == 'returned' || data['hasBeenReturned'] == true;
+    final bool isReturned = status == 'returned' || data['hasBeenReturned'] == true;
     final bool isEven = index % 2 == 0;
 
     final String modeRaw = (data['paymentMode'] ?? 'Cash').toString();
     final String modeLower = modeRaw.toLowerCase();
     Color modeColor = kIncomeGreen;
-    if (modeLower.contains('online') ||
-        modeLower.contains('upi') ||
-        modeLower.contains('card'))
-      modeColor = kPrimaryColor;
-    else if (modeLower.contains('credit'))
-      modeColor = kWarningOrange;
+    if (modeLower.contains('online') || modeLower.contains('upi') || modeLower.contains('card')) modeColor = kPrimaryColor;
+    else if (modeLower.contains('credit')) modeColor = kWarningOrange;
 
     final DateTime? dt = data['_dt'] as DateTime?;
-    final String dateStr = dt != null
-        ? DateFormat('dd MMM yyy').format(dt)
-        : '--';
+    final String dateStr = dt != null ? DateFormat('dd MMM yyy').format(dt) : '--';
     final String timeStr = dt != null ? DateFormat('hh:mm a').format(dt) : '';
 
-    Color rowBg = isEven
-        ? kBackgroundColor.withValues(alpha: 0.4)
-        : kSurfaceColor;
+    Color rowBg = isEven ? kBackgroundColor.withValues(alpha: 0.4) : kSurfaceColor;
     if (isCancelled) rowBg = kExpenseRed.withValues(alpha: 0.04);
     if (isReturned) rowBg = kWarningOrange.withValues(alpha: 0.04);
 
@@ -7809,24 +5681,20 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: rowBg,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.3))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           // Invoice number
           Expanded(
-            flex: 1,
+            flex:1,
             child: Text(
               '#${data['invoiceNumber'] ?? 'N/A'}',
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
-                color: isCancelled
-                    ? kExpenseRed
-                    : (isReturned ? kWarningOrange : kPrimaryColor),
+                color: isCancelled ? kExpenseRed : (isReturned ? kWarningOrange : kPrimaryColor),
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -7844,9 +5712,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w800,
-                    color: isCancelled || isReturned
-                        ? kTextSecondary
-                        : Colors.black87,
+                    color: isCancelled || isReturned ? kTextSecondary : Colors.black87,
                     decoration: isCancelled ? TextDecoration.lineThrough : null,
                   ),
                   maxLines: 1,
@@ -7855,14 +5721,9 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                 if (isCancelled || isReturned)
                   Container(
                     margin: const EdgeInsets.only(top: 2),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
-                      color: isCancelled
-                          ? kExpenseRed.withValues(alpha: 0.1)
-                          : kWarningOrange.withValues(alpha: 0.1),
+                      color: isCancelled ? kExpenseRed.withValues(alpha: 0.1) : kWarningOrange.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -7884,19 +5745,9 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  dateStr,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
-                  ),
-                ),
+                Text(dateStr, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.black87)),
                 if (timeStr.isNotEmpty)
-                  Text(
-                    timeStr,
-                    style: const TextStyle(fontSize: 9, color: kTextSecondary),
-                  ),
+                  Text(timeStr, style: const TextStyle(fontSize: 9, color: kTextSecondary)),
               ],
             ),
           ),
@@ -7912,11 +5763,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
                 ),
                 child: Text(
                   modeRaw.length > 6 ? modeRaw.substring(0, 5) : modeRaw,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: modeColor,
-                  ),
+                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: modeColor),
                   maxLines: 1,
                 ),
               ),
@@ -7931,9 +5778,7 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w900,
-                color: isCancelled
-                    ? kTextSecondary
-                    : (isReturned ? kWarningOrange : kPrimaryColor),
+                color: isCancelled ? kTextSecondary : (isReturned ? kWarningOrange : kPrimaryColor),
                 decoration: isCancelled ? TextDecoration.lineThrough : null,
               ),
             ),
@@ -7943,7 +5788,6 @@ class _FullSalesHistoryPageState extends State<FullSalesHistoryPage> {
     );
   }
 }
-
 // ==========================================
 // 6. TOP CUSTOMERS
 // ==========================================
@@ -7970,10 +5814,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
     'creditDue': 'Credit Due',
   };
 
-  void _downloadPdf(
-    BuildContext context,
-    List<Map<String, dynamic>> customers,
-  ) {
+  void _downloadPdf(BuildContext context, List<Map<String, dynamic>> customers) {
     final rows = customers.asMap().entries.map((e) {
       final c = e.value;
       return [
@@ -7985,25 +5826,13 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
       ];
     }).toList();
 
-    final grandTotal = customers.fold<double>(
-      0,
-      (s, c) => s + (c['totalSales'] as double),
-    );
-    final totalCredit = customers.fold<double>(
-      0,
-      (s, c) => s + (c['creditDue'] as double),
-    );
+    final grandTotal = customers.fold<double>(0, (s, c) => s + (c['totalSales'] as double));
+    final totalCredit = customers.fold<double>(0, (s, c) => s + (c['creditDue'] as double));
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
       reportTitle: 'Customer Contribution Audit',
-      headers: [
-        'Rank',
-        'Customer Name',
-        'NO. BILLS',
-        'Credit Due',
-        'Total Sales',
-      ],
+      headers: ['Rank', 'Customer Name', 'NO. BILLS', 'Credit Due', 'Total Sales'],
       rows: rows,
       summaryTitle: 'Grand Total Sales',
       summaryValue: grandTotal.toStringAsFixed(2),
@@ -8021,23 +5850,17 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
       int result = 0;
       switch (_sortBy) {
         case 'name':
-          result = (a['name'] as String).toLowerCase().compareTo(
-            (b['name'] as String).toLowerCase(),
-          );
+          result = (a['name'] as String).toLowerCase().compareTo((b['name'] as String).toLowerCase());
           break;
         case 'bills':
           result = (a['bills'] as int).compareTo(b['bills'] as int);
           break;
         case 'creditDue':
-          result = (a['creditDue'] as double).compareTo(
-            b['creditDue'] as double,
-          );
+          result = (a['creditDue'] as double).compareTo(b['creditDue'] as double);
           break;
         case 'totalSales':
         default:
-          result = (a['totalSales'] as double).compareTo(
-            b['totalSales'] as double,
-          );
+          result = (a['totalSales'] as double).compareTo(b['totalSales'] as double);
           break;
       }
       return _isDescending ? -result : result;
@@ -8057,12 +5880,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Top Customers", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
 
@@ -8076,9 +5894,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                   return Scaffold(
                     backgroundColor: kBackgroundColor,
                     appBar: _buildModernAppBar("Top Customers", widget.onBack),
-                    body: const Center(
-                      child: CircularProgressIndicator(color: kPrimaryColor),
-                    ),
+                    body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
                   );
                 }
 
@@ -8089,17 +5905,11 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
 
                 for (var d in salesSnap.data!.docs) {
                   final data = d.data() as Map<String, dynamic>;
-                  final status = (data['status'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  if (status == 'cancelled' ||
-                      status == 'returned' ||
-                      data['hasBeenReturned'] == true)
-                    continue;
+                  final status = (data['status'] ?? '').toString().toLowerCase();
+                  if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) continue;
                   final name = (data['customerName'] ?? '').toString().trim();
                   if (name.isEmpty || name.toLowerCase() == 'guest') continue;
-                  final amt =
-                      double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+                  final amt = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
                   billCount[name] = (billCount[name] ?? 0) + 1;
                   salesTotal[name] = (salesTotal[name] ?? 0) + amt;
                 }
@@ -8111,9 +5921,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                   final data = d.data() as Map<String, dynamic>;
                   final name = (data['name'] ?? '').toString().trim();
                   if (name.isEmpty) continue;
-                  final balance = (data['balance'] is num)
-                      ? (data['balance'] as num).toDouble()
-                      : 0.0;
+                  final balance = (data['balance'] is num) ? (data['balance'] as num).toDouble() : 0.0;
                   // Take the max if there are duplicates
                   creditDueMap[name] = (creditDueMap[name] ?? 0) + balance;
                 }
@@ -8121,47 +5929,29 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                 // --- Merge into a single list ---
                 final allNames = {...salesTotal.keys, ...creditDueMap.keys};
                 List<Map<String, dynamic>> customers = allNames
-                    .where(
-                      (name) =>
-                          salesTotal.containsKey(name) ||
-                          creditDueMap.containsKey(name),
-                    )
-                    .map(
-                      (name) => {
-                        'name': name,
-                        'bills': billCount[name] ?? 0,
-                        'totalSales': salesTotal[name] ?? 0.0,
-                        'creditDue': creditDueMap[name] ?? 0.0,
-                      },
-                    )
+                    .where((name) => salesTotal.containsKey(name) || creditDueMap.containsKey(name))
+                    .map((name) => {
+                          'name': name,
+                          'bills': billCount[name] ?? 0,
+                          'totalSales': salesTotal[name] ?? 0.0,
+                          'creditDue': creditDueMap[name] ?? 0.0,
+                        })
                     .toList();
 
                 // Apply search filter
                 if (_searchQuery.isNotEmpty) {
                   final q = _searchQuery.toLowerCase();
-                  customers = customers
-                      .where(
-                        (c) => (c['name'] as String).toLowerCase().contains(q),
-                      )
-                      .toList();
+                  customers = customers.where((c) => (c['name'] as String).toLowerCase().contains(q)).toList();
                 }
 
                 // Sort
                 customers = _sortCustomers(customers);
 
                 // Totals for header
-                final grandTotal = customers.fold<double>(
-                  0,
-                  (s, c) => s + (c['totalSales'] as double),
-                );
-                final totalCredit = customers.fold<double>(
-                  0,
-                  (s, c) => s + (c['creditDue'] as double),
-                );
+                final grandTotal = customers.fold<double>(0, (s, c) => s + (c['totalSales'] as double));
+                final totalCredit = customers.fold<double>(0, (s, c) => s + (c['creditDue'] as double));
                 final top6 = customers.take(6).toList();
-                final bool hasTopCustomerChartData = top6.any(
-                  (c) => (c['totalSales'] as double) > 0,
-                );
+                final bool hasTopCustomerChartData = top6.any((c) => (c['totalSales'] as double) > 0);
 
                 return Scaffold(
                   backgroundColor: kBackgroundColor,
@@ -8172,86 +5962,50 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                   ),
                   body: Column(
                     children: [
-                      _buildExecutiveCustomerHeader(
-                        grandTotal,
-                        totalCredit,
-                        customers.length,
-                      ),
+                      _buildExecutiveCustomerHeader(grandTotal, totalCredit, customers.length),
                       _buildControlStrip(),
                       Expanded(
                         child: CustomScrollView(
                           physics: const BouncingScrollPhysics(),
                           slivers: [
                             if (_searchQuery.isEmpty) ...[
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 16),
-                              ),
+                              const SliverToBoxAdapter(child: SizedBox(height: 16)),
                               SliverPadding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                ),
-                                sliver: SliverToBoxAdapter(
-                                  child: _buildSectionHeader(
-                                    "Revenue Contribution",
-                                  ),
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 14),
+                                sliver: SliverToBoxAdapter(child: _buildSectionHeader("Revenue Contribution")),
                               ),
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 10),
-                              ),
+                              const SliverToBoxAdapter(child: SizedBox(height: 10)),
                               SliverToBoxAdapter(
                                 child: hasTopCustomerChartData
                                     ? _buildContributionGraph(top6)
-                                    : const EmptyStateWidget(
-                                        message: "No data found",
-                                      ),
+                                    : const EmptyStateWidget(message: "No data found"),
                               ),
                             ],
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 24),
-                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 24)),
                             SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
                               sliver: SliverToBoxAdapter(
                                 child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    _buildSectionHeader(
-                                      "Customer Valuation Ledger",
-                                    ),
+                                    _buildSectionHeader("Customer Valuation Ledger"),
                                     Text(
                                       "${customers.length} Customers",
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.bold,
-                                        color: kPrimaryColor,
-                                      ),
+                                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kPrimaryColor),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 8),
-                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 8)),
                             customers.isEmpty
                                 ? const SliverFillRemaining(
                                     child: Center(
-                                      child: Text(
-                                        "No customer data found",
-                                        style: TextStyle(color: kTextSecondary),
-                                      ),
+                                      child: Text("No customer data found", style: TextStyle(color: kTextSecondary)),
                                     ),
                                   )
-                                : SliverToBoxAdapter(
-                                    child: _buildCustomerTable(customers),
-                                  ),
-                            const SliverToBoxAdapter(
-                              child: SizedBox(height: 40),
-                            ),
+                                : SliverToBoxAdapter(child: _buildCustomerTable(customers)),
+                            const SliverToBoxAdapter(child: SizedBox(height: 40)),
                           ],
                         ),
                       ),
@@ -8269,30 +6023,16 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
   // --- UI COMPONENTS ---
 
   Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
-    );
+    return Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2));
   }
 
-  Widget _buildExecutiveCustomerHeader(
-    double grandTotal,
-    double totalCredit,
-    int count,
-  ) {
+  Widget _buildExecutiveCustomerHeader(double grandTotal, double totalCredit, int count) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -8300,36 +6040,16 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Grand Total Sales",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Grand Total Sales", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                grandTotal.toStringAsFixed(2),
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text(grandTotal.toStringAsFixed(2), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Row(
             children: [
               _buildHeaderBadge("$count", "Customers", kPrimaryColor),
               const SizedBox(width: 8),
-              _buildHeaderBadge(
-                totalCredit.toStringAsFixed(0),
-                "Credit Due",
-                kExpenseRed,
-              ),
+              _buildHeaderBadge(totalCredit.toStringAsFixed(0), "Credit Due", kExpenseRed),
             ],
           ),
         ],
@@ -8347,22 +6067,8 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
       ),
       child: Column(
         children: [
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 15,
-            ),
-          ),
-          Text(
-            label,
-            style: const TextStyle(
-              color: kTextSecondary,
-              fontSize: 7,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 15)),
+          Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -8373,9 +6079,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         children: [
@@ -8386,37 +6090,14 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                 onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: InputDecoration(
                   hintText: 'Search customers...',
-                  hintStyle: const TextStyle(
-                    fontSize: 12,
-                    color: kTextSecondary,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    size: 16,
-                    color: kTextSecondary,
-                  ),
+                  hintStyle: const TextStyle(fontSize: 12, color: kTextSecondary),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 16, color: kTextSecondary),
                   filled: true,
                   fillColor: kBackgroundColor,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withOpacity(0.4),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withOpacity(0.4),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: kPrimaryColor),
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withOpacity(0.4))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withOpacity(0.4))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kPrimaryColor)),
                 ),
               ),
             ),
@@ -8426,11 +6107,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
           const SizedBox(width: 4),
           IconButton(
             onPressed: () => setState(() => _isDescending = !_isDescending),
-            icon: Icon(
-              _isDescending ? Icons.south_rounded : Icons.north_rounded,
-              size: 18,
-              color: kPrimaryColor,
-            ),
+            icon: Icon(_isDescending ? Icons.south_rounded : Icons.north_rounded, size: 18, color: kPrimaryColor),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -8443,102 +6120,43 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
     return InkWell(
       onTap: () => showModalBottomSheet(
         context: context,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
         builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Text(
-                "Sort By",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 10,
-                  letterSpacing: 1,
-                  color: kTextSecondary,
-                ),
-              ),
+              child: Text("Sort By", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1, color: kTextSecondary)),
             ),
-            _sortTile(
-              ctx,
-              Icons.attach_money_rounded,
-              'Total Sales',
-              'totalSales',
-            ),
-            _sortTile(
-              ctx,
-              Icons.sort_by_alpha_rounded,
-              'Customer Name',
-              'name',
-            ),
+            _sortTile(ctx, Icons.attach_money_rounded, 'Total Sales', 'totalSales'),
+            _sortTile(ctx, Icons.sort_by_alpha_rounded, 'Customer Name', 'name'),
             _sortTile(ctx, Icons.receipt_long_rounded, 'No. of Bills', 'bills'),
-            _sortTile(
-              ctx,
-              Icons.credit_card_off_rounded,
-              'Credit Due',
-              'creditDue',
-            ),
+            _sortTile(ctx, Icons.credit_card_off_rounded, 'Credit Due', 'creditDue'),
             const SizedBox(height: 20),
           ],
         ),
       ),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
         child: Row(
           children: [
             const Icon(Icons.tune_rounded, size: 14, color: kPrimaryColor),
             const SizedBox(width: 6),
-            Text(
-              _sortLabels[_sortBy] ?? _sortBy,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
-            ),
+            Text(_sortLabels[_sortBy] ?? _sortBy, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor)),
           ],
         ),
       ),
     );
   }
 
-  ListTile _sortTile(
-    BuildContext ctx,
-    IconData icon,
-    String label,
-    String key,
-  ) {
+  ListTile _sortTile(BuildContext ctx, IconData icon, String label, String key) {
     final bool selected = _sortBy == key;
     return ListTile(
       dense: true,
-      leading: Icon(
-        icon,
-        color: selected ? kPrimaryColor : kTextSecondary,
-        size: 20,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: selected ? kPrimaryColor : Colors.black87,
-        ),
-      ),
-      trailing: selected
-          ? Icon(
-              _isDescending
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              size: 16,
-              color: kPrimaryColor,
-            )
-          : null,
+      leading: Icon(icon, color: selected ? kPrimaryColor : kTextSecondary, size: 20),
+      title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: selected ? kPrimaryColor : Colors.black87)),
+      trailing: selected ? Icon(_isDescending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, size: 16, color: kPrimaryColor) : null,
       selected: selected,
       selectedTileColor: kPrimaryColor.withOpacity(0.06),
       onTap: () {
@@ -8556,9 +6174,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
   }
 
   Widget _buildContributionGraph(List<Map<String, dynamic>> top6) {
-    final double maxVal = top6.isEmpty
-        ? 100
-        : (top6.first['totalSales'] as double);
+    final double maxVal = top6.isEmpty ? 100 : (top6.first['totalSales'] as double);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -8578,36 +6194,21 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxVal > 0 ? maxVal / 4 : 5,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: kBorderColor.withOpacity(0.2),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withOpacity(0.2), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         if (v == 0) return const SizedBox();
-                        return Text(
-                          v >= 1000
-                              ? '${(v / 1000).toStringAsFixed(0)}k'
-                              : v.toStringAsFixed(0),
-                          style: const TextStyle(
-                            fontSize: 8,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
+                        return Text(v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0),
+                            style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
                       },
                     ),
                   ),
@@ -8617,22 +6218,13 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         int index = v.toInt();
-                        if (index < 0 || index >= top6.length)
-                          return const SizedBox();
+                        if (index < 0 || index >= top6.length) return const SizedBox();
                         String label = top6[index]['name'] as String;
-                        if (label.length > 6)
-                          label = '${label.substring(0, 5)}..';
+                        if (label.length > 6) label = '${label.substring(0, 5)}..';
                         return SideTitleWidget(
                           meta: m,
                           space: 8,
-                          child: Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 7,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                          child: Text(label, style: const TextStyle(fontSize: 7, color: kTextSecondary, fontWeight: FontWeight.w900)),
                         );
                       },
                     ),
@@ -8647,9 +6239,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                         toY: e.value['totalSales'] as double,
                         color: kChartColorsList[colorIndex],
                         width: 16,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: 0,
@@ -8663,15 +6253,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Financial weight of top customers by total sales",
-            style: TextStyle(
-              fontSize: 8,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
+          const Text("Financial weight of top customers by total sales", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -8682,9 +6264,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -8694,70 +6274,12 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: Row(
               children: const [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    "Rank",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 28, child: Text("Rank", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
                 SizedBox(width: 4),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Customer Name",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Bills",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Credit Due",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Total Sales",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 3, child: Text("Customer Name", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 1, child: Text("Bills", textAlign: TextAlign.center, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 2, child: Text("Credit Due", textAlign: TextAlign.right, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
+                Expanded(flex: 2, child: Text("Total Sales", textAlign: TextAlign.right, style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.4))),
               ],
             ),
           ),
@@ -8773,26 +6295,17 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
               decoration: BoxDecoration(
-                color: isEven
-                    ? kBackgroundColor.withOpacity(0.4)
-                    : kSurfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-                ),
+                color: isEven ? kBackgroundColor.withOpacity(0.4) : kSurfaceColor,
+                border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
               ),
               child: Row(
                 children: [
                   SizedBox(
                     width: 28,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 2,
-                        horizontal: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
                       decoration: BoxDecoration(
-                        color: rank <= 3
-                            ? kPrimaryColor.withValues(alpha: 0.12)
-                            : Colors.transparent,
+                        color: rank <= 3 ? kPrimaryColor.withValues(alpha: 0.12) : Colors.transparent,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -8811,11 +6324,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                     flex: 3,
                     child: Text(
                       c['name'] as String,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -8825,11 +6334,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                     child: Text(
                       '$bills',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextSecondary),
                     ),
                   ),
                   Expanded(
@@ -8849,11 +6354,7 @@ class _TopCustomersPageState extends State<TopCustomersPage> {
                     child: Text(
                       totalSales.toStringAsFixed(2),
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: kPrimaryColor,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor),
                     ),
                   ),
                 ],
@@ -8882,8 +6383,7 @@ class _StockReportPageState extends State<StockReportPage> {
   final FirestoreService _firestoreService = FirestoreService();
   String _searchQuery = '';
   bool _isDescending = false;
-  String _sortBy =
-      'productCode'; // name, productCode, stock, cost, profit, retailValue
+  String _sortBy = 'productCode'; // name, productCode, stock, cost, profit, retailValue
 
   static const Map<String, String> _sortLabels = {
     'name': 'Item Name',
@@ -8894,24 +6394,10 @@ class _StockReportPageState extends State<StockReportPage> {
     'retailValue': 'Retail Value',
   };
 
-  void _downloadPdf(
-    BuildContext context,
-    List<DocumentSnapshot> docs,
-    double totalInvValue,
-    int stockCount,
-    double retailValue,
-    double potentialProfit,
-  ) {
+  void _downloadPdf(BuildContext context, List<DocumentSnapshot> docs, double totalInvValue, int stockCount, double retailValue, double potentialProfit) {
     final rows = List.generate(docs.length, (i) {
       final d = docs[i].data() as Map<String, dynamic>;
-      final cost =
-          double.tryParse(
-            d['costPrice']?.toString() ??
-                d['cost']?.toString() ??
-                d['purchasePrice']?.toString() ??
-                '0',
-          ) ??
-          0;
+      final cost = double.tryParse(d['costPrice']?.toString() ?? d['cost']?.toString() ?? d['purchasePrice']?.toString() ?? '0') ?? 0;
       final price = double.tryParse(d['price']?.toString() ?? '0') ?? 0;
       final stock = double.tryParse(d['currentStock']?.toString() ?? '0') ?? 0;
       final retailVal = price * stock;
@@ -8930,15 +6416,7 @@ class _StockReportPageState extends State<StockReportPage> {
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
       reportTitle: 'Executive Stock Valuation Audit',
-      headers: [
-        'SL.',
-        'Product Code',
-        'Item Name',
-        'Stock',
-        'Cost',
-        'Profit',
-        'Retail Val',
-      ],
+      headers: ['SL.', 'Product Code', 'Item Name', 'Stock', 'Cost', 'Profit', 'Retail Val'],
       rows: rows,
       summaryTitle: 'Total Retail Value',
       summaryValue: '${retailValue.toStringAsFixed(2)}',
@@ -8960,12 +6438,7 @@ class _StockReportPageState extends State<StockReportPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Stock Report", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -8975,12 +6448,7 @@ class _StockReportPageState extends State<StockReportPage> {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Stock Report", widget.onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(
-                    color: kPrimaryColor,
-                    strokeWidth: 2,
-                  ),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
               );
             }
 
@@ -8992,18 +6460,9 @@ class _StockReportPageState extends State<StockReportPage> {
 
             for (var d in allDocs) {
               var data = d.data() as Map<String, dynamic>;
-              double cost =
-                  double.tryParse(
-                    data['costPrice']?.toString() ??
-                        data['cost']?.toString() ??
-                        data['purchasePrice']?.toString() ??
-                        '0',
-                  ) ??
-                  0;
-              double price =
-                  double.tryParse(data['price']?.toString() ?? '0') ?? 0;
-              double stock =
-                  double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
+              double cost = double.tryParse(data['costPrice']?.toString() ?? data['cost']?.toString() ?? data['purchasePrice']?.toString() ?? '0') ?? 0;
+              double price = double.tryParse(data['price']?.toString() ?? '0') ?? 0;
+              double stock = double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
 
               if (stock > 0) {
                 totalInventoryValue += cost * stock;
@@ -9018,13 +6477,9 @@ class _StockReportPageState extends State<StockReportPage> {
             var filteredDocs = allDocs.where((d) {
               var data = d.data() as Map<String, dynamic>;
               String query = _searchQuery.toLowerCase();
-              return (data['itemName']?.toString().toLowerCase() ?? '')
-                      .contains(query) ||
-                  (data['productCode']?.toString().toLowerCase() ?? '')
-                      .contains(query) ||
-                  (data['category']?.toString().toLowerCase() ?? '').contains(
-                    query,
-                  );
+              return (data['itemName']?.toString().toLowerCase() ?? '').contains(query) ||
+                  (data['productCode']?.toString().toLowerCase() ?? '').contains(query) ||
+                  (data['category']?.toString().toLowerCase() ?? '').contains(query);
             }).toList();
 
             filteredDocs.sort((a, b) {
@@ -9033,122 +6488,48 @@ class _StockReportPageState extends State<StockReportPage> {
               int result = 0;
               switch (_sortBy) {
                 case 'name':
-                  result = (dataA['itemName'] ?? '')
-                      .toString()
-                      .toLowerCase()
-                      .compareTo(
-                        (dataB['itemName'] ?? '').toString().toLowerCase(),
-                      );
+                  result = (dataA['itemName'] ?? '').toString().toLowerCase().compareTo((dataB['itemName'] ?? '').toString().toLowerCase());
                   break;
                 case 'productCode':
-                  final codeA =
-                      int.tryParse(dataA['productCode']?.toString() ?? '') ?? 0;
-                  final codeB =
-                      int.tryParse(dataB['productCode']?.toString() ?? '') ?? 0;
+                  final codeA = int.tryParse(dataA['productCode']?.toString() ?? '') ?? 0;
+                  final codeB = int.tryParse(dataB['productCode']?.toString() ?? '') ?? 0;
                   result = codeA != 0 && codeB != 0
                       ? codeA.compareTo(codeB)
-                      : (dataA['productCode'] ?? '').toString().compareTo(
-                          (dataB['productCode'] ?? '').toString(),
-                        );
+                      : (dataA['productCode'] ?? '').toString().compareTo((dataB['productCode'] ?? '').toString());
                   break;
                 case 'stock':
-                  result =
-                      (double.tryParse(
-                                dataA['currentStock']?.toString() ?? '0',
-                              ) ??
-                              0)
-                          .compareTo(
-                            double.tryParse(
-                                  dataB['currentStock']?.toString() ?? '0',
-                                ) ??
-                                0,
-                          );
+                  result = (double.tryParse(dataA['currentStock']?.toString() ?? '0') ?? 0)
+                      .compareTo(double.tryParse(dataB['currentStock']?.toString() ?? '0') ?? 0);
                   break;
                 case 'cost':
-                  final costA =
-                      (double.tryParse(
-                            dataA['costPrice']?.toString() ??
-                                dataA['cost']?.toString() ??
-                                '0',
-                          ) ??
-                          0) *
-                      (double.tryParse(
-                            dataA['currentStock']?.toString() ?? '0',
-                          ) ??
-                          0);
-                  final costB =
-                      (double.tryParse(
-                            dataB['costPrice']?.toString() ??
-                                dataB['cost']?.toString() ??
-                                '0',
-                          ) ??
-                          0) *
-                      (double.tryParse(
-                            dataB['currentStock']?.toString() ?? '0',
-                          ) ??
-                          0);
+                  final costA = (double.tryParse(dataA['costPrice']?.toString() ?? dataA['cost']?.toString() ?? '0') ?? 0) *
+                      (double.tryParse(dataA['currentStock']?.toString() ?? '0') ?? 0);
+                  final costB = (double.tryParse(dataB['costPrice']?.toString() ?? dataB['cost']?.toString() ?? '0') ?? 0) *
+                      (double.tryParse(dataB['currentStock']?.toString() ?? '0') ?? 0);
                   result = costA.compareTo(costB);
                   break;
                 case 'profit':
-                  final priceA =
-                      double.tryParse(dataA['price']?.toString() ?? '0') ?? 0;
-                  final cA =
-                      double.tryParse(
-                        dataA['costPrice']?.toString() ??
-                            dataA['cost']?.toString() ??
-                            '0',
-                      ) ??
-                      0;
-                  final stkA =
-                      double.tryParse(
-                        dataA['currentStock']?.toString() ?? '0',
-                      ) ??
-                      0;
+                  final priceA = double.tryParse(dataA['price']?.toString() ?? '0') ?? 0;
+                  final cA = double.tryParse(dataA['costPrice']?.toString() ?? dataA['cost']?.toString() ?? '0') ?? 0;
+                  final stkA = double.tryParse(dataA['currentStock']?.toString() ?? '0') ?? 0;
                   final profitA = (priceA - cA) * stkA;
 
-                  final priceB =
-                      double.tryParse(dataB['price']?.toString() ?? '0') ?? 0;
-                  final cB =
-                      double.tryParse(
-                        dataB['costPrice']?.toString() ??
-                            dataB['cost']?.toString() ??
-                            '0',
-                      ) ??
-                      0;
-                  final stkB =
-                      double.tryParse(
-                        dataB['currentStock']?.toString() ?? '0',
-                      ) ??
-                      0;
+                  final priceB = double.tryParse(dataB['price']?.toString() ?? '0') ?? 0;
+                  final cB = double.tryParse(dataB['costPrice']?.toString() ?? dataB['cost']?.toString() ?? '0') ?? 0;
+                  final stkB = double.tryParse(dataB['currentStock']?.toString() ?? '0') ?? 0;
                   final profitB = (priceB - cB) * stkB;
                   result = profitA.compareTo(profitB);
                   break;
                 case 'retailValue':
-                  final retA =
-                      (double.tryParse(dataA['price']?.toString() ?? '0') ??
-                          0) *
-                      (double.tryParse(
-                            dataA['currentStock']?.toString() ?? '0',
-                          ) ??
-                          0);
-                  final retB =
-                      (double.tryParse(dataB['price']?.toString() ?? '0') ??
-                          0) *
-                      (double.tryParse(
-                            dataB['currentStock']?.toString() ?? '0',
-                          ) ??
-                          0);
+                  final retA = (double.tryParse(dataA['price']?.toString() ?? '0') ?? 0) *
+                      (double.tryParse(dataA['currentStock']?.toString() ?? '0') ?? 0);
+                  final retB = (double.tryParse(dataB['price']?.toString() ?? '0') ?? 0) *
+                      (double.tryParse(dataB['currentStock']?.toString() ?? '0') ?? 0);
                   result = retA.compareTo(retB);
                   break;
                 case 'price':
-                  result =
-                      (double.tryParse(dataA['price']?.toString() ?? '0') ?? 0)
-                          .compareTo(
-                            double.tryParse(
-                                  dataB['price']?.toString() ?? '0',
-                                ) ??
-                                0,
-                          );
+                  result = (double.tryParse(dataA['price']?.toString() ?? '0') ?? 0)
+                      .compareTo(double.tryParse(dataB['price']?.toString() ?? '0') ?? 0);
                   break;
               }
               return _isDescending ? -result : result;
@@ -9159,48 +6540,25 @@ class _StockReportPageState extends State<StockReportPage> {
               appBar: _buildModernAppBar(
                 "Stock Report",
                 widget.onBack,
-                onDownload: () => _downloadPdf(
-                  context,
-                  filteredDocs,
-                  totalInventoryValue,
-                  totalStockCount,
-                  totalRetailValue,
-                  potentialProfit,
-                ),
+                onDownload: () => _downloadPdf(context, filteredDocs, totalInventoryValue, totalStockCount, totalRetailValue, potentialProfit),
               ),
               body: Column(
                 children: [
-                  _buildExecutiveValuationRibbon(
-                    totalInventoryValue,
-                    totalRetailValue,
-                    potentialProfit,
-                    totalStockCount,
-                  ),
+                  _buildExecutiveValuationRibbon(totalInventoryValue, totalRetailValue, potentialProfit, totalStockCount),
                   _buildIntegratedControlStrip(),
                   Expanded(
                     child: filteredDocs.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "No inventory items match your audit criteria",
-                              style: TextStyle(color: kTextSecondary),
-                            ),
-                          )
+                        ? const Center(child: Text("No inventory items match your audit criteria", style: TextStyle(color: kTextSecondary)))
                         : CustomScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            slivers: [
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 8),
-                              ),
-                              SliverToBoxAdapter(
-                                child: _buildHighDensityStockLedger(
-                                  filteredDocs,
-                                ),
-                              ),
-                              const SliverToBoxAdapter(
-                                child: SizedBox(height: 40),
-                              ),
-                            ],
-                          ),
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
+                        const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                        SliverToBoxAdapter(
+                          child: _buildHighDensityStockLedger(filteredDocs),
+                        ),
+                        const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -9213,39 +6571,20 @@ class _StockReportPageState extends State<StockReportPage> {
 
   // --- EXECUTIVE UI COMPONENTS ---
 
-  Widget _buildExecutiveValuationRibbon(
-    double cost,
-    double retail,
-    double profit,
-    int count,
-  ) {
+  Widget _buildExecutiveValuationRibbon(double cost, double retail, double profit, int count) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildRibbonSegment(
-            "INV. VALUE (COST)",
-            "${cost.toStringAsFixed(0)}",
-            kTextSecondary,
-          ),
-          _buildRibbonSegment(
-            "Retail Value",
-            "${retail.toStringAsFixed(0)}",
-            kPrimaryColor,
-          ),
-          _buildRibbonSegment(
-            "Potential Profit",
-            "${profit.toStringAsFixed(0)}",
-            kIncomeGreen,
-          ),
+          _buildRibbonSegment("INV. VALUE (COST)", "${cost.toStringAsFixed(0)}", kTextSecondary),
+          _buildRibbonSegment("Retail Value", "${retail.toStringAsFixed(0)}", kPrimaryColor),
+          _buildRibbonSegment("Potential Profit", "${profit.toStringAsFixed(0)}", kIncomeGreen),
           _buildRibbonSegment("Total Stock", "$count", kPurpleCharts),
         ],
       ),
@@ -9256,25 +6595,9 @@ class _StockReportPageState extends State<StockReportPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 7,
-            fontWeight: FontWeight.w900,
-            color: kTextSecondary,
-            letterSpacing: 0.5,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: color,
-            letterSpacing: -0.5,
-          ),
-        ),
+        Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color, letterSpacing: -0.5)),
       ],
     );
   }
@@ -9284,9 +6607,7 @@ class _StockReportPageState extends State<StockReportPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.5))),
       ),
       child: Row(
         children: [
@@ -9298,37 +6619,14 @@ class _StockReportPageState extends State<StockReportPage> {
                 onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: InputDecoration(
                   hintText: 'Search name, code or category...',
-                  hintStyle: const TextStyle(
-                    fontSize: 12,
-                    color: kTextSecondary,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    size: 16,
-                    color: kTextSecondary,
-                  ),
+                  hintStyle: const TextStyle(fontSize: 12, color: kTextSecondary),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 16, color: kTextSecondary),
                   filled: true,
                   fillColor: kBackgroundColor,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withValues(alpha: 0.4),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: kPrimaryColor),
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withValues(alpha: 0.4))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withValues(alpha: 0.4))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kPrimaryColor)),
                 ),
               ),
             ),
@@ -9340,11 +6638,7 @@ class _StockReportPageState extends State<StockReportPage> {
           // Asc/Desc toggle
           IconButton(
             onPressed: () => setState(() => _isDescending = !_isDescending),
-            icon: Icon(
-              _isDescending ? Icons.south_rounded : Icons.north_rounded,
-              size: 18,
-              color: kPrimaryColor,
-            ),
+            icon: Icon(_isDescending ? Icons.south_rounded : Icons.north_rounded, size: 18, color: kPrimaryColor),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -9358,46 +6652,21 @@ class _StockReportPageState extends State<StockReportPage> {
       onTap: () {
         showModalBottomSheet(
           context: context,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           builder: (ctx) => StatefulBuilder(
             builder: (ctx, setModalState) => Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text(
-                    "Sort Inventory By",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 10,
-                      letterSpacing: 1,
-                      color: kTextSecondary,
-                    ),
-                  ),
+                  child: Text("Sort Inventory By", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1, color: kTextSecondary)),
                 ),
-                _sortTile(
-                  ctx,
-                  Icons.tag_rounded,
-                  'Product Code',
-                  'productCode',
-                ),
-                _sortTile(
-                  ctx,
-                  Icons.sort_by_alpha_rounded,
-                  'Item Name',
-                  'name',
-                ),
+                _sortTile(ctx, Icons.tag_rounded, 'Product Code', 'productCode'),
+                _sortTile(ctx, Icons.sort_by_alpha_rounded, 'Item Name', 'name'),
                 _sortTile(ctx, Icons.inventory_2_rounded, 'Stock Qty', 'stock'),
                 _sortTile(ctx, Icons.money_off_rounded, 'Cost Value', 'cost'),
                 _sortTile(ctx, Icons.trending_up_rounded, 'Profit', 'profit'),
-                _sortTile(
-                  ctx,
-                  Icons.sell_rounded,
-                  'Retail Value',
-                  'retailValue',
-                ),
+                _sortTile(ctx, Icons.sell_rounded, 'Retail Value', 'retailValue'),
                 const SizedBox(height: 20),
               ],
             ),
@@ -9406,21 +6675,14 @@ class _StockReportPageState extends State<StockReportPage> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
         child: Row(
           children: [
             const Icon(Icons.tune_rounded, size: 14, color: kPrimaryColor),
             const SizedBox(width: 6),
             Text(
               _sortLabels[_sortBy] ?? _sortBy,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ],
         ),
@@ -9428,37 +6690,13 @@ class _StockReportPageState extends State<StockReportPage> {
     );
   }
 
-  ListTile _sortTile(
-    BuildContext ctx,
-    IconData icon,
-    String label,
-    String key,
-  ) {
+  ListTile _sortTile(BuildContext ctx, IconData icon, String label, String key) {
     final bool selected = _sortBy == key;
     return ListTile(
       dense: true,
-      leading: Icon(
-        icon,
-        color: selected ? kPrimaryColor : kTextSecondary,
-        size: 20,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: selected ? kPrimaryColor : Colors.black87,
-        ),
-      ),
-      trailing: selected
-          ? Icon(
-              _isDescending
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              size: 16,
-              color: kPrimaryColor,
-            )
-          : null,
+      leading: Icon(icon, color: selected ? kPrimaryColor : kTextSecondary, size: 20),
+      title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: selected ? kPrimaryColor : Colors.black87)),
+      trailing: selected ? Icon(_isDescending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, size: 16, color: kPrimaryColor) : null,
       selected: selected,
       selectedTileColor: kPrimaryColor.withOpacity(0.06),
       onTap: () {
@@ -9480,9 +6718,7 @@ class _StockReportPageState extends State<StockReportPage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -9492,124 +6728,29 @@ class _StockReportPageState extends State<StockReportPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
             child: const Row(
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    "SL.",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 28, child: Text("SL.", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
                 SizedBox(width: 6),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Product Code",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Item Name",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Stock",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Cost",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Profit",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Retail Val",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: Text("Product Code", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 3, child: Text("Item Name", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 1, child: Text("Stock", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Cost", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Profit", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Retail Val", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
           // Divider
           Container(height: 1, color: kBorderColor.withOpacity(0.5)),
-          ...List.generate(
-            docs.length,
-            (index) => _buildStockLedgerRow(
-              docs[index].data() as Map<String, dynamic>,
-              index + 1,
-            ),
-          ),
+          ...List.generate(docs.length, (index) => _buildStockLedgerRow(docs[index].data() as Map<String, dynamic>, index + 1)),
         ],
       ),
     );
   }
 
   Widget _buildStockLedgerRow(Map<String, dynamic> data, int sl) {
-    final double stock =
-        double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
+    final double stock = double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
     final double price = double.tryParse(data['price']?.toString() ?? '0') ?? 0;
-    final double cost =
-        double.tryParse(
-          data['costPrice']?.toString() ??
-              data['cost']?.toString() ??
-              data['purchasePrice']?.toString() ??
-              '0',
-        ) ??
-        0;
+    final double cost = double.tryParse(data['costPrice']?.toString() ?? data['cost']?.toString() ?? data['purchasePrice']?.toString() ?? '0') ?? 0;
     final double retailValue = price * stock;
     final double costValue = cost * stock;
     final double profit = retailValue - costValue;
@@ -9619,9 +6760,7 @@ class _StockReportPageState extends State<StockReportPage> {
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(
         color: isEven ? kBackgroundColor.withOpacity(0.4) : kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -9631,11 +6770,7 @@ class _StockReportPageState extends State<StockReportPage> {
             width: 28,
             child: Text(
               '$sl',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: kTextSecondary,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary),
             ),
           ),
           const SizedBox(width: 6),
@@ -9644,11 +6779,7 @@ class _StockReportPageState extends State<StockReportPage> {
             flex: 2,
             child: Text(
               data['productCode']?.toString() ?? 'N/A',
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kPrimaryColor),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -9658,11 +6789,7 @@ class _StockReportPageState extends State<StockReportPage> {
             flex: 3,
             child: Text(
               (data['itemName'] ?? 'Unknown').toString(),
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -9673,11 +6800,7 @@ class _StockReportPageState extends State<StockReportPage> {
             child: Text(
               stock.toStringAsFixed(0),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kTextSecondary,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextSecondary),
             ),
           ),
           // Cost (total cost value)
@@ -9686,11 +6809,7 @@ class _StockReportPageState extends State<StockReportPage> {
             child: Text(
               costValue.toStringAsFixed(0),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kTextSecondary,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextSecondary),
             ),
           ),
           // Profit
@@ -9712,11 +6831,7 @@ class _StockReportPageState extends State<StockReportPage> {
             child: Text(
               retailValue.toStringAsFixed(0),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ),
         ],
@@ -9736,11 +6851,11 @@ class ItemSalesPage extends StatelessWidget {
   ItemSalesPage({super.key, required this.onBack});
 
   void _downloadPdf(BuildContext context, List<MapEntry<String, int>> sorted) {
-    final rows = sorted
-        .asMap()
-        .entries
-        .map((e) => ['${e.key + 1}', e.value.key, e.value.value.toString()])
-        .toList();
+    final rows = sorted.asMap().entries.map((e) => [
+      '${e.key + 1}',
+      e.value.key,
+      e.value.value.toString(),
+    ]).toList();
 
     final totalQty = sorted.fold<int>(0, (sum, e) => sum + e.value);
 
@@ -9754,7 +6869,7 @@ class ItemSalesPage extends StatelessWidget {
       additionalSummary: {
         'Inventory Scope': '${sorted.length} Unique SKUs',
         'Audit Date': DateFormat('dd MMM yyyy').format(DateTime.now()),
-        'Status': 'Verified',
+        'Status': 'Verified'
       },
     );
   }
@@ -9768,12 +6883,7 @@ class ItemSalesPage extends StatelessWidget {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Item Sales Report", onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -9783,9 +6893,7 @@ class ItemSalesPage extends StatelessWidget {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Item Sales Report", onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
               );
             }
 
@@ -9795,12 +6903,8 @@ class ItemSalesPage extends StatelessWidget {
               var data = d.data() as Map<String, dynamic>;
 
               // Skip cancelled or returned bills
-              final String status = (data['status'] ?? '')
-                  .toString()
-                  .toLowerCase();
-              if (status == 'cancelled' ||
-                  status == 'returned' ||
-                  data['hasBeenReturned'] == true) {
+              final String status = (data['status'] ?? '').toString().toLowerCase();
+              if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
                 continue;
               }
 
@@ -9810,21 +6914,16 @@ class ItemSalesPage extends StatelessWidget {
 
                   // Skip quick items (item1, item2, etc.) - only count properly named items
                   if (name.toLowerCase().startsWith('item') &&
-                      RegExp(
-                        r'^item\d+$',
-                        caseSensitive: false,
-                      ).hasMatch(name.toLowerCase())) {
+                      RegExp(r'^item\d+$', caseSensitive: false).hasMatch(name.toLowerCase())) {
                     continue; // Skip quick items
                   }
 
-                  int q =
-                      int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+                  int q = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
                   qtyMap[name] = (qtyMap[name] ?? 0) + q;
                 }
               }
             }
-            var sorted = qtyMap.entries.toList()
-              ..sort((a, b) => b.value.compareTo(a.value));
+            var sorted = qtyMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
             var top6 = sorted.take(6).toList();
             int grandTotal = sorted.fold(0, (sum, e) => sum + e.value);
             final bool hasTopSalesChartData = top6.any((e) => e.value > 0);
@@ -9832,9 +6931,9 @@ class ItemSalesPage extends StatelessWidget {
             return Scaffold(
               backgroundColor: kBackgroundColor,
               appBar: _buildModernAppBar(
-                "Item Sales Report",
-                onBack,
-                onDownload: () => _downloadPdf(context, sorted),
+                  "Item Sales Report",
+                  onBack,
+                  onDownload: () => _downloadPdf(context, sorted)
               ),
               body: Column(
                 children: [
@@ -9846,17 +6945,13 @@ class ItemSalesPage extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                         SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          sliver: SliverToBoxAdapter(
-                            child: _buildSectionHeader("Sales Velocity Chart"),
-                          ),
+                          sliver: SliverToBoxAdapter(child: _buildSectionHeader("Sales Velocity Chart")),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 10)),
                         SliverToBoxAdapter(
                           child: hasTopSalesChartData
                               ? _buildPerformanceChart(top6)
-                              : const EmptyStateWidget(
-                                  message: "No data found",
-                                ),
+                              : const EmptyStateWidget(message: "No data found"),
                         ),
 
                         const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -9869,11 +6964,7 @@ class ItemSalesPage extends StatelessWidget {
                                 _buildSectionHeader("Product Ranking Ledger"),
                                 Text(
                                   "${sorted.length} SKUs ANALYZED",
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: kPrimaryColor,
-                                  ),
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kPrimaryColor),
                                 ),
                               ],
                             ),
@@ -9882,14 +6973,10 @@ class ItemSalesPage extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
                         sorted.isEmpty
-                            ? const SliverFillRemaining(
-                                child: EmptyStateWidget(
-                                  message: "No sales recorded",
-                                ),
-                              )
+                            ? const SliverFillRemaining(child: EmptyStateWidget(message: "No sales recorded"))
                             : SliverToBoxAdapter(
-                                child: _buildItemSalesTable(sorted),
-                              ),
+                          child: _buildItemSalesTable(sorted),
+                        ),
                         const SliverToBoxAdapter(child: SizedBox(height: 40)),
                       ],
                     ),
@@ -9908,12 +6995,7 @@ class ItemSalesPage extends StatelessWidget {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2),
     );
   }
 
@@ -9923,9 +7005,7 @@ class ItemSalesPage extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -9933,25 +7013,9 @@ class ItemSalesPage extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Total Units Sold",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Total Units Sold", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                "$totalQty",
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("$totalQty", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Container(
@@ -9963,22 +7027,8 @@ class ItemSalesPage extends StatelessWidget {
             ),
             child: Column(
               children: [
-                Text(
-                  "$uniqueCount",
-                  style: const TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                const Text(
-                  "Varieties",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text("$uniqueCount", style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 16)),
+                const Text("Varieties", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -10008,36 +7058,21 @@ class ItemSalesPage extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxVal > 0 ? maxVal / 4 : 5,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: kBorderColor.withOpacity(0.2),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withOpacity(0.2), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         if (v == 0) return const SizedBox();
-                        return Text(
-                          v >= 1000
-                              ? '${(v / 1000).toStringAsFixed(0)}k'
-                              : v.toStringAsFixed(0),
-                          style: const TextStyle(
-                            fontSize: 8,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
+                        return Text(v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0),
+                            style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
                       },
                     ),
                   ),
@@ -10047,22 +7082,13 @@ class ItemSalesPage extends StatelessWidget {
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         int index = v.toInt();
-                        if (index < 0 || index >= top6.length)
-                          return const SizedBox();
+                        if (index < 0 || index >= top6.length) return const SizedBox();
                         String label = top6[index].key;
-                        if (label.length > 6)
-                          label = label.substring(0, 5) + "..";
+                        if (label.length > 6) label = label.substring(0, 5) + "..";
                         return SideTitleWidget(
                           meta: m,
                           space: 8,
-                          child: Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 7,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                          child: Text(label, style: const TextStyle(fontSize: 7, color: kTextSecondary, fontWeight: FontWeight.w900)),
                         );
                       },
                     ),
@@ -10077,15 +7103,13 @@ class ItemSalesPage extends StatelessWidget {
                         toY: e.value.value.toDouble(),
                         color: kChartColorsList[colorIndex],
                         width: 14,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(3),
-                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: 0,
                           color: kBorderColor.withValues(alpha: 0.1),
                         ),
-                      ),
+                      )
                     ],
                   );
                 }).toList(),
@@ -10093,15 +7117,7 @@ class ItemSalesPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Top selling SKUs by unit quantity movement",
-            style: TextStyle(
-              fontSize: 8,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
+          const Text("Top selling SKUs by unit quantity movement", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -10113,9 +7129,7 @@ class ItemSalesPage extends StatelessWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -10127,54 +7141,20 @@ class ItemSalesPage extends StatelessWidget {
               children: [
                 SizedBox(
                   width: 32,
-                  child: Text(
-                    "Rank",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: Text("Rank", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
                 ),
                 SizedBox(width: 6),
                 Expanded(
                   flex: 4,
-                  child: Text(
-                    "Item Name",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: Text("Item Name", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    "Units Sold",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: Text("Units Sold", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
                 ),
                 Expanded(
                   flex: 2,
-                  child: Text(
-                    "SHARE %",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  child: Text("SHARE %", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
                 ),
               ],
             ),
@@ -10182,39 +7162,27 @@ class ItemSalesPage extends StatelessWidget {
           // Divider
           Container(height: 1, color: kBorderColor.withOpacity(0.5)),
           // Rows
-          ...rows.asMap().entries.map(
-            (e) => _buildItemSalesRow(e.value, e.key + 1, grandTotal),
-          ),
+          ...rows.asMap().entries.map((e) => _buildItemSalesRow(e.value, e.key + 1, grandTotal)),
         ],
       ),
     );
   }
 
-  Widget _buildItemSalesRow(
-    MapEntry<String, int> entry,
-    int rank,
-    int grandTotal,
-  ) {
+  Widget _buildItemSalesRow(MapEntry<String, int> entry, int rank, int grandTotal) {
     final bool isEven = rank % 2 == 0;
     final double share = grandTotal > 0 ? (entry.value / grandTotal) * 100 : 0;
 
     Color rankColor;
-    if (rank == 1)
-      rankColor = const Color(0xFFFFD700); // Gold
-    else if (rank == 2)
-      rankColor = const Color(0xFFC0C0C0); // Silver
-    else if (rank == 3)
-      rankColor = const Color(0xFFCD7F32); // Bronze
-    else
-      rankColor = kTextSecondary;
+    if (rank == 1) rankColor = const Color(0xFFFFD700); // Gold
+    else if (rank == 2) rankColor = const Color(0xFFC0C0C0); // Silver
+    else if (rank == 3) rankColor = const Color(0xFFCD7F32); // Bronze
+    else rankColor = kTextSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
       decoration: BoxDecoration(
         color: isEven ? kBackgroundColor.withOpacity(0.4) : kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -10227,13 +7195,9 @@ class ItemSalesPage extends StatelessWidget {
               height: 26,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: rank <= 3
-                    ? rankColor.withOpacity(0.15)
-                    : kBackgroundColor,
+                color: rank <= 3 ? rankColor.withOpacity(0.15) : kBackgroundColor,
                 borderRadius: BorderRadius.circular(6),
-                border: rank <= 3
-                    ? Border.all(color: rankColor.withOpacity(0.4))
-                    : null,
+                border: rank <= 3 ? Border.all(color: rankColor.withOpacity(0.4)) : null,
               ),
               child: Text(
                 "$rank",
@@ -10251,11 +7215,7 @@ class ItemSalesPage extends StatelessWidget {
             flex: 4,
             child: Text(
               entry.key,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.black87),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -10266,11 +7226,7 @@ class ItemSalesPage extends StatelessWidget {
             child: Text(
               "${entry.value}",
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ),
           // Share %
@@ -10312,7 +7268,7 @@ class _LowStockPageState extends State<LowStockPage> {
   String _searchQuery = '';
   bool _isDescending = false;
   String _sortBy = 'productCode'; // productCode, name, stock, minStock
-
+  
   static const Map<String, String> _sortLabels = {
     'productCode': 'Product Code',
     'name': 'Item Name',
@@ -10328,67 +7284,39 @@ class _LowStockPageState extends State<LowStockPage> {
   ) {
     int sl = 1;
     final rows = [
-      ...low.map(
-        (e) => [
-          '${sl++}',
-          e['productCode']?.toString() ?? 'N/A',
-          e['name'].toString(),
-          e['category'].toString(),
-          (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0)
-              .toStringAsFixed(0),
-          (e['currentStock'] is num
-                  ? (e['currentStock'] as num).toDouble()
-                  : 0.0)
-              .toStringAsFixed(0),
-          '-',
-        ],
-      ),
-      ...out.map(
-        (e) => [
-          '${sl++}',
-          e['productCode']?.toString() ?? 'N/A',
-          e['name'].toString(),
-          e['category'].toString(),
-          (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0)
-              .toStringAsFixed(0),
-          (e['currentStock'] is num
-                  ? (e['currentStock'] as num).toDouble()
-                  : 0.0)
-              .toStringAsFixed(0),
-          '-',
-        ],
-      ),
-      ...expired.map(
-        (e) => [
-          '${sl++}',
-          e['productCode']?.toString() ?? 'N/A',
-          e['name'].toString(),
-          e['category'].toString(),
-          (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0)
-              .toStringAsFixed(0),
-          (e['currentStock'] is num
-                  ? (e['currentStock'] as num).toDouble()
-                  : 0.0)
-              .toStringAsFixed(0),
-          e['expiryDate'] is DateTime
-              ? DateFormat('dd MMM yyyy').format(e['expiryDate'] as DateTime)
-              : '-',
-        ],
-      ),
+      ...low.map((e) => [
+        '${sl++}',
+        e['productCode']?.toString() ?? 'N/A',
+        e['name'].toString(),
+        e['category'].toString(),
+        (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        (e['currentStock'] is num ? (e['currentStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        '-',
+      ]),
+      ...out.map((e) => [
+        '${sl++}',
+        e['productCode']?.toString() ?? 'N/A',
+        e['name'].toString(),
+        e['category'].toString(),
+        (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        (e['currentStock'] is num ? (e['currentStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        '-',
+      ]),
+      ...expired.map((e) => [
+        '${sl++}',
+        e['productCode']?.toString() ?? 'N/A',
+        e['name'].toString(),
+        e['category'].toString(),
+        (e['minStock'] is num ? (e['minStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        (e['currentStock'] is num ? (e['currentStock'] as num).toDouble() : 0.0).toStringAsFixed(0),
+        e['expiryDate'] is DateTime ? DateFormat('dd MMM yyyy').format(e['expiryDate'] as DateTime) : '-',
+      ]),
     ];
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
       reportTitle: 'Stock Replenishment Audit',
-      headers: [
-        'SL.',
-        'Product Code',
-        'Item Name',
-        'Category',
-        'MIN REQ.',
-        'On Hand',
-        'Expiry',
-      ],
+      headers: ['SL.', 'Product Code', 'Item Name', 'Category', 'MIN REQ.', 'On Hand', 'Expiry'],
       rows: rows,
       summaryTitle: 'Total Alerts',
       summaryValue: '${low.length + out.length + expired.length} ITEMS',
@@ -10411,24 +7339,16 @@ class _LowStockPageState extends State<LowStockPage> {
           final codeB = int.tryParse(b['productCode']?.toString() ?? '') ?? 0;
           result = codeA != 0 && codeB != 0
               ? codeA.compareTo(codeB)
-              : (a['productCode'] ?? '').toString().compareTo(
-                  (b['productCode'] ?? '').toString(),
-                );
+              : (a['productCode'] ?? '').toString().compareTo((b['productCode'] ?? '').toString());
           break;
         case 'name':
-          result = (a['name'] ?? '').toString().toLowerCase().compareTo(
-            (b['name'] ?? '').toString().toLowerCase(),
-          );
+          result = (a['name'] ?? '').toString().toLowerCase().compareTo((b['name'] ?? '').toString().toLowerCase());
           break;
         case 'stock':
-          result = ((a['currentStock'] as double?) ?? 0).compareTo(
-            (b['currentStock'] as double?) ?? 0,
-          );
+          result = ((a['currentStock'] as double?) ?? 0).compareTo((b['currentStock'] as double?) ?? 0);
           break;
         case 'minStock':
-          result = ((a['minStock'] as double?) ?? 0).compareTo(
-            (b['minStock'] as double?) ?? 0,
-          );
+          result = ((a['minStock'] as double?) ?? 0).compareTo((b['minStock'] as double?) ?? 0);
           break;
       }
       return _isDescending ? -result : result;
@@ -10445,12 +7365,7 @@ class _LowStockPageState extends State<LowStockPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Low Stock Items", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -10460,9 +7375,7 @@ class _LowStockPageState extends State<LowStockPage> {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Low Stock Items", widget.onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
               );
             }
 
@@ -10480,22 +7393,17 @@ class _LowStockPageState extends State<LowStockPage> {
 
               if (!(data['stockEnabled'] ?? false)) continue;
 
-              final currentStock =
-                  double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
-              final minStock =
-                  double.tryParse(data['lowStockAlert']?.toString() ?? '0') ??
-                  0;
+              final currentStock = double.tryParse(data['currentStock']?.toString() ?? '0') ?? 0;
+              final minStock = double.tryParse(data['lowStockAlert']?.toString() ?? '0') ?? 0;
               final alertLevel = minStock > 0 ? minStock : 5;
 
-              if (_selectedCategory != 'All' && category != _selectedCategory)
-                continue;
+              if (_selectedCategory != 'All' && category != _selectedCategory) continue;
 
               DateTime? expiryDate;
               if (data['expiryDate'] != null) {
                 expiryDate = DateTime.tryParse(data['expiryDate'].toString());
               }
-              final isExpired =
-                  expiryDate != null && expiryDate.isBefore(today);
+              final isExpired = expiryDate != null && expiryDate.isBefore(today);
 
               Map<String, dynamic> item = {
                 'productCode': data['productCode']?.toString() ?? 'N/A',
@@ -10525,42 +7433,21 @@ class _LowStockPageState extends State<LowStockPage> {
             // Search filter
             final query = _searchQuery.toLowerCase();
             if (query.isNotEmpty) {
-              lowStockItems = lowStockItems
-                  .where(
-                    (e) =>
-                        (e['name']?.toString().toLowerCase() ?? '').contains(
-                          query,
-                        ) ||
-                        (e['productCode']?.toString().toLowerCase() ?? '')
-                            .contains(query) ||
-                        (e['category']?.toString().toLowerCase() ?? '')
-                            .contains(query),
-                  )
-                  .toList();
-              outOfStockItems = outOfStockItems
-                  .where(
-                    (e) =>
-                        (e['name']?.toString().toLowerCase() ?? '').contains(
-                          query,
-                        ) ||
-                        (e['productCode']?.toString().toLowerCase() ?? '')
-                            .contains(query) ||
-                        (e['category']?.toString().toLowerCase() ?? '')
-                            .contains(query),
-                  )
-                  .toList();
-              expiredItems = expiredItems
-                  .where(
-                    (e) =>
-                        (e['name']?.toString().toLowerCase() ?? '').contains(
-                          query,
-                        ) ||
-                        (e['productCode']?.toString().toLowerCase() ?? '')
-                            .contains(query) ||
-                        (e['category']?.toString().toLowerCase() ?? '')
-                            .contains(query),
-                  )
-                  .toList();
+              lowStockItems = lowStockItems.where((e) =>
+                (e['name']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['productCode']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['category']?.toString().toLowerCase() ?? '').contains(query)
+              ).toList();
+              outOfStockItems = outOfStockItems.where((e) =>
+                (e['name']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['productCode']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['category']?.toString().toLowerCase() ?? '').contains(query)
+              ).toList();
+              expiredItems = expiredItems.where((e) =>
+                (e['name']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['productCode']?.toString().toLowerCase() ?? '').contains(query) ||
+                (e['category']?.toString().toLowerCase() ?? '').contains(query)
+              ).toList();
             }
 
             // Sort
@@ -10573,20 +7460,11 @@ class _LowStockPageState extends State<LowStockPage> {
               appBar: _buildModernAppBar(
                 "Low Stock Items",
                 widget.onBack,
-                onDownload: () => _downloadPdf(
-                  context,
-                  lowStockItems,
-                  outOfStockItems,
-                  expiredItems,
-                ),
+                onDownload: () => _downloadPdf(context, lowStockItems, outOfStockItems, expiredItems),
               ),
               body: Column(
                 children: [
-                  _buildExecutiveStockHeader(
-                    lowStockItems.length,
-                    outOfStockItems.length,
-                    expiredItems.length,
-                  ),
+                  _buildExecutiveStockHeader(lowStockItems.length, outOfStockItems.length, expiredItems.length),
                   _buildControlStrip(),
                   Expanded(
                     child: CustomScrollView(
@@ -10596,56 +7474,31 @@ class _LowStockPageState extends State<LowStockPage> {
                           const SliverToBoxAdapter(child: SizedBox(height: 16)),
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            sliver: SliverToBoxAdapter(
-                              child: _buildSectionHeader(
-                                "Critical: Out of Stock",
-                              ),
-                            ),
+                            sliver: SliverToBoxAdapter(child: _buildSectionHeader("Critical: Out of Stock")),
                           ),
                           const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                          SliverToBoxAdapter(
-                            child: _buildTable(outOfStockItems, kExpenseRed),
-                          ),
+                          SliverToBoxAdapter(child: _buildTable(outOfStockItems, kExpenseRed)),
                         ],
                         if (expiredItems.isNotEmpty) ...[
                           const SliverToBoxAdapter(child: SizedBox(height: 24)),
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            sliver: SliverToBoxAdapter(
-                              child: _buildSectionHeader("Expired Stock"),
-                            ),
+                            sliver: SliverToBoxAdapter(child: _buildSectionHeader("Expired Stock")),
                           ),
                           const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                          SliverToBoxAdapter(
-                            child: _buildExpiredTable(
-                              expiredItems,
-                              kChartPurple,
-                            ),
-                          ),
+                          SliverToBoxAdapter(child: _buildExpiredTable(expiredItems, kChartPurple)),
                         ],
                         if (lowStockItems.isNotEmpty) ...[
                           const SliverToBoxAdapter(child: SizedBox(height: 24)),
                           SliverPadding(
                             padding: const EdgeInsets.symmetric(horizontal: 14),
-                            sliver: SliverToBoxAdapter(
-                              child: _buildSectionHeader(
-                                "Warning: Low Stock Level",
-                              ),
-                            ),
+                            sliver: SliverToBoxAdapter(child: _buildSectionHeader("Warning: Low Stock Level")),
                           ),
                           const SliverToBoxAdapter(child: SizedBox(height: 8)),
-                          SliverToBoxAdapter(
-                            child: _buildTable(lowStockItems, kWarningOrange),
-                          ),
+                          SliverToBoxAdapter(child: _buildTable(lowStockItems, kWarningOrange)),
                         ],
-                        if (lowStockItems.isEmpty &&
-                            outOfStockItems.isEmpty &&
-                            expiredItems.isEmpty)
-                          const SliverFillRemaining(
-                            child: EmptyStateWidget(
-                              message: "No stock alerts for this period",
-                            ),
-                          ),
+                        if (lowStockItems.isEmpty && outOfStockItems.isEmpty && expiredItems.isEmpty)
+                          const SliverFillRemaining(child: EmptyStateWidget(message: "No stock alerts for this period")),
                         const SliverToBoxAdapter(child: SizedBox(height: 40)),
                       ],
                     ),
@@ -10664,12 +7517,7 @@ class _LowStockPageState extends State<LowStockPage> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2),
     );
   }
 
@@ -10679,9 +7527,7 @@ class _LowStockPageState extends State<LowStockPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -10689,34 +7535,15 @@ class _LowStockPageState extends State<LowStockPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Items Requiring Attention",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Items Requiring Attention", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                "${low + out + expired}",
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("${low + out + expired}", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: kExpenseRed.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
@@ -10724,32 +7551,15 @@ class _LowStockPageState extends State<LowStockPage> {
                 ),
                 child: Column(
                   children: [
-                    Text(
-                      "$out",
-                      style: const TextStyle(
-                        color: kExpenseRed,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const Text(
-                      "Critical",
-                      style: TextStyle(
-                        color: kTextSecondary,
-                        fontSize: 7,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    Text("$out", style: const TextStyle(color: kExpenseRed, fontWeight: FontWeight.w900, fontSize: 16)),
+                    const Text("Critical", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
               if (expired > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: kChartPurple.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
@@ -10757,22 +7567,8 @@ class _LowStockPageState extends State<LowStockPage> {
                   ),
                   child: Column(
                     children: [
-                      Text(
-                        "$expired",
-                        style: const TextStyle(
-                          color: kChartPurple,
-                          fontWeight: FontWeight.w900,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const Text(
-                        "Expired",
-                        style: TextStyle(
-                          color: kTextSecondary,
-                          fontSize: 7,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text("$expired", style: const TextStyle(color: kChartPurple, fontWeight: FontWeight.w900, fontSize: 16)),
+                      const Text("Expired", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -10784,17 +7580,12 @@ class _LowStockPageState extends State<LowStockPage> {
     );
   }
 
-  Widget _buildExpiredTable(
-    List<Map<String, dynamic>> items,
-    Color accentColor,
-  ) {
+  Widget _buildExpiredTable(List<Map<String, dynamic>> items, Color accentColor) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -10803,68 +7594,12 @@ class _LowStockPageState extends State<LowStockPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: const Row(
               children: [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    "SL.",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 28, child: Text("SL.", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
                 SizedBox(width: 6),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Product Code",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Item Name",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Expiry",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Stock",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: Text("Product Code", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 3, child: Text("Item Name", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Expiry", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 1, child: Text("Stock", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
@@ -10872,23 +7607,15 @@ class _LowStockPageState extends State<LowStockPage> {
           ...List.generate(items.length, (i) {
             final item = items[i];
             final isEven = i % 2 == 0;
-            final stock = (item['currentStock'] is num
-                ? (item['currentStock'] as num).toDouble()
-                : 0.0);
+            final stock = (item['currentStock'] is num ? (item['currentStock'] as num).toDouble() : 0.0);
             final expiryText = item['expiryDate'] is DateTime
-                ? DateFormat(
-                    'dd/MM/yyyy',
-                  ).format(item['expiryDate'] as DateTime)
+                ? DateFormat('dd/MM/yyyy').format(item['expiryDate'] as DateTime)
                 : '-';
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 16),
               decoration: BoxDecoration(
-                color: isEven
-                    ? kBackgroundColor.withOpacity(0.4)
-                    : kSurfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-                ),
+                color: isEven ? kBackgroundColor.withOpacity(0.4) : kSurfaceColor,
+                border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
               ),
               child: Row(
                 children: [
@@ -10896,11 +7623,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     width: 28,
                     child: Text(
                       '${i + 1}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -10908,22 +7631,14 @@ class _LowStockPageState extends State<LowStockPage> {
                     flex: 2,
                     child: Text(
                       item['productCode']?.toString() ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: kPrimaryColor,
-                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kPrimaryColor),
                     ),
                   ),
                   Expanded(
                     flex: 3,
                     child: Text(
                       item['name'].toString(),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -10932,11 +7647,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     flex: 2,
                     child: Text(
                       expiryText,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kTextSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -10946,11 +7657,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     child: Text(
                       stock.toStringAsFixed(0),
                       textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: accentColor,
-                      ),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: accentColor),
                     ),
                   ),
                 ],
@@ -10967,9 +7674,7 @@ class _LowStockPageState extends State<LowStockPage> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         children: [
@@ -10981,37 +7686,14 @@ class _LowStockPageState extends State<LowStockPage> {
                 onChanged: (v) => setState(() => _searchQuery = v),
                 decoration: InputDecoration(
                   hintText: 'Search items...',
-                  hintStyle: const TextStyle(
-                    fontSize: 12,
-                    color: kTextSecondary,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    size: 16,
-                    color: kTextSecondary,
-                  ),
+                  hintStyle: const TextStyle(fontSize: 12, color: kTextSecondary),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 16, color: kTextSecondary),
                   filled: true,
                   fillColor: kBackgroundColor,
-                  contentPadding: const EdgeInsets.symmetric(
-                    vertical: 0,
-                    horizontal: 8,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withOpacity(0.4),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide(
-                      color: kBorderColor.withOpacity(0.4),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: kPrimaryColor),
-                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 8),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withOpacity(0.4))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: kBorderColor.withOpacity(0.4))),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: kPrimaryColor)),
                 ),
               ),
             ),
@@ -11031,15 +7713,9 @@ class _LowStockPageState extends State<LowStockPage> {
                 child: DropdownButton<String>(
                   value: _selectedCategory,
                   isDense: true,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: kPrimaryColor,
-                  ),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kPrimaryColor),
                   icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 16),
-                  items: _categories
-                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                      .toList(),
+                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                   onChanged: (v) => setState(() => _selectedCategory = v!),
                 ),
               ),
@@ -11052,11 +7728,7 @@ class _LowStockPageState extends State<LowStockPage> {
           // Asc/Desc toggle
           IconButton(
             onPressed: () => setState(() => _isDescending = !_isDescending),
-            icon: Icon(
-              _isDescending ? Icons.south_rounded : Icons.north_rounded,
-              size: 18,
-              color: kPrimaryColor,
-            ),
+            icon: Icon(_isDescending ? Icons.south_rounded : Icons.north_rounded, size: 18, color: kPrimaryColor),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
@@ -11070,33 +7742,18 @@ class _LowStockPageState extends State<LowStockPage> {
       onTap: () {
         showModalBottomSheet(
           context: context,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
           builder: (ctx) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Padding(
                 padding: EdgeInsets.all(16),
-                child: Text(
-                  "Sort By",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 10,
-                    letterSpacing: 1,
-                    color: kTextSecondary,
-                  ),
-                ),
+                child: Text("Sort By", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1, color: kTextSecondary)),
               ),
               _sortTile(ctx, Icons.tag_rounded, 'Product Code', 'productCode'),
               _sortTile(ctx, Icons.sort_by_alpha_rounded, 'Item Name', 'name'),
               _sortTile(ctx, Icons.inventory_2_rounded, 'Stock', 'stock'),
-              _sortTile(
-                ctx,
-                Icons.warning_amber_rounded,
-                'Min Stock',
-                'minStock',
-              ),
+              _sortTile(ctx, Icons.warning_amber_rounded, 'Min Stock', 'minStock'),
               const SizedBox(height: 20),
             ],
           ),
@@ -11104,21 +7761,14 @@ class _LowStockPageState extends State<LowStockPage> {
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kPrimaryColor.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
         child: Row(
           children: [
             const Icon(Icons.tune_rounded, size: 14, color: kPrimaryColor),
             const SizedBox(width: 6),
             Text(
               _sortLabels[_sortBy] ?? _sortBy,
-              style: const TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ],
         ),
@@ -11126,37 +7776,13 @@ class _LowStockPageState extends State<LowStockPage> {
     );
   }
 
-  ListTile _sortTile(
-    BuildContext ctx,
-    IconData icon,
-    String label,
-    String key,
-  ) {
+  ListTile _sortTile(BuildContext ctx, IconData icon, String label, String key) {
     final bool selected = _sortBy == key;
     return ListTile(
       dense: true,
-      leading: Icon(
-        icon,
-        color: selected ? kPrimaryColor : kTextSecondary,
-        size: 20,
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: selected ? kPrimaryColor : Colors.black87,
-        ),
-      ),
-      trailing: selected
-          ? Icon(
-              _isDescending
-                  ? Icons.arrow_downward_rounded
-                  : Icons.arrow_upward_rounded,
-              size: 16,
-              color: kPrimaryColor,
-            )
-          : null,
+      leading: Icon(icon, color: selected ? kPrimaryColor : kTextSecondary, size: 20),
+      title: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: selected ? kPrimaryColor : Colors.black87)),
+      trailing: selected ? Icon(_isDescending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded, size: 16, color: kPrimaryColor) : null,
       selected: selected,
       selectedTileColor: kPrimaryColor.withOpacity(0.06),
       onTap: () {
@@ -11178,9 +7804,7 @@ class _LowStockPageState extends State<LowStockPage> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -11190,81 +7814,13 @@ class _LowStockPageState extends State<LowStockPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Row(
               children: const [
-                SizedBox(
-                  width: 28,
-                  child: Text(
-                    "SL.",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 28, child: Text("SL.", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
                 SizedBox(width: 6),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Product Code",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Item Name",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Category",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Min",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "Stock",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 2, child: Text("Product Code", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 3, child: Text("Item Name", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Category", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 1, child: Text("Min", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 1, child: Text("Stock", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
@@ -11272,21 +7828,13 @@ class _LowStockPageState extends State<LowStockPage> {
           ...List.generate(items.length, (i) {
             final item = items[i];
             final isEven = i % 2 == 0;
-            final stock = (item['currentStock'] is num
-                ? (item['currentStock'] as num).toDouble()
-                : 0.0);
-            final min = (item['minStock'] is num
-                ? (item['minStock'] as num).toDouble()
-                : 0.0);
+            final stock = (item['currentStock'] is num ? (item['currentStock'] as num).toDouble() : 0.0);
+            final min = (item['minStock'] is num ? (item['minStock'] as num).toDouble() : 0.0);
             return Container(
               padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 16),
               decoration: BoxDecoration(
-                color: isEven
-                    ? kBackgroundColor.withOpacity(0.4)
-                    : kSurfaceColor,
-                border: Border(
-                  bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-                ),
+                color: isEven ? kBackgroundColor.withOpacity(0.4) : kSurfaceColor,
+                border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
               ),
               child: Row(
                 children: [
@@ -11294,11 +7842,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     width: 28,
                     child: Text(
                       '${i + 1}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -11306,22 +7850,14 @@ class _LowStockPageState extends State<LowStockPage> {
                     flex: 2,
                     child: Text(
                       item['productCode']?.toString() ?? 'N/A',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: kPrimaryColor,
-                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kPrimaryColor),
                     ),
                   ),
                   Expanded(
                     flex: 3,
                     child: Text(
                       item['name'].toString(),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.black87,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -11330,11 +7866,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     flex: 2,
                     child: Text(
                       item['category'].toString(),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: kTextSecondary),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -11344,11 +7876,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     child: Text(
                       min.toStringAsFixed(0),
                       textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextSecondary),
                     ),
                   ),
                   Expanded(
@@ -11356,11 +7884,7 @@ class _LowStockPageState extends State<LowStockPage> {
                     child: Text(
                       stock.toStringAsFixed(0),
                       textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: accentColor,
-                      ),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: accentColor),
                     ),
                   ),
                 ],
@@ -11394,6 +7918,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
   bool _isDescending = true;
   int _selectedTab = 0; // 0 = Sold, 1 = Not Sold
 
+
   // Cache the Products future so it does not re-fire on every setState
   Future<QuerySnapshot>? _productsFuture;
 
@@ -11403,9 +7928,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
     final now = DateTime.now();
     _startDate = DateTime(now.year, now.month, now.day);
     _endDate = DateTime(now.year, now.month, now.day, 23, 59, 59);
-    _productsFuture = _firestoreService
-        .getStoreCollection('Products')
-        .then((c) => c.get());
+    _productsFuture = _firestoreService.getStoreCollection('Products').then((c) => c.get());
   }
 
   void _onDateChanged(DateFilterOption option, DateTime start, DateTime end) {
@@ -11416,31 +7939,21 @@ class _TopProductsPageState extends State<TopProductsPage> {
     });
   }
 
+
   bool _isInDateRange(DateTime? dt) {
     if (dt == null) return false;
     return dt.isAfter(_startDate.subtract(const Duration(seconds: 1))) &&
         dt.isBefore(_endDate.add(const Duration(seconds: 1)));
   }
 
-  void _downloadPdf(
-    BuildContext context,
-    List<MapEntry<String, Map<String, dynamic>>> products,
-    double totalRev,
-    double totalProfit,
-  ) {
+  void _downloadPdf(BuildContext context, List<MapEntry<String, Map<String, dynamic>>> products, double totalRev, double totalProfit) {
     final symbol = CurrencyService().symbol;
-    final rows = products
-        .map(
-          (e) => [
-            e.key,
-            (e.key == 'Total')
-                ? ''
-                : (e.value['quantity'] as double).toStringAsFixed(2),
-            "$symbol${(e.value['amount'] as double).toStringAsFixed(2)}",
-            "$symbol${(e.value['profit'] as double).toStringAsFixed(2)}",
-          ],
-        )
-        .toList();
+    final rows = products.map((e) => [
+      e.key,
+      (e.key == 'Total') ? '' : (e.value['quantity'] as double).toStringAsFixed(2),
+      "$symbol${(e.value['amount'] as double).toStringAsFixed(2)}",
+      "$symbol${(e.value['profit'] as double).toStringAsFixed(2)}",
+    ]).toList();
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
@@ -11450,10 +7963,9 @@ class _TopProductsPageState extends State<TopProductsPage> {
       summaryTitle: 'Net Product Revenue',
       summaryValue: "$symbol${totalRev.toStringAsFixed(2)}",
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
         'Total Profit': '$symbol${totalProfit.toStringAsFixed(2)}',
-        'Audit Status': 'Certified',
+        'Audit Status': 'Certified'
       },
     );
   }
@@ -11467,12 +7979,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Product Summary", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -11482,9 +7989,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Product Summary", widget.onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
               );
             }
 
@@ -11498,13 +8003,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
                   for (var doc in productsSnapshot.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
                     final name = d['itemName']?.toString() ?? '';
-                    final cost =
-                        double.tryParse(
-                          d['costPrice']?.toString() ??
-                              d['cost']?.toString() ??
-                              '0',
-                        ) ??
-                        0;
+                    final cost = double.tryParse(d['costPrice']?.toString() ?? d['cost']?.toString() ?? '0') ?? 0;
                     if (name.isNotEmpty) {
                       currentCosts[name] = cost;
                       allProductDocs.add(d);
@@ -11519,59 +8018,31 @@ class _TopProductsPageState extends State<TopProductsPage> {
                 for (var doc in snapshot.data!.docs) {
                   final data = doc.data() as Map<String, dynamic>;
                   DateTime? dt;
-                  if (data['timestamp'] != null)
-                    dt = (data['timestamp'] as Timestamp).toDate();
-                  else if (data['date'] != null)
-                    dt = DateTime.tryParse(data['date'].toString());
+                  if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                  else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                   if (_isInDateRange(dt)) {
-                    final String status = (data['status'] ?? '')
-                        .toString()
-                        .toLowerCase();
-                    if (status == 'cancelled' ||
-                        status == 'returned' ||
-                        data['hasBeenReturned'] == true) {
+                    final String status = (data['status'] ?? '').toString().toLowerCase();
+                    if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
                       continue;
                     }
 
                     if (data['items'] != null && data['items'] is List) {
                       for (var item in (data['items'] as List)) {
                         String name = item['name']?.toString() ?? 'Unknown';
-                        double qty =
-                            double.tryParse(
-                              item['quantity']?.toString() ?? '0',
-                            ) ??
-                            0;
-                        double price =
-                            double.tryParse(item['price']?.toString() ?? '0') ??
-                            0;
-                        double cost =
-                            double.tryParse(
-                              item['cost']?.toString() ??
-                                  item['costPrice']?.toString() ??
-                                  item['purchasePrice']?.toString() ??
-                                  '0',
-                            ) ??
-                            (currentCosts[name] ?? 0);
-                        double total =
-                            double.tryParse(item['total']?.toString() ?? '0') ??
-                            0;
+                        double qty = double.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+                        double price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
+                        double cost = double.tryParse(item['cost']?.toString() ?? item['costPrice']?.toString() ?? item['purchasePrice']?.toString() ?? '0') ?? (currentCosts[name] ?? 0);
+                        double total = double.tryParse(item['total']?.toString() ?? '0') ?? 0;
                         if (total == 0) total = price * qty;
                         double profit = (price * qty) - (cost * qty);
 
                         if (!productData.containsKey(name)) {
-                          productData[name] = {
-                            'quantity': 0.0,
-                            'amount': 0.0,
-                            'profit': 0.0,
-                          };
+                          productData[name] = {'quantity': 0.0, 'amount': 0.0, 'profit': 0.0};
                         }
-                        productData[name]!['quantity'] =
-                            (productData[name]!['quantity'] as double) + qty;
-                        productData[name]!['amount'] =
-                            (productData[name]!['amount'] as double) + total;
-                        productData[name]!['profit'] =
-                            (productData[name]!['profit'] as double) + profit;
+                        productData[name]!['quantity'] = (productData[name]!['quantity'] as double) + qty;
+                        productData[name]!['amount'] = (productData[name]!['amount'] as double) + total;
+                        productData[name]!['profit'] = (productData[name]!['profit'] as double) + profit;
                         grandTotalRevenue += total;
                         grandTotalProfit += profit;
                       }
@@ -11581,47 +8052,29 @@ class _TopProductsPageState extends State<TopProductsPage> {
 
                 var sortedProducts = productData.entries.toList();
                 sortedProducts.sort((a, b) {
-                  int result = (a.value['amount'] as double).compareTo(
-                    b.value['amount'] as double,
-                  );
+                  int result = (a.value['amount'] as double).compareTo(b.value['amount'] as double);
                   return _isDescending ? -result : result;
                 });
-                final bool hasProductChartData = sortedProducts.any(
-                  (e) => (e.value['amount'] as double) > 0,
-                );
+                final bool hasProductChartData = sortedProducts.any((e) => (e.value['amount'] as double) > 0);
 
                 // Build not-sold: all products NOT sold in the same date range
                 final soldNames = productData.keys.toSet();
                 final notSoldProducts = allProductDocs
-                    .where(
-                      (d) =>
-                          !soldNames.contains(d['itemName']?.toString() ?? ''),
-                    )
+                    .where((d) => !soldNames.contains(d['itemName']?.toString() ?? ''))
                     .toList();
-                notSoldProducts.sort(
-                  (a, b) => (a['itemName']?.toString() ?? '').compareTo(
-                    b['itemName']?.toString() ?? '',
-                  ),
-                );
+                notSoldProducts.sort((a, b) =>
+                    (a['itemName']?.toString() ?? '').compareTo(b['itemName']?.toString() ?? ''));
 
                 return Scaffold(
                   backgroundColor: kBackgroundColor,
                   appBar: _buildModernAppBar(
                     "Product Summary",
                     widget.onBack,
-                    onDownload: () => _downloadPdf(
-                      context,
-                      sortedProducts,
-                      grandTotalRevenue,
-                      grandTotalProfit,
-                    ),
+                    onDownload: () => _downloadPdf(context, sortedProducts, grandTotalRevenue, grandTotalProfit),
                   ),
                   body: Column(
                     children: [
-                      _buildExecutiveProductHeader(
-                        grandTotalRevenue,
-                        grandTotalProfit,
-                      ),
+                      _buildExecutiveProductHeader(grandTotalRevenue, grandTotalProfit),
                       // Single shared date filter for both tabs
                       DateFilterWidget(
                         selectedOption: _selectedFilter,
@@ -11630,29 +8083,21 @@ class _TopProductsPageState extends State<TopProductsPage> {
                         onDateChanged: _onDateChanged,
                         showSortButton: _selectedTab == 0,
                         isDescending: _isDescending,
-                        onSortPressed: () =>
-                            setState(() => _isDescending = !_isDescending),
+                        onSortPressed: () => setState(() => _isDescending = !_isDescending),
                       ),
                       // Tab bar: Sold / Not Sold
                       Container(
                         color: kSurfaceColor,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         child: Row(
                           children: [
                             Expanded(
                               child: GestureDetector(
                                 onTap: () => setState(() => _selectedTab = 0),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: _selectedTab == 0
-                                        ? kPrimaryColor
-                                        : kGreyBg,
+                                    color: _selectedTab == 0 ? kPrimaryColor : kGreyBg,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   alignment: Alignment.center,
@@ -11661,9 +8106,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
-                                      color: _selectedTab == 0
-                                          ? Colors.white
-                                          : kTextSecondary,
+                                      color: _selectedTab == 0 ? Colors.white : kTextSecondary,
                                     ),
                                   ),
                                 ),
@@ -11674,13 +8117,9 @@ class _TopProductsPageState extends State<TopProductsPage> {
                               child: GestureDetector(
                                 onTap: () => setState(() => _selectedTab = 1),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: _selectedTab == 1
-                                        ? kGoogleRed
-                                        : kGreyBg,
+                                    color: _selectedTab == 1 ? kGoogleRed : kGreyBg,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   alignment: Alignment.center,
@@ -11689,9 +8128,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
                                     style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w800,
-                                      color: _selectedTab == 1
-                                          ? Colors.white
-                                          : kTextSecondary,
+                                      color: _selectedTab == 1 ? Colors.white : kTextSecondary,
                                     ),
                                   ),
                                 ),
@@ -11703,86 +8140,42 @@ class _TopProductsPageState extends State<TopProductsPage> {
                       Expanded(
                         child: _selectedTab == 0
                             ? CustomScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                slivers: [
-                                  const SliverToBoxAdapter(
-                                    child: SizedBox(height: 16),
-                                  ),
-                                  SliverPadding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            const SliverToBoxAdapter(child: SizedBox(height: 16)),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              sliver: SliverToBoxAdapter(child: _buildSectionHeader("Revenue contribution")),
+                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 10)),
+                            SliverToBoxAdapter(
+                              child: hasProductChartData
+                                  ? _buildContributionGraph(sortedProducts, 'amount', kPrimaryColor)
+                                  : const EmptyStateWidget(message: "No data found"),
+                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              sliver: SliverToBoxAdapter(
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _buildSectionHeader("Product Performance Ledger"),
+                                    Text(
+                                      "${sortedProducts.length} ITEMS",
+                                      style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kPrimaryColor),
                                     ),
-                                    sliver: SliverToBoxAdapter(
-                                      child: _buildSectionHeader(
-                                        "Revenue contribution",
-                                      ),
-                                    ),
-                                  ),
-                                  const SliverToBoxAdapter(
-                                    child: SizedBox(height: 10),
-                                  ),
-                                  SliverToBoxAdapter(
-                                    child: hasProductChartData
-                                        ? _buildContributionGraph(
-                                            sortedProducts,
-                                            'amount',
-                                            kPrimaryColor,
-                                          )
-                                        : const EmptyStateWidget(
-                                            message: "No data found",
-                                          ),
-                                  ),
-                                  const SliverToBoxAdapter(
-                                    child: SizedBox(height: 24),
-                                  ),
-                                  SliverPadding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    sliver: SliverToBoxAdapter(
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          _buildSectionHeader(
-                                            "Product Performance Ledger",
-                                          ),
-                                          Text(
-                                            "${sortedProducts.length} ITEMS",
-                                            style: const TextStyle(
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold,
-                                              color: kPrimaryColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SliverToBoxAdapter(
-                                    child: SizedBox(height: 8),
-                                  ),
-                                  sortedProducts.isEmpty
-                                      ? const SliverFillRemaining(
-                                          child: Center(
-                                            child: Text(
-                                              "No entries found",
-                                              style: TextStyle(
-                                                color: kTextSecondary,
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                      : SliverToBoxAdapter(
-                                          child: _buildHighDensityProductTable(
-                                            sortedProducts,
-                                          ),
-                                        ),
-                                  const SliverToBoxAdapter(
-                                    child: SizedBox(height: 40),
-                                  ),
-                                ],
-                              )
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                            sortedProducts.isEmpty
+                                ? const SliverFillRemaining(child: Center(child: Text("No entries found", style: TextStyle(color: kTextSecondary))))
+                                : SliverToBoxAdapter(child: _buildHighDensityProductTable(sortedProducts)),
+                            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                          ],
+                        )
                             : _buildNotSoldProductList(notSoldProducts),
                       ),
                     ],
@@ -11801,12 +8194,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2),
     );
   }
 
@@ -11816,9 +8204,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -11826,27 +8212,11 @@ class _TopProductsPageState extends State<TopProductsPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Total Product Revenue",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Total Product Revenue", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
               Row(
                 children: [
-                  Text(
-                    "${revenue.toStringAsFixed(2)}",
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w900,
-                      color: kPrimaryColor,
-                      letterSpacing: -1,
-                    ),
-                  ),
+                  Text("${revenue.toStringAsFixed(2)}", style:TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor  , letterSpacing: -1)),
                   const SizedBox(width: 8),
                   // Green info icon with black explanatory text
                   // Tooltip(
@@ -11886,22 +8256,9 @@ class _TopProductsPageState extends State<TopProductsPage> {
             ),
             child: Column(
               children: [
-                const Text(
-                  "Profit",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  "${profit.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    color: kIncomeGreen,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 26,
-                  ),
-                ),
+
+                const Text("Profit", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
+                Text("${profit.toStringAsFixed(0)}", style: const TextStyle(color: kIncomeGreen, fontWeight: FontWeight.w900, fontSize: 26)),
               ],
             ),
           ),
@@ -11910,11 +8267,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
     );
   }
 
-  Widget _buildContributionGraph(
-    List<MapEntry<String, Map<String, dynamic>>> data,
-    String key,
-    Color barColor,
-  ) {
+  Widget _buildContributionGraph(List<MapEntry<String, Map<String, dynamic>>> data, String key, Color barColor) {
     // Top 6 products for chart clarity
     final chartData = data.take(6).toList();
     final double maxVal = _getMaxValue(chartData, key);
@@ -11937,37 +8290,21 @@ class _TopProductsPageState extends State<TopProductsPage> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxVal > 0 ? maxVal / 4 : 10,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: kBorderColor.withOpacity(0.2),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withOpacity(0.2), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         if (v == 0) return const SizedBox();
-                        String text = v >= 1000
-                            ? '${(v / 1000).toStringAsFixed(0)}k'
-                            : v.toStringAsFixed(0);
-                        return Text(
-                          text,
-                          style: const TextStyle(
-                            fontSize: 8,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
+                        String text = v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0);
+                        return Text(text, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
                       },
                     ),
                   ),
@@ -11977,22 +8314,13 @@ class _TopProductsPageState extends State<TopProductsPage> {
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         int index = v.toInt();
-                        if (index < 0 || index >= chartData.length)
-                          return const SizedBox();
+                        if (index < 0 || index >= chartData.length) return const SizedBox();
                         String label = chartData[index].key;
-                        if (label.length > 6)
-                          label = label.substring(0, 5) + "..";
+                        if (label.length > 6) label = label.substring(0, 5) + "..";
                         return SideTitleWidget(
                           meta: m,
                           space: 8,
-                          child: Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 7,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                          child: Text(label, style: const TextStyle(fontSize: 7, color: kTextSecondary, fontWeight: FontWeight.w900)),
                         );
                       },
                     ),
@@ -12008,15 +8336,13 @@ class _TopProductsPageState extends State<TopProductsPage> {
                         toY: (e.value.value[key] as double),
                         color: kChartColorsList[colorIndex],
                         width: 16,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: 0,
                           color: kBorderColor.withValues(alpha: 0.1),
                         ),
-                      ),
+                      )
                     ],
                   );
                 }).toList(),
@@ -12027,22 +8353,14 @@ class _TopProductsPageState extends State<TopProductsPage> {
           // Caption
           Text(
             "Top products by revenue contribution",
-            style: const TextStyle(
-              fontSize: 9,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
+            style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5),
           ),
         ],
       ),
     );
   }
 
-  double _getMaxValue(
-    List<MapEntry<String, Map<String, dynamic>>> data,
-    String key,
-  ) {
+  double _getMaxValue(List<MapEntry<String, Map<String, dynamic>>> data, String key) {
     if (data.isEmpty) return 100;
     double max = 0;
     for (var e in data) {
@@ -12051,16 +8369,12 @@ class _TopProductsPageState extends State<TopProductsPage> {
     return max == 0 ? 100 : max;
   }
 
-  Widget _buildHighDensityProductTable(
-    List<MapEntry<String, Map<String, dynamic>>> rows,
-  ) {
+  Widget _buildHighDensityProductTable(List<MapEntry<String, Map<String, dynamic>>> rows) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -12069,86 +8383,21 @@ class _TopProductsPageState extends State<TopProductsPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Row(
               children: const [
-                Expanded(
-                  flex: 1,
-                  child: Text(
-                    "#",
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Text(
-                    "Product Name",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Qty",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Price",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Revenue",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 1, child: Text("#", textAlign: TextAlign.left, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary))),
+                Expanded(flex: 4, child: Text("Product Name", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Qty", textAlign: TextAlign.right, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary))),
+                Expanded(flex: 2, child: Text("Price", textAlign: TextAlign.right, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary))),
+                Expanded(flex: 2, child: Text("Revenue", textAlign: TextAlign.right, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary))),
               ],
             ),
           ),
-          ...rows
-              .asMap()
-              .entries
-              .map(
-                (entry) =>
-                    _buildProductTableRowWithIndex(entry.key, entry.value),
-              )
-              .toList(),
+          ...rows.asMap().entries.map((entry) => _buildProductTableRowWithIndex(entry.key, entry.value)).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildProductTableRowWithIndex(
-    int index,
-    MapEntry<String, Map<String, dynamic>> entry,
-  ) {
+  Widget _buildProductTableRowWithIndex(int index, MapEntry<String, Map<String, dynamic>> entry) {
     final name = entry.key;
     final qty = (entry.value['quantity'] as double);
     final amount = (entry.value['amount'] as double);
@@ -12157,71 +8406,31 @@ class _TopProductsPageState extends State<TopProductsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
       ),
       child: Row(
         children: [
-          Expanded(
-            flex: 1,
-            child: Text(
-              '${index + 1}',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: kTextSecondary,
-              ),
-            ),
-          ),
+          Expanded(flex: 1, child: Text('${index + 1}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kTextSecondary))),
           Expanded(
             flex: 4,
             child: Text(
               name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              qty.toStringAsFixed(2),
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: kTextSecondary,
-              ),
-            ),
+            child: Text(qty.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextSecondary)),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              price.toStringAsFixed(2),
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
-            ),
+            child: Text(price.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor)),
           ),
           Expanded(
             flex: 2,
-            child: Text(
-              amount.toStringAsFixed(2),
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
-            ),
+            child: Text(amount.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor)),
           ),
         ],
       ),
@@ -12232,9 +8441,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
       ),
       child: Row(
         children: [
@@ -12242,11 +8449,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
             flex: 3,
             child: Text(
               entry.key,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -12256,11 +8459,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
             child: Text(
               (entry.value['quantity'] as double).toStringAsFixed(0),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: kTextSecondary,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextSecondary),
             ),
           ),
           Expanded(
@@ -12268,11 +8467,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
             child: Text(
               "${(entry.value['amount'] as double).toStringAsFixed(0)}",
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ),
           Expanded(
@@ -12280,11 +8475,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
             child: Text(
               "${(entry.value['profit'] as double).toStringAsFixed(0)}",
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: kIncomeGreen,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kIncomeGreen),
             ),
           ),
         ],
@@ -12300,11 +8491,7 @@ class _TopProductsPageState extends State<TopProductsPage> {
           child: Text(
             'All products have been sold in this period!',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: kTextSecondary,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: kTextSecondary, fontSize: 14, fontWeight: FontWeight.w600),
           ),
         ),
       );
@@ -12320,32 +8507,11 @@ class _TopProductsPageState extends State<TopProductsPage> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Unsold Products',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: kTextSecondary,
-                  letterSpacing: 1,
-                ),
-              ),
+              const Text('Unsold Products', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: kGoogleRed.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '${products.length} ITEMS',
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: kGoogleRed,
-                  ),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: kGoogleRed.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+                child: Text('${products.length} ITEMS', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kGoogleRed)),
               ),
             ],
           ),
@@ -12356,53 +8522,10 @@ class _TopProductsPageState extends State<TopProductsPage> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: const Row(
             children: [
-              Expanded(
-                flex: 1,
-                child: Text(
-                  '#',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 4,
-                child: Text(
-                  'Product Name',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Stock',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  'Price',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                  ),
-                ),
-              ),
+              Expanded(flex: 1, child: Text('#', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary))),
+              Expanded(flex: 4, child: Text('Product Name', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+              Expanded(flex: 2, child: Text('Stock', textAlign: TextAlign.right, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary))),
+              Expanded(flex: 2, child: Text('Price', textAlign: TextAlign.right, style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary))),
             ],
           ),
         ),
@@ -12414,71 +8537,31 @@ class _TopProductsPageState extends State<TopProductsPage> {
               final d = products[index];
               final name = d['itemName']?.toString() ?? 'Unknown';
               final price = double.tryParse(d['price']?.toString() ?? '0') ?? 0;
-              final stock =
-                  double.tryParse(d['currentStock']?.toString() ?? '0') ?? 0;
+              final stock = double.tryParse(d['currentStock']?.toString() ?? '0') ?? 0;
 
               return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: kSurfaceColor,
-                  border: Border(
-                    bottom: BorderSide(
-                      color: kBorderColor.withValues(alpha: 0.3),
-                    ),
-                  ),
+                  border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.3))),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       flex: 1,
-                      child: Text(
-                        '${index + 1}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      child: Text('${index + 1}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextSecondary)),
                     ),
                     Expanded(
                       flex: 4,
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      child: Text(name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.black87), maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text(
-                        stock.toStringAsFixed(0),
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      child: Text(stock.toStringAsFixed(0), textAlign: TextAlign.right, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: kTextSecondary)),
                     ),
                     Expanded(
                       flex: 2,
-                      child: Text(
-                        price.toStringAsFixed(2),
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w900,
-                          color: kGoogleRed,
-                        ),
-                      ),
+                      child: Text(price.toStringAsFixed(2), textAlign: TextAlign.right, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kGoogleRed)),
                     ),
                   ],
                 ),
@@ -12552,16 +8635,12 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
     for (var doc in docs) {
       final data = doc.data() as Map<String, dynamic>;
       DateTime? dt;
-      if (data['timestamp'] != null)
-        dt = (data['timestamp'] as Timestamp).toDate();
-      else if (data['date'] != null)
-        dt = DateTime.tryParse(data['date'].toString());
+      if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+      else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
       if (_isInDateRange(dt)) {
         final String status = (data['status'] ?? '').toString().toLowerCase();
-        if (status == 'cancelled' ||
-            status == 'returned' ||
-            data['hasBeenReturned'] == true) {
+        if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
           continue;
         }
 
@@ -12570,23 +8649,18 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             final rawCategory = item['category']?.toString() ?? '';
             if (!_isValidCategory(rawCategory)) continue;
             final category = rawCategory.trim();
-            double qty =
-                double.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
-            double total =
-                double.tryParse(item['total']?.toString() ?? '0') ?? 0;
+            double qty = double.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+            double total = double.tryParse(item['total']?.toString() ?? '0') ?? 0;
             if (total == 0) {
-              double price =
-                  double.tryParse(item['price']?.toString() ?? '0') ?? 0;
+              double price = double.tryParse(item['price']?.toString() ?? '0') ?? 0;
               total = price * qty;
             }
 
             if (!categoryData.containsKey(category)) {
               categoryData[category] = {'quantity': 0.0, 'amount': 0.0};
             }
-            categoryData[category]!['quantity'] =
-                (categoryData[category]!['quantity'] as double) + qty;
-            categoryData[category]!['amount'] =
-                (categoryData[category]!['amount'] as double) + total;
+            categoryData[category]!['quantity'] = (categoryData[category]!['quantity'] as double) + qty;
+            categoryData[category]!['amount'] = (categoryData[category]!['amount'] as double) + total;
             totalRevenue += total;
           }
         }
@@ -12597,21 +8671,13 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
     _cachedTotalRevenue = totalRevenue;
   }
 
-  void _downloadPdf(
-    BuildContext context,
-    List<MapEntry<String, Map<String, dynamic>>> categories,
-    double totalRevenue,
-  ) {
+  void _downloadPdf(BuildContext context, List<MapEntry<String, Map<String, dynamic>>> categories, double totalRevenue) {
     final symbol = CurrencyService().symbol;
-    final rows = categories
-        .map(
-          (e) => [
-            e.key,
-            (e.value['quantity'] as double).toStringAsFixed(2),
-            "$symbol${(e.value['amount'] as double).toStringAsFixed(2)}",
-          ],
-        )
-        .toList();
+    final rows = categories.map((e) => [
+      e.key,
+      (e.value['quantity'] as double).toStringAsFixed(2),
+      "$symbol${(e.value['amount'] as double).toStringAsFixed(2)}",
+    ]).toList();
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
@@ -12621,10 +8687,9 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
       summaryTitle: 'Total Category Sales',
       summaryValue: "$symbol${totalRevenue.toStringAsFixed(2)}",
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
         'Unique Categories': '${categories.length}',
-        'Report Status': 'Finalized',
+        'Report Status': 'Finalized'
       },
     );
   }
@@ -12638,12 +8703,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
           return Scaffold(
             backgroundColor: kBackgroundColor,
             appBar: _buildModernAppBar("Top Categories", widget.onBack),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
         return StreamBuilder<QuerySnapshot>(
@@ -12653,9 +8713,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
               return Scaffold(
                 backgroundColor: kBackgroundColor,
                 appBar: _buildModernAppBar("Top Categories", widget.onBack),
-                body: const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                ),
+                body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
               );
             }
 
@@ -12668,30 +8726,22 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
 
             var sortedCategories = _cachedCategoryData.entries.toList();
             sortedCategories.sort((a, b) {
-              int result = (a.value['amount'] as double).compareTo(
-                b.value['amount'] as double,
-              );
+              int result = (a.value['amount'] as double).compareTo(b.value['amount'] as double);
               return _isDescending ? -result : result;
             });
             final totalRevenue = _cachedTotalRevenue;
-            final bool hasCategoryChartData = sortedCategories.any(
-              (e) => (e.value['amount'] as double) > 0,
-            );
+            final bool hasCategoryChartData = sortedCategories.any((e) => (e.value['amount'] as double) > 0);
 
             return Scaffold(
               backgroundColor: kBackgroundColor,
               appBar: _buildModernAppBar(
                 "Top Categories",
                 widget.onBack,
-                onDownload: () =>
-                    _downloadPdf(context, sortedCategories, totalRevenue),
+                onDownload: () => _downloadPdf(context, sortedCategories, totalRevenue),
               ),
               body: Column(
                 children: [
-                  _buildExecutiveCategoryHeader(
-                    totalRevenue,
-                    sortedCategories.length,
-                  ),
+                  _buildExecutiveCategoryHeader(totalRevenue, sortedCategories.length),
                   DateFilterWidget(
                     selectedOption: _selectedFilter,
                     startDate: _startDate,
@@ -12699,8 +8749,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                     onDateChanged: _onDateChanged,
                     showSortButton: true,
                     isDescending: _isDescending,
-                    onSortPressed: () =>
-                        setState(() => _isDescending = !_isDescending),
+                    onSortPressed: () => setState(() => _isDescending = !_isDescending),
                   ),
                   Expanded(
                     child: CustomScrollView(
@@ -12709,17 +8758,13 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                         const SliverToBoxAdapter(child: SizedBox(height: 16)),
                         SliverPadding(
                           padding: const EdgeInsets.symmetric(horizontal: 14),
-                          sliver: SliverToBoxAdapter(
-                            child: _buildSectionHeader("Revenue contribution"),
-                          ),
+                          sliver: SliverToBoxAdapter(child: _buildSectionHeader("Revenue contribution")),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 10)),
                         SliverToBoxAdapter(
                           child: hasCategoryChartData
                               ? _buildSingleBarDashboard(sortedCategories)
-                              : const EmptyStateWidget(
-                                  message: "No data found",
-                                ),
+                              : const EmptyStateWidget(message: "No data found"),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 24)),
                         SliverPadding(
@@ -12728,16 +8773,10 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                _buildSectionHeader(
-                                  "Detailed Inventory Ledger",
-                                ),
+                                _buildSectionHeader("Detailed Inventory Ledger"),
                                 Text(
                                   "${sortedCategories.length} GROUPS",
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: kPrimaryColor,
-                                  ),
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: kPrimaryColor),
                                 ),
                               ],
                             ),
@@ -12746,11 +8785,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
                         sortedCategories.isEmpty
-                            ? const SliverFillRemaining(
-                                child: EmptyStateWidget(
-                                  message: "No entries found",
-                                ),
-                              )
+                            ? const SliverFillRemaining(child: EmptyStateWidget(message: "No entries found"))
                             : SliverToBoxAdapter(
                                 child: _buildHighDensityTable(sortedCategories),
                               ),
@@ -12772,12 +8807,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2),
     );
   }
 
@@ -12787,9 +8817,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -12797,25 +8825,9 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Total Category Revenue",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.8,
-                ),
-              ),
+              const Text("Total Category Revenue", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.8)),
               const SizedBox(height: 2),
-              Text(
-                "${revenue.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("${revenue.toStringAsFixed(2)}", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Container(
@@ -12827,22 +8839,8 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             ),
             child: Column(
               children: [
-                Text(
-                  "$count",
-                  style: const TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                const Text(
-                  "Groups",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text("$count", style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 16)),
+                const Text("Groups", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -12851,9 +8849,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
     );
   }
 
-  Widget _buildSingleBarDashboard(
-    List<MapEntry<String, Map<String, dynamic>>> data,
-  ) {
+  Widget _buildSingleBarDashboard(List<MapEntry<String, Map<String, dynamic>>> data) {
     // Take top 6 categories for the chart to keep it clean
     final chartData = data.take(6).toList();
 
@@ -12875,36 +8871,21 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: 10000,
-                  getDrawingHorizontalLine: (v) => FlLine(
-                    color: kBorderColor.withOpacity(0.2),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withOpacity(0.2), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 titlesData: FlTitlesData(
                   show: true,
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         if (v == 0) return const SizedBox();
-                        return Text(
-                          v >= 1000
-                              ? '${(v / 1000).toStringAsFixed(0)}k'
-                              : v.toStringAsFixed(0),
-                          style: const TextStyle(
-                            fontSize: 8,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
+                        return Text(v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}k' : v.toStringAsFixed(0),
+                            style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold));
                       },
                     ),
                   ),
@@ -12914,22 +8895,13 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                       reservedSize: 32,
                       getTitlesWidget: (v, m) {
                         int index = v.toInt();
-                        if (index < 0 || index >= chartData.length)
-                          return const SizedBox();
+                        if (index < 0 || index >= chartData.length) return const SizedBox();
                         String label = chartData[index].key;
-                        if (label.length > 6)
-                          label = label.substring(0, 5) + "..";
+                        if (label.length > 6) label = label.substring(0, 5) + "..";
                         return SideTitleWidget(
                           meta: m,
                           space: 8,
-                          child: Text(
-                            label,
-                            style: const TextStyle(
-                              fontSize: 7,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                          child: Text(label, style: const TextStyle(fontSize: 7, color: kTextSecondary, fontWeight: FontWeight.w900)),
                         );
                       },
                     ),
@@ -12944,15 +8916,13 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
                         toY: e.value.value['amount'],
                         color: kChartColorsList[colorIndex],
                         width: 16,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                         backDrawRodData: BackgroundBarChartRodData(
                           show: true,
                           toY: 0,
                           color: kBorderColor.withValues(alpha: 0.1),
                         ),
-                      ),
+                      )
                     ],
                   );
                 }).toList(),
@@ -12960,30 +8930,18 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            "Financial performance by top category segments",
-            style: TextStyle(
-              fontSize: 8,
-              color: kTextSecondary,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 0.5,
-            ),
-          ),
+          const Text("Financial performance by top category segments", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
         ],
       ),
     );
   }
 
-  Widget _buildHighDensityTable(
-    List<MapEntry<String, Map<String, dynamic>>> rows,
-  ) {
+  Widget _buildHighDensityTable(List<MapEntry<String, Map<String, dynamic>>> rows) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border.symmetric(horizontal: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Column(
         children: [
@@ -12992,44 +8950,9 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Row(
               children: const [
-                Expanded(
-                  flex: 3,
-                  child: Text(
-                    "Category Name",
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Qty Sold",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Net Revenue",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 3, child: Text("Category Name", style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Qty Sold", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Net Revenue", textAlign: TextAlign.right, style: TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
@@ -13043,9 +8966,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.3)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.3))),
       ),
       child: Row(
         children: [
@@ -13053,11 +8974,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             flex: 3,
             child: Text(
               entry.key,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Colors.black87),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -13067,11 +8984,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             child: Text(
               (entry.value['quantity'] as double).toStringAsFixed(2),
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: kTextSecondary,
-              ),
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextSecondary),
             ),
           ),
           Expanded(
@@ -13079,11 +8992,7 @@ class _TopCategoriesPageState extends State<TopCategoriesPage> {
             child: Text(
               "${(entry.value['amount'] as double).toStringAsFixed(0)}",
               textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: kPrimaryColor,
-              ),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kPrimaryColor),
             ),
           ),
         ],
@@ -13121,11 +9030,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
@@ -13145,43 +9050,27 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
     return !date.isBefore(s) && !date.isAfter(e);
   }
 
-  void _downloadPdf(
-    BuildContext context,
-    List<Map<String, dynamic>> all,
-    double totalAmount,
-    double cashTotal,
-    double onlineTotal,
-    double creditTotal,
-  ) {
-    final rows = all
-        .map(
-          (e) => [
-            e['title']?.toString() ?? 'N/A',
-            e['category']?.toString() ?? e['type']?.toString() ?? 'N/A',
-            "$_currencySymbol${(e['amount'] as double).toStringAsFixed(2)}",
-            e['paymentMode']?.toString() ?? 'Cash',
-            e['date'] is DateTime
-                ? DateFormat('dd/MM/yy').format(e['date'] as DateTime)
-                : '--',
-          ],
-        )
-        .toList();
+  void _downloadPdf(BuildContext context, List<Map<String, dynamic>> all, double totalAmount, double cashTotal, double onlineTotal, double creditTotal) {
+    final rows = all.map((e) => [
+      e['title']?.toString() ?? 'N/A',
+      e['category']?.toString() ?? e['type']?.toString() ?? 'N/A',
+      "$_currencySymbol${(e['amount'] as double).toStringAsFixed(2)}",
+      e['paymentMode']?.toString() ?? 'Cash',
+      e['date'] is DateTime ? DateFormat('dd/MM/yy').format(e['date'] as DateTime) : '--',
+    ]).toList();
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
-      reportTitle:
-          'Expense Report - ${DateFormat('MMMM yyyy').format(_startDate)}',
+      reportTitle: 'Expense Report - ${DateFormat('MMMM yyyy').format(_startDate)}',
       headers: ['Description', 'Category', 'Amount', 'Mode', 'Date'],
       rows: rows,
       summaryTitle: 'Total Expenditure',
       summaryValue: "$_currencySymbol${totalAmount.toStringAsFixed(2)}",
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
         'Cash Payments': '$_currencySymbol${cashTotal.toStringAsFixed(2)}',
         'Online Payments': '$_currencySymbol${onlineTotal.toStringAsFixed(2)}',
-        'Credit Outstanding':
-            '$_currencySymbol${creditTotal.toStringAsFixed(2)}',
+        'Credit Outstanding': '$_currencySymbol${creditTotal.toStringAsFixed(2)}',
         'Total Records': '${all.length}',
       },
     );
@@ -13208,12 +9097,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
           if (!streams.hasData) {
             return Scaffold(
               appBar: _buildModernAppBar("Expense Report", widget.onBack),
-              body: const Center(
-                child: CircularProgressIndicator(
-                  color: kPrimaryColor,
-                  strokeWidth: 2,
-                ),
-              ),
+              body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
             );
           }
           return StreamBuilder<QuerySnapshot>(
@@ -13225,19 +9109,10 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                   return StreamBuilder<QuerySnapshot>(
                     stream: streams.data![2],
                     builder: (ctx, creditNotesSnap) {
-                      if (!expSnap.hasData ||
-                          !stockSnap.hasData ||
-                          !creditNotesSnap.hasData) {
+                      if (!expSnap.hasData || !stockSnap.hasData || !creditNotesSnap.hasData) {
                         return Scaffold(
-                          appBar: _buildModernAppBar(
-                            "Expense Report",
-                            widget.onBack,
-                          ),
-                          body: const Center(
-                            child: CircularProgressIndicator(
-                              color: kPrimaryColor,
-                            ),
-                          ),
+                          appBar: _buildModernAppBar("Expense Report", widget.onBack),
+                          body: const Center(child: CircularProgressIndicator(color: kPrimaryColor)),
                         );
                       }
 
@@ -13248,32 +9123,20 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                       double purchRemainingCredit = 0;
                       for (var doc in creditNotesSnap.data!.docs) {
                         final cnData = doc.data() as Map<String, dynamic>;
-                        final cnAmt = ((cnData['amount'] ?? 0.0) as num)
-                            .toDouble();
-                        final cnPaid = ((cnData['paidAmount'] ?? 0.0) as num)
-                            .toDouble();
-                        final remaining = (cnAmt - cnPaid).clamp(
-                          0.0,
-                          double.infinity,
-                        );
+                        final cnAmt = ((cnData['amount'] ?? 0.0) as num).toDouble();
+                        final cnPaid = ((cnData['paidAmount'] ?? 0.0) as num).toDouble();
+                        final remaining = (cnAmt - cnPaid).clamp(0.0, double.infinity);
 
                         // Check timestamp to see if it falls in the selected date range
                         DateTime? cnDt;
-                        if (cnData['timestamp'] != null)
-                          cnDt = (cnData['timestamp'] as Timestamp).toDate();
+                        if (cnData['timestamp'] != null) cnDt = (cnData['timestamp'] as Timestamp).toDate();
 
-                        if (_isInRange(cnDt, _startDate, _endDate) &&
-                            remaining > 0) {
+                        if (_isInRange(cnDt, _startDate, _endDate) && remaining > 0) {
                           totalRemainingCredit += remaining;
                           // Distinguish expense credit vs purchase credit
-                          final cnType = (cnData['type'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                          final cnSupplier = (cnData['supplierName'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                          if (cnType.contains('expense') ||
-                              cnSupplier.startsWith('expense:')) {
+                          final cnType = (cnData['type'] ?? '').toString().toLowerCase();
+                          final cnSupplier = (cnData['supplierName'] ?? '').toString().toLowerCase();
+                          if (cnType.contains('expense') || cnSupplier.startsWith('expense:')) {
                             expRemainingCredit += remaining;
                           } else {
                             purchRemainingCredit += remaining;
@@ -13296,19 +9159,11 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
 
                       for (var d in expSnap.data!.docs) {
                         var data = d.data() as Map<String, dynamic>;
-                        double amt =
-                            double.tryParse(data['amount'].toString()) ?? 0;
+                        double amt = double.tryParse(data['amount'].toString()) ?? 0;
                         DateTime? dt;
-                        if (data['timestamp'] != null)
-                          dt = (data['timestamp'] as Timestamp).toDate();
-                        else if (data['date'] != null)
-                          dt = DateTime.tryParse(data['date'].toString());
-                        String mode =
-                            (data['paymentMode'] ??
-                                    (data['isOnline'] == true
-                                        ? 'Online'
-                                        : 'Cash'))
-                                .toString();
+                        if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                        else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                        String mode = (data['paymentMode'] ?? (data['isOnline'] == true ? 'Online' : 'Cash')).toString();
 
                         if (_isInRange(dt, _startDate, _endDate)) {
                           totalAmount += amt;
@@ -13316,93 +9171,43 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                           opExpCount++;
                           opExpTotal += amt;
                           // Firestore fields: expenseName, expenseType (not title/category)
-                          String category =
-                              data['expenseType']?.toString() ??
-                              data['category']?.toString() ??
-                              'General';
-                          String title =
-                              data['expenseName']?.toString() ??
-                              data['title']?.toString() ??
-                              'Expense';
-                          categoryTotals[category] =
-                              (categoryTotals[category] ?? 0) + amt;
+                          String category = data['expenseType']?.toString() ?? data['category']?.toString() ?? 'General';
+                          String title = data['expenseName']?.toString() ?? data['title']?.toString() ?? 'Expense';
+                          categoryTotals[category] = (categoryTotals[category] ?? 0) + amt;
                           if (dt != null) {
                             dayTotals[dt.day] = (dayTotals[dt.day] ?? 0) + amt;
-                            expDayTotals[dt.day] =
-                                (expDayTotals[dt.day] ?? 0) + amt;
+                            expDayTotals[dt.day] = (expDayTotals[dt.day] ?? 0) + amt;
                           }
                           // Payment mode breakdown using actual paid/credit amounts
                           final modeLower = mode.toLowerCase();
                           if (modeLower == 'credit') {
-                            double paid =
-                                double.tryParse(
-                                  data['paidAmount']?.toString() ?? '0',
-                                ) ??
-                                0;
+                            double paid = double.tryParse(data['paidAmount']?.toString() ?? '0') ?? 0;
                             cashTotal += paid;
-                          } else if (modeLower.contains('online') ||
-                              modeLower.contains('upi') ||
-                              modeLower.contains('card')) {
+                          } else if (modeLower.contains('online') || modeLower.contains('upi') || modeLower.contains('card')) {
                             onlineTotal += amt;
                           } else if (modeLower == 'split') {
-                            double splitCash =
-                                double.tryParse(
-                                  data['cashReceived_split']?.toString() ?? '0',
-                                ) ??
-                                0;
-                            double splitOnline =
-                                double.tryParse(
-                                  data['onlineReceived_split']?.toString() ??
-                                      '0',
-                                ) ??
-                                0;
+                            double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                            double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
                             cashTotal += splitCash;
                             onlineTotal += splitOnline;
                           } else {
                             cashTotal += amt;
                           }
                           final key = _showCombinedCategory ? category : title;
-                          if (!nameGrouped.containsKey(key))
-                            nameGrouped[key] = {
-                              'category': category,
-                              'count': 0,
-                              'amount': 0.0,
-                            };
-                          nameGrouped[key]!['count'] =
-                              (nameGrouped[key]!['count'] as int) + 1;
-                          nameGrouped[key]!['amount'] =
-                              (nameGrouped[key]!['amount'] as double) + amt;
-                          all.add({
-                            'title': title,
-                            'amount': amt,
-                            'type': 'Expense',
-                            'category': category,
-                            'date': dt ?? DateTime.now(),
-                            'paymentMode': mode,
-                          });
+                          if (!nameGrouped.containsKey(key)) nameGrouped[key] = {'category': category, 'count': 0, 'amount': 0.0};
+                          nameGrouped[key]!['count'] = (nameGrouped[key]!['count'] as int) + 1;
+                          nameGrouped[key]!['amount'] = (nameGrouped[key]!['amount'] as double) + amt;
+                          all.add({'title': title, 'amount': amt, 'type': 'Expense', 'category': category, 'date': dt ?? DateTime.now(), 'paymentMode': mode});
                         }
                       }
 
                       for (var d in stockSnap.data!.docs) {
                         var data = d.data() as Map<String, dynamic>;
-                        double amt =
-                            double.tryParse(
-                              data['totalAmount']?.toString() ??
-                                  data['total']?.toString() ??
-                                  '0',
-                            ) ??
-                            0;
+                        double amt = double.tryParse(data['totalAmount']?.toString() ?? data['total']?.toString() ?? '0') ?? 0;
                         DateTime? dt;
-                        if (data['timestamp'] != null)
-                          dt = (data['timestamp'] as Timestamp).toDate();
-                        else if (data['date'] != null)
-                          dt = DateTime.tryParse(data['date'].toString());
-                        String mode =
-                            (data['paymentMode'] ??
-                                    (data['isOnline'] == true
-                                        ? 'Online'
-                                        : 'Cash'))
-                                .toString();
+                        if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                        else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                        String mode = (data['paymentMode'] ?? (data['isOnline'] == true ? 'Online' : 'Cash')).toString();
 
                         if (_isInRange(dt, _startDate, _endDate)) {
                           totalAmount += amt;
@@ -13410,94 +9215,45 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                           purchaseCount++;
                           purchaseTotal += amt;
                           String category = 'Purchase';
-                          String title =
-                              data['supplierName']?.toString() ?? 'Purchase';
-                          categoryTotals[category] =
-                              (categoryTotals[category] ?? 0) + amt;
+                          String title = data['supplierName']?.toString() ?? 'Purchase';
+                          categoryTotals[category] = (categoryTotals[category] ?? 0) + amt;
                           if (dt != null) {
                             dayTotals[dt.day] = (dayTotals[dt.day] ?? 0) + amt;
-                            purchDayTotals[dt.day] =
-                                (purchDayTotals[dt.day] ?? 0) + amt;
+                            purchDayTotals[dt.day] = (purchDayTotals[dt.day] ?? 0) + amt;
                           }
                           // Payment mode breakdown using actual paid/credit amounts
                           final modeLower = mode.toLowerCase();
                           if (modeLower == 'credit') {
-                            double paid =
-                                double.tryParse(
-                                  data['paidAmount']?.toString() ?? '0',
-                                ) ??
-                                0;
+                            double paid = double.tryParse(data['paidAmount']?.toString() ?? '0') ?? 0;
                             cashTotal += paid;
-                          } else if (modeLower.contains('online') ||
-                              modeLower.contains('upi') ||
-                              modeLower.contains('card')) {
+                          } else if (modeLower.contains('online') || modeLower.contains('upi') || modeLower.contains('card')) {
                             onlineTotal += amt;
                           } else if (modeLower == 'split') {
-                            double splitCash =
-                                double.tryParse(
-                                  data['cashReceived_split']?.toString() ?? '0',
-                                ) ??
-                                0;
-                            double splitOnline =
-                                double.tryParse(
-                                  data['onlineReceived_split']?.toString() ??
-                                      '0',
-                                ) ??
-                                0;
+                            double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                            double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
                             cashTotal += splitCash;
                             onlineTotal += splitOnline;
                           } else {
                             cashTotal += amt;
                           }
                           final key = _showCombinedCategory ? category : title;
-                          if (!nameGrouped.containsKey(key))
-                            nameGrouped[key] = {
-                              'category': category,
-                              'count': 0,
-                              'amount': 0.0,
-                            };
-                          nameGrouped[key]!['count'] =
-                              (nameGrouped[key]!['count'] as int) + 1;
-                          nameGrouped[key]!['amount'] =
-                              (nameGrouped[key]!['amount'] as double) + amt;
-                          all.add({
-                            'title': title,
-                            'amount': amt,
-                            'type': 'Stock',
-                            'category': category,
-                            'date': dt ?? DateTime.now(),
-                            'paymentMode': mode,
-                          });
+                          if (!nameGrouped.containsKey(key)) nameGrouped[key] = {'category': category, 'count': 0, 'amount': 0.0};
+                          nameGrouped[key]!['count'] = (nameGrouped[key]!['count'] as int) + 1;
+                          nameGrouped[key]!['amount'] = (nameGrouped[key]!['amount'] as double) + amt;
+                          all.add({'title': title, 'amount': amt, 'type': 'Stock', 'category': category, 'date': dt ?? DateTime.now(), 'paymentMode': mode});
                         }
                       }
 
-                      all.sort(
-                        (a, b) => (b['date'] as DateTime).compareTo(
-                          a['date'] as DateTime,
-                        ),
-                      );
-                      var sortedNameEntries = nameGrouped.entries.toList()
-                        ..sort(
-                          (a, b) => (b.value['amount'] as double).compareTo(
-                            a.value['amount'] as double,
-                          ),
-                        );
-                      var sortedCategories = categoryTotals.entries.toList()
-                        ..sort((a, b) => b.value.compareTo(a.value));
+                      all.sort((a, b) => (b['date'] as DateTime).compareTo(a['date'] as DateTime));
+                      var sortedNameEntries = nameGrouped.entries.toList()..sort((a, b) => (b.value['amount'] as double).compareTo(a.value['amount'] as double));
+                      var sortedCategories = categoryTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
 
                       return Scaffold(
                         backgroundColor: kGreyBg,
                         appBar: _buildModernAppBar(
                           "Expense Report",
                           widget.onBack,
-                          onDownload: () => _downloadPdf(
-                            context,
-                            all,
-                            totalAmount,
-                            cashTotal,
-                            onlineTotal,
-                            totalRemainingCredit,
-                          ),
+                          onDownload: () => _downloadPdf(context, all, totalAmount, cashTotal, onlineTotal, totalRemainingCredit),
                         ),
                         body: CustomScrollView(
                           physics: const BouncingScrollPhysics(),
@@ -13514,94 +9270,57 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                             // ── Expense Summary Strip ──
                             SliverToBoxAdapter(
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 10,
-                                ),
-                                child: _buildExpSummaryStrip(
-                                  expenseCount,
-                                  totalAmount,
-                                  opExpCount,
-                                  opExpTotal,
-                                  purchaseCount,
-                                  purchaseTotal,
-                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                child: _buildExpSummaryStrip(expenseCount, totalAmount, opExpCount, opExpTotal, purchaseCount, purchaseTotal),
                               ),
                             ),
 
                             SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               sliver: SliverList(
                                 delegate: SliverChildListDelegate([
                                   const SizedBox(height: 4),
-                                  _buildExpSectionLabel(
-                                    "Expense & Purchase Timeline",
-                                  ),
+                                  _buildExpSectionLabel("Expense & Purchase Timeline"),
                                   const SizedBox(height: 8),
-                                  _buildExpTimelineCard(
-                                    dayTotals,
-                                    expDayTotals,
-                                    purchDayTotals,
-                                  ),
+                                  _buildExpTimelineCard(dayTotals, expDayTotals, purchDayTotals),
                                   const SizedBox(height: 20),
 
                                   _buildExpSectionLabel("Expense Category"),
                                   const SizedBox(height: 8),
-                                  _buildExpCategoryCard(
-                                    sortedCategories,
-                                    expenseCount,
-                                    totalAmount,
-                                  ),
+                                  _buildExpCategoryCard(sortedCategories, expenseCount, totalAmount),
                                   const SizedBox(height: 20),
 
                                   Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      _buildExpSectionLabel(
-                                        "Expense By Category",
-                                      ),
+                                      _buildExpSectionLabel("Expense By Category"),
                                       _buildExpCombinedToggle(),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
-                                  _buildExpNameTable(
-                                    sortedNameEntries,
-                                    totalAmount,
-                                  ),
+                                  _buildExpNameTable(sortedNameEntries, totalAmount),
                                   const SizedBox(height: 20),
                                 ]),
                               ),
                             ),
 
                             // ── Expense Name Table entries already shown above ──
+
                             SliverPadding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               sliver: SliverList(
                                 delegate: SliverChildListDelegate([
                                   const SizedBox(height: 20),
                                   _buildExpSectionLabel("Payment Breakdown"),
                                   const SizedBox(height: 8),
-                                  _buildExpPaymentCard(
-                                    cashTotal,
-                                    onlineTotal,
-                                    totalRemainingCredit,
-                                  ),
+                                  _buildExpPaymentCard(cashTotal, onlineTotal, totalRemainingCredit),
 
                                   // ── Credit Outstanding Section ──
                                   if (totalRemainingCredit > 0) ...[
                                     const SizedBox(height: 20),
                                     _buildExpSectionLabel("Credit Outstanding"),
                                     const SizedBox(height: 8),
-                                    _buildExpCreditCard(
-                                      totalRemainingCredit,
-                                      expRemainingCredit,
-                                      purchRemainingCredit,
-                                    ),
+                                    _buildExpCreditCard(totalRemainingCredit, expRemainingCredit, purchRemainingCredit),
                                   ],
                                   const SizedBox(height: 30),
                                 ]),
@@ -13623,26 +9342,11 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
 
   // ─── Section Label (matches SalesSummary _buildSectionLabel) ───
   Widget _buildExpSectionLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
-    );
+    return Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2));
   }
 
   // ─── Summary Strip (matches SalesSummary _buildBillSummaryStrip) ───
-  Widget _buildExpSummaryStrip(
-    int count,
-    double total,
-    int opCount,
-    double opTotal,
-    int purchCount,
-    double purchTotal,
-  ) {
+  Widget _buildExpSummaryStrip(int count, double total, int opCount, double opTotal, int purchCount, double purchTotal) {
     return Column(
       children: [
         Container(
@@ -13659,37 +9363,15 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: kExpenseRed.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(
-                        Icons.receipt_long_rounded,
-                        color: kExpenseRed,
-                        size: 16,
-                      ),
+                      decoration: BoxDecoration(color: kExpenseRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+                      child: const Icon(Icons.receipt_long_rounded, color: kExpenseRed, size: 16),
                     ),
                     const SizedBox(width: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Total Expenditure",
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: kTextSecondary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          "$_currencySymbol${total.toStringAsFixed(2)}",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: kExpenseRed,
-                          ),
-                        ),
+                        const Text("Total Expenditure", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
+                        Text("$_currencySymbol${total.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kExpenseRed)),
                       ],
                     ),
                   ],
@@ -13703,23 +9385,8 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "Records",
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w900,
-                            color: kTextSecondary,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          "$count",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: kTextPrimary,
-                          ),
-                        ),
+                        const Text("Records", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
+                        Text("$count", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kTextPrimary)),
                       ],
                     ),
                   ],
@@ -13734,52 +9401,26 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: kSurfaceColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: kExpenseRed.withValues(alpha: 0.15),
-                  ),
+                  border: Border.all(color: kExpenseRed.withValues(alpha: 0.15)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: kExpenseRed.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.shopping_cart_outlined,
-                        size: 14,
-                        color: kExpenseRed,
-                      ),
+                      decoration: BoxDecoration(color: kExpenseRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.shopping_cart_outlined, size: 14, color: kExpenseRed),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Expense ($opCount)",
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: kTextSecondary,
-                            ),
-                          ),
-                          Text(
-                            "$_currencySymbol${opTotal.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: kExpenseRed,
-                            ),
-                          ),
+                          Text("Expense ($opCount)", style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kTextSecondary)),
+                          Text("$_currencySymbol${opTotal.toStringAsFixed(0)}", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kExpenseRed)),
                         ],
                       ),
                     ),
@@ -13790,52 +9431,26 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
                   color: kSurfaceColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: kWarningOrange.withValues(alpha: 0.15),
-                  ),
+                  border: Border.all(color: kWarningOrange.withValues(alpha: 0.15)),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        color: kWarningOrange.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_outlined,
-                        size: 14,
-                        color: kWarningOrange,
-                      ),
+                      decoration: BoxDecoration(color: kWarningOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.inventory_2_outlined, size: 14, color: kWarningOrange),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Purchase ($purchCount)",
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w800,
-                              color: kTextSecondary,
-                            ),
-                          ),
-                          Text(
-                            "$_currencySymbol${purchTotal.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              color: kWarningOrange,
-                            ),
-                          ),
+                          Text("Purchase ($purchCount)", style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kTextSecondary)),
+                          Text("$_currencySymbol${purchTotal.toStringAsFixed(0)}", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kWarningOrange)),
                         ],
                       ),
                     ),
@@ -13850,20 +9465,11 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
   }
 
   // ─── Timeline Chart (matches SalesSummary _buildRevenueTimelineCard) ───
-  Widget _buildExpTimelineCard(
-    Map<int, double> dayTotals,
-    Map<int, double> expDays,
-    Map<int, double> purchDays,
-  ) {
+  Widget _buildExpTimelineCard(Map<int, double> dayTotals, Map<int, double> expDays, Map<int, double> purchDays) {
     final allDays = dayTotals.keys.toList()..sort();
     int peakDay = 0;
     double peakVal = 0;
-    dayTotals.forEach((d, v) {
-      if (v > peakVal) {
-        peakVal = v;
-        peakDay = d;
-      }
-    });
+    dayTotals.forEach((d, v) { if (v > peakVal) { peakVal = v; peakDay = d; } });
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -13879,168 +9485,61 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: kChartRed,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    "Expense",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: kTextSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: kWarningOrange,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  const Text(
-                    "Purchase",
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: kTextSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                "Peak: Day $peakDay",
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Row(children: [
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: kChartRed, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 4),
+                const Text("Expense", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
+                const SizedBox(width: 10),
+                Container(width: 10, height: 10, decoration: BoxDecoration(color: kWarningOrange, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(width: 4),
+                const Text("Purchase", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
+              ]),
+              Text("Peak: Day $peakDay", style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 14),
           SizedBox(
             height: 150,
             child: allDays.isEmpty
-                ? const Center(
-                    child: Text(
-                      'No data',
-                      style: TextStyle(color: kTextSecondary, fontSize: 12),
-                    ),
-                  )
-                : BarChart(
-                    BarChartData(
-                      alignment: BarChartAlignment.spaceAround,
-                      gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: false,
-                        getDrawingHorizontalLine: (v) => FlLine(
-                          color: kBorderColor.withValues(alpha: 0.4),
-                          strokeWidth: 1,
-                        ),
-                      ),
-                      borderData: FlBorderData(show: false),
-                      titlesData: FlTitlesData(
-                        topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false),
-                        ),
-                        bottomTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 22,
-                            getTitlesWidget: (v, m) {
-                              int d = v.toInt();
-                              if (allDays.length > 10 && d % 3 != 1)
-                                return const SizedBox();
-                              return Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  '$d',
-                                  style: const TextStyle(
-                                    fontSize: 9,
-                                    color: kTextSecondary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        leftTitles: AxisTitles(
-                          sideTitles: SideTitles(
-                            showTitles: true,
-                            reservedSize: 36,
-                            getTitlesWidget: (v, m) {
-                              if (v == 0) return const SizedBox();
-                              String label = v >= 1000
-                                  ? '${(v / 1000).toStringAsFixed(0)}K'
-                                  : v.toStringAsFixed(0);
-                              return Text(
-                                label,
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  color: kTextSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      barGroups: allDays.map((day) {
-                        final expVal = expDays[day] ?? 0;
-                        final purchVal = purchDays[day] ?? 0;
-                        final barWidth = allDays.length > 20
-                            ? 3.0
-                            : allDays.length > 10
-                            ? 4.0
-                            : 5.0;
-                        return BarChartGroupData(
-                          x: day,
-                          barRods: [
-                            if (expVal > 0)
-                              BarChartRodData(
-                                toY: expVal,
-                                color: kChartRed,
-                                width: barWidth,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(2),
-                                ),
-                              ),
-                            if (purchVal > 0)
-                              BarChartRodData(
-                                toY: purchVal,
-                                color: kWarningOrange,
-                                width: barWidth,
-                                borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(2),
-                                ),
-                              ),
-                            if (expVal == 0 && purchVal == 0)
-                              BarChartRodData(
-                                toY: 0,
-                                color: kBorderColor,
-                                width: barWidth,
-                              ),
-                          ],
-                          barsSpace: 2,
-                        );
-                      }).toList(),
-                    ),
-                  ),
+                ? const Center(child: Text('No data', style: TextStyle(color: kTextSecondary, fontSize: 12)))
+                : BarChart(BarChartData(
+              alignment: BarChartAlignment.spaceAround,
+              gridData: FlGridData(
+                show: true, drawVerticalLine: false,
+                getDrawingHorizontalLine: (v) => FlLine(color: kBorderColor.withValues(alpha: 0.4), strokeWidth: 1),
+              ),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                bottomTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 22,
+                  getTitlesWidget: (v, m) {
+                    int d = v.toInt();
+                    if (allDays.length > 10 && d % 3 != 1) return const SizedBox();
+                    return Padding(padding: const EdgeInsets.only(top: 4), child: Text('$d', style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.w700)));
+                  },
+                )),
+                leftTitles: AxisTitles(sideTitles: SideTitles(
+                  showTitles: true, reservedSize: 36,
+                  getTitlesWidget: (v, m) {
+                    if (v == 0) return const SizedBox();
+                    String label = v >= 1000 ? '${(v / 1000).toStringAsFixed(0)}K' : v.toStringAsFixed(0);
+                    return Text(label, style: const TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w600));
+                  },
+                )),
+              ),
+              barGroups: allDays.map((day) {
+                final expVal = expDays[day] ?? 0;
+                final purchVal = purchDays[day] ?? 0;
+                final barWidth = allDays.length > 20 ? 3.0 : allDays.length > 10 ? 4.0 : 5.0;
+                return BarChartGroupData(x: day, barRods: [
+                  if (expVal > 0) BarChartRodData(toY: expVal, color: kChartRed, width: barWidth, borderRadius: const BorderRadius.vertical(top: Radius.circular(2))),
+                  if (purchVal > 0) BarChartRodData(toY: purchVal, color: kWarningOrange, width: barWidth, borderRadius: const BorderRadius.vertical(top: Radius.circular(2))),
+                  if (expVal == 0 && purchVal == 0) BarChartRodData(toY: 0, color: kBorderColor, width: barWidth),
+                ], barsSpace: 2);
+              }).toList(),
+            )),
           ),
         ],
       ),
@@ -14048,11 +9547,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
   }
 
   // ─── Category Donut Card (matches SalesSummary _buildPaymentStructureCard pattern) ───
-  Widget _buildExpCategoryCard(
-    List<MapEntry<String, double>> sorted,
-    int count,
-    double total,
-  ) {
+  Widget _buildExpCategoryCard(List<MapEntry<String, double>> sorted, int count, double total) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -14072,53 +9567,20 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      PieChart(
-                        PieChartData(
-                          sectionsSpace: 3,
-                          centerSpaceRadius: 32,
-                          sections: sorted.isEmpty
-                              ? [
-                                  PieChartSectionData(
-                                    color: kBorderColor.withValues(alpha: 0.3),
-                                    value: 1,
-                                    title: '',
-                                    radius: 14,
-                                  ),
-                                ]
-                              : sorted.asMap().entries.map((e) {
-                                  final c =
-                                      kChartColorsList[e.key %
-                                          kChartColorsList.length];
-                                  return PieChartSectionData(
-                                    color: c,
-                                    value: e.value.value,
-                                    title: '',
-                                    radius: 14,
-                                  );
-                                }).toList(),
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "$count",
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: kTextPrimary,
-                            ),
-                          ),
-                          const Text(
-                            "Recorded",
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                      PieChart(PieChartData(
+                        sectionsSpace: 3,
+                        centerSpaceRadius: 32,
+                        sections: sorted.isEmpty
+                            ? [PieChartSectionData(color: kBorderColor.withValues(alpha: 0.3), value: 1, title: '', radius: 14)]
+                            : sorted.asMap().entries.map((e) {
+                          final c = kChartColorsList[e.key % kChartColorsList.length];
+                          return PieChartSectionData(color: c, value: e.value.value, title: '', radius: 14);
+                        }).toList(),
+                      )),
+                      Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text("$count", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: kTextPrimary)),
+                        const Text("Recorded", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w600)),
+                      ]),
                     ],
                   ),
                 ),
@@ -14129,52 +9591,18 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                 child: Column(
                   children: sorted.map((entry) {
                     final idx = sorted.indexOf(entry);
-                    final color =
-                        kChartColorsList[idx % kChartColorsList.length];
+                    final color = kChartColorsList[idx % kChartColorsList.length];
                     final pct = total > 0 ? (entry.value / total * 100) : 0.0;
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 3),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: const TextStyle(
-                                fontSize: 10,
-                                color: kTextSecondary,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            "${entry.value.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: kTextPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            "${pct.toStringAsFixed(0)}%",
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.w700,
-                              color: color,
-                            ),
-                          ),
-                        ],
-                      ),
+                      child: Row(children: [
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(entry.key, style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                        Text("${entry.value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextPrimary)),
+                        const SizedBox(width: 6),
+                        Text("${pct.toStringAsFixed(0)}%", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color)),
+                      ]),
                     );
                   }).toList(),
                 ),
@@ -14184,39 +9612,16 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: kExpenseRed.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: kExpenseRed.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      size: 14,
-                      color: kExpenseRed,
-                    ),
-                    const SizedBox(width: 6),
-                    const Text(
-                      "Total Expenditure",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: kExpenseRed,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  "$_currencySymbol${total.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: kExpenseRed,
-                  ),
-                ),
+                Row(children: [
+                  const Icon(Icons.account_balance_wallet_rounded, size: 14, color: kExpenseRed),
+                  const SizedBox(width: 6),
+                  const Text("Total Expenditure", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kExpenseRed)),
+                ]),
+                Text("$_currencySymbol${total.toStringAsFixed(0)}", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kExpenseRed)),
               ],
             ),
           ),
@@ -14231,41 +9636,19 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         GestureDetector(
-          onTap: () =>
-              setState(() => _showCombinedCategory = !_showCombinedCategory),
+          onTap: () => setState(() => _showCombinedCategory = !_showCombinedCategory),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: _showCombinedCategory
-                  ? kPrimaryColor.withValues(alpha: 0.08)
-                  : kSurfaceColor,
+              color: _showCombinedCategory ? kPrimaryColor.withValues(alpha: 0.08) : kSurfaceColor,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: _showCombinedCategory
-                    ? kPrimaryColor.withValues(alpha: 0.3)
-                    : kBorderColor.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: _showCombinedCategory ? kPrimaryColor.withValues(alpha: 0.3) : kBorderColor.withValues(alpha: 0.5)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Group by Category",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: _showCombinedCategory
-                        ? kPrimaryColor
-                        : kTextSecondary,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                AppMiniSwitch(
-                  value: _showCombinedCategory,
-                  onChanged: (v) => setState(() => _showCombinedCategory = v),
-                ),
-              ],
-            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text("Group by Category", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _showCombinedCategory ? kPrimaryColor : kTextSecondary)),
+              const SizedBox(width: 6),
+              AppMiniSwitch(value: _showCombinedCategory, onChanged: (v) => setState(() => _showCombinedCategory = v)),
+            ]),
           ),
         ),
       ],
@@ -14273,10 +9656,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
   }
 
   // ─── Expense Name Table (Table Format) ───
-  Widget _buildExpNameTable(
-    List<MapEntry<String, Map<String, dynamic>>> entries,
-    double total,
-  ) {
+  Widget _buildExpNameTable(List<MapEntry<String, Map<String, dynamic>>> entries, double total) {
     if (entries.isEmpty) {
       return Container(
         padding: const EdgeInsets.symmetric(vertical: 36),
@@ -14287,20 +9667,9 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
         ),
         child: Column(
           children: [
-            Icon(
-              Icons.inbox_rounded,
-              size: 42,
-              color: kTextSecondary.withValues(alpha: 0.2),
-            ),
+            Icon(Icons.inbox_rounded, size: 42, color: kTextSecondary.withValues(alpha: 0.2)),
             const SizedBox(height: 8),
-            const Text(
-              "No expenses for this period",
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: kTextSecondary,
-              ),
-            ),
+            const Text("No expenses for this period", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: kTextSecondary)),
           ],
         ),
       );
@@ -14319,75 +9688,15 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: kBorderColor.withValues(alpha: 0.3),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
             child: const Row(
               children: [
-                Expanded(
-                  flex: 4,
-                  child: Text(
-                    "Name",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Category",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    "Qty",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Amount",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 40,
-                  child: Text(
-                    "%",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ),
+                Expanded(flex: 4, child: Text("Name", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Category", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                SizedBox(width: 30, child: Text("Qty", textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                Expanded(flex: 2, child: Text("Amount", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                SizedBox(width: 40, child: Text("%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
@@ -14400,17 +9709,12 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             final int count = entry.value['count'] as int;
             final String category = entry.value['category'] as String;
             final double pct = total > 0 ? (amt / total * 100) : 0.0;
-            final Color rowColor =
-                kChartColorsList[idx % kChartColorsList.length];
+            final Color rowColor = kChartColorsList[idx % kChartColorsList.length];
 
             return Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: kBorderColor.withValues(alpha: 0.3),
-                  ),
-                ),
+                border: Border(bottom: BorderSide(color: kBorderColor.withValues(alpha: 0.3))),
               ),
               child: Row(
                 children: [
@@ -14419,77 +9723,26 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                     child: Row(
                       children: [
                         Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: rowColor,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
+                          width: 6, height: 6,
+                          decoration: BoxDecoration(color: rowColor, borderRadius: BorderRadius.circular(2)),
                         ),
                         const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                              color: kTextPrimary,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
+                        Expanded(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
                       ],
                     ),
                   ),
                   Expanded(
                     flex: 2,
-                    child: Text(
-                      category,
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w600,
-                        color: kTextSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    child: Text(category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
                   ),
-                  SizedBox(
-                    width: 30,
-                    child: Text(
-                      "$count",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: kTextSecondary,
-                      ),
-                    ),
-                  ),
+                  SizedBox(width: 30, child: Text("$count", textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary))),
                   Expanded(
                     flex: 2,
-                    child: Text(
-                      "$_currencySymbol${amt.toStringAsFixed(1)}",
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: kExpenseRed,
-                      ),
-                    ),
+                    child: Text("$_currencySymbol${amt.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed)),
                   ),
                   SizedBox(
                     width: 40,
-                    child: Text(
-                      "${pct.toStringAsFixed(1)}%",
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        color: rowColor,
-                      ),
-                    ),
+                    child: Text("${pct.toStringAsFixed(1)}%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: rowColor)),
                   ),
                 ],
               ),
@@ -14500,60 +9753,15 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: kExpenseRed.withValues(alpha: 0.06),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(12),
-              ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
             ),
             child: Row(
               children: [
-                const Expanded(
-                  flex: 4,
-                  child: Text(
-                    "Total",
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kExpenseRed,
-                    ),
-                  ),
-                ),
+                const Expanded(flex: 4, child: Text("Total", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
                 const Expanded(flex: 2, child: SizedBox()),
-                SizedBox(
-                  width: 30,
-                  child: Text(
-                    "${entries.fold<int>(0, (s, e) => s + (e.value['count'] as int))}",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: kExpenseRed,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Text(
-                    "$_currencySymbol${total.toStringAsFixed(1)}",
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      color: kExpenseRed,
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  width: 40,
-                  child: Text(
-                    "100%",
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      color: kExpenseRed,
-                    ),
-                  ),
-                ),
+                SizedBox(width: 30, child: Text("${entries.fold<int>(0, (s, e) => s + (e.value['count'] as int))}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kExpenseRed))),
+                Expanded(flex: 2, child: Text("$_currencySymbol${total.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
+                const SizedBox(width: 40, child: Text("100%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kExpenseRed))),
               ],
             ),
           ),
@@ -14563,11 +9771,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
   }
 
   // ─── Name Row (matches app's _buildBreakdownRow pattern) ───
-  Widget _buildExpNameRow(
-    MapEntry<String, Map<String, dynamic>> entry,
-    double total,
-    int idx,
-  ) {
+  Widget _buildExpNameRow(MapEntry<String, Map<String, dynamic>> entry, double total, int idx) {
     final name = entry.key;
     final double amt = entry.value['amount'] as double;
     final int count = entry.value['count'] as int;
@@ -14587,94 +9791,36 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: avatarColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            width: 34, height: 34,
+            decoration: BoxDecoration(color: avatarColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
             alignment: Alignment.center,
-            child: Text(
-              initials,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: avatarColor,
-              ),
-            ),
+            child: Text(initials, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: avatarColor)),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: kTextPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                Text(name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Text(
-                  category,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w600,
-                    color: kTextSecondary,
-                    letterSpacing: 0.3,
-                  ),
-                ),
+                Text(category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary, letterSpacing: 0.3)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                "$_currencySymbol${amt.toStringAsFixed(1)}",
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: kExpenseRed,
-                ),
-              ),
+              Text("$_currencySymbol${amt.toStringAsFixed(1)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kExpenseRed)),
               const SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: kExpenseRed.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      "${pct.toStringAsFixed(1)}%",
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: kExpenseRed,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    "×$count",
-                    style: const TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ],
-              ),
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(color: kExpenseRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                  child: Text("${pct.toStringAsFixed(1)}%", style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kExpenseRed)),
+                ),
+                const SizedBox(width: 4),
+                Text("×$count", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: kTextSecondary)),
+              ]),
             ],
           ),
         ],
@@ -14696,38 +9842,14 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.pie_chart_outline_rounded,
-                      color: kTextSecondary,
-                      size: 14,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      "Payment Breakdown",
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                "$_currencySymbol${total.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w900,
-                  color: kTextPrimary,
-                ),
-              ),
-            ],
-          ),
+          Row(children: [
+            const Expanded(child: Row(children: [
+              Icon(Icons.pie_chart_outline_rounded, color: kTextSecondary, size: 14),
+              SizedBox(width: 6),
+              Text("Payment Breakdown", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
+            ])),
+            Text("$_currencySymbol${total.toStringAsFixed(0)}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kTextPrimary)),
+          ]),
           const SizedBox(height: 14),
           Row(
             children: [
@@ -14738,63 +9860,20 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      PieChart(
-                        PieChartData(
-                          sectionsSpace: 3,
-                          centerSpaceRadius: 32,
-                          sections: [
-                            if (cash > 0)
-                              PieChartSectionData(
-                                color: kIncomeGreen,
-                                value: cash,
-                                title: '',
-                                radius: 14,
-                              ),
-                            if (online > 0)
-                              PieChartSectionData(
-                                color: kChartBlue,
-                                value: online,
-                                title: '',
-                                radius: 14,
-                              ),
-                            if (credit > 0)
-                              PieChartSectionData(
-                                color: kWarningOrange,
-                                value: credit,
-                                title: '',
-                                radius: 14,
-                              ),
-                            if (total == 0)
-                              PieChartSectionData(
-                                color: kBorderColor.withValues(alpha: 0.3),
-                                value: 1,
-                                title: '',
-                                radius: 14,
-                              ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            "$_currencySymbol${total.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: kTextPrimary,
-                            ),
-                          ),
-                          const Text(
-                            "Total",
-                            style: TextStyle(
-                              fontSize: 8,
-                              color: kTextSecondary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                      PieChart(PieChartData(
+                        sectionsSpace: 3,
+                        centerSpaceRadius: 32,
+                        sections: [
+                          if (cash > 0) PieChartSectionData(color: kIncomeGreen, value: cash, title: '', radius: 14),
+                          if (online > 0) PieChartSectionData(color: kChartBlue, value: online, title: '', radius: 14),
+                          if (credit > 0) PieChartSectionData(color: kWarningOrange, value: credit, title: '', radius: 14),
+                          if (total == 0) PieChartSectionData(color: kBorderColor.withValues(alpha: 0.3), value: 1, title: '', radius: 14),
                         ],
-                      ),
+                      )),
+                      Column(mainAxisSize: MainAxisSize.min, children: [
+                        Text("$_currencySymbol${total.toStringAsFixed(0)}", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kTextPrimary)),
+                        const Text("Total", style: TextStyle(fontSize: 8, color: kTextSecondary, fontWeight: FontWeight.w600)),
+                      ]),
                     ],
                   ),
                 ),
@@ -14807,13 +9886,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                   children: [
                     _buildExpLegendRow(kIncomeGreen, 'Cash', cash, total),
                     _buildExpLegendRow(kChartBlue, 'Online', online, total),
-                    if (credit > 0)
-                      _buildExpLegendRow(
-                        kWarningOrange,
-                        'Credit',
-                        credit,
-                        total,
-                      ),
+                    if (credit > 0) _buildExpLegendRow(kWarningOrange, 'Credit', credit, total),
                   ],
                 ),
               ),
@@ -14822,39 +9895,16 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
           const SizedBox(height: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: kIncomeGreen.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: kIncomeGreen.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.account_balance_wallet_rounded,
-                      size: 14,
-                      color: kIncomeGreen,
-                    ),
-                    SizedBox(width: 6),
-                    Text(
-                      "Cash + Online paid",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: kIncomeGreen,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  "$_currencySymbol${(cash + online).toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: kIncomeGreen,
-                  ),
-                ),
+                const Row(children: [
+                  Icon(Icons.account_balance_wallet_rounded, size: 14, color: kIncomeGreen),
+                  SizedBox(width: 6),
+                  Text("Cash + Online paid", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kIncomeGreen)),
+                ]),
+                Text("$_currencySymbol${(cash + online).toStringAsFixed(0)}", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kIncomeGreen)),
               ],
             ),
           ),
@@ -14862,39 +9912,16 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: kWarningOrange.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(10),
-              ),
+              decoration: BoxDecoration(color: kWarningOrange.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(10)),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.credit_card_rounded,
-                        size: 14,
-                        color: kWarningOrange,
-                      ),
-                      SizedBox(width: 6),
-                      Text(
-                        "Credit (to pay)",
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: kWarningOrange,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    "$_currencySymbol${credit.toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w900,
-                      color: kWarningOrange,
-                    ),
-                  ),
+                  const Row(children: [
+                    Icon(Icons.credit_card_rounded, size: 14, color: kWarningOrange),
+                    SizedBox(width: 6),
+                    Text("Credit (to pay)", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: kWarningOrange)),
+                  ]),
+                  Text("$_currencySymbol${credit.toStringAsFixed(0)}", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: kWarningOrange)),
                 ],
               ),
             ),
@@ -14905,11 +9932,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
   }
 
   // ─── Credit Outstanding Card ───
-  Widget _buildExpCreditCard(
-    double totalCredit,
-    double expCredit,
-    double purchCredit,
-  ) {
+  Widget _buildExpCreditCard(double totalCredit, double expCredit, double purchCredit) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -14922,55 +9945,24 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: kWarningOrange.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.credit_card_rounded,
-                  color: kWarningOrange,
-                  size: 16,
-                ),
+          Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: kWarningOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.credit_card_rounded, color: kWarningOrange, size: 16),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Remaining To Pay", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1)),
+                  Text("Credit outstanding for this period", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w500)),
+                ],
               ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Remaining To Pay",
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        color: kTextSecondary,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                    Text(
-                      "Credit outstanding for this period",
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: kTextSecondary,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Text(
-                "$_currencySymbol${totalCredit.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: kWarningOrange,
-                ),
-              ),
-            ],
-          ),
+            ),
+            Text("$_currencySymbol${totalCredit.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: kWarningOrange)),
+          ]),
           const SizedBox(height: 14),
           // Expense credit row
           Container(
@@ -14984,35 +9976,14 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: kExpenseRed.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.shopping_cart_outlined,
-                    size: 14,
-                    color: kExpenseRed,
-                  ),
+                  decoration: BoxDecoration(color: kExpenseRed.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.shopping_cart_outlined, size: 14, color: kExpenseRed),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
-                  child: Text(
-                    "Expense Credit",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrimary,
-                    ),
-                  ),
+                  child: Text("Expense Credit", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextPrimary)),
                 ),
-                Text(
-                  "$_currencySymbol${expCredit.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: kExpenseRed,
-                  ),
-                ),
+                Text("$_currencySymbol${expCredit.toStringAsFixed(2)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kExpenseRed)),
               ],
             ),
           ),
@@ -15029,35 +10000,14 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: kWarningOrange.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.inventory_2_outlined,
-                    size: 14,
-                    color: kWarningOrange,
-                  ),
+                  decoration: BoxDecoration(color: kWarningOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+                  child: const Icon(Icons.inventory_2_outlined, size: 14, color: kWarningOrange),
                 ),
                 const SizedBox(width: 10),
                 const Expanded(
-                  child: Text(
-                    "Purchase Credit",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: kTextPrimary,
-                    ),
-                  ),
+                  child: Text("Purchase Credit", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextPrimary)),
                 ),
-                Text(
-                  "$_currencySymbol${purchCredit.toStringAsFixed(2)}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: kWarningOrange,
-                  ),
-                ),
+                Text("$_currencySymbol${purchCredit.toStringAsFixed(2)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: kWarningOrange)),
               ],
             ),
           ),
@@ -15066,55 +10016,18 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
     );
   }
 
-  Widget _buildExpLegendRow(
-    Color color,
-    String label,
-    double value,
-    double total,
-  ) {
+  Widget _buildExpLegendRow(Color color, String label, double value, double total) {
     final pct = total > 0 ? (value / total * 100) : 0.0;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontSize: 10,
-                color: kTextSecondary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          Text(
-            "${value.toStringAsFixed(0)}",
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              color: kTextPrimary,
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            "${pct.toStringAsFixed(0)}%",
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
-      ),
+      child: Row(children: [
+        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))),
+        const SizedBox(width: 8),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600))),
+        Text("${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextPrimary)),
+        const SizedBox(width: 6),
+        Text("${pct.toStringAsFixed(0)}%", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color)),
+      ]),
     );
   }
 }
@@ -15149,19 +10062,14 @@ class _TaxReportPageState extends State<TaxReportPage> {
     final store = await FirestoreService().getCurrentStoreDoc();
     if (store != null && store.exists && mounted) {
       final data = store.data() as Map<String, dynamic>;
-      setState(
-        () => _currencySymbol = CurrencyService.getSymbolWithSpace(
-          data['currency'],
-        ),
-      );
+      setState(() => _currencySymbol = CurrencyService.getSymbolWithSpace(data['currency']));
     }
   }
 
   Future<void> _selectFromDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate:
-          _fromDate ?? DateTime.now().subtract(const Duration(days: 30)),
+      initialDate: _fromDate ?? DateTime.now().subtract(const Duration(days: 30)),
       firstDate: DateTime(2020),
       lastDate: DateTime.now(),
     );
@@ -15248,12 +10156,10 @@ class _TaxReportPageState extends State<TaxReportPage> {
       summaryValue: "",
 
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_fromDate!)} to ${DateFormat('dd/MM/yy').format(_toDate!)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_fromDate!)} to ${DateFormat('dd/MM/yy').format(_toDate!)}',
         'Sales Tax': '$_currencySymbol${totalTaxAmount.toStringAsFixed(2)}',
-        'Purchase Tax':
-            '$_currencySymbol${totalPurchaseGST.toStringAsFixed(2)}',
-        'Audit Status': 'Verified',
+        'Purchase Tax': '$_currencySymbol${totalPurchaseGST.toStringAsFixed(2)}',
+        'Audit Status': 'Verified'
       },
     );
   }
@@ -15287,17 +10193,15 @@ class _TaxReportPageState extends State<TaxReportPage> {
                       backgroundColor: kPrimaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     child: const Text(
                       'Generate Audit Report',
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: 0.8,
-                      ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 0.8),
                     ),
                   ),
                 ),
@@ -15306,6 +10210,7 @@ class _TaxReportPageState extends State<TaxReportPage> {
             ),
           ),
         ),
+
       );
     }
 
@@ -15322,27 +10227,16 @@ class _TaxReportPageState extends State<TaxReportPage> {
         if (!streamsSnapshot.hasData) {
           return Scaffold(
             backgroundColor: kBackgroundColor,
-            appBar: _buildModernAppBar(
-              "Tax Report",
-              () => setState(() => _showReport = false),
-            ),
-            body: const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            ),
+            appBar: _buildModernAppBar("Tax Report", () => setState(() => _showReport = false)),
+            body: const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2)),
           );
         }
 
         // unpack the results: first 4 are streams, last is customers QuerySnapshot
         final salesStream = streamsSnapshot.data![0] as Stream<QuerySnapshot>;
-        final expensesStream =
-            streamsSnapshot.data![1] as Stream<QuerySnapshot>;
-        final purchasesStream =
-            streamsSnapshot.data![2] as Stream<QuerySnapshot>;
-        final creditNotesStream =
-            streamsSnapshot.data![3] as Stream<QuerySnapshot>;
+        final expensesStream = streamsSnapshot.data![1] as Stream<QuerySnapshot>;
+        final purchasesStream = streamsSnapshot.data![2] as Stream<QuerySnapshot>;
+        final creditNotesStream = streamsSnapshot.data![3] as Stream<QuerySnapshot>;
         final customersSnapshot = streamsSnapshot.data![4] as QuerySnapshot;
 
         // Build a map from customer doc id (phone) -> gstin/gst
@@ -15350,8 +10244,7 @@ class _TaxReportPageState extends State<TaxReportPage> {
         try {
           for (var doc in customersSnapshot.docs) {
             final d = doc.data() as Map<String, dynamic>;
-            final gstVal =
-                (d['gstin']?.toString() ?? d['gst']?.toString() ?? '').trim();
+            final gstVal = (d['gstin']?.toString() ?? d['gst']?.toString() ?? '').trim();
             if (gstVal.isNotEmpty) customersGst[doc.id] = gstVal;
           }
         } catch (_) {}
@@ -15368,19 +10261,10 @@ class _TaxReportPageState extends State<TaxReportPage> {
                     return StreamBuilder<QuerySnapshot>(
                       stream: creditNotesStream,
                       builder: (context, creditNoteSnapshot) {
-                        if (!salesSnapshot.hasData ||
-                            !expenseSnapshot.hasData ||
-                            !purchaseSnapshot.hasData) {
+                        if (!salesSnapshot.hasData || !expenseSnapshot.hasData || !purchaseSnapshot.hasData) {
                           return Scaffold(
-                            appBar: _buildModernAppBar(
-                              "Tax Report",
-                              () => setState(() => _showReport = false),
-                            ),
-                            body: const Center(
-                              child: CircularProgressIndicator(
-                                color: kPrimaryColor,
-                              ),
-                            ),
+                              appBar: _buildModernAppBar("Tax Report", () => setState(() => _showReport = false)),
+                              body: const Center(child: CircularProgressIndicator(color: kPrimaryColor))
                           );
                         }
 
@@ -15393,72 +10277,41 @@ class _TaxReportPageState extends State<TaxReportPage> {
                         double totalSalesGST = 0;
 
                         // Comparison Variables (Last Month/Prev Period)
-                        int periodDays =
-                            _toDate!.difference(_fromDate!).inDays + 1;
-                        DateTime prevStart = _fromDate!.subtract(
-                          Duration(days: periodDays),
-                        );
-                        DateTime prevEnd = _fromDate!.subtract(
-                          const Duration(days: 1),
-                        );
+                        int periodDays = _toDate!.difference(_fromDate!).inDays + 1;
+                        DateTime prevStart = _fromDate!.subtract(Duration(days: periodDays));
+                        DateTime prevEnd = _fromDate!.subtract(const Duration(days: 1));
                         double prevTaxAmount = 0;
                         double prevSalesGST = 0;
 
                         for (var d in salesSnapshot.data!.docs) {
                           var data = d.data() as Map<String, dynamic>;
                           DateTime? dt;
-                          if (data['timestamp'] != null)
-                            dt = (data['timestamp'] as Timestamp).toDate();
-                          else if (data['date'] != null)
-                            dt = DateTime.tryParse(data['date'].toString());
+                          if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                          else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
-                          final String status = (data['status'] ?? '')
-                              .toString()
-                              .toLowerCase();
-                          bool isCancelled =
-                              status == 'cancelled' ||
-                              status == 'returned' ||
-                              data['hasBeenReturned'] == true;
+                          final String status = (data['status'] ?? '').toString().toLowerCase();
+                          bool isCancelled = status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true;
 
                           if (_isInDateRange(dt, _fromDate!, _toDate!)) {
                             if (isCancelled) continue;
 
-                            double saleTax =
-                                double.tryParse(
-                                  data['totalTax']?.toString() ?? '0',
-                                ) ??
-                                0;
+                            double saleTax = double.tryParse(data['totalTax']?.toString() ?? '0') ?? 0;
                             if (saleTax == 0) {
-                              saleTax =
-                                  double.tryParse(
-                                    data['taxAmount']?.toString() ??
-                                        data['tax']?.toString() ??
-                                        '0',
-                                  ) ??
-                                  0;
+                              saleTax = double.tryParse(data['taxAmount']?.toString() ?? data['tax']?.toString() ?? '0') ?? 0;
                             }
 
                             if (saleTax > 0) {
                               totalTaxAmount += saleTax;
-                              if (data['taxes'] != null &&
-                                  data['taxes'] is List) {
+                              if (data['taxes'] != null && data['taxes'] is List) {
                                 for (var taxItem in (data['taxes'] as List)) {
                                   if (taxItem is Map<String, dynamic>) {
-                                    String taxName =
-                                        taxItem['name']?.toString() ?? 'Tax';
-                                    double taxAmount =
-                                        double.tryParse(
-                                          taxItem['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
-                                    taxBreakdown[taxName] =
-                                        (taxBreakdown[taxName] ?? 0) +
-                                        taxAmount;
+                                    String taxName = taxItem['name']?.toString() ?? 'Tax';
+                                    double taxAmount = double.tryParse(taxItem['amount']?.toString() ?? '0') ?? 0;
+                                    taxBreakdown[taxName] = (taxBreakdown[taxName] ?? 0) + taxAmount;
                                   }
                                 }
                               } else {
-                                taxBreakdown['Sales Tax'] =
-                                    (taxBreakdown['Sales Tax'] ?? 0) + saleTax;
+                                taxBreakdown['Sales Tax'] = (taxBreakdown['Sales Tax'] ?? 0) + saleTax;
                               }
                               data['calculatedTax'] = saleTax;
                               data['date'] = dt;
@@ -15466,14 +10319,9 @@ class _TaxReportPageState extends State<TaxReportPage> {
                             }
 
                             // TAX details (use sale-level customerGST if present, otherwise fallback to customers collection gstin/gst)
-                            String gstNum =
-                                (data['customerGST']?.toString() ?? '').trim();
+                            String gstNum = (data['customerGST']?.toString() ?? '').trim();
                             if (gstNum.isEmpty) {
-                              final phoneKey =
-                                  (data['customerPhone']?.toString() ??
-                                          data['customerId']?.toString() ??
-                                          '')
-                                      .trim();
+                              final phoneKey = (data['customerPhone']?.toString() ?? data['customerId']?.toString() ?? '').trim();
                               gstNum = customersGst[phoneKey] ?? '';
                             }
                             if (gstNum.isEmpty) gstNum = '--';
@@ -15481,26 +10329,16 @@ class _TaxReportPageState extends State<TaxReportPage> {
                             salesRows.add({
                               'date': dt,
                               'category': 'Sale',
-                              'invoice':
-                                  data['invoiceNumber']?.toString() ?? 'N/A',
+                              'invoice': data['invoiceNumber']?.toString() ?? 'N/A',
                               'gstNumber': gstNum,
-                              'amount':
-                                  double.tryParse(
-                                    data['total']?.toString() ?? '0',
-                                  ) ??
-                                  0,
+                              'amount': double.tryParse(data['total']?.toString() ?? '0') ?? 0,
                               'gst': saleTax,
                             });
                             totalSalesGST += saleTax;
+
                           } else if (_isInDateRange(dt, prevStart, prevEnd)) {
                             if (isCancelled) continue;
-                            double saleTax =
-                                double.tryParse(
-                                  data['totalTax']?.toString() ??
-                                      data['taxAmount']?.toString() ??
-                                      '0',
-                                ) ??
-                                0;
+                            double saleTax = double.tryParse(data['totalTax']?.toString() ?? data['taxAmount']?.toString() ?? '0') ?? 0;
                             prevTaxAmount += saleTax;
                             prevSalesGST += saleTax;
                           }
@@ -15510,55 +10348,37 @@ class _TaxReportPageState extends State<TaxReportPage> {
                         double totalPurchaseGST = 0;
 
                         void processInward(
-                          QuerySnapshot snap,
-                          String cat,
-                          String amtKey,
-                          String gstKey,
-                          String gstNumKey, {
-                          String invoiceKey = 'invoiceNumber',
-                          String invoiceAutoKey = '',
-                        }) {
+                            QuerySnapshot snap,
+                            String cat,
+                            String amtKey,
+                            String gstKey,
+                            String gstNumKey, {
+                              String invoiceKey = 'invoiceNumber',
+                              String invoiceAutoKey = '',
+                            }) {
                           for (var doc in snap.docs) {
                             final data = doc.data() as Map<String, dynamic>;
                             DateTime? dt;
-                            if (data['timestamp'] != null)
-                              dt = (data['timestamp'] as Timestamp).toDate();
-                            else if (data['date'] != null)
-                              dt = DateTime.tryParse(data['date'].toString());
+                            if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                            else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                             if (_isInDateRange(dt, _fromDate!, _toDate!)) {
-                              double amount =
-                                  double.tryParse(
-                                    data[amtKey]?.toString() ?? '0',
-                                  ) ??
-                                  0;
+                              double amount = double.tryParse(data[amtKey]?.toString() ?? '0') ?? 0;
                               // gst may be stored under different keys (taxAmount, gst, etc.)
-                              double gst =
-                                  double.tryParse(
-                                    data[gstKey]?.toString() ?? '0',
-                                  ) ??
-                                  0;
+                              double gst = double.tryParse(data[gstKey]?.toString() ?? '0') ?? 0;
 
                               String gstNum = '';
                               if (gstNumKey != '--') {
-                                gstNum = (data[gstNumKey]?.toString() ?? '')
-                                    .trim();
+                                gstNum = (data[gstNumKey]?.toString() ?? '').trim();
                               }
                               if (gstNum.isEmpty) {
-                                final supplierKey =
-                                    (data['supplierPhone']?.toString() ??
-                                            data['supplierId']?.toString() ??
-                                            data['customerPhone']?.toString() ??
-                                            data['customerId']?.toString() ??
-                                            '')
-                                        .trim();
+                                final supplierKey = (data['supplierPhone']?.toString() ?? data['supplierId']?.toString() ?? data['customerPhone']?.toString() ?? data['customerId']?.toString() ?? '').trim();
                                 gstNum = customersGst[supplierKey] ?? '';
                               }
                               if (gstNum.isEmpty) gstNum = '--';
 
                               // invoice handling: hide if auto-generated flag is set
-                              String invRaw =
-                                  (data[invoiceKey]?.toString() ?? '--');
+                              String invRaw = (data[invoiceKey]?.toString() ?? '--');
                               String invoice = invRaw;
                               if (invoiceAutoKey.isNotEmpty) {
                                 final auto = data[invoiceAutoKey];
@@ -15579,65 +10399,38 @@ class _TaxReportPageState extends State<TaxReportPage> {
                         }
 
                         // Expenses: use 'amount' and 'taxAmount' and 'taxNumber', reference/invoice key is 'referenceNumber'
-                        processInward(
-                          expenseSnapshot.data!,
-                          'Expense',
-                          'amount',
-                          'taxAmount',
-                          'taxNumber',
-                          invoiceKey: 'referenceNumber',
-                          invoiceAutoKey: 'referenceAutoGenerated',
-                        );
+                        processInward(expenseSnapshot.data!, 'Expense', 'amount', 'taxAmount', 'taxNumber', invoiceKey: 'referenceNumber', invoiceAutoKey: 'referenceAutoGenerated');
                         // Purchases: use 'totalAmount' and 'taxAmount' and 'supplierGstin'
-                        processInward(
-                          purchaseSnapshot.data!,
-                          'Purchase',
-                          'totalAmount',
-                          'taxAmount',
-                          'supplierGstin',
-                          invoiceKey: 'invoiceNumber',
-                          invoiceAutoKey: 'invoiceAutoGenerated',
-                        );
+                        processInward(purchaseSnapshot.data!, 'Purchase', 'totalAmount', 'taxAmount', 'supplierGstin', invoiceKey: 'invoiceNumber', invoiceAutoKey: 'invoiceAutoGenerated');
                         if (creditNoteSnapshot.hasData) {
                           // Credit notes may use 'amount' and 'gst' but likely don't need gst num mapping
-                          processInward(
-                            creditNoteSnapshot.data!,
-                            'Credit Note',
-                            'amount',
-                            'gst',
-                            '--',
-                            invoiceKey: 'invoiceNumber',
-                          );
+                          processInward(creditNoteSnapshot.data!, 'Credit Note', 'amount', 'gst', '--', invoiceKey: 'invoiceNumber');
                         }
 
-                        double gstNetLiability =
-                            totalSalesGST - totalPurchaseGST;
+                        double gstNetLiability = totalSalesGST - totalPurchaseGST;
                         double totalNetTax = totalTaxAmount + gstNetLiability;
 
                         return Scaffold(
                           backgroundColor: kBackgroundColor,
                           appBar: _buildModernAppBar(
-                            "Tax Report",
-                            () => setState(() => _showReport = false),
-                            onDownload: () => _downloadPdf(
-                              context: context,
-                              taxableDocs: taxableDocs,
-                              totalTaxAmount: totalTaxAmount,
-                              taxBreakdown: taxBreakdown,
-                              salesRows: salesRows,
-                              purchaseRows: purchaseRows,
-                              totalSalesGST: totalSalesGST,
-                              totalPurchaseGST: totalPurchaseGST,
-                              netLiability: gstNetLiability,
-                            ),
+                              "Tax Report",
+                                  () => setState(() => _showReport = false),
+                              onDownload: () => _downloadPdf(
+                                  context: context,
+                                  taxableDocs: taxableDocs,
+                                  totalTaxAmount: totalTaxAmount,
+                                  taxBreakdown: taxBreakdown,
+                                  salesRows: salesRows,
+                                  purchaseRows: purchaseRows,
+                                  totalSalesGST: totalSalesGST,
+                                  totalPurchaseGST: totalPurchaseGST,
+                                  netLiability: gstNetLiability
+                              )
                           ),
                           bottomNavigationBar: SafeArea(
                             child: Container(
                               height: 130,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 8,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                               color: kSurfaceColor,
                               child: _buildTaxSummary(salesRows, purchaseRows),
                             ),
@@ -15647,95 +10440,38 @@ class _TaxReportPageState extends State<TaxReportPage> {
                             slivers: [
                               SliverPadding(
                                 padding: const EdgeInsets.only(
-                                  left: 12,
-                                  right: 12,
-                                  top: 12,
-                                  bottom:
-                                      120, // Enough to clear the floating bottom bar if it overlap
+                                  left: 12, right: 12, top: 12,
+                                  bottom: 120, // Enough to clear the floating bottom bar if it overlap
                                 ),
                                 sliver: SliverList(
                                   delegate: SliverChildListDelegate([
                                     // Date range card
                                     Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 12,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                                       margin: const EdgeInsets.only(bottom: 16),
                                       decoration: BoxDecoration(
                                         color: kSurfaceColor,
                                         borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: kBorderColor.withOpacity(0.4),
-                                        ),
+                                        border: Border.all(color: kBorderColor.withOpacity(0.4)),
                                       ),
                                       child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
+                                        crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
-                                          Row(
-                                            children: [
-                                              const Text(
-                                                'From',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.black54,
-                                                  letterSpacing: 0.3,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                ':',
-                                                style: TextStyle(
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                DateFormat(
-                                                  'dd-MM-yyyy',
-                                                ).format(_fromDate!),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                          Row(children: [
+                                            const Text('From', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black54, letterSpacing: 0.3)),
+                                            const SizedBox(width: 8),
+                                            const Text(':', style: TextStyle(color: Colors.black54)),
+                                            const SizedBox(width: 8),
+                                            Text(DateFormat('dd-MM-yyyy').format(_fromDate!), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87)),
+                                          ]),
                                           const SizedBox(height: 6),
-                                          Row(
-                                            children: [
-                                              const Text(
-                                                'To      ',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.black54,
-                                                  letterSpacing: 0.3,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              const Text(
-                                                ':',
-                                                style: TextStyle(
-                                                  color: Colors.black54,
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Text(
-                                                DateFormat(
-                                                  'dd-MM-yyyy',
-                                                ).format(_toDate!),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w800,
-                                                  color: Colors.black87,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                          Row(children: [
+                                            const Text('To      ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black54, letterSpacing: 0.3)),
+                                            const SizedBox(width: 8),
+                                            const Text(':', style: TextStyle(color: Colors.black54)),
+                                            const SizedBox(width: 8),
+                                            Text(DateFormat('dd-MM-yyyy').format(_toDate!), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Colors.black87)),
+                                          ]),
                                         ],
                                       ),
                                     ),
@@ -15768,23 +10504,22 @@ class _TaxReportPageState extends State<TaxReportPage> {
 
   // --- EXECUTIVE UI COMPONENTS ---
 
-  // ─── SECTION HEADER ──────────────────────────────────
+// ─── SECTION HEADER ──────────────────────────────────
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Text(
         title,
         style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          color: kTextSecondary,
-          letterSpacing: 1.1,
-        ),
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            color: kTextSecondary,
+            letterSpacing: 1.1),
       ),
     );
   }
 
-  // ─── DATE TILE ───────────────────────────────────────
+// ─── DATE TILE ───────────────────────────────────────
   Widget _buildDateTile(String label, DateTime? date, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
@@ -15798,70 +10533,56 @@ class _TaxReportPageState extends State<TaxReportPage> {
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.calendar_today_rounded,
-              size: 14,
-              color: kPrimaryColor.withOpacity(0.7),
-            ),
+            Icon(Icons.calendar_today_rounded,
+                size: 14, color: kPrimaryColor.withOpacity(0.7)),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w800,
-                    color: kTextSecondary,
-                    letterSpacing: 0.8,
-                  ),
-                ),
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        color: kTextSecondary,
+                        letterSpacing: 0.8)),
                 const SizedBox(height: 2),
                 Text(
                   date != null
                       ? DateFormat('dd MMM yyyy').format(date)
                       : 'Tap to select',
                   style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: date != null ? Colors.black87 : kTextSecondary,
-                  ),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color:
+                      date != null ? Colors.black87 : kTextSecondary),
                 ),
               ],
             ),
             const Spacer(),
-            Icon(
-              Icons.keyboard_arrow_down_rounded,
-              color: kPrimaryColor.withOpacity(0.4),
-              size: 18,
-            ),
+            Icon(Icons.keyboard_arrow_down_rounded,
+                color: kPrimaryColor.withOpacity(0.4), size: 18),
           ],
         ),
       ),
     );
   }
 
-  // ─── UNIFIED TAX HEADER ──────────────────────────────
+// ─── UNIFIED TAX HEADER ──────────────────────────────
+
 
   Widget _buildTag(String label, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(6)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 10, fontWeight: FontWeight.w700, color: color)),
     );
   }
 
-  // ─── BREAKDOWN MATRIX ────────────────────────────────
+// ─── BREAKDOWN MATRIX ────────────────────────────────
   Widget _buildBreakdownMatrix(List<MapEntry<String, double>> types) {
     return Container(
       padding: const EdgeInsets.all(10),
@@ -15888,20 +10609,18 @@ class _TaxReportPageState extends State<TaxReportPage> {
                 Text(
                   entry.key,
                   style: const TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kTextSecondary,
-                    letterSpacing: 0.5,
-                  ),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      color: kTextSecondary,
+                      letterSpacing: 0.5),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   "$_currencySymbol${entry.value.toStringAsFixed(2)}",
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.black87,
-                  ),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black87),
                 ),
               ],
             ),
@@ -15911,11 +10630,9 @@ class _TaxReportPageState extends State<TaxReportPage> {
     );
   }
 
-  // ─── GST TABLE ───────────────────────────────────────
-  Widget _buildGstTable(
-    List<Map<String, dynamic>> rows, {
-    Color headerColor = kPrimaryColor,
-  }) {
+// ─── GST TABLE ───────────────────────────────────────
+  Widget _buildGstTable(List<Map<String, dynamic>> rows,
+      {Color headerColor = kPrimaryColor}) {
     double totalAmount = 0, totalTax = 0;
     for (var r in rows) {
       totalAmount += double.tryParse((r['amount'] ?? 0).toString()) ?? 0;
@@ -15924,20 +10641,11 @@ class _TaxReportPageState extends State<TaxReportPage> {
 
     // Compact column style
     const headerStyle = TextStyle(
-      fontSize: 9,
-      fontWeight: FontWeight.w900,
-      color: kTextSecondary,
-    );
-    const cellStyle = TextStyle(
-      fontSize: 10,
-      fontWeight: FontWeight.w700,
-      color: Colors.black87,
-    );
-    const dimStyle = TextStyle(
-      fontSize: 9,
-      fontWeight: FontWeight.w600,
-      color: kTextSecondary,
-    );
+        fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary);
+    const cellStyle =
+    TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black87);
+    const dimStyle =
+    TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary);
 
     return Container(
       width: double.infinity,
@@ -15953,32 +10661,23 @@ class _TaxReportPageState extends State<TaxReportPage> {
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
             decoration: BoxDecoration(
               color: headerColor.withOpacity(0.08),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(9),
-              ),
+              borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(9)),
             ),
             child: Row(
               children: const [
                 Expanded(flex: 2, child: Text("Date", style: headerStyle)),
                 Expanded(flex: 2, child: Text("Cat", style: headerStyle)),
                 Expanded(flex: 2, child: Text("INV#", style: headerStyle)),
-                Expanded(flex: 3, child: Text("TAX NO.", style: headerStyle)),
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Amt",
-                    textAlign: TextAlign.right,
-                    style: headerStyle,
-                  ),
-                ),
+                    flex: 3,
+                    child: Text("TAX NO.", style: headerStyle)),
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    "Tax",
-                    textAlign: TextAlign.right,
-                    style: headerStyle,
-                  ),
-                ),
+                    flex: 2,
+                    child: Text("Amt", textAlign: TextAlign.right, style: headerStyle)),
+                Expanded(
+                    flex: 2,
+                    child: Text("Tax", textAlign: TextAlign.right, style: headerStyle)),
               ],
             ),
           ),
@@ -15987,14 +10686,11 @@ class _TaxReportPageState extends State<TaxReportPage> {
           if (rows.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                "No data available",
-                style: TextStyle(
-                  fontSize: 12,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              child: Text("No data available",
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: kTextSecondary,
+                      fontWeight: FontWeight.w600)),
             )
           else
             ...rows.map((row) {
@@ -16004,64 +10700,65 @@ class _TaxReportPageState extends State<TaxReportPage> {
               final String dateStr = dt != null
                   ? DateFormat('dd/MM/yy').format(dt)
                   : '--';
-              final String category = (row['category']?.toString() ?? '');
+              final String category =
+              (row['category']?.toString() ?? '');
               final String inv = (row['invoice']?.toString() ?? '--');
-              final String gstNum = (row['gstNumber']?.toString() ?? '--');
+              final String gstNum =
+              (row['gstNumber']?.toString() ?? '--');
               final double amount =
                   double.tryParse((row['amount'] ?? 0).toString()) ?? 0;
               final double gst =
                   double.tryParse((row['gst'] ?? 0).toString()) ?? 0;
 
               return Container(
-                padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
+                padding:
+                const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
                 decoration: BoxDecoration(
                   border: Border(
-                    bottom: BorderSide(color: kBorderColor.withOpacity(0.15)),
-                  ),
+                      bottom: BorderSide(
+                          color: kBorderColor.withOpacity(0.15))),
                 ),
                 child: Row(
                   children: [
-                    Expanded(flex: 2, child: Text(dateStr, style: dimStyle)),
-                    Expanded(flex: 2, child: Text(category, style: dimStyle)),
                     Expanded(
-                      flex: 2,
-                      child: Text(
-                        inv,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          color: kPrimaryColor,
-                        ),
-                      ),
-                    ),
+                        flex: 2,
+                        child: Text(dateStr, style: dimStyle)),
                     Expanded(
-                      flex: 3,
-                      child: Text(
-                        gstNum.isEmpty ? '--' : gstNum,
-                        style: dimStyle,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+                        flex: 2,
+                        child: Text(category, style: dimStyle)),
                     Expanded(
-                      flex: 2,
-                      child: Text(
-                        "$_currencySymbol${amount.toStringAsFixed(0)}",
-                        textAlign: TextAlign.right,
-                        style: cellStyle,
-                      ),
-                    ),
+                        flex: 2,
+                        child: Text(
+                          inv,
+                          style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: kPrimaryColor),
+                        )),
                     Expanded(
-                      flex: 2,
-                      child: Text(
-                        "$_currencySymbol${gst.toStringAsFixed(0)}",
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
+                        flex: 3,
+                        child: Text(
+                          gstNum.isEmpty ? '--' : gstNum,
+                          style: dimStyle,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                    Expanded(
+                        flex: 2,
+                        child: Text(
+                          "$_currencySymbol${amount.toStringAsFixed(0)}",
+                          textAlign: TextAlign.right,
+                          style: cellStyle,
+                        )),
+                    Expanded(
+                        flex: 2,
+                        child: Text(
+                          "$_currencySymbol${gst.toStringAsFixed(0)}",
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.black87),
+                        )),
                   ],
                 ),
               );
@@ -16072,45 +10769,32 @@ class _TaxReportPageState extends State<TaxReportPage> {
             padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 8),
             decoration: BoxDecoration(
               color: kBackgroundColor.withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(9),
-              ),
+              borderRadius:
+              const BorderRadius.vertical(bottom: Radius.circular(9)),
             ),
             child: Row(
               children: [
-                const Expanded(
-                  flex: 9,
-                  child: Text(
-                    'Total',
+                const Expanded(flex: 9, child: Text('Total',
                     style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                    ),
-                  ),
-                ),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: kTextSecondary))),
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    "$_currencySymbol${totalAmount.toStringAsFixed(0)}",
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+                    flex: 2,
+                    child: Text(
+                      "$_currencySymbol${totalAmount.toStringAsFixed(0)}",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w900),
+                    )),
                 Expanded(
-                  flex: 2,
-                  child: Text(
-                    "$_currencySymbol${totalTax.toStringAsFixed(0)}",
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+                    flex: 2,
+                    child: Text(
+                      "$_currencySymbol${totalTax.toStringAsFixed(0)}",
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w900),
+                    )),
               ],
             ),
           ),
@@ -16119,11 +10803,9 @@ class _TaxReportPageState extends State<TaxReportPage> {
     );
   }
 
-  // ─── BOTTOM SUMMARY BAR ──────────────────────────────
-  Widget _buildTaxSummary(
-    List<Map<String, dynamic>> salesRows,
-    List<Map<String, dynamic>> purchaseRows,
-  ) {
+// ─── BOTTOM SUMMARY BAR ──────────────────────────────
+  Widget _buildTaxSummary(List<Map<String, dynamic>> salesRows,
+      List<Map<String, dynamic>> purchaseRows) {
     double salesAmount = 0, salesGst = 0;
     for (var r in salesRows) {
       salesAmount += double.tryParse((r['amount'] ?? 0).toString()) ?? 0;
@@ -16136,32 +10818,22 @@ class _TaxReportPageState extends State<TaxReportPage> {
     }
     final double netGst = salesGst - purchaseGst;
 
-    Widget cell(
-      String title,
-      String value, {
-      bool highlight = false,
-      Color? color,
-    }) {
+    Widget cell(String title, String value,
+        {bool highlight = false, Color? color}) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              color: kTextSecondary,
-            ),
-          ),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  color: kTextSecondary)),
           const SizedBox(height: 3),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w900,
-              color: highlight ? (color ?? Colors.black87) : Colors.black87,
-            ),
-          ),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: highlight ? (color ?? Colors.black87) : Colors.black87)),
         ],
       );
     }
@@ -16173,33 +10845,23 @@ class _TaxReportPageState extends State<TaxReportPage> {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: kBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: kBorderColor.withOpacity(0.3)),
-            ),
+                color: kBackgroundColor,
+                borderRadius: BorderRadius.circular(8),
+                border:
+                Border.all(color: kBorderColor.withOpacity(0.3))),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Tax On Sales',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kPrimaryColor,
-                  ),
-                ),
+                const Text('Tax On Sales',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: kPrimaryColor)),
                 const SizedBox(height: 5),
-                cell(
-                  'Taxable',
-                  '$_currencySymbol${salesAmount.toStringAsFixed(0)}',
-                ),
+                cell('Taxable', '$_currencySymbol${salesAmount.toStringAsFixed(0)}'),
                 const SizedBox(height: 4),
-                cell(
-                  'Tax',
-                  '$_currencySymbol${salesGst.toStringAsFixed(0)}',
-                  highlight: true,
-                  color: kIncomeGreen,
-                ),
+                cell('Tax', '$_currencySymbol${salesGst.toStringAsFixed(0)}',
+                    highlight: true, color: kIncomeGreen),
               ],
             ),
           ),
@@ -16211,33 +10873,23 @@ class _TaxReportPageState extends State<TaxReportPage> {
           child: Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: kBackgroundColor,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: kBorderColor.withOpacity(0.3)),
-            ),
+                color: kBackgroundColor,
+                borderRadius: BorderRadius.circular(8),
+                border:
+                Border.all(color: kBorderColor.withOpacity(0.3))),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Tax On Purchases',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    color: kPrimaryColor,
-                  ),
-                ),
+                const Text('Tax On Purchases',
+                    style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        color: kPrimaryColor)),
                 const SizedBox(height: 5),
-                cell(
-                  'Taxable',
-                  '$_currencySymbol${purchaseAmount.toStringAsFixed(0)}',
-                ),
+                cell('Taxable', '$_currencySymbol${purchaseAmount.toStringAsFixed(0)}'),
                 const SizedBox(height: 4),
-                cell(
-                  'Tax Paid',
-                  '$_currencySymbol${purchaseGst.toStringAsFixed(0)}',
-                  highlight: true,
-                  color: kExpenseRed,
-                ),
+                cell('Tax Paid', '$_currencySymbol${purchaseGst.toStringAsFixed(0)}',
+                    highlight: true, color: kExpenseRed),
               ],
             ),
           ),
@@ -16277,32 +10929,24 @@ class _TaxReportPageState extends State<TaxReportPage> {
     );
   }
 
-  // Keep this — used in _buildComprehensiveSummary
+// Keep this — used in _buildComprehensiveSummary
   Widget _buildSummaryRecord(String label, double val, Color color) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: kTextSecondary,
-          ),
-        ),
-        Text(
-          "$_currencySymbol${val.toStringAsFixed(2)}",
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 12,
-            color: color,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: kTextSecondary)),
+        Text("$_currencySymbol${val.toStringAsFixed(2)}",
+            style: TextStyle(
+                fontWeight: FontWeight.w900, fontSize: 12, color: color)),
       ],
     );
   }
-}
 
+}
 // ==========================================
 // INCOME SUMMARY PAGE (Enhanced with all features from screenshot)
 // ==========================================
@@ -16319,9 +10963,8 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
   final FirestoreService _firestoreService = FirestoreService();
 
   // Streams for credit tracker data
-  Stream<QuerySnapshot>? _customersStream; // Sales credit – total receivable
-  Stream<QuerySnapshot>?
-  _purchaseCreditStream; // Purchase credit – total payable
+  Stream<QuerySnapshot>? _customersStream;   // Sales credit – total receivable
+  Stream<QuerySnapshot>? _purchaseCreditStream; // Purchase credit – total payable
 
   @override
   void initState() {
@@ -16364,12 +11007,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
         ]),
         builder: (context, streamsSnapshot) {
           if (!streamsSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamsSnapshot.data![0],
@@ -16390,141 +11028,67 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                               return StreamBuilder<QuerySnapshot>(
                                 stream: _purchaseCreditStream,
                                 builder: (context, purchaseCreditSnapshot) {
-                                  if (!salesSnapshot.hasData ||
-                                      !expenseSnapshot.hasData ||
-                                      !purchaseSnapshot.hasData) {
-                                    return const Center(
-                                      child: CircularProgressIndicator(
-                                        color: kPrimaryColor,
-                                      ),
-                                    );
+                                  if (!salesSnapshot.hasData || !expenseSnapshot.hasData || !purchaseSnapshot.hasData) {
+                                    return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
                                   }
 
                                   final now = DateTime.now();
-                                  final todayStart = DateTime(
-                                    now.year,
-                                    now.month,
-                                    now.day,
-                                  );
-                                  final yesterday = now.subtract(
-                                    const Duration(days: 1),
-                                  );
-                                  final yesterdayStart = DateTime(
-                                    yesterday.year,
-                                    yesterday.month,
-                                    yesterday.day,
-                                  );
-                                  final last7Days = now.subtract(
-                                    const Duration(days: 7),
-                                  );
-                                  final thisMonthStart = DateTime(
-                                    now.year,
-                                    now.month,
-                                    1,
-                                  );
+                                  final todayStart = DateTime(now.year, now.month, now.day);
+                                  final yesterday = now.subtract(const Duration(days: 1));
+                                  final yesterdayStart = DateTime(yesterday.year, yesterday.month, yesterday.day);
+                                  final last7Days = now.subtract(const Duration(days: 7));
+                                  final thisMonthStart = DateTime(now.year, now.month, 1);
 
-                                  double incomeToday = 0,
-                                      incomeYesterday = 0,
-                                      incomeLast7Days = 0,
-                                      incomeThisMonth = 0;
-                                  double expenseToday = 0,
-                                      expenseYesterday = 0,
-                                      expenseLast7Days = 0,
-                                      expenseThisMonth = 0;
+                                  double incomeToday = 0, incomeYesterday = 0, incomeLast7Days = 0, incomeThisMonth = 0;
+                                  double expenseToday = 0, expenseYesterday = 0, expenseLast7Days = 0, expenseThisMonth = 0;
 
                                   // --- Process Sales (skip cancelled/returned like DayBook) ---
                                   for (var doc in salesSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
-                                    final String status = (data['status'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    if (status == 'cancelled' ||
-                                        status == 'returned' ||
-                                        data['hasBeenReturned'] == true) {
+                                    final data = doc.data() as Map<String, dynamic>;
+                                    final String status = (data['status'] ?? '').toString().toLowerCase();
+                                    if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
                                       continue;
                                     }
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
-                                    double total =
-                                        double.tryParse(
-                                          data['total']?.toString() ?? '0',
-                                        ) ??
-                                        0;
+                                    double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
 
                                     if (dt != null) {
-                                      if (dt.isAfter(todayStart))
-                                        incomeToday += total;
-                                      if (dt.isAfter(yesterdayStart) &&
-                                          dt.isBefore(todayStart))
-                                        incomeYesterday += total;
-                                      if (dt.isAfter(last7Days))
-                                        incomeLast7Days += total;
-                                      if (dt.isAfter(thisMonthStart))
-                                        incomeThisMonth += total;
+                                      if (dt.isAfter(todayStart)) incomeToday += total;
+                                      if (dt.isAfter(yesterdayStart) && dt.isBefore(todayStart)) incomeYesterday += total;
+                                      if (dt.isAfter(last7Days)) incomeLast7Days += total;
+                                      if (dt.isAfter(thisMonthStart)) incomeThisMonth += total;
                                     }
                                   }
 
                                   // --- Process Credits (credit collected = income, manual credit = expense, like DayBook) ---
                                   if (creditsSnapshot.hasData) {
-                                    for (var doc
-                                        in creditsSnapshot.data!.docs) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-                                      final type = (data['type'] ?? '')
-                                          .toString()
-                                          .toLowerCase();
-                                      final amount =
-                                          double.tryParse(
-                                            data['amount']?.toString() ?? '0',
-                                          ) ??
-                                          0;
+                                    for (var doc in creditsSnapshot.data!.docs) {
+                                      final data = doc.data() as Map<String, dynamic>;
+                                      final type = (data['type'] ?? '').toString().toLowerCase();
+                                      final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
                                       DateTime? dt;
-                                      if (data['timestamp'] != null)
-                                        dt = (data['timestamp'] as Timestamp)
-                                            .toDate();
-                                      else if (data['date'] != null)
-                                        dt = DateTime.tryParse(
-                                          data['date'].toString(),
-                                        );
+                                      if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                      else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                                       // Skip sale_payment / credit_sale (already counted in sales)
-                                      if (type == 'sale_payment' ||
-                                          type == 'credit_sale')
-                                        continue;
+                                      if (type == 'sale_payment' || type == 'credit_sale') continue;
 
                                       if (dt != null) {
-                                        if (type.contains('payment_received') ||
-                                            type.contains('credit_payment') ||
-                                            type == 'settlement') {
+                                        if (type.contains('payment_received') || type.contains('credit_payment') || type == 'settlement') {
                                           // Credit collected from customer = money IN (income)
-                                          if (dt.isAfter(todayStart))
-                                            incomeToday += amount;
-                                          if (dt.isAfter(yesterdayStart) &&
-                                              dt.isBefore(todayStart))
-                                            incomeYesterday += amount;
-                                          if (dt.isAfter(last7Days))
-                                            incomeLast7Days += amount;
-                                          if (dt.isAfter(thisMonthStart))
-                                            incomeThisMonth += amount;
+                                          if (dt.isAfter(todayStart)) incomeToday += amount;
+                                          if (dt.isAfter(yesterdayStart) && dt.isBefore(todayStart)) incomeYesterday += amount;
+                                          if (dt.isAfter(last7Days)) incomeLast7Days += amount;
+                                          if (dt.isAfter(thisMonthStart)) incomeThisMonth += amount;
                                         } else if (type == 'add_credit') {
                                           // Manual credit given to customer = money OUT (expense)
-                                          if (dt.isAfter(todayStart))
-                                            expenseToday += amount;
-                                          if (dt.isAfter(yesterdayStart) &&
-                                              dt.isBefore(todayStart))
-                                            expenseYesterday += amount;
-                                          if (dt.isAfter(last7Days))
-                                            expenseLast7Days += amount;
-                                          if (dt.isAfter(thisMonthStart))
-                                            expenseThisMonth += amount;
+                                          if (dt.isAfter(todayStart)) expenseToday += amount;
+                                          if (dt.isAfter(yesterdayStart) && dt.isBefore(todayStart)) expenseYesterday += amount;
+                                          if (dt.isAfter(last7Days)) expenseLast7Days += amount;
+                                          if (dt.isAfter(thisMonthStart)) expenseThisMonth += amount;
                                         }
                                       }
                                     }
@@ -16532,116 +11096,64 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
 
                                   // --- Process Expenses ---
                                   for (var doc in expenseSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
+                                    final data = doc.data() as Map<String, dynamic>;
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
-                                    double amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
+                                    double amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
 
                                     if (dt != null) {
-                                      if (dt.isAfter(todayStart))
-                                        expenseToday += amount;
-                                      if (dt.isAfter(yesterdayStart) &&
-                                          dt.isBefore(todayStart))
-                                        expenseYesterday += amount;
-                                      if (dt.isAfter(last7Days))
-                                        expenseLast7Days += amount;
-                                      if (dt.isAfter(thisMonthStart))
-                                        expenseThisMonth += amount;
+                                      if (dt.isAfter(todayStart)) expenseToday += amount;
+                                      if (dt.isAfter(yesterdayStart) && dt.isBefore(todayStart)) expenseYesterday += amount;
+                                      if (dt.isAfter(last7Days)) expenseLast7Days += amount;
+                                      if (dt.isAfter(thisMonthStart)) expenseThisMonth += amount;
                                     }
                                   }
 
                                   // --- Credit Tracker: Total Receivable (customers.balance) ---
                                   double totalReceivable = 0;
                                   if (customersSnapshot.hasData) {
-                                    for (var doc
-                                        in customersSnapshot.data!.docs) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-                                      totalReceivable +=
-                                          ((data['balance'] ?? 0.0) as num)
-                                              .toDouble();
+                                    for (var doc in customersSnapshot.data!.docs) {
+                                      final data = doc.data() as Map<String, dynamic>;
+                                      totalReceivable += ((data['balance'] ?? 0.0) as num).toDouble();
                                     }
                                   }
 
                                   // --- Credit Tracker: Total Payable (purchaseCreditNotes: amount - paidAmount) ---
                                   double totalPayable = 0;
                                   if (purchaseCreditSnapshot.hasData) {
-                                    for (var doc
-                                        in purchaseCreditSnapshot.data!.docs) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-                                      final amt =
-                                          ((data['amount'] ?? 0.0) as num)
-                                              .toDouble();
-                                      final paid =
-                                          ((data['paidAmount'] ?? 0.0) as num)
-                                              .toDouble();
-                                      totalPayable += (amt - paid).clamp(
-                                        0,
-                                        double.infinity,
-                                      );
+                                    for (var doc in purchaseCreditSnapshot.data!.docs) {
+                                      final data = doc.data() as Map<String, dynamic>;
+                                      final amt = ((data['amount'] ?? 0.0) as num).toDouble();
+                                      final paid = ((data['paidAmount'] ?? 0.0) as num).toDouble();
+                                      totalPayable += (amt - paid).clamp(0, double.infinity);
                                     }
                                   }
 
                                   // --- Process Stock Purchases as expenses ---
-                                  double purchaseToday = 0,
-                                      purchaseYesterday = 0,
-                                      purchaseLast7Days = 0,
-                                      purchaseThisMonth = 0;
+                                  double purchaseToday = 0, purchaseYesterday = 0, purchaseLast7Days = 0, purchaseThisMonth = 0;
                                   for (var doc in purchaseSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
+                                    final data = doc.data() as Map<String, dynamic>;
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
-                                    double amount =
-                                        double.tryParse(
-                                          data['totalAmount']?.toString() ??
-                                              data['amount']?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
+                                    double amount = double.tryParse(data['totalAmount']?.toString() ?? data['amount']?.toString() ?? '0') ?? 0;
 
                                     if (dt != null) {
-                                      if (dt.isAfter(todayStart))
-                                        purchaseToday += amount;
-                                      if (dt.isAfter(yesterdayStart) &&
-                                          dt.isBefore(todayStart))
-                                        purchaseYesterday += amount;
-                                      if (dt.isAfter(last7Days))
-                                        purchaseLast7Days += amount;
-                                      if (dt.isAfter(thisMonthStart))
-                                        purchaseThisMonth += amount;
+                                      if (dt.isAfter(todayStart)) purchaseToday += amount;
+                                      if (dt.isAfter(yesterdayStart) && dt.isBefore(todayStart)) purchaseYesterday += amount;
+                                      if (dt.isAfter(last7Days)) purchaseLast7Days += amount;
+                                      if (dt.isAfter(thisMonthStart)) purchaseThisMonth += amount;
                                     }
                                   }
 
                                   // Total expenses = expenses + purchases
-                                  final totalExpToday =
-                                      expenseToday + purchaseToday;
-                                  final totalExpYesterday =
-                                      expenseYesterday + purchaseYesterday;
-                                  final totalExpWeek =
-                                      expenseLast7Days + purchaseLast7Days;
-                                  final totalExpMonth =
-                                      expenseThisMonth + purchaseThisMonth;
+                                  final totalExpToday = expenseToday + purchaseToday;
+                                  final totalExpYesterday = expenseYesterday + purchaseYesterday;
+                                  final totalExpWeek = expenseLast7Days + purchaseLast7Days;
+                                  final totalExpMonth = expenseThisMonth + purchaseThisMonth;
 
                                   // Build weekly data for chart (last 7 days, day-wise)
                                   final Map<int, double> weeklyIncome = {};
@@ -16651,154 +11163,66 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                                     weeklyExpense[6 - i] = 0;
                                   }
                                   for (var doc in salesSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
+                                    final data = doc.data() as Map<String, dynamic>;
                                     // Skip cancelled/returned
-                                    final String status = (data['status'] ?? '')
-                                        .toString()
-                                        .toLowerCase();
-                                    if (status == 'cancelled' ||
-                                        status == 'returned' ||
-                                        data['hasBeenReturned'] == true)
-                                      continue;
+                                    final String status = (data['status'] ?? '').toString().toLowerCase();
+                                    if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) continue;
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
-                                    double total =
-                                        double.tryParse(
-                                          data['total']?.toString() ?? '0',
-                                        ) ??
-                                        0;
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                    double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
                                     if (dt != null && dt.isAfter(last7Days)) {
-                                      final daysAgo = now
-                                          .difference(
-                                            DateTime(dt.year, dt.month, dt.day),
-                                          )
-                                          .inDays;
+                                      final daysAgo = now.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
                                       if (daysAgo >= 0 && daysAgo <= 6) {
-                                        weeklyIncome[6 - daysAgo] =
-                                            (weeklyIncome[6 - daysAgo] ?? 0) +
-                                            total;
+                                        weeklyIncome[6 - daysAgo] = (weeklyIncome[6 - daysAgo] ?? 0) + total;
                                       }
                                     }
                                   }
                                   // Credits for chart: credit collected = income, manual credit = expense
                                   if (creditsSnapshot.hasData) {
-                                    for (var doc
-                                        in creditsSnapshot.data!.docs) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-                                      final type = (data['type'] ?? '')
-                                          .toString()
-                                          .toLowerCase();
-                                      final amount =
-                                          double.tryParse(
-                                            data['amount']?.toString() ?? '0',
-                                          ) ??
-                                          0;
-                                      if (type == 'sale_payment' ||
-                                          type == 'credit_sale')
-                                        continue;
+                                    for (var doc in creditsSnapshot.data!.docs) {
+                                      final data = doc.data() as Map<String, dynamic>;
+                                      final type = (data['type'] ?? '').toString().toLowerCase();
+                                      final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                                      if (type == 'sale_payment' || type == 'credit_sale') continue;
                                       DateTime? dt;
-                                      if (data['timestamp'] != null)
-                                        dt = (data['timestamp'] as Timestamp)
-                                            .toDate();
-                                      else if (data['date'] != null)
-                                        dt = DateTime.tryParse(
-                                          data['date'].toString(),
-                                        );
+                                      if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                      else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
                                       if (dt != null && dt.isAfter(last7Days)) {
-                                        final daysAgo = now
-                                            .difference(
-                                              DateTime(
-                                                dt.year,
-                                                dt.month,
-                                                dt.day,
-                                              ),
-                                            )
-                                            .inDays;
+                                        final daysAgo = now.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
                                         if (daysAgo >= 0 && daysAgo <= 6) {
-                                          if (type.contains(
-                                                'payment_received',
-                                              ) ||
-                                              type.contains('credit_payment') ||
-                                              type == 'settlement') {
-                                            weeklyIncome[6 - daysAgo] =
-                                                (weeklyIncome[6 - daysAgo] ??
-                                                    0) +
-                                                amount;
+                                          if (type.contains('payment_received') || type.contains('credit_payment') || type == 'settlement') {
+                                            weeklyIncome[6 - daysAgo] = (weeklyIncome[6 - daysAgo] ?? 0) + amount;
                                           } else if (type == 'add_credit') {
-                                            weeklyExpense[6 - daysAgo] =
-                                                (weeklyExpense[6 - daysAgo] ??
-                                                    0) +
-                                                amount;
+                                            weeklyExpense[6 - daysAgo] = (weeklyExpense[6 - daysAgo] ?? 0) + amount;
                                           }
                                         }
                                       }
                                     }
                                   }
                                   for (var doc in expenseSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
+                                    final data = doc.data() as Map<String, dynamic>;
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
-                                    double amount =
-                                        double.tryParse(
-                                          data['amount']?.toString() ?? '0',
-                                        ) ??
-                                        0;
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                    double amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
                                     if (dt != null && dt.isAfter(last7Days)) {
-                                      final daysAgo = now
-                                          .difference(
-                                            DateTime(dt.year, dt.month, dt.day),
-                                          )
-                                          .inDays;
+                                      final daysAgo = now.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
                                       if (daysAgo >= 0 && daysAgo <= 6) {
-                                        weeklyExpense[6 - daysAgo] =
-                                            (weeklyExpense[6 - daysAgo] ?? 0) +
-                                            amount;
+                                        weeklyExpense[6 - daysAgo] = (weeklyExpense[6 - daysAgo] ?? 0) + amount;
                                       }
                                     }
                                   }
                                   for (var doc in purchaseSnapshot.data!.docs) {
-                                    final data =
-                                        doc.data() as Map<String, dynamic>;
+                                    final data = doc.data() as Map<String, dynamic>;
                                     DateTime? dt;
-                                    if (data['timestamp'] != null)
-                                      dt = (data['timestamp'] as Timestamp)
-                                          .toDate();
-                                    else if (data['date'] != null)
-                                      dt = DateTime.tryParse(
-                                        data['date'].toString(),
-                                      );
-                                    double amount =
-                                        double.tryParse(
-                                          data['totalAmount']?.toString() ??
-                                              data['amount']?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
+                                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                                    double amount = double.tryParse(data['totalAmount']?.toString() ?? data['amount']?.toString() ?? '0') ?? 0;
                                     if (dt != null && dt.isAfter(last7Days)) {
-                                      final daysAgo = now
-                                          .difference(
-                                            DateTime(dt.year, dt.month, dt.day),
-                                          )
-                                          .inDays;
+                                      final daysAgo = now.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
                                       if (daysAgo >= 0 && daysAgo <= 6) {
-                                        weeklyExpense[6 - daysAgo] =
-                                            (weeklyExpense[6 - daysAgo] ?? 0) +
-                                            amount;
+                                        weeklyExpense[6 - daysAgo] = (weeklyExpense[6 - daysAgo] ?? 0) + amount;
                                       }
                                     }
                                   }
@@ -16807,95 +11231,43 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                                     children: [
                                       Expanded(
                                         child: CustomScrollView(
-                                          physics:
-                                              const BouncingScrollPhysics(),
+                                          physics: const BouncingScrollPhysics(),
                                           slivers: [
                                             SliverPadding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 12,
-                                                    vertical: 12,
-                                                  ),
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                               sliver: SliverList(
                                                 delegate: SliverChildListDelegate([
                                                   // ── Income VS Expense Performance Card ──
-                                                  _buildPerformanceCard(
-                                                    incomeThisMonth,
-                                                    totalExpMonth,
-                                                  ),
+                                                  _buildPerformanceCard(incomeThisMonth, totalExpMonth),
 
                                                   const SizedBox(height: 16),
 
                                                   // ── Income VS Expense Bar Chart (Last 7 Days) ──
-                                                  _buildIncomeExpenseChart(
-                                                    weeklyIncome,
-                                                    weeklyExpense,
-                                                    incomeLast7Days,
-                                                    totalExpWeek,
-                                                  ),
+                                                  _buildIncomeExpenseChart(weeklyIncome, weeklyExpense, incomeLast7Days, totalExpWeek),
 
                                                   const SizedBox(height: 16),
 
                                                   // ── Comparison Cards with arrows ──
-                                                  _buildSectionHeader(
-                                                    "Income Vs Expense",
-                                                  ),
+                                                  _buildSectionHeader("Income Vs Expense"),
                                                   const SizedBox(height: 8),
-                                                  _buildComparisonRow(
-                                                    "Today",
-                                                    incomeToday,
-                                                    totalExpToday,
-                                                  ),
+                                                  _buildComparisonRow("Today", incomeToday, totalExpToday),
                                                   const SizedBox(height: 8),
-                                                  _buildComparisonRow(
-                                                    "Yesterday",
-                                                    incomeYesterday,
-                                                    totalExpYesterday,
-                                                  ),
+                                                  _buildComparisonRow("Yesterday", incomeYesterday, totalExpYesterday),
                                                   const SizedBox(height: 8),
-                                                  _buildComparisonRow(
-                                                    "Last 7 Days",
-                                                    incomeLast7Days,
-                                                    totalExpWeek,
-                                                  ),
+                                                  _buildComparisonRow("Last 7 Days", incomeLast7Days, totalExpWeek),
                                                   const SizedBox(height: 8),
-                                                  _buildComparisonRow(
-                                                    "This Month",
-                                                    incomeThisMonth,
-                                                    totalExpMonth,
-                                                  ),
+                                                  _buildComparisonRow("This Month", incomeThisMonth, totalExpMonth),
 
                                                   const SizedBox(height: 24),
-                                                  _buildSectionHeader(
-                                                    "Credit Tracker – Settlement Monitor",
-                                                  ),
+                                                  _buildSectionHeader("Credit Tracker – Settlement Monitor"),
                                                   const SizedBox(height: 8),
-                                                  _buildCreditSummaryBanner(
-                                                    totalReceivable,
-                                                    totalPayable,
-                                                  ),
+                                                  _buildCreditSummaryBanner(totalReceivable, totalPayable),
                                                   const SizedBox(height: 8),
                                                   Row(
                                                     children: [
-                                                      Expanded(
-                                                        child: _buildDuesTile(
-                                                          "Total Receivable",
-                                                          totalReceivable,
-                                                          kIncomeGreen,
-                                                          Icons
-                                                              .call_received_rounded,
-                                                        ),
-                                                      ),
+                                                      Expanded(child: _buildDuesTile("Total Receivable", totalReceivable, kIncomeGreen, Icons.call_received_rounded)),
                                                       const SizedBox(width: 8),
-                                                      Expanded(
-                                                        child: _buildDuesTile(
-                                                          "Total Payable",
-                                                          totalPayable,
-                                                          kExpenseRed,
-                                                          Icons
-                                                              .call_made_rounded,
-                                                        ),
-                                                      ),
+                                                      Expanded(child: _buildDuesTile("Total Payable", totalPayable, kExpenseRed, Icons.call_made_rounded)),
                                                     ],
                                                   ),
 
@@ -16971,20 +11343,9 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Business Performance",
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: kTextSecondary,
-                  letterSpacing: 1.2,
-                ),
-              ),
+              const Text("Business Performance", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2)),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: performanceColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -16994,14 +11355,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                   children: [
                     Icon(performanceIcon, size: 14, color: performanceColor),
                     const SizedBox(width: 4),
-                    Text(
-                      performanceLabel,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                        color: performanceColor,
-                      ),
-                    ),
+                    Text(performanceLabel, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: performanceColor)),
                   ],
                 ),
               ),
@@ -17017,34 +11371,15 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: kIncomeGreen,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: kIncomeGreen, borderRadius: BorderRadius.circular(2))),
                         const SizedBox(width: 6),
-                        const Text(
-                          "Total Income",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text("Total Income", style: TextStyle(fontSize: 11, color: kTextSecondary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${CurrencyService().symbol}${totalIncome.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: kIncomeGreen,
-                        letterSpacing: -0.5,
-                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: kIncomeGreen, letterSpacing: -0.5),
                     ),
                   ],
                 ),
@@ -17056,34 +11391,15 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: kExpenseRed,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
+                        Container(width: 8, height: 8, decoration: BoxDecoration(color: kExpenseRed, borderRadius: BorderRadius.circular(2))),
                         const SizedBox(width: 6),
-                        const Text(
-                          "Total Expense",
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        const Text("Total Expense", style: TextStyle(fontSize: 11, color: kTextSecondary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       "${CurrencyService().symbol}${totalExpense.toStringAsFixed(0)}",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                        color: kExpenseRed,
-                        letterSpacing: -0.5,
-                      ),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: kExpenseRed, letterSpacing: -0.5),
                     ),
                   ],
                 ),
@@ -17099,15 +11415,11 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
               child: Row(
                 children: [
                   Expanded(
-                    flex: totalIncome > 0
-                        ? totalIncome.toInt().clamp(1, 999999)
-                        : 1,
+                    flex: totalIncome > 0 ? totalIncome.toInt().clamp(1, 999999) : 1,
                     child: Container(color: kIncomeGreen),
                   ),
                   Expanded(
-                    flex: totalExpense > 0
-                        ? totalExpense.toInt().clamp(1, 999999)
-                        : 1,
+                    flex: totalExpense > 0 ? totalExpense.toInt().clamp(1, 999999) : 1,
                     child: Container(color: kExpenseRed),
                   ),
                 ],
@@ -17128,32 +11440,20 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                 Row(
                   children: [
                     Icon(
-                      isHealthy
-                          ? Icons.arrow_upward_rounded
-                          : Icons.arrow_downward_rounded,
+                      isHealthy ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                       size: 16,
                       color: isHealthy ? kIncomeGreen : kExpenseRed,
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isHealthy
-                          ? "Income exceeds expenses"
-                          : "Expenses exceed income",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: isHealthy ? kIncomeGreen : kExpenseRed,
-                      ),
+                      isHealthy ? "Income exceeds expenses" : "Expenses exceed income",
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isHealthy ? kIncomeGreen : kExpenseRed),
                     ),
                   ],
                 ),
                 Text(
                   "${percentage.abs().toStringAsFixed(1)}%",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    color: isHealthy ? kIncomeGreen : kExpenseRed,
-                  ),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: isHealthy ? kIncomeGreen : kExpenseRed),
                 ),
               ],
             ),
@@ -17164,12 +11464,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
   }
 
   // ── Income vs Expense Bar Chart (Last 7 Days) ──
-  Widget _buildIncomeExpenseChart(
-    Map<int, double> weeklyIncome,
-    Map<int, double> weeklyExpense,
-    double totalWeekIncome,
-    double totalWeekExpense,
-  ) {
+  Widget _buildIncomeExpenseChart(Map<int, double> weeklyIncome, Map<int, double> weeklyExpense, double totalWeekIncome, double totalWeekExpense) {
     final now = DateTime.now();
     final dayLabels = List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
@@ -17201,64 +11496,21 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Income Vs Expense",
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w900,
-                  color: kTextSecondary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const Text(
-                "Last 7 Days",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text("Income Vs Expense", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2)),
+              const Text("Last 7 Days", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 4),
           // Legend
           Row(
             children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: kIncomeGreen,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: kIncomeGreen, borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 4),
-              const Text(
-                "Income",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text("Income", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
               const SizedBox(width: 16),
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: kExpenseRed,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: kExpenseRed, borderRadius: BorderRadius.circular(2))),
               const SizedBox(width: 4),
-              const Text(
-                "Expense",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const Text("Expense", style: TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: 16),
@@ -17274,11 +11526,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                       final label = rodIndex == 0 ? 'Income' : 'Expense';
                       return BarTooltipItem(
                         '$label\n${CurrencyService().symbol}${rod.toY.toStringAsFixed(0)}',
-                        TextStyle(
-                          color: rodIndex == 0 ? kIncomeGreen : kExpenseRed,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 11,
-                        ),
+                        TextStyle(color: rodIndex == 0 ? kIncomeGreen : kExpenseRed, fontWeight: FontWeight.w700, fontSize: 11),
                       );
                     },
                   ),
@@ -17293,14 +11541,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                         if (idx >= 0 && idx < dayLabels.length) {
                           return Padding(
                             padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              dayLabels[idx],
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
-                                color: kTextSecondary,
-                              ),
-                            ),
+                            child: Text(dayLabels[idx], style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kTextSecondary)),
                           );
                         }
                         return const SizedBox.shrink();
@@ -17320,32 +11561,18 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                         } else {
                           label = value.toStringAsFixed(0);
                         }
-                        return Text(
-                          label,
-                          style: const TextStyle(
-                            fontSize: 9,
-                            color: kTextSecondary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        );
+                        return Text(label, style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.w600));
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
-                  rightTitles: const AxisTitles(
-                    sideTitles: SideTitles(showTitles: false),
-                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                 ),
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
                   horizontalInterval: maxVal * 1.2 / 4,
-                  getDrawingHorizontalLine: (value) => FlLine(
-                    color: kBorderColor.withOpacity(0.5),
-                    strokeWidth: 1,
-                  ),
+                  getDrawingHorizontalLine: (value) => FlLine(color: kBorderColor.withOpacity(0.5), strokeWidth: 1),
                 ),
                 borderData: FlBorderData(show: false),
                 barGroups: List.generate(7, (i) {
@@ -17356,19 +11583,13 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                         toY: weeklyIncome[i] ?? 0,
                         color: kIncomeGreen,
                         width: 10,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          topRight: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
                       ),
                       BarChartRodData(
                         toY: weeklyExpense[i] ?? 0,
                         color: kExpenseRed,
                         width: 10,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(4),
-                          topRight: Radius.circular(4),
-                        ),
+                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(4)),
                       ),
                     ],
                   );
@@ -17382,10 +11603,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
             children: [
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   decoration: BoxDecoration(
                     color: kIncomeGreen.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(10),
@@ -17394,30 +11612,15 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Total Income",
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      const Text("Total Income", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kTextSecondary)),
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 14,
-                            color: kIncomeGreen,
-                          ),
+                          const Icon(Icons.arrow_upward_rounded, size: 14, color: kIncomeGreen),
                           const SizedBox(width: 2),
                           Text(
                             "${CurrencyService().symbol}${totalWeekIncome.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: kIncomeGreen,
-                            ),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: kIncomeGreen),
                           ),
                         ],
                       ),
@@ -17428,10 +11631,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
               const SizedBox(width: 8),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 10,
-                    horizontal: 12,
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
                   decoration: BoxDecoration(
                     color: kExpenseRed.withOpacity(0.06),
                     borderRadius: BorderRadius.circular(10),
@@ -17440,30 +11640,15 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Total Expense",
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                          color: kTextSecondary,
-                        ),
-                      ),
+                      const Text("Total Expense", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: kTextSecondary)),
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          const Icon(
-                            Icons.arrow_downward_rounded,
-                            size: 14,
-                            color: kExpenseRed,
-                          ),
+                          const Icon(Icons.arrow_downward_rounded, size: 14, color: kExpenseRed),
                           const SizedBox(width: 2),
                           Text(
                             "${CurrencyService().symbol}${totalWeekExpense.toStringAsFixed(0)}",
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                              color: kExpenseRed,
-                            ),
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: kExpenseRed),
                           ),
                         ],
                       ),
@@ -17497,33 +11682,18 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           // Period label
           SizedBox(
             width: 80,
-            child: Text(
-              period,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: kTextPrimary,
-              ),
-            ),
+            child: Text(period, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kTextPrimary)),
           ),
           // Income
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.arrow_upward_rounded,
-                  size: 13,
-                  color: kIncomeGreen,
-                ),
+                const Icon(Icons.arrow_upward_rounded, size: 13, color: kIncomeGreen),
                 const SizedBox(width: 2),
                 Text(
                   "${CurrencyService().symbol}${income.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: kIncomeGreen,
-                  ),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: kIncomeGreen),
                 ),
               ],
             ),
@@ -17533,19 +11703,11 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.arrow_downward_rounded,
-                  size: 13,
-                  color: kExpenseRed,
-                ),
+                const Icon(Icons.arrow_downward_rounded, size: 13, color: kExpenseRed),
                 const SizedBox(width: 2),
                 Text(
                   "${CurrencyService().symbol}${expense.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                    color: kExpenseRed,
-                  ),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: kExpenseRed),
                 ),
               ],
             ),
@@ -17561,19 +11723,13 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  isHealthy
-                      ? Icons.arrow_upward_rounded
-                      : Icons.arrow_downward_rounded,
+                  isHealthy ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
                   size: 12,
                   color: isHealthy ? kIncomeGreen : kExpenseRed,
                 ),
                 Text(
                   "${pct.toStringAsFixed(0)}%",
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: isHealthy ? kIncomeGreen : kExpenseRed,
-                  ),
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: isHealthy ? kIncomeGreen : kExpenseRed),
                 ),
               ],
             ),
@@ -17597,9 +11753,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           end: Alignment.centerRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: (isPositive ? kIncomeGreen : kExpenseRed).withOpacity(0.2),
-        ),
+        border: Border.all(color: (isPositive ? kIncomeGreen : kExpenseRed).withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -17607,32 +11761,15 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Net Credit Position",
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: kTextSecondary,
-                  letterSpacing: 1.2,
-                ),
-              ),
+              const Text("Net Credit Position", style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2)),
               const SizedBox(height: 4),
               Text(
                 "${CurrencyService().symbol}${net.abs().toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                  color: isPositive ? kIncomeGreen : kExpenseRed,
-                  letterSpacing: -0.5,
-                ),
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: isPositive ? kIncomeGreen : kExpenseRed, letterSpacing: -0.5),
               ),
               Text(
                 isPositive ? "Net amount to collect" : "Net amount to pay",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: isPositive ? kIncomeGreen : kExpenseRed,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 10, color: isPositive ? kIncomeGreen : kExpenseRed, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -17643,9 +11780,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              isPositive
-                  ? Icons.trending_up_rounded
-                  : Icons.trending_down_rounded,
+              isPositive ? Icons.trending_up_rounded : Icons.trending_down_rounded,
               color: isPositive ? kIncomeGreen : kExpenseRed,
               size: 24,
             ),
@@ -17676,9 +11811,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -17686,46 +11819,16 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Net Cash Position Today",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+              const Text("Net Cash Position Today", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
               const SizedBox(height: 2),
-              Text(
-                "${CurrencyService().symbol}${net.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: net >= 0 ? kIncomeGreen : kExpenseRed,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("${CurrencyService().symbol}${net.toStringAsFixed(2)}", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: net >= 0 ? kIncomeGreen : kExpenseRed, letterSpacing: -1)),
             ],
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                "${CurrencyService().symbol}${income.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  color: kIncomeGreen,
-                ),
-              ),
-              Text(
-                "${CurrencyService().symbol}${expense.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  color: kExpenseRed,
-                ),
-              ),
+              Text("${CurrencyService().symbol}${income.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kIncomeGreen)),
+              Text("${CurrencyService().symbol}${expense.toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: kExpenseRed)),
             ],
           ),
         ],
@@ -17733,22 +11836,14 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
     );
   }
 
-  Widget _buildComparisonGrid(
-    double today,
-    double yesterday,
-    double week,
-    double month,
-    Color themeColor,
-  ) {
+  Widget _buildComparisonGrid(double today, double yesterday, double week, double month, Color themeColor) {
     return Column(
       children: [
         Row(
           children: [
             Expanded(child: _buildMetricTile("Today", today, themeColor)),
             const SizedBox(width: 8),
-            Expanded(
-              child: _buildMetricTile("Yesterday", yesterday, themeColor),
-            ),
+            Expanded(child: _buildMetricTile("Yesterday", yesterday, themeColor)),
           ],
         ),
         const SizedBox(height: 8),
@@ -17774,35 +11869,18 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: kTextSecondary,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text(
             "${CurrencyService().symbol}${value.toStringAsFixed(0)}",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: color,
-              letterSpacing: -0.5,
-            ),
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: color, letterSpacing: -0.5),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDuesTile(
-    String label,
-    double value,
-    Color color,
-    IconData icon,
-  ) {
+  Widget _buildDuesTile(String label, double value, Color color, IconData icon) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -17814,10 +11892,7 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 16),
           ),
           const SizedBox(width: 12),
@@ -17825,23 +11900,8 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Text(
-                  "${CurrencyService().symbol}${value.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                  ),
-                ),
+                Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w900, letterSpacing: 0.5)),
+                Text("${CurrencyService().symbol}${value.toStringAsFixed(0)}", style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               ],
             ),
           ),
@@ -17861,29 +11921,12 @@ class _IncomeSummaryPageState extends State<IncomeSummaryPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            period,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          ),
+          Text(period, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
           Row(
             children: [
-              Text(
-                "${CurrencyService().symbol}${income.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  color: kIncomeGreen,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                ),
-              ),
+              Text("${CurrencyService().symbol}${income.toStringAsFixed(0)}", style: const TextStyle(color: kIncomeGreen, fontWeight: FontWeight.w900, fontSize: 14)),
               const Text("  /  ", style: TextStyle(color: kTextSecondary)),
-              Text(
-                "${CurrencyService().symbol}${expense.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  color: kExpenseRed,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 14,
-                ),
-              ),
+              Text("${CurrencyService().symbol}${expense.toStringAsFixed(0)}", style: const TextStyle(color: kExpenseRed, fontWeight: FontWeight.w900, fontSize: 14)),
             ],
           ),
         ],
@@ -17952,35 +11995,14 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
 
   void _downloadPdf(BuildContext context) {
     final rows = [
-      [
-        'Income - Cash',
-        '$_currencySymbol${_incomeCash.toStringAsFixed(2)}',
-        '$_incomeCashCount txns',
-      ],
-      [
-        'Income - Online',
-        '$_currencySymbol${_incomeOnline.toStringAsFixed(2)}',
-        '$_incomeOnlineCount txns',
-      ],
-      [
-        'Income - Credit',
-        '$_currencySymbol${_incomeCredit.toStringAsFixed(2)}',
-        '$_incomeCreditCount txns',
-      ],
-      [
-        'Expense - Cash',
-        '$_currencySymbol${_expenseCash.toStringAsFixed(2)}',
-        '$_expenseCashCount txns',
-      ],
-      [
-        'Expense - Online',
-        '$_currencySymbol${_expenseOnline.toStringAsFixed(2)}',
-        '$_expenseOnlineCount txns',
-      ],
+      ['Income - Cash', '$_currencySymbol${_incomeCash.toStringAsFixed(2)}', '$_incomeCashCount txns'],
+      ['Income - Online', '$_currencySymbol${_incomeOnline.toStringAsFixed(2)}', '$_incomeOnlineCount txns'],
+      ['Income - Credit', '$_currencySymbol${_incomeCredit.toStringAsFixed(2)}', '$_incomeCreditCount txns'],
+      ['Expense - Cash', '$_currencySymbol${_expenseCash.toStringAsFixed(2)}', '$_expenseCashCount txns'],
+      ['Expense - Online', '$_currencySymbol${_expenseOnline.toStringAsFixed(2)}', '$_expenseOnlineCount txns'],
     ];
 
-    double totalNet =
-        (_incomeCash + _incomeOnline) - (_expenseCash + _expenseOnline);
+    double totalNet = (_incomeCash + _incomeOnline) - (_expenseCash + _expenseOnline);
 
     ReportPdfGenerator.generateAndDownloadPdf(
       context: context,
@@ -17990,12 +12012,9 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
       summaryTitle: "Net Cash Position",
       summaryValue: "$_currencySymbol${totalNet.toStringAsFixed(2)}",
       additionalSummary: {
-        'Period':
-            '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
-        'Total Inflow':
-            '$_currencySymbol${(_incomeCash + _incomeOnline).toStringAsFixed(2)}',
-        'Total Outflow':
-            '$_currencySymbol${(_expenseCash + _expenseOnline).toStringAsFixed(2)}',
+        'Period': '${DateFormat('dd/MM/yy').format(_startDate)} - ${DateFormat('dd/MM/yy').format(_endDate)}',
+        'Total Inflow': '$_currencySymbol${(_incomeCash + _incomeOnline).toStringAsFixed(2)}',
+        'Total Outflow': '$_currencySymbol${(_expenseCash + _expenseOnline).toStringAsFixed(2)}',
       },
     );
   }
@@ -18004,11 +12023,7 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kGreyBg,
-      appBar: _buildModernAppBar(
-        "Payment Summary",
-        widget.onBack,
-        onDownload: () => _downloadPdf(context),
-      ),
+      appBar: _buildModernAppBar("Payment Summary", widget.onBack, onDownload: () => _downloadPdf(context)),
       body: FutureBuilder<List<Stream<QuerySnapshot>>>(
         future: Future.wait([
           _firestoreService.getCollectionStream('sales'),
@@ -18019,12 +12034,7 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
         ]),
         builder: (context, streamsSnapshot) {
           if (!streamsSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamsSnapshot.data![0],
@@ -18041,500 +12051,265 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
                           return StreamBuilder<QuerySnapshot>(
                             stream: streamsSnapshot.data![4],
                             builder: (context, purchaseCreditsSnapshot) {
-                              if (!salesSnapshot.hasData ||
-                                  !expenseSnapshot.hasData ||
-                                  !purchaseSnapshot.hasData ||
-                                  !creditsSnapshot.hasData ||
-                                  !purchaseCreditsSnapshot.hasData) {
-                                return const Center(
-                                  child: CircularProgressIndicator(
-                                    color: kPrimaryColor,
+                  if (!salesSnapshot.hasData || !expenseSnapshot.hasData || !purchaseSnapshot.hasData || !creditsSnapshot.hasData || !purchaseCreditsSnapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+                  }
+
+                  // --- Income from Sales (Money IN) ---
+                  double incomeCash = 0, incomeOnline = 0, incomeCredit = 0;
+                  int incomeCashCount = 0, incomeOnlineCount = 0, incomeCreditCount = 0;
+
+                  // --- Credit Collections (Money IN from credit repayments) ---
+                  double creditCollectedCash = 0, creditCollectedOnline = 0;
+                  int creditCollectedCashCount = 0, creditCollectedOnlineCount = 0;
+
+                  // --- Manual Credit Given (Money OUT) ---
+                  double manualCreditCash = 0, manualCreditOnline = 0;
+                  int manualCreditCashCount = 0, manualCreditOnlineCount = 0;
+
+                  for (var doc in salesSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    DateTime? dt;
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+
+                    if (_isInDateRange(dt)) {
+                      final String status = (data['status'] ?? '').toString().toLowerCase();
+                      if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) continue;
+
+                      double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+                      String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
+
+                      if (mode == 'split') {
+                        double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                        double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
+                        double splitCredit = double.tryParse(data['creditIssued_split']?.toString() ?? '0') ?? 0;
+                        if (splitCash > 0) { incomeCash += splitCash; incomeCashCount++; }
+                        if (splitOnline > 0) { incomeOnline += splitOnline; incomeOnlineCount++; }
+                        if (splitCredit > 0) { incomeCredit += splitCredit; incomeCreditCount++; }
+                      } else if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                        incomeOnline += total; incomeOnlineCount++;
+                      } else if (mode.contains('credit')) {
+                        final partialCash = double.tryParse(data['cashReceived_partial']?.toString() ?? '0') ?? 0;
+                        final creditIssued = double.tryParse(data['creditIssued_partial']?.toString() ?? '0') ?? total;
+                        if (partialCash > 0) { incomeCash += partialCash; incomeCashCount++; }
+                        incomeCredit += creditIssued; incomeCreditCount++;
+                      } else {
+                        incomeCash += total; incomeCashCount++;
+                      }
+                    }
+                  }
+
+                  // --- Process Credits Collection ---
+                  for (var doc in creditsSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    DateTime? dt;
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                    if (_isInDateRange(dt)) {
+                      final type = (data['type'] ?? '').toString().toLowerCase();
+                      final amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                      final method = (data['method'] ?? 'Cash').toString().toLowerCase();
+                      if (type == 'sale_payment' || type == 'credit_sale') continue;
+                      if (type.contains('payment_received') || type.contains('credit_payment') || type == 'settlement') {
+                        if (method.contains('online') || method.contains('upi') || method.contains('card')) {
+                          creditCollectedOnline += amount; creditCollectedOnlineCount++;
+                        } else {
+                          creditCollectedCash += amount; creditCollectedCashCount++;
+                        }
+                      } else if (type == 'add_credit') {
+                        if (method.contains('online') || method.contains('upi') || method.contains('card')) {
+                          manualCreditOnline += amount; manualCreditOnlineCount++;
+                        } else {
+                          manualCreditCash += amount; manualCreditCashCount++;
+                        }
+                      }
+                    }
+                  }
+
+                  // --- Expense Calculations ---
+                  double expenseCash = 0, expenseOnline = 0;
+                  int expenseCashCount = 0, expenseOnlineCount = 0;
+                  for (var doc in expenseSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    DateTime? dt;
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                    if (_isInDateRange(dt)) {
+                      double amount = double.tryParse(data['amount']?.toString() ?? '0') ?? 0;
+                      String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
+                      if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                        expenseOnline += amount; expenseOnlineCount++;
+                      } else {
+                        expenseCash += amount; expenseCashCount++;
+                      }
+                    }
+                  }
+
+                  // --- Stock Purchase Calculations ---
+                  double purchaseCash = 0, purchaseOnline = 0;
+                  int purchaseCashCount = 0, purchaseOnlineCount = 0;
+                  for (var doc in purchaseSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    DateTime? dt;
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                    if (_isInDateRange(dt)) {
+                      double amount = double.tryParse(data['totalAmount']?.toString() ?? '0') ?? 0;
+                      String mode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
+                      if (mode.contains('online') || mode.contains('upi') || mode.contains('card')) {
+                        purchaseOnline += amount; purchaseOnlineCount++;
+                      } else if (mode.contains('credit')) {
+                        // Purchase on credit — no actual money out yet
+                      } else {
+                        purchaseCash += amount; purchaseCashCount++;
+                      }
+                    }
+                  }
+
+                  // --- Purchase Credit Notes (payments made against purchase credits) ---
+                  double purchaseCreditPaidCash = 0, purchaseCreditPaidOnline = 0;
+                  int purchaseCreditPaidCashCount = 0, purchaseCreditPaidOnlineCount = 0;
+                  for (var doc in purchaseCreditsSnapshot.data!.docs) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    DateTime? dt;
+                    if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                    else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
+                    if (_isInDateRange(dt)) {
+                      final paidAmount = double.tryParse(data['paidAmount']?.toString() ?? '0') ?? 0;
+                      final method = (data['paymentMethod'] ?? data['method'] ?? 'Cash').toString().toLowerCase();
+                      if (paidAmount > 0) {
+                        if (method.contains('online') || method.contains('upi') || method.contains('card')) {
+                          purchaseCreditPaidOnline += paidAmount; purchaseCreditPaidOnlineCount++;
+                        } else {
+                          purchaseCreditPaidCash += paidAmount; purchaseCreditPaidCashCount++;
+                        }
+                      }
+                    }
+                  }
+
+                  // --- Aggregate Totals ---
+                  double totalInCash = incomeCash + creditCollectedCash;
+                  double totalInOnline = incomeOnline + creditCollectedOnline;
+                  int totalInCashCount = incomeCashCount + creditCollectedCashCount;
+                  int totalInOnlineCount = incomeOnlineCount + creditCollectedOnlineCount;
+
+                  double totalOutCash = expenseCash + purchaseCash + purchaseCreditPaidCash + manualCreditCash;
+                  double totalOutOnline = expenseOnline + purchaseOnline + purchaseCreditPaidOnline + manualCreditOnline;
+                  int totalOutCashCount = expenseCashCount + purchaseCashCount + purchaseCreditPaidCashCount + manualCreditCashCount;
+                  int totalOutOnlineCount = expenseOnlineCount + purchaseOnlineCount + purchaseCreditPaidOnlineCount + manualCreditOnlineCount;
+
+                  double totalIn = totalInCash + totalInOnline;
+                  double totalOut = totalOutCash + totalOutOnline;
+                  double totalNet = totalIn - totalOut;
+
+                  // Store values for PDF download
+                  _incomeCash = totalInCash;
+                  _incomeOnline = totalInOnline;
+                  _incomeCredit = incomeCredit;
+                  _expenseCash = totalOutCash;
+                  _expenseOnline = totalOutOnline;
+                  _incomeCashCount = totalInCashCount;
+                  _incomeOnlineCount = totalInOnlineCount;
+                  _incomeCreditCount = incomeCreditCount;
+                  _expenseCashCount = totalOutCashCount;
+                  _expenseOnlineCount = totalOutOnlineCount;
+
+                  return Column(
+                    children: [
+                      DateFilterWidget(
+                        selectedOption: _selectedFilter,
+                        startDate: _startDate,
+                        endDate: _endDate,
+                        onDateChanged: _onDateChanged,
+                      ),
+                      Expanded(
+                        child: CustomScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          slivers: [
+                            SliverToBoxAdapter(
+                              child: _buildNetPositionStrip(totalNet, totalIn, totalOut),
+                            ),
+                            SliverPadding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                              sliver: SliverList(
+                                delegate: SliverChildListDelegate([
+                                  _buildSectionHeader("MONEY IN — INCOME"),
+                                  const SizedBox(height: 8),
+                                  _buildFlowAnalyticsCard(
+                                    "Sales Receipts",
+                                    incomeCash + incomeOnline,
+                                    incomeCash,
+                                    incomeOnline,
+                                    kIncomeGreen,
+                                    incomeCashCount + incomeOnlineCount,
                                   ),
-                                );
-                              }
-
-                              // --- Income from Sales (Money IN) ---
-                              double incomeCash = 0,
-                                  incomeOnline = 0,
-                                  incomeCredit = 0;
-                              int incomeCashCount = 0,
-                                  incomeOnlineCount = 0,
-                                  incomeCreditCount = 0;
-
-                              // --- Credit Collections (Money IN from credit repayments) ---
-                              double creditCollectedCash = 0,
-                                  creditCollectedOnline = 0;
-                              int creditCollectedCashCount = 0,
-                                  creditCollectedOnlineCount = 0;
-
-                              // --- Manual Credit Given (Money OUT) ---
-                              double manualCreditCash = 0,
-                                  manualCreditOnline = 0;
-                              int manualCreditCashCount = 0,
-                                  manualCreditOnlineCount = 0;
-
-                              for (var doc in salesSnapshot.data!.docs) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                DateTime? dt;
-                                if (data['timestamp'] != null)
-                                  dt = (data['timestamp'] as Timestamp)
-                                      .toDate();
-                                else if (data['date'] != null)
-                                  dt = DateTime.tryParse(
-                                    data['date'].toString(),
-                                  );
-
-                                if (_isInDateRange(dt)) {
-                                  final String status = (data['status'] ?? '')
-                                      .toString()
-                                      .toLowerCase();
-                                  if (status == 'cancelled' ||
-                                      status == 'returned' ||
-                                      data['hasBeenReturned'] == true)
-                                    continue;
-
-                                  double total =
-                                      double.tryParse(
-                                        data['total']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                                  String mode = (data['paymentMode'] ?? 'Cash')
-                                      .toString()
-                                      .toLowerCase();
-
-                                  if (mode == 'split') {
-                                    double splitCash =
-                                        double.tryParse(
-                                          data['cashReceived_split']
-                                                  ?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
-                                    double splitOnline =
-                                        double.tryParse(
-                                          data['onlineReceived_split']
-                                                  ?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
-                                    double splitCredit =
-                                        double.tryParse(
-                                          data['creditIssued_split']
-                                                  ?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
-                                    if (splitCash > 0) {
-                                      incomeCash += splitCash;
-                                      incomeCashCount++;
-                                    }
-                                    if (splitOnline > 0) {
-                                      incomeOnline += splitOnline;
-                                      incomeOnlineCount++;
-                                    }
-                                    if (splitCredit > 0) {
-                                      incomeCredit += splitCredit;
-                                      incomeCreditCount++;
-                                    }
-                                  } else if (mode.contains('online') ||
-                                      mode.contains('upi') ||
-                                      mode.contains('card')) {
-                                    incomeOnline += total;
-                                    incomeOnlineCount++;
-                                  } else if (mode.contains('credit')) {
-                                    final partialCash =
-                                        double.tryParse(
-                                          data['cashReceived_partial']
-                                                  ?.toString() ??
-                                              '0',
-                                        ) ??
-                                        0;
-                                    final creditIssued =
-                                        double.tryParse(
-                                          data['creditIssued_partial']
-                                                  ?.toString() ??
-                                              '0',
-                                        ) ??
-                                        total;
-                                    if (partialCash > 0) {
-                                      incomeCash += partialCash;
-                                      incomeCashCount++;
-                                    }
-                                    incomeCredit += creditIssued;
-                                    incomeCreditCount++;
-                                  } else {
-                                    incomeCash += total;
-                                    incomeCashCount++;
-                                  }
-                                }
-                              }
-
-                              // --- Process Credits Collection ---
-                              for (var doc in creditsSnapshot.data!.docs) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                DateTime? dt;
-                                if (data['timestamp'] != null)
-                                  dt = (data['timestamp'] as Timestamp)
-                                      .toDate();
-                                else if (data['date'] != null)
-                                  dt = DateTime.tryParse(
-                                    data['date'].toString(),
-                                  );
-                                if (_isInDateRange(dt)) {
-                                  final type = (data['type'] ?? '')
-                                      .toString()
-                                      .toLowerCase();
-                                  final amount =
-                                      double.tryParse(
-                                        data['amount']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                                  final method = (data['method'] ?? 'Cash')
-                                      .toString()
-                                      .toLowerCase();
-                                  if (type == 'sale_payment' ||
-                                      type == 'credit_sale')
-                                    continue;
-                                  if (type.contains('payment_received') ||
-                                      type.contains('credit_payment') ||
-                                      type == 'settlement') {
-                                    if (method.contains('online') ||
-                                        method.contains('upi') ||
-                                        method.contains('card')) {
-                                      creditCollectedOnline += amount;
-                                      creditCollectedOnlineCount++;
-                                    } else {
-                                      creditCollectedCash += amount;
-                                      creditCollectedCashCount++;
-                                    }
-                                  } else if (type == 'add_credit') {
-                                    if (method.contains('online') ||
-                                        method.contains('upi') ||
-                                        method.contains('card')) {
-                                      manualCreditOnline += amount;
-                                      manualCreditOnlineCount++;
-                                    } else {
-                                      manualCreditCash += amount;
-                                      manualCreditCashCount++;
-                                    }
-                                  }
-                                }
-                              }
-
-                              // --- Expense Calculations ---
-                              double expenseCash = 0, expenseOnline = 0;
-                              int expenseCashCount = 0, expenseOnlineCount = 0;
-                              for (var doc in expenseSnapshot.data!.docs) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                DateTime? dt;
-                                if (data['timestamp'] != null)
-                                  dt = (data['timestamp'] as Timestamp)
-                                      .toDate();
-                                else if (data['date'] != null)
-                                  dt = DateTime.tryParse(
-                                    data['date'].toString(),
-                                  );
-                                if (_isInDateRange(dt)) {
-                                  double amount =
-                                      double.tryParse(
-                                        data['amount']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                                  String mode = (data['paymentMode'] ?? 'Cash')
-                                      .toString()
-                                      .toLowerCase();
-                                  if (mode.contains('online') ||
-                                      mode.contains('upi') ||
-                                      mode.contains('card')) {
-                                    expenseOnline += amount;
-                                    expenseOnlineCount++;
-                                  } else {
-                                    expenseCash += amount;
-                                    expenseCashCount++;
-                                  }
-                                }
-                              }
-
-                              // --- Stock Purchase Calculations ---
-                              double purchaseCash = 0, purchaseOnline = 0;
-                              int purchaseCashCount = 0,
-                                  purchaseOnlineCount = 0;
-                              for (var doc in purchaseSnapshot.data!.docs) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                DateTime? dt;
-                                if (data['timestamp'] != null)
-                                  dt = (data['timestamp'] as Timestamp)
-                                      .toDate();
-                                else if (data['date'] != null)
-                                  dt = DateTime.tryParse(
-                                    data['date'].toString(),
-                                  );
-                                if (_isInDateRange(dt)) {
-                                  double amount =
-                                      double.tryParse(
-                                        data['totalAmount']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                                  String mode = (data['paymentMode'] ?? 'Cash')
-                                      .toString()
-                                      .toLowerCase();
-                                  if (mode.contains('online') ||
-                                      mode.contains('upi') ||
-                                      mode.contains('card')) {
-                                    purchaseOnline += amount;
-                                    purchaseOnlineCount++;
-                                  } else if (mode.contains('credit')) {
-                                    // Purchase on credit — no actual money out yet
-                                  } else {
-                                    purchaseCash += amount;
-                                    purchaseCashCount++;
-                                  }
-                                }
-                              }
-
-                              // --- Purchase Credit Notes (payments made against purchase credits) ---
-                              double purchaseCreditPaidCash = 0,
-                                  purchaseCreditPaidOnline = 0;
-                              int purchaseCreditPaidCashCount = 0,
-                                  purchaseCreditPaidOnlineCount = 0;
-                              for (var doc
-                                  in purchaseCreditsSnapshot.data!.docs) {
-                                final data = doc.data() as Map<String, dynamic>;
-                                DateTime? dt;
-                                if (data['timestamp'] != null)
-                                  dt = (data['timestamp'] as Timestamp)
-                                      .toDate();
-                                else if (data['date'] != null)
-                                  dt = DateTime.tryParse(
-                                    data['date'].toString(),
-                                  );
-                                if (_isInDateRange(dt)) {
-                                  final paidAmount =
-                                      double.tryParse(
-                                        data['paidAmount']?.toString() ?? '0',
-                                      ) ??
-                                      0;
-                                  final method =
-                                      (data['paymentMethod'] ??
-                                              data['method'] ??
-                                              'Cash')
-                                          .toString()
-                                          .toLowerCase();
-                                  if (paidAmount > 0) {
-                                    if (method.contains('online') ||
-                                        method.contains('upi') ||
-                                        method.contains('card')) {
-                                      purchaseCreditPaidOnline += paidAmount;
-                                      purchaseCreditPaidOnlineCount++;
-                                    } else {
-                                      purchaseCreditPaidCash += paidAmount;
-                                      purchaseCreditPaidCashCount++;
-                                    }
-                                  }
-                                }
-                              }
-
-                              // --- Aggregate Totals ---
-                              double totalInCash =
-                                  incomeCash + creditCollectedCash;
-                              double totalInOnline =
-                                  incomeOnline + creditCollectedOnline;
-                              int totalInCashCount =
-                                  incomeCashCount + creditCollectedCashCount;
-                              int totalInOnlineCount =
-                                  incomeOnlineCount +
-                                  creditCollectedOnlineCount;
-
-                              double totalOutCash =
-                                  expenseCash +
-                                  purchaseCash +
-                                  purchaseCreditPaidCash +
-                                  manualCreditCash;
-                              double totalOutOnline =
-                                  expenseOnline +
-                                  purchaseOnline +
-                                  purchaseCreditPaidOnline +
-                                  manualCreditOnline;
-                              int totalOutCashCount =
-                                  expenseCashCount +
-                                  purchaseCashCount +
-                                  purchaseCreditPaidCashCount +
-                                  manualCreditCashCount;
-                              int totalOutOnlineCount =
-                                  expenseOnlineCount +
-                                  purchaseOnlineCount +
-                                  purchaseCreditPaidOnlineCount +
-                                  manualCreditOnlineCount;
-
-                              double totalIn = totalInCash + totalInOnline;
-                              double totalOut = totalOutCash + totalOutOnline;
-                              double totalNet = totalIn - totalOut;
-
-                              // Store values for PDF download
-                              _incomeCash = totalInCash;
-                              _incomeOnline = totalInOnline;
-                              _incomeCredit = incomeCredit;
-                              _expenseCash = totalOutCash;
-                              _expenseOnline = totalOutOnline;
-                              _incomeCashCount = totalInCashCount;
-                              _incomeOnlineCount = totalInOnlineCount;
-                              _incomeCreditCount = incomeCreditCount;
-                              _expenseCashCount = totalOutCashCount;
-                              _expenseOnlineCount = totalOutOnlineCount;
-
-                              return Column(
-                                children: [
-                                  DateFilterWidget(
-                                    selectedOption: _selectedFilter,
-                                    startDate: _startDate,
-                                    endDate: _endDate,
-                                    onDateChanged: _onDateChanged,
-                                  ),
-                                  Expanded(
-                                    child: CustomScrollView(
-                                      physics: const BouncingScrollPhysics(),
-                                      slivers: [
-                                        SliverToBoxAdapter(
-                                          child: _buildNetPositionStrip(
-                                            totalNet,
-                                            totalIn,
-                                            totalOut,
-                                          ),
-                                        ),
-                                        SliverPadding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 12,
-                                            vertical: 12,
-                                          ),
-                                          sliver: SliverList(
-                                            delegate: SliverChildListDelegate([
-                                              _buildSectionHeader(
-                                                "MONEY IN — INCOME",
-                                              ),
-                                              const SizedBox(height: 8),
-                                              _buildFlowAnalyticsCard(
-                                                "Sales Receipts",
-                                                incomeCash + incomeOnline,
-                                                incomeCash,
-                                                incomeOnline,
-                                                kIncomeGreen,
-                                                incomeCashCount +
-                                                    incomeOnlineCount,
-                                              ),
-                                              if (creditCollectedCash +
-                                                      creditCollectedOnline >
-                                                  0) ...[
-                                                const SizedBox(height: 12),
-                                                _buildFlowAnalyticsCard(
-                                                  "Credit Collections",
-                                                  creditCollectedCash +
-                                                      creditCollectedOnline,
-                                                  creditCollectedCash,
-                                                  creditCollectedOnline,
-                                                  kIncomeGreen,
-                                                  creditCollectedCashCount +
-                                                      creditCollectedOnlineCount,
-                                                ),
-                                              ],
-                                              if (incomeCredit > 0) ...[
-                                                const SizedBox(height: 12),
-                                                _buildCreditCard(
-                                                  "Credit Sales (Pending)",
-                                                  incomeCredit,
-                                                  incomeCreditCount,
-                                                  kWarningOrange,
-                                                ),
-                                              ],
-                                              const SizedBox(height: 24),
-                                              _buildSectionHeader(
-                                                "MONEY OUT — EXPENSES",
-                                              ),
-                                              const SizedBox(height: 8),
-                                              _buildFlowAnalyticsCard(
-                                                "Expenses",
-                                                expenseCash + expenseOnline,
-                                                expenseCash,
-                                                expenseOnline,
-                                                kExpenseRed,
-                                                expenseCashCount +
-                                                    expenseOnlineCount,
-                                              ),
-                                              if (purchaseCash +
-                                                      purchaseOnline >
-                                                  0) ...[
-                                                const SizedBox(height: 12),
-                                                _buildFlowAnalyticsCard(
-                                                  "Stock Purchases",
-                                                  purchaseCash + purchaseOnline,
-                                                  purchaseCash,
-                                                  purchaseOnline,
-                                                  kExpenseRed,
-                                                  purchaseCashCount +
-                                                      purchaseOnlineCount,
-                                                ),
-                                              ],
-                                              if (purchaseCreditPaidCash +
-                                                      purchaseCreditPaidOnline >
-                                                  0) ...[
-                                                const SizedBox(height: 12),
-                                                _buildCreditCard(
-                                                  "Purchase Credits Paid",
-                                                  purchaseCreditPaidCash +
-                                                      purchaseCreditPaidOnline,
-                                                  purchaseCreditPaidCashCount +
-                                                      purchaseCreditPaidOnlineCount,
-                                                  kExpenseRed,
-                                                ),
-                                              ],
-                                              if (manualCreditCash +
-                                                      manualCreditOnline >
-                                                  0) ...[
-                                                const SizedBox(height: 12),
-                                                _buildCreditCard(
-                                                  "Manual Credit Given",
-                                                  manualCreditCash +
-                                                      manualCreditOnline,
-                                                  manualCreditCashCount +
-                                                      manualCreditOnlineCount,
-                                                  kWarningOrange,
-                                                ),
-                                              ],
-                                              const SizedBox(height: 24),
-                                              _buildSectionHeader(
-                                                "Settlement Summary",
-                                              ),
-                                              const SizedBox(height: 8),
-                                              _buildLedgerRow(
-                                                "Cash Position",
-                                                totalInCash,
-                                                totalOutCash,
-                                                kIncomeGreen,
-                                              ),
-                                              const SizedBox(height: 4),
-                                              _buildLedgerRow(
-                                                "Online Balance",
-                                                totalInOnline,
-                                                totalOutOnline,
-                                                kPrimaryColor,
-                                              ),
-                                              if (incomeCredit > 0) ...[
-                                                const SizedBox(height: 4),
-                                                _buildLedgerRow(
-                                                  "Credit Outstanding",
-                                                  incomeCredit,
-                                                  0,
-                                                  kWarningOrange,
-                                                ),
-                                              ],
-                                              const SizedBox(height: 40),
-                                            ]),
-                                          ),
-                                        ),
-                                      ],
+                                  if (creditCollectedCash + creditCollectedOnline > 0) ...[
+                                    const SizedBox(height: 12),
+                                    _buildFlowAnalyticsCard(
+                                      "Credit Collections",
+                                      creditCollectedCash + creditCollectedOnline,
+                                      creditCollectedCash,
+                                      creditCollectedOnline,
+                                      kIncomeGreen,
+                                      creditCollectedCashCount + creditCollectedOnlineCount,
                                     ),
+                                  ],
+                                  if (incomeCredit > 0) ...[
+                                    const SizedBox(height: 12),
+                                    _buildCreditCard("Credit Sales (Pending)", incomeCredit, incomeCreditCount, kWarningOrange),
+                                  ],
+                                  const SizedBox(height: 24),
+                                  _buildSectionHeader("MONEY OUT — EXPENSES"),
+                                  const SizedBox(height: 8),
+                                  _buildFlowAnalyticsCard(
+                                    "Expenses",
+                                    expenseCash + expenseOnline,
+                                    expenseCash,
+                                    expenseOnline,
+                                    kExpenseRed,
+                                    expenseCashCount + expenseOnlineCount,
                                   ),
-                                ],
-                              );
+                                  if (purchaseCash + purchaseOnline > 0) ...[
+                                    const SizedBox(height: 12),
+                                    _buildFlowAnalyticsCard(
+                                      "Stock Purchases",
+                                      purchaseCash + purchaseOnline,
+                                      purchaseCash,
+                                      purchaseOnline,
+                                      kExpenseRed,
+                                      purchaseCashCount + purchaseOnlineCount,
+                                    ),
+                                  ],
+                                  if (purchaseCreditPaidCash + purchaseCreditPaidOnline > 0) ...[
+                                    const SizedBox(height: 12),
+                                    _buildCreditCard("Purchase Credits Paid", purchaseCreditPaidCash + purchaseCreditPaidOnline,
+                                        purchaseCreditPaidCashCount + purchaseCreditPaidOnlineCount, kExpenseRed),
+                                  ],
+                                  if (manualCreditCash + manualCreditOnline > 0) ...[
+                                    const SizedBox(height: 12),
+                                    _buildCreditCard("Manual Credit Given", manualCreditCash + manualCreditOnline,
+                                        manualCreditCashCount + manualCreditOnlineCount, kWarningOrange),
+                                  ],
+                                  const SizedBox(height: 24),
+                                  _buildSectionHeader("Settlement Summary"),
+                                  const SizedBox(height: 8),
+                                  _buildLedgerRow("Cash Position", totalInCash, totalOutCash, kIncomeGreen),
+                                  const SizedBox(height: 4),
+                                  _buildLedgerRow("Online Balance", totalInOnline, totalOutOnline, kPrimaryColor),
+                                  if (incomeCredit > 0) ...[
+                                    const SizedBox(height: 4),
+                                    _buildLedgerRow("Credit Outstanding", incomeCredit, 0, kWarningOrange),
+                                  ],
+                                  const SizedBox(height: 40),
+                                ]),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
                             },
                           );
                         },
@@ -18570,9 +12345,7 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -18580,40 +12353,16 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Net Cash Position",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+              const Text("Net Cash Position", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
               const SizedBox(height: 2),
-              Text(
-                " ${net.toStringAsFixed(2)}",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: net >= 0 ? kIncomeGreen : kExpenseRed,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text(" ${net.toStringAsFixed(2)}", style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: net >= 0 ? kIncomeGreen : kExpenseRed, letterSpacing: -1)),
             ],
           ),
           Row(
             children: [
-              _buildSmallTrend(
-                income,
-                kIncomeGreen,
-                Icons.arrow_downward_rounded,
-              ),
+              _buildSmallTrend(income, kIncomeGreen, Icons.arrow_downward_rounded),
               const SizedBox(width: 12),
-              _buildSmallTrend(
-                expense,
-                kExpenseRed,
-                Icons.arrow_upward_rounded,
-              ),
+              _buildSmallTrend(expense, kExpenseRed, Icons.arrow_upward_rounded),
             ],
           ),
         ],
@@ -18630,36 +12379,15 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
           children: [
             Icon(icon, size: 10, color: color),
             const SizedBox(width: 4),
-            Text(
-              " ${val.toStringAsFixed(0)}",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
+            Text(" ${val.toStringAsFixed(0)}", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
           ],
         ),
-        Text(
-          color == kIncomeGreen ? "IN" : "Out",
-          style: const TextStyle(
-            fontSize: 7,
-            fontWeight: FontWeight.bold,
-            color: kTextSecondary,
-          ),
-        ),
+        Text(color == kIncomeGreen ? "IN" : "Out", style: const TextStyle(fontSize: 7, fontWeight: FontWeight.bold, color: kTextSecondary)),
       ],
     );
   }
 
-  Widget _buildFlowAnalyticsCard(
-    String label,
-    double total,
-    double cash,
-    double online,
-    Color themeColor,
-    int count,
-  ) {
+  Widget _buildFlowAnalyticsCard(String label, double total, double cash, double online, Color themeColor, int count) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -18675,41 +12403,15 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: kTextSecondary,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    "${total.toStringAsFixed(2)}",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
+                  Text(label, style: const TextStyle(color: kTextSecondary, fontSize: 10, fontWeight: FontWeight.bold)),
+                  Text("${total.toStringAsFixed(2)}", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900)),
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: themeColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  "$count TXNS",
-                  style: TextStyle(
-                    color: themeColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: themeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text("$count TXNS", style: TextStyle(color: themeColor, fontSize: 10, fontWeight: FontWeight.w900)),
+              )
             ],
           ),
           const SizedBox(height: 20),
@@ -18727,33 +12429,13 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
                           sectionsSpace: 2,
                           centerSpaceRadius: 28,
                           sections: [
-                            PieChartSectionData(
-                              color: kChartGreen,
-                              value: cash,
-                              title: '',
-                              radius: 12,
-                            ),
-                            PieChartSectionData(
-                              color: kChartBlue,
-                              value: online,
-                              title: '',
-                              radius: 12,
-                            ),
-                            if (total == 0)
-                              PieChartSectionData(
-                                color: kBorderColor,
-                                value: 1,
-                                title: '',
-                                radius: 12,
-                              ),
+                            PieChartSectionData(color: kChartGreen, value: cash, title: '', radius: 12),
+                            PieChartSectionData(color: kChartBlue, value: online, title: '', radius: 12),
+                            if (total == 0) PieChartSectionData(color: kBorderColor, value: 1, title: '', radius: 12),
                           ],
                         ),
                       ),
-                      const Icon(
-                        Icons.donut_large_rounded,
-                        size: 16,
-                        color: kTextSecondary,
-                      ),
+                      const Icon(Icons.donut_large_rounded, size: 16, color: kTextSecondary),
                     ],
                   ),
                 ),
@@ -18763,19 +12445,9 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
                 flex: 6,
                 child: Column(
                   children: [
-                    _buildCompactDistributionRow(
-                      "Cash Mode",
-                      cash,
-                      total,
-                      kChartGreen,
-                    ),
+                    _buildCompactDistributionRow("Cash Mode", cash, total, kChartGreen),
                     const SizedBox(height: 8),
-                    _buildCompactDistributionRow(
-                      "Online Mode",
-                      online,
-                      total,
-                      kChartBlue,
-                    ),
+                    _buildCompactDistributionRow("Online Mode", online, total, kChartBlue),
                   ],
                 ),
               ),
@@ -18786,61 +12458,27 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
     );
   }
 
-  Widget _buildCompactDistributionRow(
-    String label,
-    double val,
-    double total,
-    Color color,
-  ) {
+  Widget _buildCompactDistributionRow(String label, double val, double total, Color color) {
     final percent = total > 0 ? (val / total) * 100 : 0.0;
     return Row(
       children: [
-        Container(
-          width: 6,
-          height: 6,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
+        Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: kTextSecondary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                "${val.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
+              Text(label, style: const TextStyle(fontSize: 10, color: kTextSecondary, fontWeight: FontWeight.w600)),
+              Text("${val.toStringAsFixed(0)}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
             ],
           ),
         ),
-        Text(
-          "${percent.toStringAsFixed(0)}%",
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            color: color,
-          ),
-        ),
+        Text("${percent.toStringAsFixed(0)}%", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color)),
       ],
     );
   }
 
-  Widget _buildLedgerRow(
-    String label,
-    double income,
-    double expense,
-    Color themeColor,
-  ) {
+  Widget _buildLedgerRow(String label, double income, double expense, Color themeColor) {
     final net = income - expense;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -18851,56 +12489,30 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 3,
-            height: 24,
-            decoration: BoxDecoration(
-              color: themeColor,
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+          Container(width: 3, height: 24, decoration: BoxDecoration(color: themeColor, borderRadius: BorderRadius.circular(10))),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
                 Text(
                   "IN: ${income.toStringAsFixed(0)} • OUT: ${expense.toStringAsFixed(0)}",
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: kTextSecondary,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
           ),
           Text(
             "${net.toStringAsFixed(0)}",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-              color: net >= 0 ? kIncomeGreen : kExpenseRed,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: net >= 0 ? kIncomeGreen : kExpenseRed),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCreditCard(
-    String label,
-    double amount,
-    int count,
-    Color themeColor,
-  ) {
+  Widget _buildCreditCard(String label, double amount, int count, Color themeColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -18912,10 +12524,7 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: themeColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: themeColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.credit_card_rounded, color: themeColor, size: 18),
           ),
           const SizedBox(width: 14),
@@ -18923,32 +12532,12 @@ class _PaymentReportPageState extends State<PaymentReportPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  "$count transactions",
-                  style: const TextStyle(
-                    fontSize: 9,
-                    color: kTextSecondary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text(label, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                Text("$count transactions", style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
-          Text(
-            "${amount.toStringAsFixed(0)}",
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 14,
-              color: themeColor,
-            ),
-          ),
+          Text("${amount.toStringAsFixed(0)}", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: themeColor)),
         ],
       ),
     );
@@ -19007,20 +12596,13 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
         future: _firestoreService.getCollectionStream('sales'),
         builder: (context, streamSnapshot) {
           if (!streamSnapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: kPrimaryColor,
-                strokeWidth: 2,
-              ),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor, strokeWidth: 2));
           }
           return StreamBuilder<QuerySnapshot>(
             stream: streamSnapshot.data!,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                );
+                return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
               }
 
               // --- Process staff data ---
@@ -19034,45 +12616,27 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
               for (var doc in snapshot.data!.docs) {
                 final data = doc.data() as Map<String, dynamic>;
                 // Resolve an invoice identifier (prefer explicit invoiceNumber, fallback to doc id)
-                final String invoiceId =
-                    (data['invoiceNumber'] ?? data['invoice'] ?? doc.id)
-                        .toString();
+                final String invoiceId = (data['invoiceNumber'] ?? data['invoice'] ?? doc.id).toString();
 
                 // Skip duplicate invoice entries if they appear multiple times in the snapshot
                 if (_processedInvoices.contains(invoiceId)) continue;
                 _processedInvoices.add(invoiceId);
                 DateTime? dt;
-                if (data['timestamp'] != null)
-                  dt = (data['timestamp'] as Timestamp).toDate();
-                else if (data['date'] != null)
-                  dt = DateTime.tryParse(data['date'].toString());
+                if (data['timestamp'] != null) dt = (data['timestamp'] as Timestamp).toDate();
+                else if (data['date'] != null) dt = DateTime.tryParse(data['date'].toString());
 
                 if (_isInDateRange(dt)) {
                   // Skip cancelled or returned bills
-                  final String status = (data['status'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  if (status == 'cancelled' ||
-                      status == 'returned' ||
-                      data['hasBeenReturned'] == true) {
+                  final String status = (data['status'] ?? '').toString().toLowerCase();
+                  if (status == 'cancelled' || status == 'returned' || data['hasBeenReturned'] == true) {
                     continue;
                   }
 
                   String staffName = data['staffName']?.toString() ?? 'owner';
-                  double total =
-                      double.tryParse(data['total']?.toString() ?? '0') ?? 0;
-                  double tax =
-                      double.tryParse(
-                        data['totalTax']?.toString() ??
-                            data['taxAmount']?.toString() ??
-                            '0',
-                      ) ??
-                      0;
-                  double discount =
-                      double.tryParse(data['discount']?.toString() ?? '0') ?? 0;
-                  String paymentMode = (data['paymentMode'] ?? 'Cash')
-                      .toString()
-                      .toLowerCase();
+                  double total = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+                  double tax = double.tryParse(data['totalTax']?.toString() ?? data['taxAmount']?.toString() ?? '0') ?? 0;
+                  double discount = double.tryParse(data['discount']?.toString() ?? '0') ?? 0;
+                  String paymentMode = (data['paymentMode'] ?? 'Cash').toString().toLowerCase();
 
                   final double netTotal = (total - tax) < 0 ? 0 : (total - tax);
                   final double splitRatio = total > 0 ? (netTotal / total) : 0;
@@ -19096,89 +12660,46 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
                     };
                   }
 
-                  staffData[staffName]!['salesCount'] =
-                      (staffData[staffName]!['salesCount'] as int) + 1;
-                  staffData[staffName]!['totalAmount'] =
-                      (staffData[staffName]!['totalAmount'] as double) +
-                      netTotal;
-                  staffData[staffName]!['totalDiscount'] =
-                      (staffData[staffName]!['totalDiscount'] as double) +
-                      discount;
+                  staffData[staffName]!['salesCount'] = (staffData[staffName]!['salesCount'] as int) + 1;
+                  staffData[staffName]!['totalAmount'] = (staffData[staffName]!['totalAmount'] as double) + netTotal;
+                  staffData[staffName]!['totalDiscount'] = (staffData[staffName]!['totalDiscount'] as double) + discount;
 
                   // Handle Split payments separately
                   if (paymentMode == 'split') {
-                    double splitCash =
-                        double.tryParse(
-                          data['cashReceived_split']?.toString() ?? '0',
-                        ) ??
-                        0;
-                    double splitOnline =
-                        double.tryParse(
-                          data['onlineReceived_split']?.toString() ?? '0',
-                        ) ??
-                        0;
-                    double splitCredit =
-                        double.tryParse(
-                          data['creditIssued_split']?.toString() ?? '0',
-                        ) ??
-                        0;
+                    double splitCash = double.tryParse(data['cashReceived_split']?.toString() ?? '0') ?? 0;
+                    double splitOnline = double.tryParse(data['onlineReceived_split']?.toString() ?? '0') ?? 0;
+                    double splitCredit = double.tryParse(data['creditIssued_split']?.toString() ?? '0') ?? 0;
                     if (splitCash > 0) {
-                      staffData[staffName]!['cashCount'] =
-                          (staffData[staffName]!['cashCount'] as int) + 1;
-                      staffData[staffName]!['cashAmount'] =
-                          (staffData[staffName]!['cashAmount'] as double) +
-                          (splitCash * splitRatio);
+                      staffData[staffName]!['cashCount'] = (staffData[staffName]!['cashCount'] as int) + 1;
+                      staffData[staffName]!['cashAmount'] = (staffData[staffName]!['cashAmount'] as double) + (splitCash * splitRatio);
                     }
                     if (splitOnline > 0) {
-                      staffData[staffName]!['onlineCount'] =
-                          (staffData[staffName]!['onlineCount'] as int) + 1;
-                      staffData[staffName]!['onlineAmount'] =
-                          (staffData[staffName]!['onlineAmount'] as double) +
-                          (splitOnline * splitRatio);
+                      staffData[staffName]!['onlineCount'] = (staffData[staffName]!['onlineCount'] as int) + 1;
+                      staffData[staffName]!['onlineAmount'] = (staffData[staffName]!['onlineAmount'] as double) + (splitOnline * splitRatio);
                     }
                     if (splitCredit > 0) {
-                      staffData[staffName]!['creditCount'] =
-                          (staffData[staffName]!['creditCount'] as int) + 1;
-                      staffData[staffName]!['creditAmount'] =
-                          (staffData[staffName]!['creditAmount'] as double) +
-                          (splitCredit * splitRatio);
+                      staffData[staffName]!['creditCount'] = (staffData[staffName]!['creditCount'] as int) + 1;
+                      staffData[staffName]!['creditAmount'] = (staffData[staffName]!['creditAmount'] as double) + (splitCredit * splitRatio);
                     }
-                  } else if (paymentMode.contains('online') ||
-                      paymentMode.contains('upi') ||
-                      paymentMode.contains('card')) {
-                    staffData[staffName]!['onlineCount'] =
-                        (staffData[staffName]!['onlineCount'] as int) + 1;
-                    staffData[staffName]!['onlineAmount'] =
-                        (staffData[staffName]!['onlineAmount'] as double) +
-                        netTotal;
-                  } else if (paymentMode.contains('credit') &&
-                      paymentMode.contains('note')) {
-                    staffData[staffName]!['creditNoteCount'] =
-                        (staffData[staffName]!['creditNoteCount'] as int) + 1;
-                    staffData[staffName]!['creditNoteAmount'] =
-                        (staffData[staffName]!['creditNoteAmount'] as double) +
-                        netTotal;
+                  } else if (paymentMode.contains('online') || paymentMode.contains('upi') || paymentMode.contains('card')) {
+                    staffData[staffName]!['onlineCount'] = (staffData[staffName]!['onlineCount'] as int) + 1;
+                    staffData[staffName]!['onlineAmount'] = (staffData[staffName]!['onlineAmount'] as double) + netTotal;
+                  } else if (paymentMode.contains('credit') && paymentMode.contains('note')) {
+                    staffData[staffName]!['creditNoteCount'] = (staffData[staffName]!['creditNoteCount'] as int) + 1;
+                    staffData[staffName]!['creditNoteAmount'] = (staffData[staffName]!['creditNoteAmount'] as double) + netTotal;
                   } else if (paymentMode.contains('credit')) {
-                    staffData[staffName]!['creditCount'] =
-                        (staffData[staffName]!['creditCount'] as int) + 1;
-                    staffData[staffName]!['creditAmount'] =
-                        (staffData[staffName]!['creditAmount'] as double) +
-                        netTotal;
+                    staffData[staffName]!['creditCount'] = (staffData[staffName]!['creditCount'] as int) + 1;
+                    staffData[staffName]!['creditAmount'] = (staffData[staffName]!['creditAmount'] as double) + netTotal;
                   } else {
-                    staffData[staffName]!['cashCount'] =
-                        (staffData[staffName]!['cashCount'] as int) + 1;
-                    staffData[staffName]!['cashAmount'] =
-                        (staffData[staffName]!['cashAmount'] as double) +
-                        netTotal;
+                    staffData[staffName]!['cashCount'] = (staffData[staffName]!['cashCount'] as int) + 1;
+                    staffData[staffName]!['cashAmount'] = (staffData[staffName]!['cashAmount'] as double) + netTotal;
                   }
                 }
               }
 
               var sortedEntries = staffData.entries.toList();
               sortedEntries.sort((a, b) {
-                int result = (a.value['totalAmount'] as double).compareTo(
-                  b.value['totalAmount'] as double,
-                );
+                int result = (a.value['totalAmount'] as double).compareTo(b.value['totalAmount'] as double);
                 return _isDescending ? -result : result;
               });
 
@@ -19192,32 +12713,20 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
                     onDateChanged: _onDateChanged,
                     showSortButton: true,
                     isDescending: _isDescending,
-                    onSortPressed: () =>
-                        setState(() => _isDescending = !_isDescending),
+                    onSortPressed: () => setState(() => _isDescending = !_isDescending),
                   ),
                   Expanded(
                     child: sortedEntries.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "No staff sales recorded for this period",
-                              style: TextStyle(color: kTextSecondary),
-                            ),
-                          )
+                        ? const Center(child: Text("No staff sales recorded for this period", style: TextStyle(color: kTextSecondary)))
                         : ListView.builder(
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 12,
-                            ),
-                            itemCount: sortedEntries.length,
-                            itemBuilder: (context, index) {
-                              final entry = sortedEntries[index];
-                              return _buildStaffPerformanceCard(
-                                entry.key,
-                                entry.value,
-                              );
-                            },
-                          ),
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      itemCount: sortedEntries.length,
+                      itemBuilder: (context, index) {
+                        final entry = sortedEntries[index];
+                        return _buildStaffPerformanceCard(entry.key, entry.value);
+                      },
+                    ),
                   ),
                 ],
               );
@@ -19233,12 +12742,7 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kTextSecondary,
-        letterSpacing: 1.2,
-      ),
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 1.2),
     );
   }
 
@@ -19248,9 +12752,7 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: kSurfaceColor,
-        border: Border(
-          bottom: BorderSide(color: kBorderColor.withOpacity(0.5)),
-        ),
+        border: Border(bottom: BorderSide(color: kBorderColor.withOpacity(0.5))),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -19258,25 +12760,9 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Total Staff Revenue",
-                style: TextStyle(
-                  color: kTextSecondary,
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1,
-                ),
-              ),
+              const Text("Total Staff Revenue", style: TextStyle(color: kTextSecondary, fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 1)),
               const SizedBox(height: 2),
-              Text(
-                "${total.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: kPrimaryColor,
-                  letterSpacing: -1,
-                ),
-              ),
+              Text("${total.toStringAsFixed(2)}", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: kPrimaryColor, letterSpacing: -1)),
             ],
           ),
           Container(
@@ -19288,22 +12774,8 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
             ),
             child: Column(
               children: [
-                Text(
-                  "$bills",
-                  style: const TextStyle(
-                    color: kPrimaryColor,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
-                  ),
-                ),
-                const Text(
-                  "Bills",
-                  style: TextStyle(
-                    color: kTextSecondary,
-                    fontSize: 7,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text("$bills", style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 16)),
+                const Text("Bills", style: TextStyle(color: kTextSecondary, fontSize: 7, fontWeight: FontWeight.bold)),
               ],
             ),
           ),
@@ -19333,35 +12805,14 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
                   CircleAvatar(
                     radius: 16,
                     backgroundColor: kPrimaryColor.withOpacity(0.1),
-                    child: Text(
-                      name[0],
-                      style: const TextStyle(
-                        color: kPrimaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
+                    child: Text(name[0], style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      Text(
-                        "${data['salesCount']} TRANSACTIONS",
-                        style: const TextStyle(
-                          fontSize: 9,
-                          color: kTextSecondary,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(name, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.black87)),
+                      Text("${data['salesCount']} TRANSACTIONS", style: const TextStyle(fontSize: 9, color: kTextSecondary, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ],
@@ -19369,24 +12820,8 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    "${(data['totalAmount'] as double).toStringAsFixed(0)}",
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
-                      color: kPrimaryColor,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const Text(
-                    "Total Contribution",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: kTextSecondary,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
+                  Text("${(data['totalAmount'] as double).toStringAsFixed(0)}", style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kPrimaryColor, letterSpacing: -0.5)),
+                  const Text("Total Contribution", style: TextStyle(fontSize: 7, fontWeight: FontWeight.w900, color: kTextSecondary, letterSpacing: 0.5)),
                 ],
               ),
             ],
@@ -19396,41 +12831,17 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(
-                child: _buildMiniStatTile(
-                  "CASH",
-                  data['cashAmount'],
-                  kIncomeGreen,
-                ),
-              ),
+              Expanded(child: _buildMiniStatTile("CASH", data['cashAmount'], kIncomeGreen)),
               const SizedBox(width: 8),
-              Expanded(
-                child: _buildMiniStatTile(
-                  "ONLINE",
-                  data['onlineAmount'],
-                  kPrimaryColor,
-                ),
-              ),
+              Expanded(child: _buildMiniStatTile("ONLINE", data['onlineAmount'], kPrimaryColor)),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: [
-              Expanded(
-                child: _buildMiniStatTile(
-                  "CREDIT",
-                  data['creditAmount'],
-                  kWarningOrange,
-                ),
-              ),
+              Expanded(child: _buildMiniStatTile("CREDIT", data['creditAmount'], kWarningOrange)),
               const SizedBox(width: 8),
-              Expanded(
-                child: _buildMiniStatTile(
-                  "DISCOUNT",
-                  data['totalDiscount'],
-                  kExpenseRed,
-                ),
-              ),
+              Expanded(child: _buildMiniStatTile("DISCOUNT", data['totalDiscount'], kExpenseRed)),
             ],
           ),
         ],
@@ -19449,22 +12860,8 @@ class _StaffSaleReportPageState extends State<StaffSaleReportPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.w900,
-              color: kTextSecondary,
-            ),
-          ),
-          Text(
-            "${val.toStringAsFixed(0)}",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              color: color.withOpacity(0.8),
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w900, color: kTextSecondary)),
+          Text("${val.toStringAsFixed(0)}", style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: color.withOpacity(0.8))),
         ],
       ),
     );

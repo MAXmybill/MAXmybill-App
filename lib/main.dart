@@ -63,8 +63,11 @@ void main() async {
   // Initialize AuthCacheService for persistent login cache
   await AuthCacheService.instance.initialize();
 
-  // Initialize FCM notifications and deep-link handling
-  await NotificationService().initialize();
+  // Initialize FCM notifications and deep-link handling (non-blocking - runs in background)
+  // This prevents app from blocking on startup if offline
+  NotificationService().initialize().catchError((e) {
+    debugPrint('⚠️ FCM initialization failed but app continues: $e');
+  });
 
   // Initialize SaleSyncService for offline sales syncing
   final saleSyncService = SaleSyncService();

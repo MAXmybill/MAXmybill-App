@@ -33,10 +33,10 @@ import 'package:heroicons/heroicons.dart';
 
 // Invoice Template Types
 enum InvoiceTemplate {
-  classic, // Black & White Professional
-  modern, // Blue Accent Modern
-  minimal, // Clean Minimal
-  colorful, // Colorful Creative
+  classic,    // Black & White Professional
+  modern,     // Blue Accent Modern
+  minimal,    // Clean Minimal
+  colorful,   // Colorful Creative
 }
 
 // Template Colors - Classic (Black & White)
@@ -131,8 +131,7 @@ class InvoicePage extends StatefulWidget {
   State<InvoicePage> createState() => _InvoicePageState();
 }
 
-class _InvoicePageState extends State<InvoicePage>
-    with TickerProviderStateMixin {
+class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin {
   bool _isLoading = true;
   String? _storeId;
 
@@ -149,8 +148,7 @@ class _InvoicePageState extends State<InvoicePage>
   String? businessEmail;
   String? businessLogoUrl;
   String? businessLicenseNumber;
-  String?
-  businessLicenseTypeName; // License type name like "FSSAI", "Drug License", etc.
+  String? businessLicenseTypeName; // License type name like "FSSAI", "Drug License", etc.
   String _currencySymbol = ''; // Will be loaded from store data
 
   // Header Info Settings (shared for display)
@@ -192,8 +190,7 @@ class _InvoicePageState extends State<InvoicePage>
   bool _thermalShowDelivery = false;
   bool _thermalShowLicense = true;
   String _thermalSaleInvoiceText = 'Thank you for your purchase!';
-  bool _thermalShowTaxColumn =
-      false; // Tax column hidden by default for thermal
+  bool _thermalShowTaxColumn = false; // Tax column hidden by default for thermal
 
   // ==========================================
   // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -211,8 +208,7 @@ class _InvoicePageState extends State<InvoicePage>
   String _a4SaleInvoiceText = 'Thank you for your purchase!';
   bool _a4ShowTaxColumn = true; // Tax column shown by default for A4
   bool _a4ShowSignature = false;
-  String _a4ColorTheme =
-      'blue'; // Color theme for A4: blue, black, green, purple, red
+  String _a4ColorTheme = 'blue'; // Color theme for A4: blue, black, green, purple, red
 
   // Preview mode TabController
   late TabController _previewTabController;
@@ -231,8 +227,7 @@ class _InvoicePageState extends State<InvoicePage>
   bool _ratingDialogShown = false;
 
   // Plan gate - watermark shown for free users
-  bool _isPaidPlan =
-      true; // default true to avoid flash of watermark on paid users
+  bool _isPaidPlan = true; // default true to avoid flash of watermark on paid users
 
   @override
   void initState() {
@@ -272,9 +267,7 @@ class _InvoicePageState extends State<InvoicePage>
       }
     });
 
-    _storeDataSubscription = FirestoreService().storeDataStream.listen((
-      storeData,
-    ) {
+    _storeDataSubscription = FirestoreService().storeDataStream.listen((storeData) {
       if (mounted) {
         setState(() {
           businessLogoUrl = storeData['logoUrl'];
@@ -312,9 +305,7 @@ class _InvoicePageState extends State<InvoicePage>
             }
           }
         });
-        debugPrint(
-          'Invoice: Store data updated via stream - logo=$businessLogoUrl, email=$businessEmail, taxType=$businessTaxTypeName $businessGSTIN',
-        );
+        debugPrint('Invoice: Store data updated via stream - logo=$businessLogoUrl, email=$businessEmail, taxType=$businessTaxTypeName $businessGSTIN');
       }
     });
   }
@@ -343,12 +334,8 @@ class _InvoicePageState extends State<InvoicePage>
       // Add a delay to ensure purchaseCount has been updated
       await Future.delayed(const Duration(milliseconds: 1000));
 
-      final customersCollection = await FirestoreService().getStoreCollection(
-        'customers',
-      );
-      final customerDoc = await customersCollection
-          .doc(widget.customerPhone)
-          .get();
+      final customersCollection = await FirestoreService().getStoreCollection('customers');
+      final customerDoc = await customersCollection.doc(widget.customerPhone).get();
 
       debugPrint('📊 Checking rating for customer: ${widget.customerPhone}');
 
@@ -371,14 +358,10 @@ class _InvoicePageState extends State<InvoicePage>
             _showRatingDialog();
           }
         } else {
-          debugPrint(
-            '❌ Rating dialog: purchaseCount=$purchaseCount, hasRating=$hasRating',
-          );
+          debugPrint('❌ Rating dialog: purchaseCount=$purchaseCount, hasRating=$hasRating');
         }
       } else {
-        debugPrint(
-          '❌ Rating dialog: Customer document does not exist - might be new customer',
-        );
+        debugPrint('❌ Rating dialog: Customer document does not exist - might be new customer');
         // For brand new customers that don't have a document yet, show rating dialog
         debugPrint('✅ Showing rating dialog for brand new customer');
         await Future.delayed(const Duration(milliseconds: 2500));
@@ -402,9 +385,7 @@ class _InvoicePageState extends State<InvoicePage>
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             backgroundColor: Colors.white,
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -475,9 +456,7 @@ class _InvoicePageState extends State<InvoicePage>
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: HeroIcon(
                           HeroIcons.star,
-                          style: index < selectedRating
-                              ? HeroIconStyle.solid
-                              : HeroIconStyle.outline,
+                          style: index < selectedRating ? HeroIconStyle.solid : HeroIconStyle.outline,
                           size: 40,
                           color: index < selectedRating ? kOrange : kGrey300,
                         ),
@@ -539,9 +518,9 @@ class _InvoicePageState extends State<InvoicePage>
                       child: ElevatedButton(
                         onPressed: selectedRating > 0
                             ? () {
-                                _submitCustomerRating(selectedRating);
-                                Navigator.pop(context);
-                              }
+                          _submitCustomerRating(selectedRating);
+                          Navigator.pop(context);
+                        }
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
@@ -577,9 +556,7 @@ class _InvoicePageState extends State<InvoicePage>
     if (widget.customerPhone == null || widget.customerPhone!.isEmpty) return;
 
     try {
-      final customersCollection = await FirestoreService().getStoreCollection(
-        'customers',
-      );
+      final customersCollection = await FirestoreService().getStoreCollection('customers');
       await customersCollection.doc(widget.customerPhone).set({
         'rating': rating,
         'ratedAt': FieldValue.serverTimestamp(),
@@ -590,12 +567,7 @@ class _InvoicePageState extends State<InvoicePage>
           SnackBar(
             content: Row(
               children: [
-                const HeroIcon(
-                  HeroIcons.star,
-                  style: HeroIconStyle.solid,
-                  color: kOrange,
-                  size: 20,
-                ),
+                const HeroIcon(HeroIcons.star, style: HeroIconStyle.solid, color: kOrange, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   'Customer rated $rating star${rating > 1 ? 's' : ''}',
@@ -605,9 +577,7 @@ class _InvoicePageState extends State<InvoicePage>
             ),
             backgroundColor: kGoogleGreen,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       }
@@ -619,23 +589,14 @@ class _InvoicePageState extends State<InvoicePage>
   void _generateConfetti() {
     final random = Random();
     for (int i = 0; i < 50; i++) {
-      _confettiParticles.add(
-        _Confetti(
-          x: random.nextDouble(),
-          y: random.nextDouble() * -1, // Start above screen
-          color: [
-            kPrimaryColor,
-            kOrange,
-            kGoogleGreen,
-            Colors.purple,
-            Colors.pink,
-            Colors.amber,
-          ][random.nextInt(6)],
-          size: random.nextDouble() * 8 + 4,
-          speed: random.nextDouble() * 0.5 + 0.3,
-          rotation: random.nextDouble() * 360,
-        ),
-      );
+      _confettiParticles.add(_Confetti(
+        x: random.nextDouble(),
+        y: random.nextDouble() * -1, // Start above screen
+        color: [kPrimaryColor, kOrange, kGoogleGreen, Colors.purple, Colors.pink, Colors.amber][random.nextInt(6)],
+        size: random.nextDouble() * 8 + 4,
+        speed: random.nextDouble() * 0.5 + 0.3,
+        rotation: random.nextDouble() * 360,
+      ));
     }
   }
 
@@ -693,9 +654,7 @@ class _InvoicePageState extends State<InvoicePage>
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         // Header Info (general)
-        _receiptHeader = widget.isPaymentReceipt
-            ? 'Payment Receipt'
-            : (prefs.getString('receipt_header') ?? 'Invoice');
+        _receiptHeader = widget.isPaymentReceipt ? 'Payment Receipt' : (prefs.getString('receipt_header') ?? 'Invoice');
         _showLogo = prefs.getBool('receipt_show_logo') ?? true;
         _showEmail = prefs.getBool('receipt_show_email') ?? true;
         _showPhone = prefs.getBool('receipt_show_phone') ?? true;
@@ -704,50 +663,36 @@ class _InvoicePageState extends State<InvoicePage>
         _showLocation = prefs.getBool('receipt_show_location') ?? true;
 
         // Item Table (general)
-        _showCustomerDetails =
-            prefs.getBool('receipt_show_customer_details') ?? true;
-        _showMeasuringUnit =
-            prefs.getBool('receipt_show_measuring_unit') ?? true;
+        _showCustomerDetails = prefs.getBool('receipt_show_customer_details') ?? true;
+        _showMeasuringUnit = prefs.getBool('receipt_show_measuring_unit') ?? true;
         _showMRP = prefs.getBool('receipt_show_mrp') ?? false;
         _showPaymentMode = prefs.getBool('receipt_show_payment_mode') ?? true;
         _showTotalItems = prefs.getBool('receipt_show_total_items') ?? true;
         _showTotalQty = prefs.getBool('receipt_show_total_qty') ?? false;
-        _showSaveAmountMessage =
-            prefs.getBool('receipt_show_save_amount') ?? true;
+        _showSaveAmountMessage = prefs.getBool('receipt_show_save_amount') ?? true;
 
         // Invoice Footer (general)
-        _footerDescription =
-            prefs.getString('receipt_footer_description') ??
-            'Thank you for your business!';
+        _footerDescription = prefs.getString('receipt_footer_description') ?? 'Thank you for your business!';
         _footerImageUrl = prefs.getString('receipt_footer_image');
 
         // Quotation Footer
-        _quotationFooterDescription =
-            prefs.getString('quotation_footer_description') ?? 'Thank You';
+        _quotationFooterDescription = prefs.getString('quotation_footer_description') ?? 'Thank You';
 
         // ==========================================
         // THERMAL PRINTER SPECIFIC SETTINGS
         // ==========================================
         _thermalShowHeader = prefs.getBool('thermal_show_header') ?? true;
         _thermalShowLogo = prefs.getBool('thermal_show_logo') ?? true;
-        _thermalShowCustomerInfo =
-            prefs.getBool('thermal_show_customer_info') ?? true;
-        _thermalShowItemTable =
-            prefs.getBool('thermal_show_item_table') ?? true;
-        _thermalShowTotalItemQuantity =
-            prefs.getBool('thermal_show_total_item_quantity') ?? true;
-        _thermalShowTaxDetails =
-            prefs.getBool('thermal_show_tax_details') ?? true;
+        _thermalShowCustomerInfo = prefs.getBool('thermal_show_customer_info') ?? true;
+        _thermalShowItemTable = prefs.getBool('thermal_show_item_table') ?? true;
+        _thermalShowTotalItemQuantity = prefs.getBool('thermal_show_total_item_quantity') ?? true;
+        _thermalShowTaxDetails = prefs.getBool('thermal_show_tax_details') ?? true;
         _thermalShowYouSaved = prefs.getBool('thermal_show_you_saved') ?? true;
-        _thermalShowDescription =
-            prefs.getBool('thermal_show_description') ?? false;
+        _thermalShowDescription = prefs.getBool('thermal_show_description') ?? false;
         _thermalShowDelivery = prefs.getBool('thermal_show_delivery') ?? false;
         _thermalShowLicense = prefs.getBool('thermal_show_license') ?? true;
-        _thermalSaleInvoiceText =
-            prefs.getString('thermal_sale_invoice_text') ??
-            'Thank you for your purchase!';
-        _thermalShowTaxColumn =
-            prefs.getBool('thermal_show_tax_column') ?? false;
+        _thermalSaleInvoiceText = prefs.getString('thermal_sale_invoice_text') ?? 'Thank you for your purchase!';
+        _thermalShowTaxColumn = prefs.getBool('thermal_show_tax_column') ?? false;
 
         // ==========================================
         // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -756,16 +701,13 @@ class _InvoicePageState extends State<InvoicePage>
         _a4ShowLogo = prefs.getBool('a4_show_logo') ?? true;
         _a4ShowCustomerInfo = prefs.getBool('a4_show_customer_info') ?? true;
         _a4ShowItemTable = prefs.getBool('a4_show_item_table') ?? true;
-        _a4ShowTotalItemQuantity =
-            prefs.getBool('a4_show_total_item_quantity') ?? true;
+        _a4ShowTotalItemQuantity = prefs.getBool('a4_show_total_item_quantity') ?? true;
         _a4ShowTaxDetails = prefs.getBool('a4_show_tax_details') ?? true;
         _a4ShowYouSaved = prefs.getBool('a4_show_you_saved') ?? true;
         _a4ShowDescription = prefs.getBool('a4_show_description') ?? false;
         _a4ShowDelivery = prefs.getBool('a4_show_delivery') ?? false;
         _a4ShowLicense = prefs.getBool('a4_show_license') ?? true;
-        _a4SaleInvoiceText =
-            prefs.getString('a4_sale_invoice_text') ??
-            'Thank you for your purchase!';
+        _a4SaleInvoiceText = prefs.getString('a4_sale_invoice_text') ?? 'Thank you for your purchase!';
         _a4ShowTaxColumn = prefs.getBool('a4_show_tax_column') ?? true;
         _a4ShowSignature = prefs.getBool('a4_show_signature') ?? false;
         _a4ColorTheme = prefs.getString('a4_color_theme') ?? 'blue';
@@ -785,8 +727,7 @@ class _InvoicePageState extends State<InvoicePage>
         setState(() {
           businessName = data['businessName'] ?? widget.businessName;
           businessPhone = data['businessPhone'] ?? widget.businessPhone;
-          businessLocation =
-              data['businessLocation'] ?? widget.businessLocation;
+          businessLocation = data['businessLocation'] ?? widget.businessLocation;
 
           // Parse taxType - stored as "Type Number" format (e.g., "GSTIN 27AAFCV2449G1Z7")
           final taxType = data['taxType'] ?? data['gstin'] ?? '';
@@ -794,9 +735,7 @@ class _InvoicePageState extends State<InvoicePage>
             final taxParts = taxType.toString().split(' ');
             if (taxParts.length > 1) {
               businessTaxTypeName = taxParts[0]; // e.g., "GSTIN"
-              businessGSTIN = taxParts
-                  .sublist(1)
-                  .join(' '); // e.g., "27AAFCV2449G1Z7"
+              businessGSTIN = taxParts.sublist(1).join(' '); // e.g., "27AAFCV2449G1Z7"
             } else {
               businessTaxTypeName = 'GSTIN'; // Default name
               businessGSTIN = taxType;
@@ -816,9 +755,7 @@ class _InvoicePageState extends State<InvoicePage>
             final licenseParts = licenseNumber.toString().trim().split(' ');
             if (licenseParts.length > 1) {
               businessLicenseTypeName = licenseParts[0]; // e.g., "FSSAI"
-              businessLicenseNumber = licenseParts
-                  .sublist(1)
-                  .join(' '); // e.g., "123456789"
+              businessLicenseNumber = licenseParts.sublist(1).join(' '); // e.g., "123456789"
             } else {
               // Only one token — treat it as the number, use 'License' as label
               businessLicenseTypeName = 'License';
@@ -831,21 +768,17 @@ class _InvoicePageState extends State<InvoicePage>
           _currencySymbol = CurrencyService.getSymbolWithSpace(currencyCode);
           _isLoading = false;
         });
-        debugPrint(
-          'Invoice: Store data loaded - name=$businessName, logo=$businessLogoUrl, email=$businessEmail, gstin=$businessGSTIN, license=$businessLicenseNumber, location=$businessLocation, currency=$_currencySymbol',
-        );
+        debugPrint('Invoice: Store data loaded - name=$businessName, logo=$businessLogoUrl, email=$businessEmail, gstin=$businessGSTIN, license=$businessLicenseNumber, location=$businessLocation, currency=$_currencySymbol');
         return;
       }
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() { _isLoading = false; });
     } catch (e) {
       debugPrint('Error loading store data: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() { _isLoading = false; });
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -861,9 +794,7 @@ class _InvoicePageState extends State<InvoicePage>
         elevation: 0,
         centerTitle: true,
         title: Text(
-          widget.isPaymentReceipt
-              ? 'Payment Receipt'
-              : (widget.isQuotation ? 'Quotation Details' : 'Invoice Details'),
+          widget.isPaymentReceipt ? 'Payment Receipt' : (widget.isQuotation ? 'Quotation Details' : 'Invoice Details'),
           style: const TextStyle(
             color: kWhite,
             fontWeight: FontWeight.w700,
@@ -875,11 +806,8 @@ class _InvoicePageState extends State<InvoicePage>
           icon: const HeroIcon(HeroIcons.xMark, color: kWhite, size: 18),
           onPressed: () => Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(
-              builder: (context) =>
-                  NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
-            ),
-            (route) => false,
+            CupertinoPageRoute(builder: (context) => NewSalePage(uid: widget.uid, userEmail: widget.userEmail)),
+                (route) => false,
           ),
         ),
         actions: [
@@ -888,10 +816,7 @@ class _InvoicePageState extends State<InvoicePage>
             tooltip: 'Printer Setup',
             onPressed: () => Navigator.push(
               context,
-              CupertinoPageRoute(
-                builder: (_) =>
-                    PrinterSetupPage(onBack: () => Navigator.pop(context)),
-              ),
+              CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
             ),
           ),
           IconButton(
@@ -925,32 +850,10 @@ class _InvoicePageState extends State<InvoicePage>
                 dividerColor: Colors.transparent,
                 labelColor: kWhite,
                 unselectedLabelColor: kBlack54,
-                labelStyle: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
-                  letterSpacing: 0.5,
-                ),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
                 tabs: const [
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.print_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('Thermal'),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.picture_as_pdf_rounded, size: 16),
-                        SizedBox(width: 8),
-                        Text('A4 / PDF'),
-                      ],
-                    ),
-                  ),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.print_rounded, size: 16), SizedBox(width: 8), Text('Thermal')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.picture_as_pdf_rounded, size: 16), SizedBox(width: 8), Text('A4 / PDF')])),
                 ],
               ),
             ),
@@ -960,24 +863,22 @@ class _InvoicePageState extends State<InvoicePage>
       body: Stack(
         children: [
           _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: kPrimaryColor),
-                )
+              ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
               : TabBarView(
-                  controller: _previewTabController,
-                  children: [
-                    // Thermal Preview Tab
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                      child: _buildThermalPreview(),
-                    ),
-                    // A4/PDF Preview Tab
-                    SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                      child: _buildA4Preview(templateColors),
-                    ),
-                  ],
-                ),
+            controller: _previewTabController,
+            children: [
+              // Thermal Preview Tab
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                child: _buildThermalPreview(),
+              ),
+              // A4/PDF Preview Tab
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                child: _buildA4Preview(templateColors),
+              ),
+            ],
+          ),
           // Celebration confetti overlay
           if (_showCelebration)
             AnimatedBuilder(
@@ -1000,16 +901,11 @@ class _InvoicePageState extends State<InvoicePage>
               animation: _celebrationController,
               builder: (context, child) {
                 // Scale animation: grow from 0 to 1 in first 30% of animation
-                final scaleProgress = (_celebrationController.value / 0.3)
-                    .clamp(0.0, 1.0);
+                final scaleProgress = (_celebrationController.value / 0.3).clamp(0.0, 1.0);
                 final scale = Curves.elasticOut.transform(scaleProgress);
 
                 // Fade out in last 20% of animation
-                final fadeProgress =
-                    ((_celebrationController.value - 0.8) / 0.2).clamp(
-                      0.0,
-                      1.0,
-                    );
+                final fadeProgress = ((_celebrationController.value - 0.8) / 0.2).clamp(0.0, 1.0);
                 final opacity = 1.0 - fadeProgress;
 
                 return IgnorePointer(
@@ -1044,6 +940,7 @@ class _InvoicePageState extends State<InvoicePage>
                 );
               },
             ),
+
         ],
       ),
       bottomNavigationBar: _buildBottomActionBar(),
@@ -1104,6 +1001,7 @@ class _InvoicePageState extends State<InvoicePage>
     });
   }
 
+
   Widget _buildExpandableSection({
     required String title,
     required bool isExpanded,
@@ -1117,11 +1015,7 @@ class _InvoicePageState extends State<InvoicePage>
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kGrey200),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -1134,18 +1028,9 @@ class _InvoicePageState extends State<InvoicePage>
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      color: kBlack87,
-                    ),
-                  ),
+                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: kBlack87)),
                   Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up_rounded
-                        : Icons.keyboard_arrow_down_rounded,
+                    isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
                     color: _getTemplateColors(_selectedTemplate)['primary'],
                   ),
                 ],
@@ -1167,11 +1052,7 @@ class _InvoicePageState extends State<InvoicePage>
     );
   }
 
-  Widget _buildTextFieldInModal(
-    TextEditingController controller,
-    String label,
-    Function(String) onChanged,
-  ) {
+  Widget _buildTextFieldInModal(TextEditingController controller, String label, Function(String) onChanged) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -1184,49 +1065,29 @@ class _InvoicePageState extends State<InvoicePage>
             labelText: label,
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
             ),
-            labelStyle: TextStyle(
-              color: hasText ? kPrimaryColor : kBlack54,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-            floatingLabelStyle: TextStyle(
-              color: hasText ? kPrimaryColor : kPrimaryColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
           ),
+
         );
       },
     );
   }
 
-  Widget _buildMultilineTextFieldInModal(
-    TextEditingController controller,
-    String hint,
-    Function(String) onChanged,
-  ) {
+  Widget _buildMultilineTextFieldInModal(TextEditingController controller, String hint, Function(String) onChanged) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -1238,89 +1099,39 @@ class _InvoicePageState extends State<InvoicePage>
           style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(
-              color: kGrey400,
-              fontWeight: FontWeight.w400,
-            ),
+            hintStyle: const TextStyle(color: kGrey400, fontWeight: FontWeight.w400),
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
             ),
-            labelStyle: TextStyle(
-              color: hasText ? kPrimaryColor : kBlack54,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-            floatingLabelStyle: TextStyle(
-              color: hasText ? kPrimaryColor : kPrimaryColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
           ),
+
         );
       },
     );
   }
 
-  Widget _buildSectionLabel(String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 12, left: 4),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.0,
-      ),
-    ),
-  );
+  Widget _buildSectionLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 12, left: 4), child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)));
 
   List<Widget> _buildTemplateOptions(StateSetter setModalState) {
     final templates = [
-      {
-        'index': 0,
-        'title': 'Classic Professional',
-        'icon': Icons.article_rounded,
-        'color': Colors.black,
-      },
-      {
-        'index': 1,
-        'title': 'Modern Business',
-        'icon': Icons.receipt_long_rounded,
-        'color': const Color(0xFF2F7CF6),
-      },
-      {
-        'index': 2,
-        'title': 'Compact Receipt',
-        'icon': Icons.description_rounded,
-        'color': const Color(0xFF37474F),
-      },
-      {
-        'index': 3,
-        'title': 'Detailed Creative',
-        'icon': Icons.summarize_rounded,
-        'color': const Color(0xFF6A1B9A),
-      },
+      {'index': 0, 'title': 'Classic Professional', 'icon': Icons.article_rounded, 'color': Colors.black},
+      {'index': 1, 'title': 'Modern Business', 'icon': Icons.receipt_long_rounded, 'color': const Color(0xFF2F7CF6)},
+      {'index': 2, 'title': 'Compact Receipt', 'icon': Icons.description_rounded, 'color': const Color(0xFF37474F)},
+      {'index': 3, 'title': 'Detailed Creative', 'icon': Icons.summarize_rounded, 'color': const Color(0xFF6A1B9A)},
     ];
 
     return templates.map((template) {
@@ -1329,14 +1140,8 @@ class _InvoicePageState extends State<InvoicePage>
         padding: const EdgeInsets.only(bottom: 10),
         child: InkWell(
           onTap: () {
-            setState(
-              () => _selectedTemplate =
-                  InvoiceTemplate.values[template['index'] as int],
-            );
-            setModalState(
-              () => _selectedTemplate =
-                  InvoiceTemplate.values[template['index'] as int],
-            );
+            setState(() => _selectedTemplate = InvoiceTemplate.values[template['index'] as int]);
+            setModalState(() => _selectedTemplate = InvoiceTemplate.values[template['index'] as int]);
           },
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -1350,30 +1155,19 @@ class _InvoicePageState extends State<InvoicePage>
             ),
             child: Row(
               children: [
-                Icon(
-                  template['icon'] as IconData,
-                  color: isSelected ? template['color'] as Color : kBlack54,
-                  size: 24,
-                ),
+                Icon(template['icon'] as IconData, color: isSelected ? template['color'] as Color : kBlack54, size: 24),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     template['title'] as String,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected
-                          ? FontWeight.w800
-                          : FontWeight.w600,
+                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                       color: isSelected ? template['color'] as Color : kBlack87,
                     ),
                   ),
                 ),
-                if (isSelected)
-                  Icon(
-                    Icons.check_circle_rounded,
-                    color: template['color'] as Color,
-                    size: 20,
-                  ),
+                if (isSelected) Icon(Icons.check_circle_rounded, color: template['color'] as Color, size: 20),
               ],
             ),
           ),
@@ -1393,14 +1187,7 @@ class _InvoicePageState extends State<InvoicePage>
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: kBlack87,
-          ),
-        ),
+        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87)),
         trailing: AppMiniSwitch(value: value, onChanged: onChanged),
       ),
     );
@@ -1423,10 +1210,7 @@ class _InvoicePageState extends State<InvoicePage>
       await prefs.setBool('receipt_show_location', _showLocation);
 
       // Item Table Settings
-      await prefs.setBool(
-        'receipt_show_customer_details',
-        _showCustomerDetails,
-      );
+      await prefs.setBool('receipt_show_customer_details', _showCustomerDetails);
       await prefs.setBool('receipt_show_measuring_unit', _showMeasuringUnit);
       await prefs.setBool('receipt_show_mrp', _showMRP);
       await prefs.setBool('receipt_show_payment_mode', _showPaymentMode);
@@ -1436,10 +1220,7 @@ class _InvoicePageState extends State<InvoicePage>
 
       // Footer Settings
       await prefs.setString('receipt_footer_description', _footerDescription);
-      await prefs.setString(
-        'quotation_footer_description',
-        _quotationFooterDescription,
-      );
+      await prefs.setString('quotation_footer_description', _quotationFooterDescription);
       if (_footerImageUrl != null) {
         await prefs.setString('receipt_footer_image', _footerImageUrl!);
       }
@@ -1448,31 +1229,28 @@ class _InvoicePageState extends State<InvoicePage>
       try {
         final storeId = await FirestoreService().getCurrentStoreId();
         if (storeId != null) {
-          await FirebaseFirestore.instance
-              .collection('store')
-              .doc(storeId)
-              .update({
-                'invoiceSettings': {
-                  'template': _selectedTemplate.index,
-                  'header': _receiptHeader,
-                  'showLogo': _showLogo,
-                  'showEmail': _showEmail,
-                  'showPhone': _showPhone,
-                  'showGST': _showGST,
-                  'showLicense': _showLicenseNumber,
-                  'showLocation': _showLocation,
-                  'showCustomerDetails': _showCustomerDetails,
-                  'showMeasuringUnit': _showMeasuringUnit,
-                  'showMRP': _showMRP,
-                  'showPaymentMode': _showPaymentMode,
-                  'showTotalItems': _showTotalItems,
-                  'showTotalQty': _showTotalQty,
-                  'showSaveAmount': _showSaveAmountMessage,
-                  'footerDescription': _footerDescription,
-                  'footerImageUrl': _footerImageUrl,
-                  'quotationFooter': _quotationFooterDescription,
-                },
-              });
+          await FirebaseFirestore.instance.collection('store').doc(storeId).update({
+            'invoiceSettings': {
+              'template': _selectedTemplate.index,
+              'header': _receiptHeader,
+              'showLogo': _showLogo,
+              'showEmail': _showEmail,
+              'showPhone': _showPhone,
+              'showGST': _showGST,
+              'showLicense': _showLicenseNumber,
+              'showLocation': _showLocation,
+              'showCustomerDetails': _showCustomerDetails,
+              'showMeasuringUnit': _showMeasuringUnit,
+              'showMRP': _showMRP,
+              'showPaymentMode': _showPaymentMode,
+              'showTotalItems': _showTotalItems,
+              'showTotalQty': _showTotalQty,
+              'showSaveAmount': _showSaveAmountMessage,
+              'footerDescription': _footerDescription,
+              'footerImageUrl': _footerImageUrl,
+              'quotationFooter': _quotationFooterDescription,
+            }
+          });
         }
       } catch (e) {
         debugPrint('Error saving to Firestore: $e');
@@ -1480,11 +1258,7 @@ class _InvoicePageState extends State<InvoicePage>
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Receipt settings updated'),
-            backgroundColor: kGoogleGreen,
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('Receipt settings updated'), backgroundColor: kGoogleGreen, behavior: SnackBarBehavior.floating),
         );
       }
     } catch (e) {
@@ -1492,10 +1266,7 @@ class _InvoicePageState extends State<InvoicePage>
     }
   }
 
-  Widget _buildInvoiceByTemplate(
-    InvoiceTemplate template,
-    Map<String, Color> colors,
-  ) {
+  Widget _buildInvoiceByTemplate(InvoiceTemplate template, Map<String, Color> colors) {
     switch (template) {
       case InvoiceTemplate.classic:
         return _buildClassicLayout(colors);
@@ -1514,107 +1285,39 @@ class _InvoicePageState extends State<InvoicePage>
   Map<String, Color> _getA4ThemeColors() {
     switch (_a4ColorTheme) {
       case 'gold':
-        return {
-          'primary': const Color(0xFFC9A441),
-          'accent': const Color(0xFFD4B856),
-          'light': const Color(0xFFFDF8E8),
-        };
+        return {'primary': const Color(0xFFC9A441), 'accent': const Color(0xFFD4B856), 'light': const Color(0xFFFDF8E8)};
       case 'lavender':
-        return {
-          'primary': const Color(0xFF9A96D8),
-          'accent': const Color(0xFFB0ACE5),
-          'light': const Color(0xFFF3F2FC),
-        };
+        return {'primary': const Color(0xFF9A96D8), 'accent': const Color(0xFFB0ACE5), 'light': const Color(0xFFF3F2FC)};
       case 'green':
-        return {
-          'primary': const Color(0xFF1CB466),
-          'accent': const Color(0xFF2ECC7A),
-          'light': const Color(0xFFE6F9EF),
-        };
+        return {'primary': const Color(0xFF1CB466), 'accent': const Color(0xFF2ECC7A), 'light': const Color(0xFFE6F9EF)};
       case 'brown':
-        return {
-          'primary': const Color(0xFFAF4700),
-          'accent': const Color(0xFFC55A15),
-          'light': const Color(0xFFFEF3E8),
-        };
+        return {'primary': const Color(0xFFAF4700), 'accent': const Color(0xFFC55A15), 'light': const Color(0xFFFEF3E8)};
       case 'blue':
-        return {
-          'primary': const Color(0xFF6488E0),
-          'accent': const Color(0xFF7A9AEB),
-          'light': const Color(0xFFEEF3FC),
-        };
+        return {'primary': const Color(0xFF6488E0), 'accent': const Color(0xFF7A9AEB), 'light': const Color(0xFFEEF3FC)};
       case 'peach':
-        return {
-          'primary': const Color(0xFFFAA774),
-          'accent': const Color(0xFFFBB88A),
-          'light': const Color(0xFFFFF5EE),
-        };
+        return {'primary': const Color(0xFFFAA774), 'accent': const Color(0xFFFBB88A), 'light': const Color(0xFFFFF5EE)};
       case 'red':
-        return {
-          'primary': const Color(0xFFDB4747),
-          'accent': const Color(0xFFE56060),
-          'light': const Color(0xFFFDECEC),
-        };
+        return {'primary': const Color(0xFFDB4747), 'accent': const Color(0xFFE56060), 'light': const Color(0xFFFDECEC)};
       case 'purple':
-        return {
-          'primary': const Color(0xFF7A1FA2),
-          'accent': const Color(0xFF9333B5),
-          'light': const Color(0xFFF5E8F9),
-        };
+        return {'primary': const Color(0xFF7A1FA2), 'accent': const Color(0xFF9333B5), 'light': const Color(0xFFF5E8F9)};
       case 'orange':
-        return {
-          'primary': const Color(0xFFF45715),
-          'accent': const Color(0xFFF76E35),
-          'light': const Color(0xFFFEEDE6),
-        };
+        return {'primary': const Color(0xFFF45715), 'accent': const Color(0xFFF76E35), 'light': const Color(0xFFFEEDE6)};
       case 'pink':
-        return {
-          'primary': const Color(0xFFE2A9F1),
-          'accent': const Color(0xFFEBBCF6),
-          'light': const Color(0xFFFCF3FE),
-        };
+        return {'primary': const Color(0xFFE2A9F1), 'accent': const Color(0xFFEBBCF6), 'light': const Color(0xFFFCF3FE)};
       case 'copper':
-        return {
-          'primary': const Color(0xFFB36A22),
-          'accent': const Color(0xFFC47F3A),
-          'light': const Color(0xFFFBF2E8),
-        };
+        return {'primary': const Color(0xFFB36A22), 'accent': const Color(0xFFC47F3A), 'light': const Color(0xFFFBF2E8)};
       case 'black':
-        return {
-          'primary': const Color(0xFF000000),
-          'accent': const Color(0xFF333333),
-          'light': const Color(0xFFF5F5F5),
-        };
+        return {'primary': const Color(0xFF000000), 'accent': const Color(0xFF333333), 'light': const Color(0xFFF5F5F5)};
       case 'olive':
-        return {
-          'primary': const Color(0xFF9B9B6E),
-          'accent': const Color(0xFFADAD85),
-          'light': const Color(0xFFF6F6F0),
-        };
+        return {'primary': const Color(0xFF9B9B6E), 'accent': const Color(0xFFADAD85), 'light': const Color(0xFFF6F6F0)};
       case 'navy':
-        return {
-          'primary': const Color(0xFF2F6798),
-          'accent': const Color(0xFF4279AA),
-          'light': const Color(0xFFEAF1F7),
-        };
+        return {'primary': const Color(0xFF2F6798), 'accent': const Color(0xFF4279AA), 'light': const Color(0xFFEAF1F7)};
       case 'grey':
-        return {
-          'primary': const Color(0xFF737373),
-          'accent': const Color(0xFF8A8A8A),
-          'light': const Color(0xFFF2F2F2),
-        };
+        return {'primary': const Color(0xFF737373), 'accent': const Color(0xFF8A8A8A), 'light': const Color(0xFFF2F2F2)};
       case 'forest':
-        return {
-          'primary': const Color(0xFF4F6F1F),
-          'accent': const Color(0xFF628535),
-          'light': const Color(0xFFEFF3E7),
-        };
+        return {'primary': const Color(0xFF4F6F1F), 'accent': const Color(0xFF628535), 'light': const Color(0xFFEFF3E7)};
       default:
-        return {
-          'primary': const Color(0xFF6488E0),
-          'accent': const Color(0xFF7A9AEB),
-          'light': const Color(0xFFEEF3FC),
-        };
+        return {'primary': const Color(0xFF6488E0), 'accent': const Color(0xFF7A9AEB), 'light': const Color(0xFFEEF3FC)};
     }
   }
 
@@ -1624,9 +1327,7 @@ class _InvoicePageState extends State<InvoicePage>
   Widget _buildA4Preview(Map<String, Color> templateColors) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availW = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : MediaQuery.of(context).size.width - 32;
+        final availW = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width - 32;
         // Scale factor: designed for 460px, shrinks on smaller screens
         final scale = (availW / 460).clamp(0.6, 1.0);
         return _buildA4PreviewContent(scale);
@@ -1644,916 +1345,527 @@ class _InvoicePageState extends State<InvoicePage>
     // Scaled helpers
     double fs(double size) => size * scale;
     double sp(double size) => size * scale;
-    EdgeInsets hp(double h, double v) =>
-        EdgeInsets.symmetric(horizontal: sp(h), vertical: sp(v));
+    EdgeInsets hp(double h, double v) => EdgeInsets.symmetric(horizontal: sp(h), vertical: sp(v));
 
     return Center(
-      child: Container(
-        width: double.infinity,
-        constraints: const BoxConstraints(maxWidth: 500),
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(25),
-              blurRadius: 15,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top accent strip — always visible at very top
-            Container(width: double.infinity, height: 4, color: themeColor),
-
-            // Header — white bsg, bottom divider, dark text
-            if (_a4ShowHeader)
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(maxWidth: 500),
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(25),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top accent strip — always visible at very top
               Container(
                 width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  border: Border(
-                    bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-                  ),
-                ),
-                padding: hp(20, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Logo
-                    if (_a4ShowLogo)
-                      Container(
-                        width: sp(46),
-                        height: sp(46),
-                        margin: EdgeInsets.only(right: sp(12)),
-                        decoration: BoxDecoration(
-                          color: themeColor.withAlpha(18),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: themeColor.withAlpha(60)),
-                        ),
-                        child:
-                            businessLogoUrl != null &&
-                                businessLogoUrl!.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  businessLogoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Center(
-                                    child: Text(
-                                      businessName.isNotEmpty
-                                          ? businessName[0].toUpperCase()
-                                          : 'B',
-                                      style: TextStyle(
-                                        fontSize: fs(20),
-                                        fontWeight: FontWeight.w900,
-                                        color: themeColor,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Center(
-                                child: Text(
-                                  businessName.isNotEmpty
-                                      ? businessName[0].toUpperCase()
-                                      : 'B',
-                                  style: TextStyle(
-                                    fontSize: fs(20),
-                                    fontWeight: FontWeight.w900,
-                                    color: themeColor,
-                                  ),
-                                ),
-                              ),
-                      ),
-                    // Business Info
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            businessName,
-                            style: TextStyle(
-                              fontSize: fs(15),
-                              fontWeight: FontWeight.w900,
-                              color: kBlack87,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (_showLocation && businessLocation.isNotEmpty)
-                            Text(
-                              businessLocation,
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                color: kBlack54,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          if (_showPhone && businessPhone.isNotEmpty)
-                            Text(
-                              'Tel: $businessPhone',
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                color: kBlack54,
-                              ),
-                            ),
-                          if (_showEmail &&
-                              businessEmail != null &&
-                              businessEmail!.isNotEmpty)
-                            Text(
-                              'Email: $businessEmail',
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                color: kBlack54,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          if (_showGST &&
-                              businessGSTIN != null &&
-                              businessGSTIN!.isNotEmpty)
-                            Text(
-                              '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                fontWeight: FontWeight.w700,
-                                color: kBlack87,
-                              ),
-                            ),
-                          if (_a4ShowLicense &&
-                              businessLicenseNumber != null &&
-                              businessLicenseNumber!.isNotEmpty)
-                            Text(
-                              '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                fontWeight: FontWeight.w700,
-                                color: kBlack87,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: sp(8)),
-                    // Invoice Info badge — small coloured tag
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: hp(8, 4),
-                          decoration: BoxDecoration(
-                            color: themeColor,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            widget.isQuotation ? 'Quotation' : 'Tax Invoice',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: fs(9),
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: sp(4)),
-                        Text(
-                          '#${widget.invoiceNumber}',
-                          style: TextStyle(
-                            fontSize: fs(12),
-                            fontWeight: FontWeight.w700,
-                            color: kBlack87,
-                          ),
-                        ),
-                        Text(
-                          dateStr,
-                          style: TextStyle(fontSize: fs(10), color: kBlack54),
-                        ),
-                        Text(
-                          timeStr,
-                          style: TextStyle(fontSize: fs(10), color: kBlack54),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                height: 4,
+                color: themeColor,
               ),
 
-            // Content area
-            Padding(
-              padding: EdgeInsets.all(sp(16)),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Customer Section — plain grey box, theme colour only for label
-                  if (_a4ShowCustomerInfo && widget.customerName != null) ...[
-                    Container(
-                      padding: hp(12, 10),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8FA),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            'Customer: ',
-                            style: TextStyle(
-                              fontSize: fs(12),
-                              fontWeight: FontWeight.w700,
-                              color: themeColor,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              widget.customerName!,
-                              style: TextStyle(
-                                fontSize: fs(12),
-                                color: kBlack87,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (widget.customerPhone != null)
-                            Text(
-                              ' | Contact: ${widget.customerPhone}',
-                              style: TextStyle(
-                                fontSize: fs(11),
-                                color: kBlack54,
-                              ),
-                            ),
-                        ],
-                      ),
+              // Header — white bsg, bottom divider, dark text
+              if (_a4ShowHeader)
+                Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                     ),
-                    SizedBox(height: sp(14)),
-                  ],
-
-                  // Items Table — keep as-is (table header uses themeColor — perfect)
-                  if (_a4ShowItemTable) ...[
-                    // Table Header
-                    Container(
-                      decoration: BoxDecoration(
-                        color: themeColor,
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(6),
-                        ),
-                        border: Border.all(color: themeColor),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: 5,
-                            child: Padding(
-                              padding: hp(6, 8),
-                              child: Text(
-                                'Item Description',
-                                style: TextStyle(
-                                  fontSize: fs(10),
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(
-                            width: sp(34),
-                            child: Padding(
-                              padding: hp(2, 8),
-                              child: Text(
-                                'QTY.',
-                                style: TextStyle(
-                                  fontSize: fs(10),
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: hp(4, 8),
-                              child: Text(
-                                'Price',
-                                style: TextStyle(
-                                  fontSize: fs(10),
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          ),
-                          if (_a4ShowTaxColumn)
-                            Expanded(
-                              flex: 2,
-                              child: Padding(
-                                padding: hp(4, 8),
-                                child: Text(
-                                  'Tax',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            ),
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: hp(6, 8),
-                              child: Text(
-                                'Amount',
-                                style: TextStyle(
-                                  fontSize: fs(10),
-                                  fontWeight: FontWeight.w800,
-                                  color: Colors.white,
-                                ),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Table Body — alternating white / very-light-grey (no theme tint)
-                    Container(
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                        borderRadius: const BorderRadius.vertical(
-                          bottom: Radius.circular(6),
-                        ),
-                      ),
-                      child: Column(
-                        children: widget.items.asMap().entries.map((entry) {
-                          final idx = entry.key;
-                          final item = entry.value;
-                          final name = (item['name'] ?? 'Item') as String;
-                          final qty = item['quantity'] ?? 1;
-                          final rate = (item['price'] ?? item['rate'] ?? 0.0)
-                              .toDouble();
-                          final taxPerc = (item['taxPercentage'] ?? 0)
-                              .toDouble();
-                          final taxName = (item['taxName'] ?? '') as String;
-                          final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
-                          final taxType = item['taxType'] as String?;
-                          final baseTotal =
-                              rate * (qty is num ? qty.toDouble() : 1.0);
-                          // Compute amount respecting tax type
-                          final double amount;
-                          if (taxType == 'Tax Included in Price' ||
-                              taxType == 'Price includes Tax') {
-                            amount = baseTotal; // price already has tax
-                          } else if (taxType != null) {
-                            amount =
-                                baseTotal +
-                                taxAmt; // add tax for 'Add Tax at Billing' etc.
-                          } else {
-                            amount = (item['total'] ?? baseTotal)
-                                .toDouble(); // fresh sale: total is already totalWithTax
-                          }
-                          // Subtle alternating: white vs very-light-grey (no theme tint)
-                          final rowBg = idx.isEven
-                              ? Colors.white
-                              : const Color(0xFFF9FAFB);
-                          return Container(
-                            color: rowBg,
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  flex: 5,
-                                  child: Padding(
-                                    padding: hp(6, 8),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          name,
-                                          style: TextStyle(
-                                            fontSize: fs(11),
-                                            fontWeight: FontWeight.w700,
-                                            color: kBlack87,
-                                          ),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        if (taxName.isNotEmpty && taxPerc > 0)
-                                          Text(
-                                            '$taxName ${taxPerc.toStringAsFixed(0)}%',
-                                            style: TextStyle(
-                                              fontSize: fs(9),
-                                              color: kBlack54,
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: sp(34),
-                                  child: Padding(
-                                    padding: hp(2, 8),
-                                    child: Text(
-                                      qty is double && qty % 1 != 0
-                                          ? qty.toStringAsFixed(2)
-                                          : '$qty',
-                                      style: TextStyle(
-                                        fontSize: fs(11),
-                                        color: kBlack87,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Padding(
-                                    padding: hp(4, 8),
-                                    child: Text(
-                                      rate.toStringAsFixed(2),
-                                      style: TextStyle(
-                                        fontSize: fs(11),
-                                        color: kBlack87,
-                                      ),
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ),
-                                ),
-                                if (_a4ShowTaxColumn)
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: hp(4, 8),
-                                      child: taxPerc > 0
-                                          ? Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text(
-                                                  taxAmt.toStringAsFixed(2),
-                                                  style: TextStyle(
-                                                    fontSize: fs(11),
-                                                    color: kBlack87,
-                                                  ),
-                                                  textAlign: TextAlign.right,
-                                                ),
-                                                Text(
-                                                  '(${taxPerc.toStringAsFixed(0)}%)',
-                                                  style: TextStyle(
-                                                    fontSize: fs(8),
-                                                    color: kBlack54,
-                                                  ),
-                                                  textAlign: TextAlign.right,
-                                                ),
-                                              ],
-                                            )
-                                          : Text(
-                                              '-',
-                                              style: TextStyle(
-                                                fontSize: fs(11),
-                                                color: kBlack54,
-                                              ),
-                                              textAlign: TextAlign.right,
-                                            ),
-                                    ),
-                                  ),
-                                Expanded(
-                                  flex: 2,
-                                  child: Padding(
-                                    padding: hp(6, 8),
-                                    // Keep theme colour on total amount — matches reference image
-                                    child: Text(
-                                      amount.toStringAsFixed(2),
-                                      style: TextStyle(
-                                        fontSize: fs(11),
-                                        fontWeight: FontWeight.w800,
-                                        color: themeColor,
-                                      ),
-                                      textAlign: TextAlign.right,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    SizedBox(height: sp(14)),
-                  ],
-
-                  // Totals Section
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                  padding: hp(20, 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // You Saved / Item count
+                      // Logo
+                      if (_a4ShowLogo)
+                        Container(
+                          width: sp(46), height: sp(46),
+                          margin: EdgeInsets.only(right: sp(12)),
+                          decoration: BoxDecoration(
+                            color: themeColor.withAlpha(18),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: themeColor.withAlpha(60)),
+                          ),
+                          child: businessLogoUrl != null && businessLogoUrl!.isNotEmpty
+                              ? ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(businessLogoUrl!, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Center(child: Text(businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B', style: TextStyle(fontSize: fs(20), fontWeight: FontWeight.w900, color: themeColor))),
+                            ),
+                          )
+                              : Center(child: Text(businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B', style: TextStyle(fontSize: fs(20), fontWeight: FontWeight.w900, color: themeColor))),
+                        ),
+                      // Business Info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (_a4ShowYouSaved && widget.discount > 0)
-                              Container(
-                                padding: EdgeInsets.all(sp(8)),
-                                margin: EdgeInsets.only(bottom: sp(6)),
-                                decoration: BoxDecoration(
-                                  color: kGoogleGreen.withAlpha(20),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: kGoogleGreen.withAlpha(60),
-                                  ),
-                                ),
-                                child: Text(
-                                  '🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!',
-                                  style: TextStyle(
-                                    fontSize: fs(11),
-                                    fontWeight: FontWeight.w700,
-                                    color: kGoogleGreen,
-                                  ),
-                                ),
-                              ),
-                            if (_a4ShowTotalItemQuantity)
-                              Text(
-                                'Items: ${widget.items.length} | Qty: ${widget.items.fold<num>(0, (s, i) => s + ((i['quantity'] ?? 1) is int ? i['quantity'] : (i['quantity'] as num).toInt()))}',
-                                style: TextStyle(
-                                  fontSize: fs(11),
-                                  color: kBlack54,
-                                ),
-                              ),
+                            Text(businessName, style: TextStyle(fontSize: fs(15), fontWeight: FontWeight.w900, color: kBlack87), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (_showLocation && businessLocation.isNotEmpty)
+                              Text(businessLocation, style: TextStyle(fontSize: fs(10), color: kBlack54), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (_showPhone && businessPhone.isNotEmpty)
+                              Text('Tel: $businessPhone', style: TextStyle(fontSize: fs(10), color: kBlack54)),
+                            if (_showEmail && businessEmail != null && businessEmail!.isNotEmpty)
+                              Text('Email: $businessEmail', style: TextStyle(fontSize: fs(10), color: kBlack54), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty)
+                              Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w700, color: kBlack87)),
+                            if (_a4ShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty)
+                              Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w700, color: kBlack87)),
                           ],
                         ),
                       ),
                       SizedBox(width: sp(8)),
-                      // Totals Box — grey border, white bg, theme colour only on total row text
+                      // Invoice Info badge — small coloured tag
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: hp(8, 4),
+                            decoration: BoxDecoration(color: themeColor, borderRadius: BorderRadius.circular(4)),
+                            child: Text(widget.isQuotation ? 'Quotation' : 'Tax Invoice', style: TextStyle(color: Colors.white, fontSize: fs(9), fontWeight: FontWeight.w900)),
+                          ),
+                          SizedBox(height: sp(4)),
+                          Text('#${widget.invoiceNumber}', style: TextStyle(fontSize: fs(12), fontWeight: FontWeight.w700, color: kBlack87)),
+                          Text(dateStr, style: TextStyle(fontSize: fs(10), color: kBlack54)),
+                          Text(timeStr, style: TextStyle(fontSize: fs(10), color: kBlack54)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Content area
+              Padding(
+                padding: EdgeInsets.all(sp(16)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Customer Section — plain grey box, theme colour only for label
+                    if (_a4ShowCustomerInfo && widget.customerName != null) ...[
                       Container(
-                        width: sp(180),
+                        padding: hp(12, 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F8FA),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Row(
+                          children: [
+                            Text('Customer: ', style: TextStyle(fontSize: fs(12), fontWeight: FontWeight.w700, color: themeColor)),
+                            Expanded(child: Text(widget.customerName!, style: TextStyle(fontSize: fs(12), color: kBlack87), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                            if (widget.customerPhone != null)
+                              Text(' | Contact: ${widget.customerPhone}', style: TextStyle(fontSize: fs(11), color: kBlack54)),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: sp(14)),
+                    ],
+
+                    // Items Table — keep as-is (table header uses themeColor — perfect)
+                    if (_a4ShowItemTable) ...[
+                      // Table Header
+                      Container(
+                        decoration: BoxDecoration(
+                          color: themeColor,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                          border: Border.all(color: themeColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              flex: 5,
+                              child: Padding(
+                                padding: hp(6, 8),
+                                child: Text('Item Description', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white)),
+                              ),
+                            ),
+                            SizedBox(
+                              width: sp(34),
+                              child: Padding(
+                                padding: hp(2, 8),
+                                child: Text('QTY.', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.center),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: hp(4, 8),
+                                child: Text('Price', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
+                              ),
+                            ),
+                            if (_a4ShowTaxColumn)
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: hp(4, 8),
+                                  child: Text('Tax', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
+                                ),
+                              ),
+                            Expanded(
+                              flex: 2,
+                              child: Padding(
+                                padding: hp(6, 8),
+                                child: Text('Amount', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Table Body — alternating white / very-light-grey (no theme tint)
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(6)),
+                        ),
+                        child: Column(
+                          children: widget.items.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final item = entry.value;
+                            final name = (item['name'] ?? 'Item') as String;
+                            final qty = item['quantity'] ?? 1;
+                            final rate = (item['price'] ?? item['rate'] ?? 0.0).toDouble();
+                            final taxPerc = (item['taxPercentage'] ?? 0).toDouble();
+                            final taxName = (item['taxName'] ?? '') as String;
+                            final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+                            final taxType = item['taxType'] as String?;
+                            final baseTotal = rate * (qty is num ? qty.toDouble() : 1.0);
+                            // Compute amount respecting tax type
+                            final double amount;
+                            if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+                              amount = baseTotal; // price already has tax
+                            } else if (taxType != null) {
+                              amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
+                            } else {
+                              amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
+                            }
+                            // Subtle alternating: white vs very-light-grey (no theme tint)
+                            final rowBg = idx.isEven ? Colors.white : const Color(0xFFF9FAFB);
+                            return Container(
+                              color: rowBg,
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: Padding(
+                                      padding: hp(6, 8),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name, style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kBlack87), maxLines: 3, overflow: TextOverflow.ellipsis),
+                                          if (taxName.isNotEmpty && taxPerc > 0)
+                                            Text('$taxName ${taxPerc.toStringAsFixed(0)}%', style: TextStyle(fontSize: fs(9), color: kBlack54)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: sp(34),
+                                    child: Padding(
+                                      padding: hp(2, 8),
+                                      child: Text(
+                                        qty is double && qty % 1 != 0 ? qty.toStringAsFixed(2) : '$qty',
+                                        style: TextStyle(fontSize: fs(11), color: kBlack87),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: hp(4, 8),
+                                      child: Text(rate.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), color: kBlack87), textAlign: TextAlign.right),
+                                    ),
+                                  ),
+                                  if (_a4ShowTaxColumn)
+                                    Expanded(
+                                      flex: 2,
+                                      child: Padding(
+                                        padding: hp(4, 8),
+                                        child: taxPerc > 0
+                                            ? Column(
+                                                crossAxisAlignment: CrossAxisAlignment.end,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(taxAmt.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), color: kBlack87), textAlign: TextAlign.right),
+                                                  Text('(${taxPerc.toStringAsFixed(0)}%)', style: TextStyle(fontSize: fs(8), color: kBlack54), textAlign: TextAlign.right),
+                                                ],
+                                              )
+                                            : Text('-', style: TextStyle(fontSize: fs(11), color: kBlack54), textAlign: TextAlign.right),
+                                      ),
+                                    ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Padding(
+                                      padding: hp(6, 8),
+                                      // Keep theme colour on total amount — matches reference image
+                                      child: Text(amount.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w800, color: themeColor), textAlign: TextAlign.right),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      SizedBox(height: sp(14)),
+                    ],
+
+                    // Totals Section
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // You Saved / Item count
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (_a4ShowYouSaved && widget.discount > 0)
+                                Container(
+                                  padding: EdgeInsets.all(sp(8)),
+                                  margin: EdgeInsets.only(bottom: sp(6)),
+                                  decoration: BoxDecoration(color: kGoogleGreen.withAlpha(20), borderRadius: BorderRadius.circular(6), border: Border.all(color: kGoogleGreen.withAlpha(60))),
+                                  child: Text('🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kGoogleGreen)),
+                                ),
+                              if (_a4ShowTotalItemQuantity)
+                                Text(
+                                  'Items: ${widget.items.length} | Qty: ${widget.items.fold<num>(0, (s, i) => s + ((i['quantity'] ?? 1) is int ? i['quantity'] : (i['quantity'] as num).toInt()))}',
+                                  style: TextStyle(fontSize: fs(11), color: kBlack54),
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: sp(8)),
+                        // Totals Box — grey border, white bg, theme colour only on total row text
+                        Container(
+                          width: sp(180),
+                          padding: EdgeInsets.all(sp(10)),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFE5E7EB)),
+                          ),
+                          child: Column(
+                            children: [
+                              _buildScaledTotalRow('Subtotal', '$currency${widget.subtotal.toStringAsFixed(2)}', fs),
+                              if (widget.discount > 0)
+                                _buildScaledTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', fs, isGreen: true),
+                              if (_a4ShowTaxDetails && widget.taxes != null)
+                                ...widget.taxes!.map((tax) => _buildScaledTotalRow(tax['name'] ?? 'Tax', '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}', fs)),
+                              if (widget.deliveryCharge > 0)
+                                _buildScaledTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', fs),
+                              Divider(height: sp(14), color: const Color(0xFFE5E7EB)),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Total', style: TextStyle(fontSize: fs(13), fontWeight: FontWeight.w900, color: themeColor)),
+                                  Text('$currency${widget.total.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(14), fontWeight: FontWeight.w900, color: themeColor)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: sp(12)),
+
+                    // Payment Mode — plain grey
+                    Container(
+                      padding: hp(10, 7),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.payment_rounded, size: fs(13), color: kBlack54),
+                              SizedBox(width: sp(6)),
+                              Text(
+                                widget.paymentMode != "quotation" ? widget.paymentMode : 'Paid via ${widget.paymentMode}',
+                                style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kBlack87),
+                              ),
+                            ],
+                          ),
+                          if (_isSplitPayment) ...[
+                            SizedBox(height: sp(6)),
+                            if (_splitCashAmount > 0)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Cash', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
+                                  Text('$currency${_splitCashAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kGoogleGreen, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            if (_splitOnlineAmount > 0)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Online', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
+                                  Text('$currency${_splitOnlineAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kPrimaryColor, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                            if (_splitCreditAmount > 0)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text('Credit', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
+                                  Text('$currency${_splitCreditAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kOrange, fontWeight: FontWeight.w700)),
+                                ],
+                              ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    // Bill Notes — plain grey
+                    if (widget.customNote != null && widget.customNote!.isNotEmpty) ...[
+                      SizedBox(height: sp(10)),
+                      Container(
+                        width: double.infinity,
                         padding: EdgeInsets.all(sp(10)),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: const Color(0xFFF7F8FA),
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: const Color(0xFFE5E7EB)),
                         ),
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _buildScaledTotalRow(
-                              'Subtotal',
-                              '$currency${widget.subtotal.toStringAsFixed(2)}',
-                              fs,
-                            ),
-                            if (widget.discount > 0)
-                              _buildScaledTotalRow(
-                                'Discount',
-                                '-$currency${widget.discount.toStringAsFixed(2)}',
-                                fs,
-                                isGreen: true,
-                              ),
-                            if (_a4ShowTaxDetails && widget.taxes != null)
-                              ...widget.taxes!.map(
-                                (tax) => _buildScaledTotalRow(
-                                  tax['name'] ?? 'Tax',
-                                  '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
-                                  fs,
-                                ),
-                              ),
-                            if (widget.deliveryCharge > 0)
-                              _buildScaledTotalRow(
-                                'Delivery',
-                                '+$currency${widget.deliveryCharge.toStringAsFixed(2)}',
-                                fs,
-                              ),
-                            Divider(
-                              height: sp(14),
-                              color: const Color(0xFFE5E7EB),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Total',
-                                  style: TextStyle(
-                                    fontSize: fs(13),
-                                    fontWeight: FontWeight.w900,
-                                    color: themeColor,
-                                  ),
-                                ),
-                                Text(
-                                  '$currency${widget.total.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: fs(14),
-                                    fontWeight: FontWeight.w900,
-                                    color: themeColor,
-                                  ),
-                                ),
-                              ],
-                            ),
+                            Text('Note:', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.bold, color: kBlack54)),
+                            SizedBox(height: sp(3)),
+                            Text(widget.customNote!, style: TextStyle(fontSize: fs(11), color: kBlack87)),
                           ],
                         ),
                       ),
                     ],
-                  ),
-                  SizedBox(height: sp(12)),
 
-                  // Payment Mode — plain grey
-                  Container(
-                    padding: hp(10, 7),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FA),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.payment_rounded,
-                              size: fs(13),
-                              color: kBlack54,
-                            ),
-                            SizedBox(width: sp(6)),
-                            Text(
-                              widget.paymentMode != "quotation"
-                                  ? widget.paymentMode
-                                  : 'Paid via ${widget.paymentMode}',
-                              style: TextStyle(
-                                fontSize: fs(11),
-                                fontWeight: FontWeight.w700,
-                                color: kBlack87,
-                              ),
-                            ),
-                          ],
+                    // Delivery Address — plain grey
+                    if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
+                      SizedBox(height: sp(8)),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(sp(10)),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF7F8FA),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
                         ),
-                        if (_isSplitPayment) ...[
-                          SizedBox(height: sp(6)),
-                          if (_splitCashAmount > 0)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Cash',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kBlack54,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '$currency${_splitCashAmount.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kGoogleGreen,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (_splitOnlineAmount > 0)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Online',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kBlack54,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '$currency${_splitOnlineAmount.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kPrimaryColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (_splitCreditAmount > 0)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Credit',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kBlack54,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                Text(
-                                  '$currency${_splitCreditAmount.toStringAsFixed(2)}',
-                                  style: TextStyle(
-                                    fontSize: fs(10),
-                                    color: kOrange,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ],
-                    ),
-                  ),
-
-                  // Bill Notes — plain grey
-                  if (widget.customNote != null &&
-                      widget.customNote!.isNotEmpty) ...[
-                    SizedBox(height: sp(10)),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(sp(10)),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8FA),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Note:',
-                            style: TextStyle(
-                              fontSize: fs(11),
-                              fontWeight: FontWeight.bold,
-                              color: kBlack54,
-                            ),
-                          ),
-                          SizedBox(height: sp(3)),
-                          Text(
-                            widget.customNote!,
-                            style: TextStyle(fontSize: fs(11), color: kBlack87),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  // Delivery Address — plain grey
-                  if (widget.deliveryAddress != null &&
-                      widget.deliveryAddress!.isNotEmpty) ...[
-                    SizedBox(height: sp(8)),
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.all(sp(10)),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF7F8FA),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Delivery Address:',
-                            style: TextStyle(
-                              fontSize: fs(11),
-                              fontWeight: FontWeight.bold,
-                              color: kBlack54,
-                            ),
-                          ),
-                          SizedBox(height: sp(3)),
-                          Text(
-                            widget.deliveryAddress!,
-                            style: TextStyle(fontSize: fs(11), color: kBlack87),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-
-                  if (_a4ShowSignature) ...[
-                    SizedBox(height: sp(16)),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: SizedBox(
-                        width: sp(170),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: sp(30)),
-                            Container(height: 1, color: kBlack54),
-                            SizedBox(height: sp(4)),
-                            Text(
-                              'Authorized Signature',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: fs(10),
-                                color: kBlack54,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            Text('Delivery Address:', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.bold, color: kBlack54)),
+                            SizedBox(height: sp(3)),
+                            Text(widget.deliveryAddress!, style: TextStyle(fontSize: fs(11), color: kBlack87)),
                           ],
+                        ),
+                      ),
+                    ],
+
+                    if (_a4ShowSignature) ...[
+                      SizedBox(height: sp(16)),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: SizedBox(
+                          width: sp(170),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              SizedBox(height: sp(30)),
+                              Container(height: 1, color: kBlack54),
+                              SizedBox(height: sp(4)),
+                              Text(
+                                'Authorized Signature',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+
+                    SizedBox(height: sp(20)),
+
+                    // Footer — light grey bg, dark text, small theme accent
+                    Container(
+                      width: double.infinity,
+                      padding: hp(16, 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border(left: BorderSide(color: themeColor, width: 4)),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _a4SaleInvoiceText.isNotEmpty ? _a4SaleInvoiceText : 'Thank you for your business!',
+                          style: TextStyle(fontSize: fs(13), fontWeight: FontWeight.w700, color: kBlack87),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
                   ],
-
-                  SizedBox(height: sp(20)),
-
-                  // Footer — light grey bg, dark text, small theme accent
-                  Container(
-                    width: double.infinity,
-                    padding: hp(16, 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FA),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border(
-                        left: BorderSide(color: themeColor, width: 4),
-                      ),
-                    ),
-                    child: Center(
-                      child: Text(
-                        _a4SaleInvoiceText.isNotEmpty
-                            ? _a4SaleInvoiceText
-                            : 'Thank you for your business!',
-                        style: TextStyle(
-                          fontSize: fs(13),
-                          fontWeight: FontWeight.w700,
-                          color: kBlack87,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+            ],
+          ),
+        ));
   }
 
   /// Scaled total row for preview
-  Widget _buildScaledTotalRow(
-    String label,
-    String value,
-    double Function(double) fs, {
-    bool isGreen = false,
-  }) {
+    Widget _buildScaledTotalRow(String label, String value, double Function(double) fs, {bool isGreen = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: fs(11),
-              color: kBlack54,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: fs(11),
-              fontWeight: FontWeight.w800,
-              color: isGreen ? kGoogleGreen : kBlack87,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: fs(11), color: kBlack54, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w800, color: isGreen ? kGoogleGreen : kBlack87)),
         ],
       ),
     );
-  }
+    }
 
-  bool get _isSplitPayment => widget.paymentMode.toLowerCase() == 'split';
+    bool get _isSplitPayment => widget.paymentMode.toLowerCase() == 'split';
 
-  double _safeAmount(dynamic value) {
+    double _safeAmount(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '0') ?? 0.0;
-  }
+    }
 
-  double get _splitCashAmount {
+    double get _splitCashAmount {
     if (!_isSplitPayment) return 0.0;
     final explicit = _safeAmount(widget.cashReceived_split);
     if (explicit > 0) return explicit;
     return _safeAmount(widget.cashReceived);
-  }
+    }
 
-  double get _splitOnlineAmount {
+    double get _splitOnlineAmount {
     if (!_isSplitPayment) return 0.0;
     return _safeAmount(widget.onlineReceived_split);
-  }
+    }
 
-  double get _splitCreditAmount {
+    double get _splitCreditAmount {
     if (!_isSplitPayment) return 0.0;
     final explicit = _safeAmount(widget.creditIssued_split);
     if (explicit > 0) return explicit;
     final inferred = widget.total - _splitCashAmount - _splitOnlineAmount;
     return inferred > 0 ? inferred : 0.0;
-  }
+    }
 
   // ==========================================
   // THERMAL RECEIPT PREVIEW
@@ -2564,26 +1876,11 @@ class _InvoicePageState extends State<InvoicePage>
     final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
 
     // Calculate total quantity
-    final totalQty = widget.items.fold<num>(
-      0,
-      (sum, item) =>
-          sum +
-          ((item['quantity'] ?? 1) is int
-              ? item['quantity']
-              : (item['quantity'] as num).toInt()),
-    );
+    final totalQty = widget.items.fold<num>(0, (sum, item) => sum + ((item['quantity'] ?? 1) is int ? item['quantity'] : (item['quantity'] as num).toInt()));
 
     // Helper: thermal text style with NotoSans for best clarity
-    TextStyle tStyle({
-      double size = 9,
-      FontWeight weight = FontWeight.normal,
-      Color color = kBlack87,
-    }) => TextStyle(
-      fontSize: size,
-      fontWeight: weight,
-      color: color,
-      fontFamily: 'NotoSans',
-    );
+    TextStyle tStyle({double size = 9, FontWeight weight = FontWeight.normal, Color color = kBlack87}) =>
+        TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'NotoSans');
 
     return Center(
       child: Container(
@@ -2618,11 +1915,7 @@ class _InvoicePageState extends State<InvoicePage>
                           color: kGrey200,
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Icon(
-                          Icons.store,
-                          color: kBlack54,
-                          size: 30,
-                        ),
+                        child: const Icon(Icons.store, color: kBlack54, size: 30),
                       ),
                     ),
                   ),
@@ -2639,14 +1932,8 @@ class _InvoicePageState extends State<InvoicePage>
                     ),
                     child: Center(
                       child: Text(
-                        businessName.isNotEmpty
-                            ? businessName[0].toUpperCase()
-                            : 'B',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                          color: kBlack87,
-                        ),
+                        businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B',
+                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: kBlack87),
                       ),
                     ),
                   ),
@@ -2663,42 +1950,24 @@ class _InvoicePageState extends State<InvoicePage>
               if (_showLocation && businessLocation.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    businessLocation,
-                    style: tStyle(size: 9),
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text(businessLocation, style: tStyle(size: 9), textAlign: TextAlign.center),
                 ),
               if (_showPhone && businessPhone.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    'PHONE: $businessPhone',
-                    style: tStyle(size: 9),
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('PHONE: $businessPhone', style: tStyle(size: 9), textAlign: TextAlign.center),
                 ),
-              if (_showGST &&
-                  businessGSTIN != null &&
-                  businessGSTIN!.isNotEmpty)
+              if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
-                    style: tStyle(size: 9, weight: FontWeight.w600),
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
+                      style: tStyle(size: 9, weight: FontWeight.w600), textAlign: TextAlign.center),
                 ),
-              if (_thermalShowLicense &&
-                  businessLicenseNumber != null &&
-                  businessLicenseNumber!.isNotEmpty)
+              if (_thermalShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
-                    style: tStyle(size: 9, weight: FontWeight.w600),
-                    textAlign: TextAlign.center,
-                  ),
+                  child: Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
+                      style: tStyle(size: 9, weight: FontWeight.w600), textAlign: TextAlign.center),
                 ),
             ],
 
@@ -2708,21 +1977,12 @@ class _InvoicePageState extends State<InvoicePage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Bill No: ${widget.invoiceNumber}',
-                  style: tStyle(size: 9, weight: FontWeight.w600),
-                ),
+                Text('Bill No: ${widget.invoiceNumber}', style: tStyle(size: 9, weight: FontWeight.w600)),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      'Date: $dateStr',
-                      style: tStyle(size: 9, weight: FontWeight.w600),
-                    ),
-                    Text(
-                      'Time: $timeStr',
-                      style: tStyle(size: 9, weight: FontWeight.w600),
-                    ),
+                    Text('Date: $dateStr', style: tStyle(size: 9, weight: FontWeight.w600)),
+                    Text('Time: $timeStr', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
               ],
@@ -2743,21 +2003,11 @@ class _InvoicePageState extends State<InvoicePage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Customer: ${widget.customerName}',
-                      style: tStyle(size: 9, weight: FontWeight.w600),
-                    ),
+                    Text('Customer: ${widget.customerName}', style: tStyle(size: 9, weight: FontWeight.w600)),
                     if (widget.customerPhone != null)
-                      Text(
-                        'Contact: ${widget.customerPhone}',
-                        style: tStyle(size: 9, color: kBlack54),
-                      ),
-                    if (widget.customerGSTIN != null &&
-                        widget.customerGSTIN!.isNotEmpty)
-                      Text(
-                        'Tax: ${widget.customerGSTIN}',
-                        style: tStyle(size: 9, color: kBlack54),
-                      ),
+                      Text('Contact: ${widget.customerPhone}', style: tStyle(size: 9, color: kBlack54)),
+                    if (widget.customerGSTIN != null && widget.customerGSTIN!.isNotEmpty)
+                      Text('Tax: ${widget.customerGSTIN}', style: tStyle(size: 9, color: kBlack54)),
                   ],
                 ),
               ),
@@ -2778,37 +2028,10 @@ class _InvoicePageState extends State<InvoicePage>
                 ),
                 child: Row(
                   children: [
-                    Expanded(
-                      flex: 5,
-                      child: Text(
-                        'Item',
-                        style: tStyle(size: 9, weight: FontWeight.w800),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 32,
-                      child: Text(
-                        'Qty',
-                        style: tStyle(size: 9, weight: FontWeight.w800),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Price',
-                        style: tStyle(size: 9, weight: FontWeight.w800),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Amt',
-                        style: tStyle(size: 9, weight: FontWeight.w800),
-                        textAlign: TextAlign.right,
-                      ),
-                    ),
+                    Expanded(flex: 5, child: Text('Item', style: tStyle(size: 9, weight: FontWeight.w800))),
+                    SizedBox(width: 32, child: Text('Qty', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.center)),
+                    Expanded(flex: 2, child: Text('Price', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
+                    Expanded(flex: 2, child: Text('Amt', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
                   ],
                 ),
               ),
@@ -2823,24 +2046,16 @@ class _InvoicePageState extends State<InvoicePage>
                 final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
                 // Compute amount respecting tax type
                 final double amount;
-                if (taxType == 'Tax Included in Price' ||
-                    taxType == 'Price includes Tax') {
+                if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
                   amount = baseTotal; // price already has tax
                 } else if (taxType != null) {
-                  amount =
-                      baseTotal +
-                      taxAmt; // add tax for 'Add Tax at Billing' etc.
+                  amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
                 } else {
-                  amount = (item['total'] ?? baseTotal)
-                      .toDouble(); // fresh sale: total is already totalWithTax
+                  amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
                 }
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: kGrey300, width: 0.5),
-                    ),
-                  ),
+                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGrey300, width: 0.5))),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2853,30 +2068,9 @@ class _InvoicePageState extends State<InvoicePage>
                           ],
                         ),
                       ),
-                      SizedBox(
-                        width: 32,
-                        child: Text(
-                          '$qty',
-                          style: tStyle(size: 9),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          price.toStringAsFixed(2),
-                          style: tStyle(size: 9),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          amount.toStringAsFixed(2),
-                          style: tStyle(size: 9),
-                          textAlign: TextAlign.right,
-                        ),
-                      ),
+                      SizedBox(width: 32, child: Text('$qty', style: tStyle(size: 9), textAlign: TextAlign.center)),
+                      Expanded(flex: 2, child: Text(price.toStringAsFixed(2), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                      Expanded(flex: 2, child: Text(amount.toStringAsFixed(2), style: tStyle(size: 9), textAlign: TextAlign.right)),
                     ],
                   ),
                 );
@@ -2886,59 +2080,34 @@ class _InvoicePageState extends State<InvoicePage>
             // ========== SUBTOTAL ROW ==========
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: kBlack87, width: 1)),
-              ),
+              decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack87, width: 1))),
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 5,
-                    child: Text(
-                      'Subtotal',
-                      style: tStyle(size: 10, weight: FontWeight.w600),
-                    ),
-                  ),
+                  Expanded(flex: 5, child: Text('Subtotal', style: tStyle(size: 10, weight: FontWeight.w600))),
                   SizedBox(
                     width: 32,
                     child: _thermalShowTotalItemQuantity
-                        ? Text(
-                            '${totalQty.toInt()}',
-                            style: tStyle(size: 10, weight: FontWeight.w600),
-                            textAlign: TextAlign.center,
-                          )
+                        ? Text('${totalQty.toInt()}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.center)
                         : const SizedBox.shrink(),
                   ),
                   Expanded(flex: 2, child: const SizedBox.shrink()),
-                  Expanded(
-                    flex: 2,
-                    child: Text(
-                      widget.subtotal.toStringAsFixed(2),
-                      style: tStyle(size: 10, weight: FontWeight.w600),
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
+                  Expanded(flex: 2, child: Text(widget.subtotal.toStringAsFixed(2), style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right)),
                 ],
               ),
             ),
 
             // ========== TAX BREAKDOWN (Only show if taxes passed from previous page) ==========
-            if (_thermalShowTaxDetails &&
-                widget.taxes != null &&
-                widget.taxes!.isNotEmpty)
+            if (_thermalShowTaxDetails && widget.taxes != null && widget.taxes!.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: const BoxDecoration(
-                  border: Border(top: BorderSide(color: kBlack54, width: 1)),
-                ),
+                decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack54, width: 1))),
                 child: Column(
                   children: [
                     // Show only real taxes from widget.taxes (passed from previous page)
-                    ...widget.taxes!.map(
-                      (tax) => _buildTaxRow(
-                        tax['name'] ?? 'Tax',
-                        (tax['amount'] ?? 0.0).toDouble(),
-                      ),
-                    ),
+                    ...widget.taxes!.map((tax) => _buildTaxRow(
+                      tax['name'] ?? 'Tax',
+                      (tax['amount'] ?? 0.0).toDouble(),
+                    )),
                   ],
                 ),
               ),
@@ -2951,10 +2120,7 @@ class _InvoicePageState extends State<InvoicePage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Discount', style: tStyle(size: 9, color: kBlack54)),
-                    Text(
-                      '-${widget.discount.toStringAsFixed(2)}',
-                      style: tStyle(size: 9, weight: FontWeight.w600),
-                    ),
+                    Text('-${widget.discount.toStringAsFixed(2)}', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -2965,14 +2131,8 @@ class _InvoicePageState extends State<InvoicePage>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Delivery Charge',
-                      style: tStyle(size: 9, color: kBlack54),
-                    ),
-                    Text(
-                      '+${widget.deliveryCharge.toStringAsFixed(2)}',
-                      style: tStyle(size: 9, weight: FontWeight.w600),
-                    ),
+                    Text('Delivery Charge', style: tStyle(size: 9, color: kBlack54)),
+                    Text('+${widget.deliveryCharge.toStringAsFixed(2)}', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -2980,20 +2140,12 @@ class _InvoicePageState extends State<InvoicePage>
             // ========== GRAND TOTAL ==========
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: kBlack87, width: 1.5)),
-              ),
+              decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack87, width: 1.5))),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Total',
-                    style: tStyle(size: 12, weight: FontWeight.w900),
-                  ),
-                  Text(
-                    '$currency ${widget.total.toStringAsFixed(2)}',
-                    style: tStyle(size: 12, weight: FontWeight.w900),
-                  ),
+                  Text('Total', style: tStyle(size: 12, weight: FontWeight.w900)),
+                  Text('$currency ${widget.total.toStringAsFixed(2)}', style: tStyle(size: 12, weight: FontWeight.w900)),
                 ],
               ),
             ),
@@ -3008,14 +2160,8 @@ class _InvoicePageState extends State<InvoicePage>
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Payment:',
-                          style: tStyle(size: 9, color: kBlack54),
-                        ),
-                        Text(
-                          widget.paymentMode,
-                          style: tStyle(size: 9, weight: FontWeight.w700),
-                        ),
+                        Text('Payment:', style: tStyle(size: 9, color: kBlack54)),
+                        Text(widget.paymentMode, style: tStyle(size: 9, weight: FontWeight.w700)),
                       ],
                     ),
                     if (_isSplitPayment) ...[
@@ -3023,54 +2169,24 @@ class _InvoicePageState extends State<InvoicePage>
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Cash',
-                              style: tStyle(size: 8, color: kBlack54),
-                            ),
-                            Text(
-                              '$currency ${_splitCashAmount.toStringAsFixed(2)}',
-                              style: tStyle(
-                                size: 8,
-                                weight: FontWeight.w700,
-                                color: kGoogleGreen,
-                              ),
-                            ),
+                            Text('Cash', style: tStyle(size: 8, color: kBlack54)),
+                            Text('$currency ${_splitCashAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kGoogleGreen)),
                           ],
                         ),
                       if (_splitOnlineAmount > 0)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Online',
-                              style: tStyle(size: 8, color: kBlack54),
-                            ),
-                            Text(
-                              '$currency ${_splitOnlineAmount.toStringAsFixed(2)}',
-                              style: tStyle(
-                                size: 8,
-                                weight: FontWeight.w700,
-                                color: kPrimaryColor,
-                              ),
-                            ),
+                            Text('Online', style: tStyle(size: 8, color: kBlack54)),
+                            Text('$currency ${_splitOnlineAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kPrimaryColor)),
                           ],
                         ),
                       if (_splitCreditAmount > 0)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Credit',
-                              style: tStyle(size: 8, color: kBlack54),
-                            ),
-                            Text(
-                              '$currency ${_splitCreditAmount.toStringAsFixed(2)}',
-                              style: tStyle(
-                                size: 8,
-                                weight: FontWeight.w700,
-                                color: kOrange,
-                              ),
-                            ),
+                            Text('Credit', style: tStyle(size: 8, color: kBlack54)),
+                            Text('$currency ${_splitCreditAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kOrange)),
                           ],
                         ),
                     ],
@@ -3082,19 +2198,9 @@ class _InvoicePageState extends State<InvoicePage>
             if (_thermalShowYouSaved && widget.discount > 0) ...[
               const SizedBox(height: 10),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 6,
-                  horizontal: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: kGrey200,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: kBlack54),
-                ),
-                child: Text(
-                  '🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!',
-                  style: tStyle(size: 9, weight: FontWeight.w700),
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(6), border: Border.all(color: kBlack54)),
+                child: Text('🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!', style: tStyle(size: 9, weight: FontWeight.w700)),
               ),
             ],
 
@@ -3104,38 +2210,24 @@ class _InvoicePageState extends State<InvoicePage>
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Items: ${widget.items.length}',
-                    style: tStyle(size: 8, color: kBlack54),
-                  ),
+                  Text('Items: ${widget.items.length}', style: tStyle(size: 8, color: kBlack54)),
                   Text(' | ', style: tStyle(size: 8, color: kBlack54)),
-                  Text(
-                    'Qty: ${totalQty.toInt()}',
-                    style: tStyle(size: 8, color: kBlack54),
-                  ),
+                  Text('Qty: ${totalQty.toInt()}', style: tStyle(size: 8, color: kBlack54)),
                 ],
               ),
             ],
 
             // ========== DELIVERY ADDRESS ==========
-            if (widget.deliveryAddress != null &&
-                widget.deliveryAddress!.isNotEmpty) ...[
+            if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: kGrey200,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: kGrey300),
-                ),
+                decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(6), border: Border.all(color: kGrey300)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Customer Notes:',
-                      style: tStyle(size: 8, weight: FontWeight.w700),
-                    ),
+                    Text('Customer Notes:', style: tStyle(size: 8, weight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text(widget.deliveryAddress!, style: tStyle(size: 8)),
                   ],
@@ -3146,9 +2238,7 @@ class _InvoicePageState extends State<InvoicePage>
             // ========== FOOTER ==========
             const SizedBox(height: 12),
             Text(
-              _thermalSaleInvoiceText.isNotEmpty
-                  ? _thermalSaleInvoiceText
-                  : 'Thank You',
+              _thermalSaleInvoiceText.isNotEmpty ? _thermalSaleInvoiceText : 'Thank You',
               style: tStyle(size: 10, weight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
@@ -3179,56 +2269,34 @@ class _InvoicePageState extends State<InvoicePage>
     );
   }
 
+
+
   // Template Layouts
   Widget _buildClassicLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors['primary']!, width: 1.5),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: const Center(
-        child: Text('Classic Layout', style: TextStyle(fontSize: 14)),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
+      child: const Center(child: Text('Classic Layout', style: TextStyle(fontSize: 14))),
     );
   }
 
   Widget _buildModernLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors['primary']!, width: 1.5),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: const Center(
-        child: Text('Modern Layout', style: TextStyle(fontSize: 14)),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
+      child: const Center(child: Text('Modern Layout', style: TextStyle(fontSize: 14))),
     );
   }
 
   Widget _buildCompactLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors['primary']!, width: 1.5),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: const Center(
-        child: Text('Compact Layout', style: TextStyle(fontSize: 14)),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
+      child: const Center(child: Text('Compact Layout', style: TextStyle(fontSize: 14))),
     );
   }
 
   Widget _buildDetailedLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: colors['primary']!, width: 1.5),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: const Center(
-        child: Text('Detailed Layout', style: TextStyle(fontSize: 14)),
-      ),
+      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
+      child: const Center(child: Text('Detailed Layout', style: TextStyle(fontSize: 14))),
     );
   }
 
@@ -3239,38 +2307,19 @@ class _InvoicePageState extends State<InvoicePage>
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(15),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -5))],
         ),
         child: Row(
           children: [
-            _buildBtn(
-              Icons.print_rounded,
-              "Print",
-              () => _handlePrint(context),
-              true,
-            ),
+            _buildBtn(Icons.print_rounded, "Print", () => _handlePrint(context), true),
             const SizedBox(width: 12),
-            _buildBtn(
-              Icons.share_rounded,
-              "Share",
-              () => _handleShare(context),
-              true,
-            ),
+            _buildBtn(Icons.share_rounded, "Share", () => _handleShare(context), true),
             const SizedBox(width: 12),
             _buildBtn(Icons.add_rounded, "New Sale", () {
               Navigator.pushAndRemoveUntil(
                 context,
-                CupertinoPageRoute(
-                  builder: (context) =>
-                      NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
-                ),
-                (route) => false,
+                CupertinoPageRoute(builder: (context) => NewSalePage(uid: widget.uid, userEmail: widget.userEmail)),
+                    (route) => false,
               );
             }, false),
           ],
@@ -3279,12 +2328,7 @@ class _InvoicePageState extends State<InvoicePage>
     );
   }
 
-  Widget _buildBtn(
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-    bool isSec,
-  ) {
+  Widget _buildBtn(IconData icon, String label, VoidCallback onTap, bool isSec) {
     return Expanded(
       child: ElevatedButton(
         onPressed: onTap,
@@ -3295,9 +2339,7 @@ class _InvoicePageState extends State<InvoicePage>
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: isSec
-                ? const BorderSide(color: kPrimaryColor, width: 1.5)
-                : BorderSide.none,
+            side: isSec ? const BorderSide(color: kPrimaryColor, width: 1.5) : BorderSide.none,
           ),
         ),
         child: Row(
@@ -3305,14 +2347,7 @@ class _InvoicePageState extends State<InvoicePage>
           children: [
             Icon(icon, size: 18),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
-                letterSpacing: 0.5,
-              ),
-            ),
+            Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5)),
           ],
         ),
       ),
@@ -3322,8 +2357,7 @@ class _InvoicePageState extends State<InvoicePage>
   // Print Handler
   Future<void> _handlePrint(BuildContext context) async {
     try {
-      BluetoothAdapterState adapterState =
-          await FlutterBluePlus.adapterState.first;
+      BluetoothAdapterState adapterState = await FlutterBluePlus.adapterState.first;
       if (adapterState == BluetoothAdapterState.off) {
         if (Platform.isAndroid) {
           try {
@@ -3342,32 +2376,11 @@ class _InvoicePageState extends State<InvoicePage>
             context: context,
             builder: (ctx) => AlertDialog(
               backgroundColor: kWhite,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              title: const Text(
-                'Bluetooth Required',
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 16,
-                  color: kBlack87,
-                ),
-              ),
-              content: const Text(
-                'Bluetooth is currently disabled. Please enable it in settings to connect with your printer.',
-                style: TextStyle(color: kBlack54, fontWeight: FontWeight.w500),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: const Text('Bluetooth Required', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: kBlack87)),
+              content: const Text('Bluetooth is currently disabled. Please enable it in settings to connect with your printer.', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w500)),
               actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text(
-                    'OK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      color: kPrimaryColor,
-                    ),
-                  ),
-                ),
+                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w800, color: kPrimaryColor))),
               ],
             ),
           );
@@ -3388,14 +2401,7 @@ class _InvoicePageState extends State<InvoicePage>
                 children: [
                   CircularProgressIndicator(color: kPrimaryColor),
                   SizedBox(height: 16),
-                  Text(
-                    'PRINTING...',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      color: kPrimaryColor,
-                    ),
-                  ),
+                  Text('PRINTING...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor)),
                 ],
               ),
             ),
@@ -3444,10 +2450,7 @@ class _InvoicePageState extends State<InvoicePage>
         if (context.mounted) {
           final result = await Navigator.push(
             context,
-            CupertinoPageRoute(
-              builder: (_) =>
-                  PrinterSetupPage(onBack: () => Navigator.pop(context)),
-            ),
+            CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
           );
           // If user came back after setting up a printer, retry print
           if (result == true && context.mounted) {
@@ -3460,28 +2463,20 @@ class _InvoicePageState extends State<InvoicePage>
       final devices = await FlutterBluePlus.bondedDevices;
       BluetoothDevice device;
       try {
-        device = devices.firstWhere(
-          (d) => d.remoteId.toString() == selectedPrinterId,
-        );
+        device = devices.firstWhere((d) => d.remoteId.toString() == selectedPrinterId);
       } catch (_) {
         // Printer saved but no longer bonded — go to setup
         Navigator.pop(context);
         if (context.mounted) {
-          CommonWidgets.showSnackBar(
-            context,
-            "Printer not found. Please set up again.",
-            bgColor: kOrange,
-          );
+          CommonWidgets.showSnackBar(context, "Printer not found. Please set up again.", bgColor: kOrange);
           await Navigator.push(
             context,
-            CupertinoPageRoute(
-              builder: (_) =>
-                  PrinterSetupPage(onBack: () => Navigator.pop(context)),
-            ),
+            CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
           );
         }
         return;
       }
+
 
       if (device.isConnected == false) {
         await device.connect(timeout: const Duration(seconds: 10));
@@ -3507,23 +2502,15 @@ class _InvoicePageState extends State<InvoicePage>
       final tCur = _toThermalSafe(_currencySymbol).trim();
 
       // Print Logo if available
-      if (_thermalShowLogo &&
-          businessLogoUrl != null &&
-          businessLogoUrl!.isNotEmpty) {
+      if (_thermalShowLogo && businessLogoUrl != null && businessLogoUrl!.isNotEmpty) {
         try {
           // Download image and convert to bitmap for thermal printer
-          final response = await HttpClient().getUrl(
-            Uri.parse(businessLogoUrl!),
-          );
+          final response = await HttpClient().getUrl(Uri.parse(businessLogoUrl!));
           final httpResponse = await response.close();
-          final imageBytes = await consolidateHttpClientResponseBytes(
-            httpResponse,
-          );
+          final imageBytes = await consolidateHttpClientResponseBytes(httpResponse);
 
           // Decode image
-          final codec = await ui.instantiateImageCodec(
-            Uint8List.fromList(imageBytes),
-          );
+          final codec = await ui.instantiateImageCodec(Uint8List.fromList(imageBytes));
           final frame = await codec.getNextFrame();
           final image = frame.image;
 
@@ -3533,17 +2520,10 @@ class _InvoicePageState extends State<InvoicePage>
           final targetHeight = (image.height * scale).toInt();
 
           // Convert to bitmap bytes for ESC/POS
-          final byteData = await image.toByteData(
-            format: ui.ImageByteFormat.rawRgba,
-          );
+          final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
           if (byteData != null) {
             // Convert RGBA to monochrome bitmap
-            final List<int> bitmapBytes = _convertToMonochromeBitmap(
-              byteData.buffer.asUint8List(),
-              image.width,
-              image.height,
-              targetWidth,
-            );
+            final List<int> bitmapBytes = _convertToMonochromeBitmap(byteData.buffer.asUint8List(), image.width, image.height, targetWidth);
 
             // Center align for logo
             bytes.addAll([esc, 0x61, 0x01]);
@@ -3551,14 +2531,8 @@ class _InvoicePageState extends State<InvoicePage>
             // Print bitmap using GS v 0 command
             final widthBytes = (targetWidth + 7) ~/ 8;
             bytes.addAll([gs, 0x76, 0x30, 0x00]); // GS v 0 - raster bit image
-            bytes.addAll([
-              widthBytes & 0xFF,
-              (widthBytes >> 8) & 0xFF,
-            ]); // xL, xH
-            bytes.addAll([
-              targetHeight & 0xFF,
-              (targetHeight >> 8) & 0xFF,
-            ]); // yL, yH
+            bytes.addAll([widthBytes & 0xFF, (widthBytes >> 8) & 0xFF]); // xL, xH
+            bytes.addAll([targetHeight & 0xFF, (targetHeight >> 8) & 0xFF]); // yL, yH
             bytes.addAll(bitmapBytes);
 
             bytes.add(lf);
@@ -3573,14 +2547,7 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.addAll([esc, 0x61, 0x01]); // Center align
       // 80mm: double-height+width (0x30) | 58mm: just bold (0x08) — smaller, fits paper
       bytes.addAll([esc, 0x21, printerWidth == '80mm' ? 0x30 : 0x08]);
-      bytes.addAll(
-        enc(
-          _truncateText(
-            businessName,
-            lineWidth ~/ (printerWidth == '80mm' ? 2 : 1),
-          ),
-        ),
-      );
+      bytes.addAll(enc(_truncateText(businessName, lineWidth ~/ (printerWidth == '80mm' ? 2 : 1))));
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x00]); // Reset to normal
 
@@ -3596,29 +2563,13 @@ class _InvoicePageState extends State<InvoicePage>
       }
       if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty) {
         bytes.addAll([esc, 0x21, 0x08]);
-        bytes.addAll(
-          enc(
-            _truncateText(
-              '${businessTaxTypeName ?? 'Tax'}: $businessGSTIN',
-              lineWidth,
-            ),
-          ),
-        );
+        bytes.addAll(enc(_truncateText('${businessTaxTypeName ?? 'Tax'}: $businessGSTIN', lineWidth)));
         bytes.addAll([esc, 0x21, 0x00]);
         bytes.add(lf);
       }
-      if (_thermalShowLicense &&
-          businessLicenseNumber != null &&
-          businessLicenseNumber!.isNotEmpty) {
+      if (_thermalShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty) {
         bytes.addAll([esc, 0x21, 0x08]);
-        bytes.addAll(
-          enc(
-            _truncateText(
-              '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
-              lineWidth,
-            ),
-          ),
-        );
+        bytes.addAll(enc(_truncateText('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', lineWidth)));
         bytes.addAll([esc, 0x21, 0x00]);
         bytes.add(lf);
       }
@@ -3629,15 +2580,7 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.addAll([esc, 0x61, 0x00]); // Left align
       final dateStr = DateFormat('dd-MMM-yyyy').format(widget.dateTime);
       final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
-      bytes.addAll(
-        enc(
-          _formatTwoColumns(
-            'Bill No: ${widget.invoiceNumber}',
-            'Date: $dateStr',
-            lineWidth,
-          ),
-        ),
-      );
+      bytes.addAll(enc(_formatTwoColumns('Bill No: ${widget.invoiceNumber}', 'Date: $dateStr', lineWidth)));
       bytes.add(lf);
       bytes.addAll(enc(_formatTwoColumns('', 'Time: $timeStr', lineWidth)));
       bytes.add(lf);
@@ -3648,15 +2591,11 @@ class _InvoicePageState extends State<InvoicePage>
         bytes.add(lf);
         bytes.addAll([esc, 0x61, 0x00]);
         bytes.addAll([esc, 0x21, 0x08]);
-        bytes.addAll(
-          enc(_truncateText('Customer: ${widget.customerName!}', lineWidth)),
-        );
+        bytes.addAll(enc(_truncateText('Customer: ${widget.customerName!}', lineWidth)));
         bytes.addAll([esc, 0x21, 0x00]);
         bytes.add(lf);
         if (widget.customerPhone != null) {
-          bytes.addAll(
-            enc(_truncateText('Contact: ${widget.customerPhone}', lineWidth)),
-          );
+          bytes.addAll(enc(_truncateText('Contact: ${widget.customerPhone}', lineWidth)));
           bytes.add(lf);
         }
       }
@@ -3665,9 +2604,7 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x08]); // Bold
-      bytes.addAll(
-        enc(_formatTableRow('Item', 'Qty', 'Price', 'Amt', lineWidth)),
-      );
+      bytes.addAll(enc(_formatTableRow('Item', 'Qty', 'Price', 'Amt', lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
       bytes.addAll(enc(thinDivider));
@@ -3685,26 +2622,18 @@ class _InvoicePageState extends State<InvoicePage>
         final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
         // Compute amount respecting tax type
         final double amount;
-        if (taxType == 'Tax Included in Price' ||
-            taxType == 'Price includes Tax') {
+        if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
           amount = baseTotal; // price already has tax
         } else if (taxType != null) {
           amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
         } else {
-          amount = (item['total'] ?? baseTotal)
-              .toDouble(); // fresh sale: total is already totalWithTax
+          amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
         }
 
         totalQty += (qty is int ? qty : (qty as num).toInt());
 
         // No currency in table columns; no tax sub-line
-        List<String> itemLines = _formatTableRowMultiLine(
-          name,
-          '$qty',
-          price.toStringAsFixed(2),
-          amount.toStringAsFixed(2),
-          lineWidth,
-        );
+        List<String> itemLines = _formatTableRowMultiLine(name, '$qty', price.toStringAsFixed(2), amount.toStringAsFixed(2), lineWidth);
         for (String line in itemLines) {
           bytes.addAll(enc(line));
           bytes.add(lf);
@@ -3717,67 +2646,31 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x08]);
-      bytes.addAll(
-        enc(
-          _formatTableRow(
-            'Subtotal',
-            '$totalQty',
-            '',
-            widget.subtotal.toStringAsFixed(2),
-            lineWidth,
-          ),
-        ),
-      );
+      bytes.addAll(enc(_formatTableRow('Subtotal', '$totalQty', '', widget.subtotal.toStringAsFixed(2), lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
 
       // Tax breakdown
-      if (_thermalShowTaxDetails &&
-          widget.taxes != null &&
-          widget.taxes!.isNotEmpty) {
+      if (_thermalShowTaxDetails && widget.taxes != null && widget.taxes!.isNotEmpty) {
         bytes.addAll(enc(thinDivider));
         bytes.add(lf);
         for (var tax in widget.taxes!) {
           final taxName = tax['name'] ?? 'Tax';
           final taxAmount = (tax['amount'] ?? 0.0).toDouble();
-          bytes.addAll(
-            enc(
-              _formatTwoColumns(
-                _toThermalSafe(taxName),
-                taxAmount.toStringAsFixed(2),
-                lineWidth,
-              ),
-            ),
-          );
+          bytes.addAll(enc(_formatTwoColumns(_toThermalSafe(taxName), taxAmount.toStringAsFixed(2), lineWidth)));
           bytes.add(lf);
         }
       }
 
       // Discount
       if (widget.discount > 0) {
-        bytes.addAll(
-          enc(
-            _formatTwoColumns(
-              'Discount',
-              '-${widget.discount.toStringAsFixed(2)}',
-              lineWidth,
-            ),
-          ),
-        );
+        bytes.addAll(enc(_formatTwoColumns('Discount', '-${widget.discount.toStringAsFixed(2)}', lineWidth)));
         bytes.add(lf);
       }
 
       // Delivery Charge
       if (widget.deliveryCharge > 0) {
-        bytes.addAll(
-          enc(
-            _formatTwoColumns(
-              'Delivery Charge',
-              '+${widget.deliveryCharge.toStringAsFixed(2)}',
-              lineWidth,
-            ),
-          ),
-        );
+        bytes.addAll(enc(_formatTwoColumns('Delivery Charge', '+${widget.deliveryCharge.toStringAsFixed(2)}', lineWidth)));
         bytes.add(lf);
       }
 
@@ -3786,15 +2679,7 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.add(lf);
       // 80mm: bold + double-height (0x18) | 58mm: just bold (0x08)
       bytes.addAll([esc, 0x21, printerWidth == '80mm' ? 0x18 : 0x08]);
-      bytes.addAll(
-        enc(
-          _formatTwoColumns(
-            'Total',
-            '$tCur${widget.total.toStringAsFixed(2)}',
-            lineWidth,
-          ),
-        ),
-      );
+      bytes.addAll(enc(_formatTwoColumns('Total', '$tCur${widget.total.toStringAsFixed(2)}', lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
       bytes.addAll(enc(dividerLine));
@@ -3802,45 +2687,19 @@ class _InvoicePageState extends State<InvoicePage>
 
       // Payment Mode
       if (_showPaymentMode) {
-        bytes.addAll(
-          enc(_formatTwoColumns('Payment:', widget.paymentMode, lineWidth)),
-        );
+        bytes.addAll(enc(_formatTwoColumns('Payment:', widget.paymentMode, lineWidth)));
         bytes.add(lf);
         if (_isSplitPayment) {
           if (_splitCashAmount > 0) {
-            bytes.addAll(
-              enc(
-                _formatTwoColumns(
-                  '  Cash',
-                  '$tCur${_splitCashAmount.toStringAsFixed(2)}',
-                  lineWidth,
-                ),
-              ),
-            );
+            bytes.addAll(enc(_formatTwoColumns('  Cash', '$tCur${_splitCashAmount.toStringAsFixed(2)}', lineWidth)));
             bytes.add(lf);
           }
           if (_splitOnlineAmount > 0) {
-            bytes.addAll(
-              enc(
-                _formatTwoColumns(
-                  '  Online',
-                  '$tCur${_splitOnlineAmount.toStringAsFixed(2)}',
-                  lineWidth,
-                ),
-              ),
-            );
+            bytes.addAll(enc(_formatTwoColumns('  Online', '$tCur${_splitOnlineAmount.toStringAsFixed(2)}', lineWidth)));
             bytes.add(lf);
           }
           if (_splitCreditAmount > 0) {
-            bytes.addAll(
-              enc(
-                _formatTwoColumns(
-                  '  Credit',
-                  '$tCur${_splitCreditAmount.toStringAsFixed(2)}',
-                  lineWidth,
-                ),
-              ),
-            );
+            bytes.addAll(enc(_formatTwoColumns('  Credit', '$tCur${_splitCreditAmount.toStringAsFixed(2)}', lineWidth)));
             bytes.add(lf);
           }
         }
@@ -3848,14 +2707,7 @@ class _InvoicePageState extends State<InvoicePage>
 
       // You Saved
       if (_thermalShowYouSaved && widget.discount > 0) {
-        bytes.addAll(
-          enc(
-            _truncateText(
-              '** You Saved $tCur${widget.discount.toStringAsFixed(2)}! **',
-              lineWidth,
-            ),
-          ),
-        );
+        bytes.addAll(enc(_truncateText('** You Saved $tCur${widget.discount.toStringAsFixed(2)}! **', lineWidth)));
         bytes.add(lf);
       }
 
@@ -3877,13 +2729,9 @@ class _InvoicePageState extends State<InvoicePage>
       }
 
       // Delivery Address (if provided)
-      if (widget.deliveryAddress != null &&
-          widget.deliveryAddress!.isNotEmpty) {
+      if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) {
         bytes.addAll([esc, 0x61, 0x00]); // Left align
-        for (final line in _wrapText(
-          'Delivery: ${widget.deliveryAddress}',
-          lineWidth,
-        )) {
+        for (final line in _wrapText('Delivery: ${widget.deliveryAddress}', lineWidth)) {
           bytes.addAll(enc(line));
           bytes.add(lf);
         }
@@ -3904,9 +2752,7 @@ class _InvoicePageState extends State<InvoicePage>
       bytes.addAll([esc, 0x61, 0x01]); // Center
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x08]);
-      final footerStr = _thermalSaleInvoiceText.isNotEmpty
-          ? _thermalSaleInvoiceText
-          : 'Thank You';
+      final footerStr = _thermalSaleInvoiceText.isNotEmpty ? _thermalSaleInvoiceText : 'Thank You';
       for (final line in _wrapText(footerStr, lineWidth)) {
         bytes.addAll(enc(line));
         bytes.add(lf);
@@ -3932,10 +2778,7 @@ class _InvoicePageState extends State<InvoicePage>
       BluetoothCharacteristic? writeChar;
       for (var s in services) {
         for (var c in s.characteristics) {
-          if (c.properties.write) {
-            writeChar = c;
-            break;
-          }
+          if (c.properties.write) { writeChar = c; break; }
         }
       }
       if (writeChar != null) {
@@ -3952,20 +2795,10 @@ class _InvoicePageState extends State<InvoicePage>
         }
       }
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(
-        context,
-        numberOfCopies > 1
-            ? '$numberOfCopies copies printed successfully'
-            : 'Receipt printed successfully',
-        bgColor: kGoogleGreen,
-      );
+      CommonWidgets.showSnackBar(context, numberOfCopies > 1 ? '$numberOfCopies copies printed successfully' : 'Receipt printed successfully', bgColor: kGoogleGreen);
     } catch (e) {
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(
-        context,
-        'Printing failed: $e',
-        bgColor: kErrorColor,
-      );
+      CommonWidgets.showSnackBar(context, 'Printing failed: $e', bgColor: kErrorColor);
     }
   }
 
@@ -3978,11 +2811,8 @@ class _InvoicePageState extends State<InvoicePage>
   /// Always right-aligns [right]; [left] is truncated if needed to make room.
   String _formatTwoColumns(String left, String right, int lineWidth) {
     // Clamp right to lineWidth
-    final safeRight = right.length > lineWidth
-        ? right.substring(0, lineWidth)
-        : right;
-    final availLeft =
-        lineWidth - safeRight.length - 1; // at least 1 space separator
+    final safeRight = right.length > lineWidth ? right.substring(0, lineWidth) : right;
+    final availLeft = lineWidth - safeRight.length - 1; // at least 1 space separator
 
     if (availLeft <= 0) {
       // Right side alone fills the line — just print right flush-right
@@ -4002,34 +2832,34 @@ class _InvoicePageState extends State<InvoicePage>
   /// their ASCII fallbacks so ESC/POS printers render them correctly.
   String _toThermalSafe(String text) {
     return text
-        .replaceAll('₹', 'Rs.') // Indian Rupee
-        .replaceAll('€', 'EUR') // Euro
-        .replaceAll('£', 'GBP') // Pound
-        .replaceAll('¥', 'JPY') // Yen/Yuan
-        .replaceAll('₩', 'KRW') // Korean Won
-        .replaceAll('₪', 'ILS') // Shekel
-        .replaceAll('₺', 'TRY') // Turkish Lira
-        .replaceAll('₴', 'UAH') // Hryvnia
-        .replaceAll('₸', 'KZT') // Tenge
-        .replaceAll('₮', 'MNT') // Tugrik
-        .replaceAll('₭', 'LAK') // Kip
-        .replaceAll('₱', 'PHP') // Philippine Peso
-        .replaceAll('₦', 'NGN') // Naira
-        .replaceAll('₡', 'CRC') // Colon
-        .replaceAll('₲', 'PYG') // Guarani
-        .replaceAll('₼', 'AZN') // Manat
-        .replaceAll('₾', 'GEL') // Lari
-        .replaceAll('₽', 'RUB') // Ruble
-        .replaceAll('฿', 'THB') // Baht
-        .replaceAll('﷼', 'SAR') // Riyal
-        .replaceAll('₨', 'Rs.') // Rupee sign
-        .replaceAll('৳', 'BDT') // Taka
-        .replaceAll('₫', 'VND') // Dong
-        .replaceAll('₢', 'Cr.') // Cruzeiro
-        .replaceAll('₵', 'GHS') // Cedi
-        .replaceAll('🎉', '') // Emoji — not printable
+        .replaceAll('₹', 'Rs.')  // Indian Rupee
+        .replaceAll('€', 'EUR')  // Euro
+        .replaceAll('£', 'GBP')  // Pound
+        .replaceAll('¥', 'JPY')  // Yen/Yuan
+        .replaceAll('₩', 'KRW')  // Korean Won
+        .replaceAll('₪', 'ILS')  // Shekel
+        .replaceAll('₺', 'TRY')  // Turkish Lira
+        .replaceAll('₴', 'UAH')  // Hryvnia
+        .replaceAll('₸', 'KZT')  // Tenge
+        .replaceAll('₮', 'MNT')  // Tugrik
+        .replaceAll('₭', 'LAK')  // Kip
+        .replaceAll('₱', 'PHP')  // Philippine Peso
+        .replaceAll('₦', 'NGN')  // Naira
+        .replaceAll('₡', 'CRC')  // Colon
+        .replaceAll('₲', 'PYG')  // Guarani
+        .replaceAll('₼', 'AZN')  // Manat
+        .replaceAll('₾', 'GEL')  // Lari
+        .replaceAll('₽', 'RUB')  // Ruble
+        .replaceAll('฿', 'THB')  // Baht
+        .replaceAll('﷼', 'SAR')  // Riyal
+        .replaceAll('₨', 'Rs.')  // Rupee sign
+        .replaceAll('৳', 'BDT')  // Taka
+        .replaceAll('₫', 'VND')  // Dong
+        .replaceAll('₢', 'Cr.')  // Cruzeiro
+        .replaceAll('₵', 'GHS')  // Cedi
+        .replaceAll('🎉', '')    // Emoji — not printable
         .replaceAll('✓', 'OK')
-        // Strip any remaining non-ASCII chars (codepoint > 127)
+    // Strip any remaining non-ASCII chars (codepoint > 127)
         .replaceAll(RegExp(r'[^\x00-\x7F]'), '?');
   }
 
@@ -4038,26 +2868,18 @@ class _InvoicePageState extends State<InvoicePage>
   //   item=14  qty=4  price=7  amt=7   (14+4+7+7 = 32)
   // 80mm paper → lineWidth = 48 chars total (Font A)
   //   item=24  qty=4  price=10  amt=10  (24+4+10+10 = 48)
-  int _qtyW(int lw) => 4;
+  int _qtyW(int lw)   => 4;
   int _priceW(int lw) => lw <= 32 ? 7 : (lw <= 42 ? 8 : 10);
-  int _amtW(int lw) => lw <= 32 ? 7 : (lw <= 42 ? 8 : 10);
-  int _itemW(int lw) => lw - _qtyW(lw) - _priceW(lw) - _amtW(lw);
+  int _amtW(int lw)   => lw <= 32 ? 7 : (lw <= 42 ? 8 : 10);
+  int _itemW(int lw)  => lw - _qtyW(lw) - _priceW(lw) - _amtW(lw);
 
-  String _formatTableRow(
-    String item,
-    String qty,
-    String price,
-    String amt,
-    int lineWidth,
-  ) {
-    final itemW = _itemW(lineWidth);
-    final qtyW = _qtyW(lineWidth);
+  String _formatTableRow(String item, String qty, String price, String amt, int lineWidth) {
+    final itemW  = _itemW(lineWidth);
+    final qtyW   = _qtyW(lineWidth);
     final priceW = _priceW(lineWidth);
-    final amtW = _amtW(lineWidth);
+    final amtW   = _amtW(lineWidth);
 
-    String itemStr = item.length > itemW
-        ? '${item.substring(0, itemW - 1)}.'
-        : item.padRight(itemW);
+    String itemStr = item.length > itemW ? '${item.substring(0, itemW - 1)}.' : item.padRight(itemW);
 
     return '$itemStr'
         '${qty.padLeft(qtyW)}'
@@ -4070,17 +2892,11 @@ class _InvoicePageState extends State<InvoicePage>
   ///   • If name fits on one line  → single row: [NAME_____][QTY][PRICE][AMT]
   ///   • If name is too long       → name wraps across rows inside the item column,
   ///                                  and the final wrapped line carries the values.
-  List<String> _formatTableRowMultiLine(
-    String item,
-    String qty,
-    String price,
-    String amt,
-    int lineWidth,
-  ) {
-    final itemW = _itemW(lineWidth);
-    final qtyW = _qtyW(lineWidth);
+  List<String> _formatTableRowMultiLine(String item, String qty, String price, String amt, int lineWidth) {
+    final itemW  = _itemW(lineWidth);
+    final qtyW   = _qtyW(lineWidth);
     final priceW = _priceW(lineWidth);
-    final amtW = _amtW(lineWidth);
+    final amtW   = _amtW(lineWidth);
 
     List<String> lines = [];
 
@@ -4088,9 +2904,9 @@ class _InvoicePageState extends State<InvoicePage>
       // ── Single line ──────────────────────────────────────────────────────────
       lines.add(
         '${item.padRight(itemW)}'
-        '${qty.padLeft(qtyW)}'
-        '${price.padLeft(priceW)}'
-        '${amt.padLeft(amtW)}',
+            '${qty.padLeft(qtyW)}'
+            '${price.padLeft(priceW)}'
+            '${amt.padLeft(amtW)}',
       );
     } else {
       // ── Multi-line item name ─────────────────────────────────────────────────
@@ -4105,9 +2921,9 @@ class _InvoicePageState extends State<InvoicePage>
       final lastChunk = itemChunks.last.padRight(itemW);
       lines.add(
         '$lastChunk'
-        '${qty.padLeft(qtyW)}'
-        '${price.padLeft(priceW)}'
-        '${amt.padLeft(amtW)}',
+            '${qty.padLeft(qtyW)}'
+            '${price.padLeft(priceW)}'
+            '${amt.padLeft(amtW)}',
       );
     }
 
@@ -4129,9 +2945,7 @@ class _InvoicePageState extends State<InvoicePage>
           // Force-break a very long word
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length)
-                ? start + maxWidth
-                : word.length;
+            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -4145,9 +2959,7 @@ class _InvoicePageState extends State<InvoicePage>
         if (word.length > maxWidth) {
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length)
-                ? start + maxWidth
-                : word.length;
+            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -4166,12 +2978,7 @@ class _InvoicePageState extends State<InvoicePage>
   }
 
   /// Convert RGBA image bytes to monochrome bitmap for thermal printer
-  List<int> _convertToMonochromeBitmap(
-    Uint8List rgba,
-    int width,
-    int height,
-    int targetWidth,
-  ) {
+  List<int> _convertToMonochromeBitmap(Uint8List rgba, int width, int height, int targetWidth) {
     final scale = targetWidth / width;
     final targetHeight = (height * scale).toInt();
     final widthBytes = (targetWidth + 7) ~/ 8;
@@ -4217,10 +3024,7 @@ class _InvoicePageState extends State<InvoicePage>
                 children: [
                   CircularProgressIndicator(color: kPrimaryColor),
                   SizedBox(height: 16),
-                  Text(
-                    'Generating PDF...',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                  ),
+                  Text('Generating PDF...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
@@ -4235,16 +3039,13 @@ class _InvoicePageState extends State<InvoicePage>
 
       Navigator.pop(context);
 
-      await Share.shareXFiles([
-        XFile(file.path),
-      ], text: 'Invoice #${widget.invoiceNumber}');
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Invoice #${widget.invoiceNumber}',
+      );
     } catch (e) {
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(
-        context,
-        'Error sharing: $e',
-        bgColor: kErrorColor,
-      );
+      CommonWidgets.showSnackBar(context, 'Error sharing: $e', bgColor: kErrorColor);
     }
   }
 
@@ -4266,9 +3067,7 @@ class _InvoicePageState extends State<InvoicePage>
       try {
         final response = await HttpClient().getUrl(Uri.parse(businessLogoUrl!));
         final httpResponse = await response.close();
-        final imageBytes = await consolidateHttpClientResponseBytes(
-          httpResponse,
-        );
+        final imageBytes = await consolidateHttpClientResponseBytes(httpResponse);
         logoImage = pw.MemoryImage(Uint8List.fromList(imageBytes));
       } catch (e) {
         debugPrint('Error loading logo for PDF: $e');
@@ -4287,18 +3086,12 @@ class _InvoicePageState extends State<InvoicePage>
           final themeColor = PdfColor.fromInt(a4Colors['primary']!.toARGB32());
           return pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 24,
-            ),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 24),
             decoration: pw.BoxDecoration(
               color: PdfColors.white,
               border: pw.Border(
                 top: pw.BorderSide(color: themeColor, width: 5),
-                bottom: const pw.BorderSide(
-                  color: PdfColors.grey300,
-                  width: 0.5,
-                ),
+                bottom: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
               ),
             ),
             child: pw.Row(
@@ -4307,43 +3100,23 @@ class _InvoicePageState extends State<InvoicePage>
                 // Logo
                 if (_a4ShowLogo && logoImage != null)
                   pw.Container(
-                    width: 52,
-                    height: 52,
+                    width: 52, height: 52,
                     margin: const pw.EdgeInsets.only(right: 16),
                     child: pw.Image(logoImage, fit: pw.BoxFit.cover),
                   )
                 else if (_a4ShowLogo)
                   pw.Container(
-                    width: 52,
-                    height: 52,
+                    width: 52, height: 52,
                     margin: const pw.EdgeInsets.only(right: 16),
                     decoration: pw.BoxDecoration(
-                      color: PdfColor(
-                        themeColor.red,
-                        themeColor.green,
-                        themeColor.blue,
-                        0.08,
-                      ),
-                      border: pw.Border.all(
-                        color: PdfColor(
-                          themeColor.red,
-                          themeColor.green,
-                          themeColor.blue,
-                          0.3,
-                        ),
-                      ),
+                      color: PdfColor(themeColor.red, themeColor.green, themeColor.blue, 0.08),
+                      border: pw.Border.all(color: PdfColor(themeColor.red, themeColor.green, themeColor.blue, 0.3)),
                       borderRadius: pw.BorderRadius.circular(8),
                     ),
                     child: pw.Center(
                       child: pw.Text(
-                        businessName.isNotEmpty
-                            ? businessName[0].toUpperCase()
-                            : 'B',
-                        style: pw.TextStyle(
-                          fontSize: 24,
-                          fontWeight: pw.FontWeight.bold,
-                          color: themeColor,
-                        ),
+                        businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B',
+                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: themeColor),
                       ),
                     ),
                   ),
@@ -4352,69 +3125,26 @@ class _InvoicePageState extends State<InvoicePage>
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(
-                        businessName,
-                        style: pw.TextStyle(
-                          fontSize: 20,
-                          fontWeight: pw.FontWeight.bold,
-                          color: PdfColors.black,
-                        ),
-                      ),
+                      pw.Text(businessName, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                       if (_showLocation && businessLocation.isNotEmpty) ...[
                         pw.SizedBox(height: 3),
-                        pw.Text(
-                          businessLocation,
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
+                        pw.Text(businessLocation, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                       ],
                       if (_showPhone && businessPhone.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text(
-                          'Tel: $businessPhone',
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
+                        pw.Text('Tel: $businessPhone', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                       ],
-                      if (_showEmail &&
-                          businessEmail != null &&
-                          businessEmail!.isNotEmpty) ...[
+                      if (_showEmail && businessEmail != null && businessEmail!.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text(
-                          'Email: $businessEmail',
-                          style: const pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.grey700,
-                          ),
-                        ),
+                        pw.Text('Email: $businessEmail', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                       ],
                       if (_showGST && businessGSTIN != null) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text(
-                          '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.black,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                        ),
+                        pw.Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN', style: pw.TextStyle(fontSize: 10, color: PdfColors.black, fontWeight: pw.FontWeight.bold)),
                       ],
-                      if (_a4ShowLicense &&
-                          businessLicenseNumber != null &&
-                          businessLicenseNumber!.isNotEmpty) ...[
+                      if (_a4ShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text(
-                          '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
-                          style: pw.TextStyle(
-                            fontSize: 10,
-                            color: PdfColors.black,
-                            fontWeight: pw.FontWeight.bold,
-                          ),
-                        ),
+                        pw.Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', style: pw.TextStyle(fontSize: 10, color: PdfColors.black, fontWeight: pw.FontWeight.bold)),
                       ],
                     ],
                   ),
@@ -4424,51 +3154,21 @@ class _InvoicePageState extends State<InvoicePage>
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
+                      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: pw.BoxDecoration(
                         color: themeColor,
                         borderRadius: pw.BorderRadius.circular(4),
                       ),
                       child: pw.Text(
-                        widget.isPaymentReceipt
-                            ? 'Payment Receipt'
-                            : (widget.isQuotation
-                                  ? 'Quotation'
-                                  : 'Tax Invoice'),
-                        style: pw.TextStyle(
-                          color: PdfColors.white,
-                          fontSize: 11,
-                          fontWeight: pw.FontWeight.bold,
-                        ),
+                        widget.isPaymentReceipt ? 'Payment Receipt' : (widget.isQuotation ? 'Quotation' : 'Tax Invoice'),
+                        style: pw.TextStyle(color: PdfColors.white, fontSize: 11, fontWeight: pw.FontWeight.bold),
                       ),
                     ),
                     pw.SizedBox(height: 6),
-                    pw.Text(
-                      '#${widget.invoiceNumber}',
-                      style: pw.TextStyle(
-                        fontSize: 13,
-                        fontWeight: pw.FontWeight.bold,
-                        color: PdfColors.black,
-                      ),
-                    ),
+                    pw.Text('#${widget.invoiceNumber}', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
                     pw.SizedBox(height: 2),
-                    pw.Text(
-                      dateStr,
-                      style: const pw.TextStyle(
-                        fontSize: 10,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
-                    pw.Text(
-                      timeStr,
-                      style: const pw.TextStyle(
-                        fontSize: 10,
-                        color: PdfColors.grey700,
-                      ),
-                    ),
+                    pw.Text(dateStr, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                    pw.Text(timeStr, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                   ],
                 ),
               ],
@@ -4478,15 +3178,11 @@ class _InvoicePageState extends State<InvoicePage>
 
         // ── FOOTER — last page only ───────────────────────────────────────
         footer: (pw.Context context) {
-          if (context.pageNumber < context.pagesCount)
-            return pw.SizedBox.shrink();
+          if (context.pageNumber < context.pagesCount) return pw.SizedBox.shrink();
           final themeColor = PdfColor.fromInt(a4Colors['primary']!.toARGB32());
           return pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 16,
-            ),
+            padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 16),
             decoration: pw.BoxDecoration(
               color: const PdfColor.fromInt(0xFFF7F8FA),
               border: pw.Border(
@@ -4499,15 +3195,8 @@ class _InvoicePageState extends State<InvoicePage>
               children: [
                 pw.Expanded(
                   child: pw.Text(
-                    _a4SaleInvoiceText.isNotEmpty
-                        ? _a4SaleInvoiceText
-                        : 'Thank you for your business!',
-                    style: pw.TextStyle(
-                      font: ttfBold,
-                      fontSize: 13,
-                      fontWeight: pw.FontWeight.bold,
-                      color: PdfColors.black,
-                    ),
+                    _a4SaleInvoiceText.isNotEmpty ? _a4SaleInvoiceText : 'Thank you for your business!',
+                    style: pw.TextStyle(font: ttfBold, fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                     textAlign: pw.TextAlign.center,
                   ),
                 ),
@@ -4517,31 +3206,14 @@ class _InvoicePageState extends State<InvoicePage>
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text(
-                            'Generated by Maxmybill',
-                            style: const pw.TextStyle(
-                              fontSize: 8,
-                              color: PdfColors.grey600,
-                            ),
-                          ),
-                          pw.Text(
-                            'www.maxmybill.com',
-                            style: pw.TextStyle(
-                              font: ttfBold,
-                              fontSize: 8,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.grey700,
-                            ),
-                          ),
+                          pw.Text('Generated by Maxmybill', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                          pw.Text('www.maxmybill.com', style: pw.TextStyle(font: ttfBold, fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                         ],
                       ),
                     pw.SizedBox(width: 8),
                     pw.Text(
                       'Page ${context.pageNumber} of ${context.pagesCount}',
-                      style: const pw.TextStyle(
-                        fontSize: 8,
-                        color: PdfColors.grey600,
-                      ),
+                      style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
                     ),
                   ],
                 ),
@@ -4572,40 +3244,13 @@ class _InvoicePageState extends State<InvoicePage>
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            'Customer',
-                            style: pw.TextStyle(
-                              fontSize: 9,
-                              fontWeight: pw.FontWeight.bold,
-                              color: themeColor,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
+                          pw.Text('Customer', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: themeColor, letterSpacing: 1.2)),
                           pw.SizedBox(height: 4),
-                          pw.Text(
-                            widget.customerName!,
-                            style: pw.TextStyle(
-                              fontSize: 14,
-                              fontWeight: pw.FontWeight.bold,
-                            ),
-                          ),
+                          pw.Text(widget.customerName!, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
                           if (widget.customerPhone != null)
-                            pw.Text(
-                              'Contact: ${widget.customerPhone!}',
-                              style: const pw.TextStyle(
-                                fontSize: 11,
-                                color: PdfColors.grey700,
-                              ),
-                            ),
-                          if (widget.customerGSTIN != null &&
-                              widget.customerGSTIN!.isNotEmpty)
-                            pw.Text(
-                              'GSTIN: ${widget.customerGSTIN}',
-                              style: const pw.TextStyle(
-                                fontSize: 10,
-                                color: PdfColors.grey700,
-                              ),
-                            ),
+                            pw.Text('Contact: ${widget.customerPhone!}', style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
+                          if (widget.customerGSTIN != null && widget.customerGSTIN!.isNotEmpty)
+                            pw.Text('GSTIN: ${widget.customerGSTIN}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
                         ],
                       ),
                     ),
@@ -4614,59 +3259,30 @@ class _InvoicePageState extends State<InvoicePage>
 
                   // ── ITEMS TABLE ──
                   pw.Table(
-                    border: pw.TableBorder.all(
-                      color: PdfColors.grey300,
-                      width: 0.5,
-                    ),
-                    columnWidths: _a4ShowTaxColumn
-                        ? {
-                            0: const pw.FlexColumnWidth(4.5),
-                            1: const pw.FixedColumnWidth(36),
-                            2: const pw.FlexColumnWidth(1.6),
-                            3: const pw.FlexColumnWidth(1.4),
-                            4: const pw.FlexColumnWidth(1.6),
-                          }
-                        : {
-                            0: const pw.FlexColumnWidth(5),
-                            1: const pw.FixedColumnWidth(36),
-                            2: const pw.FlexColumnWidth(1.8),
-                            3: const pw.FlexColumnWidth(1.8),
-                          },
+                    border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+                    columnWidths: _a4ShowTaxColumn ? {
+                      0: const pw.FlexColumnWidth(4.5),
+                      1: const pw.FixedColumnWidth(36),
+                      2: const pw.FlexColumnWidth(1.6),
+                      3: const pw.FlexColumnWidth(1.4),
+                      4: const pw.FlexColumnWidth(1.6),
+                    } : {
+                      0: const pw.FlexColumnWidth(5),
+                      1: const pw.FixedColumnWidth(36),
+                      2: const pw.FlexColumnWidth(1.8),
+                      3: const pw.FlexColumnWidth(1.8),
+                    },
                     children: [
                       // Header row
                       pw.TableRow(
                         decoration: pw.BoxDecoration(color: themeColor),
                         children: [
-                          _pdfCell(
-                            'Item / Description',
-                            ttfBold,
-                            isHeader: true,
-                          ),
-                          _pdfCell(
-                            'Qty',
-                            ttfBold,
-                            isHeader: true,
-                            align: pw.TextAlign.center,
-                          ),
-                          _pdfCell(
-                            'Rate',
-                            ttfBold,
-                            isHeader: true,
-                            align: pw.TextAlign.right,
-                          ),
+                          _pdfCell('Item / Description', ttfBold, isHeader: true),
+                          _pdfCell('Qty', ttfBold, isHeader: true, align: pw.TextAlign.center),
+                          _pdfCell('Rate', ttfBold, isHeader: true, align: pw.TextAlign.right),
                           if (_a4ShowTaxColumn)
-                            _pdfCell(
-                              'Tax',
-                              ttfBold,
-                              isHeader: true,
-                              align: pw.TextAlign.right,
-                            ),
-                          _pdfCell(
-                            'Amount',
-                            ttfBold,
-                            isHeader: true,
-                            align: pw.TextAlign.right,
-                          ),
+                            _pdfCell('Tax', ttfBold, isHeader: true, align: pw.TextAlign.right),
+                          _pdfCell('Amount', ttfBold, isHeader: true, align: pw.TextAlign.right),
                         ],
                       ),
                       // ALL item rows — MultiPage handles page breaks automatically
@@ -4680,114 +3296,51 @@ class _InvoicePageState extends State<InvoicePage>
                         final taxName = (item['taxName'] ?? '') as String;
                         final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
                         final taxType = item['taxType'] as String?;
-                        final baseTotal =
-                            price * (qty is num ? qty.toDouble() : 1.0);
+                        final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
                         // Compute amount respecting tax type
                         final double amount;
-                        if (taxType == 'Tax Included in Price' ||
-                            taxType == 'Price includes Tax') {
+                        if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
                           amount = baseTotal; // price already has tax
                         } else if (taxType != null) {
-                          amount =
-                              baseTotal +
-                              taxAmt; // add tax for 'Add Tax at Billing' etc.
+                          amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
                         } else {
-                          amount = (item['total'] ?? baseTotal)
-                              .toDouble(); // fresh sale: total is already totalWithTax
+                          amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
                         }
                         final isEven = idx.isEven;
-                        final rowBg = isEven
-                            ? PdfColors.white
-                            : const PdfColor.fromInt(0xFFF9FAFB);
+                        final rowBg = isEven ? PdfColors.white : const PdfColor.fromInt(0xFFF9FAFB);
                         return pw.TableRow(
                           decoration: pw.BoxDecoration(color: rowBg),
                           children: [
                             pw.Padding(
-                              padding: const pw.EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 7,
-                              ),
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                               child: pw.Column(
                                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                                 children: [
-                                  pw.Text(
-                                    name,
-                                    style: pw.TextStyle(
-                                      font: ttfBold,
-                                      fontSize: 10,
-                                    ),
-                                  ),
+                                  pw.Text(name, style: pw.TextStyle(font: ttfBold, fontSize: 10)),
                                   if (taxName.isNotEmpty && taxPerc > 0)
-                                    pw.Text(
-                                      '$taxName ${taxPerc.toStringAsFixed(0)}%',
-                                      style: const pw.TextStyle(
-                                        fontSize: 8,
-                                        color: PdfColors.grey600,
-                                      ),
-                                    ),
+                                    pw.Text('$taxName ${taxPerc.toStringAsFixed(0)}%', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
                                 ],
                               ),
                             ),
                             _pdfCell(
-                              qty is double && qty % 1 != 0
-                                  ? qty.toStringAsFixed(2)
-                                  : '$qty',
-                              ttf,
-                              align: pw.TextAlign.center,
-                              isEven: isEven,
+                              qty is double && qty % 1 != 0 ? qty.toStringAsFixed(2) : '$qty',
+                              ttf, align: pw.TextAlign.center, isEven: isEven,
                             ),
-                            _pdfCell(
-                              price.toStringAsFixed(2),
-                              ttf,
-                              align: pw.TextAlign.right,
-                              isEven: isEven,
-                            ),
+                            _pdfCell(price.toStringAsFixed(2), ttf, align: pw.TextAlign.right, isEven: isEven),
                             if (_a4ShowTaxColumn)
                               pw.Padding(
-                                padding: const pw.EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 7,
-                                ),
+                                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
                                 child: taxPerc > 0
                                     ? pw.Column(
-                                        crossAxisAlignment:
-                                            pw.CrossAxisAlignment.end,
+                                        crossAxisAlignment: pw.CrossAxisAlignment.end,
                                         children: [
-                                          pw.Text(
-                                            taxAmt.toStringAsFixed(2),
-                                            style: pw.TextStyle(
-                                              font: ttf,
-                                              fontSize: 10,
-                                            ),
-                                          ),
-                                          pw.Text(
-                                            '(${taxPerc.toStringAsFixed(0)}%)',
-                                            style: pw.TextStyle(
-                                              font: ttf,
-                                              fontSize: 7,
-                                              color: PdfColors.grey600,
-                                            ),
-                                          ),
+                                          pw.Text(taxAmt.toStringAsFixed(2), style: pw.TextStyle(font: ttf, fontSize: 10)),
+                                          pw.Text('(${taxPerc.toStringAsFixed(0)}%)', style: pw.TextStyle(font: ttf, fontSize: 7, color: PdfColors.grey600)),
                                         ],
                                       )
-                                    : pw.Text(
-                                        '-',
-                                        textAlign: pw.TextAlign.right,
-                                        style: pw.TextStyle(
-                                          font: ttf,
-                                          fontSize: 10,
-                                          color: PdfColors.grey600,
-                                        ),
-                                      ),
+                                    : pw.Text('-', textAlign: pw.TextAlign.right, style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey600)),
                               ),
-                            _pdfCell(
-                              amount.toStringAsFixed(2),
-                              ttfBold,
-                              align: pw.TextAlign.right,
-                              isEven: isEven,
-                              bold: true,
-                              color: themeColor,
-                            ),
+                            _pdfCell(amount.toStringAsFixed(2), ttfBold, align: pw.TextAlign.right, isEven: isEven, bold: true, color: themeColor),
                           ],
                         );
                       }),
@@ -4806,65 +3359,26 @@ class _InvoicePageState extends State<InvoicePage>
                       ),
                       child: pw.Column(
                         children: [
-                          _invoicePdfTotalRow(
-                            'Subtotal',
-                            '$currency${widget.subtotal.toStringAsFixed(2)}',
-                            ttf,
-                            ttfBold,
-                          ),
+                          _invoicePdfTotalRow('Subtotal', '$currency${widget.subtotal.toStringAsFixed(2)}', ttf, ttfBold),
                           if (widget.discount > 0)
-                            _invoicePdfTotalRow(
-                              'Discount',
-                              '-$currency${widget.discount.toStringAsFixed(2)}',
-                              ttf,
-                              ttfBold,
-                              isDiscount: true,
-                            ),
+                            _invoicePdfTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', ttf, ttfBold, isDiscount: true),
                           if (widget.taxes != null && widget.taxes!.isNotEmpty)
-                            ...widget.taxes!.map(
-                              (tax) => _invoicePdfTotalRow(
-                                tax['name'] ?? 'Tax',
-                                '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
-                                ttf,
-                                ttfBold,
-                              ),
-                            ),
+                            ...widget.taxes!.map((tax) => _invoicePdfTotalRow(
+                              tax['name'] ?? 'Tax',
+                              '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
+                              ttf, ttfBold,
+                            )),
                           if (widget.deliveryCharge > 0)
-                            _invoicePdfTotalRow(
-                              'Delivery',
-                              '+$currency${widget.deliveryCharge.toStringAsFixed(2)}',
-                              ttf,
-                              ttfBold,
-                            ),
+                            _invoicePdfTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', ttf, ttfBold),
                           pw.Container(height: 1, color: PdfColors.grey300),
                           pw.Container(
                             color: PdfColors.white,
-                            padding: const pw.EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 10,
-                            ),
+                            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                             child: pw.Row(
-                              mainAxisAlignment:
-                                  pw.MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                               children: [
-                                pw.Text(
-                                  'Total',
-                                  style: pw.TextStyle(
-                                    font: ttfBold,
-                                    fontSize: 13,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: themeColor,
-                                  ),
-                                ),
-                                pw.Text(
-                                  '$currency${widget.total.toStringAsFixed(2)}',
-                                  style: pw.TextStyle(
-                                    font: ttfBold,
-                                    fontSize: 14,
-                                    fontWeight: pw.FontWeight.bold,
-                                    color: themeColor,
-                                  ),
-                                ),
+                                pw.Text('Total', style: pw.TextStyle(font: ttfBold, fontSize: 13, fontWeight: pw.FontWeight.bold, color: themeColor)),
+                                pw.Text('$currency${widget.total.toStringAsFixed(2)}', style: pw.TextStyle(font: ttfBold, fontSize: 14, fontWeight: pw.FontWeight.bold, color: themeColor)),
                               ],
                             ),
                           ),
@@ -4874,8 +3388,7 @@ class _InvoicePageState extends State<InvoicePage>
                   ),
 
                   // Bill Notes
-                  if (widget.customNote != null &&
-                      widget.customNote!.isNotEmpty) ...[
+                  if (widget.customNote != null && widget.customNote!.isNotEmpty) ...[
                     pw.SizedBox(height: 14),
                     pw.Container(
                       width: double.infinity,
@@ -4888,27 +3401,16 @@ class _InvoicePageState extends State<InvoicePage>
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            'Note:',
-                            style: pw.TextStyle(
-                              fontSize: 10,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.grey700,
-                            ),
-                          ),
+                          pw.Text('Note:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                           pw.SizedBox(height: 4),
-                          pw.Text(
-                            widget.customNote!,
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
+                          pw.Text(widget.customNote!, style: const pw.TextStyle(fontSize: 10)),
                         ],
                       ),
                     ),
                   ],
 
                   // Delivery Address
-                  if (widget.deliveryAddress != null &&
-                      widget.deliveryAddress!.isNotEmpty) ...[
+                  if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     pw.Container(
                       width: double.infinity,
@@ -4921,19 +3423,9 @@ class _InvoicePageState extends State<InvoicePage>
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text(
-                            'Delivery Address:',
-                            style: pw.TextStyle(
-                              fontSize: 10,
-                              fontWeight: pw.FontWeight.bold,
-                              color: PdfColors.grey700,
-                            ),
-                          ),
+                          pw.Text('Delivery Address:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
                           pw.SizedBox(height: 4),
-                          pw.Text(
-                            widget.deliveryAddress!,
-                            style: const pw.TextStyle(fontSize: 10),
-                          ),
+                          pw.Text(widget.deliveryAddress!, style: const pw.TextStyle(fontSize: 10)),
                         ],
                       ),
                     ),
@@ -4954,11 +3446,7 @@ class _InvoicePageState extends State<InvoicePage>
                             pw.Text(
                               'Authorized Signature',
                               textAlign: pw.TextAlign.center,
-                              style: pw.TextStyle(
-                                font: ttf,
-                                fontSize: 9,
-                                color: PdfColors.grey700,
-                              ),
+                              style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey700),
                             ),
                           ],
                         ),
@@ -4977,34 +3465,14 @@ class _InvoicePageState extends State<InvoicePage>
     return pdf;
   }
 
-  pw.Widget _invoicePdfTotalRow(
-    String label,
-    String value,
-    pw.Font ttf,
-    pw.Font ttfBold, {
-    bool isDiscount = false,
-  }) {
+  pw.Widget _invoicePdfTotalRow(String label, String value, pw.Font ttf, pw.Font ttfBold, {bool isDiscount = false}) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(
-            label,
-            style: pw.TextStyle(
-              font: ttf,
-              fontSize: 10,
-              color: isDiscount ? PdfColors.green700 : PdfColors.grey800,
-            ),
-          ),
-          pw.Text(
-            value,
-            style: pw.TextStyle(
-              font: ttfBold,
-              fontSize: 10,
-              color: isDiscount ? PdfColors.green700 : PdfColors.black,
-            ),
-          ),
+          pw.Text(label, style: pw.TextStyle(font: ttf, fontSize: 10, color: isDiscount ? PdfColors.green700 : PdfColors.grey800)),
+          pw.Text(value, style: pw.TextStyle(font: ttfBold, fontSize: 10, color: isDiscount ? PdfColors.green700 : PdfColors.black)),
         ],
       ),
     );
@@ -5012,14 +3480,14 @@ class _InvoicePageState extends State<InvoicePage>
 
   /// Reusable PDF table cell
   pw.Widget _pdfCell(
-    String text,
-    pw.Font font, {
-    bool isHeader = false,
-    bool bold = false,
-    bool isEven = true,
-    pw.TextAlign align = pw.TextAlign.left,
-    PdfColor? color,
-  }) {
+      String text,
+      pw.Font font, {
+        bool isHeader = false,
+        bool bold = false,
+        bool isEven = true,
+        pw.TextAlign align = pw.TextAlign.left,
+        PdfColor? color,
+      }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       child: pw.Text(
@@ -5028,10 +3496,10 @@ class _InvoicePageState extends State<InvoicePage>
         style: pw.TextStyle(
           font: font,
           fontSize: isHeader ? 9 : 10,
-          fontWeight: (isHeader || bold)
-              ? pw.FontWeight.bold
-              : pw.FontWeight.normal,
-          color: isHeader ? PdfColors.white : (color ?? PdfColors.black),
+          fontWeight: (isHeader || bold) ? pw.FontWeight.bold : pw.FontWeight.normal,
+          color: isHeader
+              ? PdfColors.white
+              : (color ?? PdfColors.black),
         ),
       ),
     );
@@ -5067,22 +3535,14 @@ class _ConfettiPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
-      final paint = Paint()
-        ..color = particle.color.withAlpha((255 * (1 - progress)).toInt());
+      final paint = Paint()..color = particle.color.withAlpha((255 * (1 - progress)).toInt());
       final x = particle.x * size.width;
       final y = (particle.y + progress * particle.speed * 3) * size.height;
 
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(particle.rotation + progress * 10);
-      canvas.drawRect(
-        Rect.fromCenter(
-          center: Offset.zero,
-          width: particle.size,
-          height: particle.size * 0.6,
-        ),
-        paint,
-      );
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: particle.size, height: particle.size * 0.6), paint);
       canvas.restore();
     }
   }

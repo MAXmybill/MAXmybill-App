@@ -17,8 +17,7 @@ class PlanProvider extends ChangeNotifier {
 
   // Cache the current plan for instant access
   String _cachedPlan = PLAN_FREE;
-  String _rawPlan =
-      PLAN_FREE; // Store the original plan from Firestore (before expiry check)
+  String _rawPlan = PLAN_FREE; // Store the original plan from Firestore (before expiry check)
   DateTime? _cachedExpiryDate;
   bool _isInitialized = false;
 
@@ -26,14 +25,12 @@ class PlanProvider extends ChangeNotifier {
   /// Returns 'Free' if the plan has expired
   String get cachedPlan {
     // Check if plan is expired
-    if (_rawPlan.toLowerCase() != 'free' &&
-        _rawPlan.toLowerCase() != 'starter') {
+    if (_rawPlan.toLowerCase() != 'free' && _rawPlan.toLowerCase() != 'starter') {
       // Fail closed: paid plan without a valid expiry is treated as free.
       if (_cachedExpiryDate == null) {
         return PLAN_FREE;
       }
-      if (_cachedExpiryDate != null &&
-          DateTime.now().isAfter(_cachedExpiryDate!)) {
+      if (_cachedExpiryDate != null && DateTime.now().isAfter(_cachedExpiryDate!)) {
         return PLAN_FREE; // Plan expired, return Free
       }
     }
@@ -50,9 +47,7 @@ class PlanProvider extends ChangeNotifier {
   /// Check if plan is expiring soon (within 3 days)
   bool get isExpiringSoon {
     if (_cachedExpiryDate == null) return false;
-    final daysUntilExpiry = _cachedExpiryDate!
-        .difference(DateTime.now())
-        .inDays;
+    final daysUntilExpiry = _cachedExpiryDate!.difference(DateTime.now()).inDays;
     return daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
   }
 
@@ -79,9 +74,7 @@ class PlanProvider extends ChangeNotifier {
   Future<void> forceRefresh() async {
     debugPrint('🔄 PlanProvider: Force refreshing subscription status...');
     await _fetchPlanAndExpiry();
-    debugPrint(
-      '✅ PlanProvider: New plan = $_cachedPlan, Expiry = $_cachedExpiryDate',
-    );
+    debugPrint('✅ PlanProvider: New plan = $_cachedPlan, Expiry = $_cachedExpiryDate');
     notifyListeners();
   }
 
@@ -118,9 +111,7 @@ class PlanProvider extends ChangeNotifier {
 
       // Get raw plan from Firestore (without expiry check)
       final rawPlanValue = data['plan']?.toString();
-      _rawPlan = (rawPlanValue != null && rawPlanValue.trim().isNotEmpty)
-          ? rawPlanValue.trim()
-          : PLAN_FREE;
+      _rawPlan = (rawPlanValue != null && rawPlanValue.trim().isNotEmpty) ? rawPlanValue.trim() : PLAN_FREE;
 
       // Get plan (with expiry check applied)
       _cachedPlan = await getCurrentPlan();
@@ -152,46 +143,40 @@ class PlanProvider extends ChangeNotifier {
           .collection('store')
           .doc(storeDoc.id)
           .snapshots()
-          .listen(
-            (snapshot) async {
-              // Update cached plan and expiry date when Firestore changes
-              if (snapshot.exists) {
-                final data = snapshot.data() as Map<String, dynamic>?;
-                if (data != null) {
-                  // Update raw plan (without expiry check)
-                  final newPlan = data['plan']?.toString() ?? PLAN_FREE;
-                  _rawPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
+          .listen((snapshot) async {
+        // Update cached plan and expiry date when Firestore changes
+        if (snapshot.exists) {
+          final data = snapshot.data() as Map<String, dynamic>?;
+          if (data != null) {
+            // Update raw plan (without expiry check)
+            final newPlan = data['plan']?.toString() ?? PLAN_FREE;
+            _rawPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
 
-                  // Update cached plan (with expiry check)
-                  if (newPlan != _cachedPlan) {
-                    debugPrint(
-                      '📱 PlanProvider: Real-time update - Plan changed to $newPlan',
-                    );
-                    _cachedPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
-                  }
+            // Update cached plan (with expiry check)
+            if (newPlan != _cachedPlan) {
+              debugPrint('📱 PlanProvider: Real-time update - Plan changed to $newPlan');
+              _cachedPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
+            }
 
-                  // Update expiry date
-                  final expiryDateStr = data['subscriptionExpiryDate']
-                      ?.toString();
-                  if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
-                    try {
-                      _cachedExpiryDate = DateTime.parse(expiryDateStr);
-                    } catch (e) {
-                      _cachedExpiryDate = null;
-                    }
-                  } else {
-                    _cachedExpiryDate = null;
-                  }
-                }
+            // Update expiry date
+            final expiryDateStr = data['subscriptionExpiryDate']?.toString();
+            if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
+              try {
+                _cachedExpiryDate = DateTime.parse(expiryDateStr);
+              } catch (e) {
+                _cachedExpiryDate = null;
               }
-              // Notify all widgets to rebuild
-              notifyListeners();
-            },
-            onError: (e) {
-              debugPrint('Plan listener error: $e');
-              notifyListeners();
-            },
-          );
+            } else {
+              _cachedExpiryDate = null;
+            }
+          }
+        }
+        // Notify all widgets to rebuild
+        notifyListeners();
+      }, onError: (e) {
+        debugPrint('Plan listener error: $e');
+        notifyListeners();
+      });
     } catch (e) {
       debugPrint('Error starting plan listener: $e');
       notifyListeners();
@@ -228,24 +213,18 @@ class PlanProvider extends ChangeNotifier {
         debugPrint('🔍 getCurrentPlan: expiryDateStr = "$expiryDateStr"');
         // Fail closed: paid plan requires a valid non-expired subscription date.
         if (expiryDateStr == null || expiryDateStr.isEmpty) {
-          debugPrint(
-            '🔍 getCurrentPlan: Missing expiry for paid plan, returning Free',
-          );
+          debugPrint('🔍 getCurrentPlan: Missing expiry for paid plan, returning Free');
           return PLAN_FREE;
         }
         try {
           final expiryDate = DateTime.parse(expiryDateStr);
-          debugPrint(
-            '🔍 getCurrentPlan: expiryDate = $expiryDate, now = ${DateTime.now()}',
-          );
+          debugPrint('🔍 getCurrentPlan: expiryDate = $expiryDate, now = ${DateTime.now()}');
           if (DateTime.now().isAfter(expiryDate)) {
             debugPrint('🔍 getCurrentPlan: Plan EXPIRED, returning Free');
             return PLAN_FREE; // Expired
           }
         } catch (e) {
-          debugPrint(
-            '🔍 getCurrentPlan: Error parsing expiry: $e, returning Free',
-          );
+          debugPrint('🔍 getCurrentPlan: Error parsing expiry: $e, returning Free');
           return PLAN_FREE;
         }
       }
@@ -281,16 +260,10 @@ class PlanProvider extends ChangeNotifier {
 
   String _normalizedPlanKey(String plan) {
     final planLower = plan.toLowerCase().trim();
-    if (planLower.contains('max pro') ||
-        planLower.contains('premium') ||
-        planLower.contains(' pro'))
-      return 'max pro';
-    if (planLower.contains('max plus') || planLower.contains(' plus'))
-      return 'max plus';
-    if (planLower.contains('max one') || planLower.contains('maxone'))
-      return 'max one';
-    if (planLower.contains('max lite') || planLower.contains(' lite'))
-      return 'max lite';
+    if (planLower.contains('max pro') || planLower.contains('premium') || planLower.contains(' pro')) return 'max pro';
+    if (planLower.contains('max plus') || planLower.contains(' plus')) return 'max plus';
+    if (planLower.contains('max one') || planLower.contains('maxone')) return 'max one';
+    if (planLower.contains('max lite') || planLower.contains(' lite')) return 'max lite';
     if (planLower.contains('starter')) return 'starter';
     if (planLower.contains('free')) return 'free';
     return planLower;
@@ -348,21 +321,13 @@ class PlanProvider extends ChangeNotifier {
   Future<bool> canAccessStaffManagementAsync() async {
     final plan = await getCurrentPlan();
     final planLower = _normalizedPlanKey(plan);
-    debugPrint(
-      '🔍 canAccessStaffManagementAsync: plan="$plan", planLower="$planLower"',
-    );
+    debugPrint('🔍 canAccessStaffManagementAsync: plan="$plan", planLower="$planLower"');
     // Starter is the free plan - no staff management
     if (planLower == 'free' || planLower == 'starter') {
-      debugPrint(
-        '🔍 canAccessStaffManagementAsync: returning FALSE (free/starter)',
-      );
+      debugPrint('🔍 canAccessStaffManagementAsync: returning FALSE (free/starter)');
       return false;
     }
-    final canAccess =
-        planLower == 'max one' ||
-        planLower == 'max lite' ||
-        planLower == 'max plus' ||
-        planLower == 'max pro';
+    final canAccess = planLower == 'max one' || planLower == 'max lite' || planLower == 'max plus' || planLower == 'max pro';
     debugPrint('🔍 canAccessStaffManagementAsync: returning $canAccess');
     return canAccess;
   }
@@ -418,10 +383,7 @@ class PlanProvider extends ChangeNotifier {
   bool canRemoveWatermark() => !_isFreePlan();
   bool canAccessStaffManagement() {
     final planLower = _normalizedPlanKey(cachedPlan);
-    return planLower == 'max one' ||
-        planLower == 'max lite' ||
-        planLower == 'max plus' ||
-        planLower == 'max pro';
+    return planLower == 'max one' || planLower == 'max lite' || planLower == 'max plus' || planLower == 'max pro';
   }
 
   int getMaxStaffCount() {
@@ -451,3 +413,4 @@ class PlanProvider extends ChangeNotifier {
     super.dispose();
   }
 }
+

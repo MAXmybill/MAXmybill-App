@@ -54,3 +54,4 @@ class AppMiniSwitch extends StatelessWidget {
     );
   }
 }
+

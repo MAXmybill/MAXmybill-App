@@ -56,9 +56,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
 
   Future<void> _loadAvailableRoles() async {
     try {
-      final rolesCollection = await FirestoreService().getStoreCollection(
-        'roles',
-      );
+      final rolesCollection = await FirestoreService().getStoreCollection('roles');
       final snapshot = await rolesCollection.get();
 
       if (snapshot.docs.isNotEmpty) {
@@ -87,21 +85,9 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
       // Keep default fallback
       setState(() {
         _availableRoles = [
-          {
-            'name': 'Staff',
-            'permissions': _getDefaultPermissions('Staff'),
-            'isDefault': true,
-          },
-          {
-            'name': 'Manager',
-            'permissions': _getDefaultPermissions('Manager'),
-            'isDefault': true,
-          },
-          {
-            'name': 'Admin',
-            'permissions': _getDefaultPermissions('Admin'),
-            'isDefault': true,
-          },
+          {'name': 'Staff', 'permissions': _getDefaultPermissions('Staff'), 'isDefault': true},
+          {'name': 'Manager', 'permissions': _getDefaultPermissions('Manager'), 'isDefault': true},
+          {'name': 'Admin', 'permissions': _getDefaultPermissions('Admin'), 'isDefault': true},
         ];
         _rolesLoaded = true;
       });
@@ -110,9 +96,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
 
   Future<void> _initializeDefaultRoles() async {
     try {
-      final rolesCollection = await FirestoreService().getStoreCollection(
-        'roles',
-      );
+      final rolesCollection = await FirestoreService().getStoreCollection('roles');
 
       final defaultRoles = {
         'Staff': _getDefaultPermissions('Staff'),
@@ -187,9 +171,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
       final maxStaff = await PlanPermissionHelper.getMaxStaffCount();
       final currentStaffCount = await _getCurrentStaffCount();
 
-      debugPrint(
-        'Staff limit check: maxStaff=$maxStaff, currentStaff=$currentStaffCount',
-      );
+      debugPrint('Staff limit check: maxStaff=$maxStaff, currentStaff=$currentStaffCount');
 
       if (currentStaffCount >= maxStaff) {
         if (mounted) {
@@ -231,10 +213,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
         await existingApp.delete();
       } catch (_) {}
 
-      tempApp = await Firebase.initializeApp(
-        name: 'SecondaryApp',
-        options: Firebase.app().options,
-      );
+      tempApp = await Firebase.initializeApp(name: 'SecondaryApp', options: Firebase.app().options);
       final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
 
       UserCredential? cred;
@@ -248,9 +227,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
       } on FirebaseAuthException catch (e) {
         if (e.code == 'email-already-in-use') {
           // Email already exists - try to sign in and delete the old account
-          debugPrint(
-            '⚠️ Email already in use, attempting to delete old account...',
-          );
+          debugPrint('⚠️ Email already in use, attempting to delete old account...');
 
           try {
             // Try to sign in with the same password
@@ -280,9 +257,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
               _showLoadingIndicator(false);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(
-                    'This email is already registered. Please use a different email or contact the previous owner to remove the account.',
-                  ),
+                  content: Text('This email is already registered. Please use a different email or contact the previous owner to remove the account.'),
                   backgroundColor: kErrorColor,
                   duration: const Duration(seconds: 5),
                 ),
@@ -325,10 +300,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
       };
 
       await FirestoreService().setDocument('users', cred.user!.uid, userData);
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(cred.user!.uid)
-          .set(userData);
+      await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set(userData);
 
       if (mounted) {
         _showLoadingIndicator(false);
@@ -341,15 +313,11 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
         );
         Navigator.pop(context, true);
       }
+
     } on FirebaseAuthException catch (e) {
-      if (mounted) {
+      if(mounted) {
         _showLoadingIndicator(false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message ?? 'Error'),
-            backgroundColor: kErrorColor,
-          ),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? 'Error'), backgroundColor: kErrorColor));
       }
     } finally {
       await tempApp?.delete();
@@ -359,11 +327,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
 
   void _showLoadingIndicator(bool show) {
     if (show) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
+      showDialog(context: context, barrierDismissible: false, builder: (_) => const Center(child: CircularProgressIndicator()));
     } else {
       Navigator.of(context, rootNavigator: true).pop();
     }
@@ -420,21 +384,11 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
         ),
-        title: const Text(
-          'Invite New Staff',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
-        ),
+        title: const Text('Invite New Staff', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 18)),
         backgroundColor: kPrimaryColor,
         elevation: 0,
         centerTitle: true,
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20), onPressed: () => Navigator.pop(context)),
       ),
       body: Form(
         key: _formKey,
@@ -445,38 +399,15 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
                 padding: const EdgeInsets.all(20),
                 children: [
                   _buildSectionHeader("Identity"),
-                  _buildModernField(
-                    _nameCtrl,
-                    'Full Name',
-                    HeroIcons.user,
-                    isMandatory: true,
-                  ),
+                  _buildModernField(_nameCtrl, 'Full Name', HeroIcons.user, isMandatory: true),
                   const SizedBox(height: 16),
-                  _buildModernField(
-                    _phoneCtrl,
-                    'Phone Number',
-                    HeroIcons.phone,
-                    type: TextInputType.phone,
-                    isMandatory: true,
-                  ),
+                  _buildModernField(_phoneCtrl, 'Phone Number', HeroIcons.phone, type: TextInputType.phone, isMandatory: true),
 
                   const SizedBox(height: 24),
                   _buildSectionHeader("Credentials"),
-                  _buildModernField(
-                    _emailCtrl,
-                    'Email Address',
-                    HeroIcons.envelope,
-                    type: TextInputType.emailAddress,
-                    isMandatory: true,
-                  ),
+                  _buildModernField(_emailCtrl, 'Email Address', HeroIcons.envelope, type: TextInputType.emailAddress, isMandatory: true),
                   const SizedBox(height: 16),
-                  _buildModernField(
-                    _passCtrl,
-                    'Temporary Password',
-                    HeroIcons.lockClosed,
-                    isPassword: true,
-                    isMandatory: true,
-                  ),
+                  _buildModernField(_passCtrl, 'Temporary Password', HeroIcons.lockClosed, isPassword: true, isMandatory: true),
 
                   const SizedBox(height: 24),
                   _buildSectionHeader("Assignment"),
@@ -485,29 +416,12 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
                   const SizedBox(height: 32),
                   Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: kPrimaryColor.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: kPrimaryColor.withOpacity(0.1)),
-                    ),
+                    decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: kPrimaryColor.withOpacity(0.1))),
                     child: const Row(
                       children: [
-                        HeroIcon(
-                          HeroIcons.informationCircle,
-                          color: kPrimaryColor,
-                          size: 20,
-                        ),
+                        HeroIcon(HeroIcons.informationCircle, color: kPrimaryColor, size: 20),
                         SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            "Staff will be invited via email. You can approve them in the dashboard once they verify their address.",
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: kBlack54,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
+                        Expanded(child: Text("Staff will be invited via email. You can approve them in the dashboard once they verify their address.", style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500))),
                       ],
                     ),
                   ),
@@ -523,11 +437,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
 
   Widget _buildPopupMenu() {
     return PopupMenuButton<String>(
-      icon: const HeroIcon(
-        HeroIcons.ellipsisHorizontal,
-        color: kWhite,
-        size: 24,
-      ),
+      icon: const HeroIcon(HeroIcons.ellipsisHorizontal, color: kWhite, size: 24),
       elevation: 0,
       offset: const Offset(0, 48),
       shape: RoundedRectangleBorder(
@@ -542,152 +452,76 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
         }
       },
       itemBuilder: (context) => [
-        _buildPopupItem(
-          'contacts',
-          HeroIcons.users,
-          'Import Contacts',
-          kPrimaryColor,
-        ),
-        _buildPopupItem(
-          'excel',
-          HeroIcons.tableCells,
-          'Import Excel',
-          kGoogleGreen,
-        ),
+        _buildPopupItem('contacts', HeroIcons.users, 'Import Contacts', kPrimaryColor),
+        _buildPopupItem('excel', HeroIcons.tableCells, 'Import Excel', kGoogleGreen),
       ],
     );
   }
 
-  PopupMenuItem<String> _buildPopupItem(
-    String value,
-    HeroIcons icon,
-    String label,
-    Color color,
-  ) {
+  PopupMenuItem<String> _buildPopupItem(String value, HeroIcons icon, String label, Color color) {
     return PopupMenuItem(
       value: value,
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
             child: HeroIcon(icon, size: 18, color: color),
           ),
           const SizedBox(width: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: kBlack87,
-            ),
-          ),
+          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87)),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title) => Padding(
-    padding: const EdgeInsets.only(bottom: 10, left: 4),
-    child: Text(
-      title,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w900,
-        color: kBlack54,
-        letterSpacing: 1.0,
-      ),
-    ),
-  );
+  Widget _buildSectionHeader(String title) => Padding(padding: const EdgeInsets.only(bottom: 10, left: 4), child: Text(title, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)));
 
-  Widget _buildModernField(
-    TextEditingController ctrl,
-    String label,
-    HeroIcons icon, {
-    TextInputType type = TextInputType.text,
-    bool isPassword = false,
-    bool isMandatory = false,
-  }) {
+  Widget _buildModernField(TextEditingController ctrl, String label, HeroIcons icon, {TextInputType type = TextInputType.text, bool isPassword = false, bool isMandatory = false}) {
     return ValueListenableBuilder(
       valueListenable: ctrl,
       builder: (context, val, child) {
         bool filled = ctrl.text.isNotEmpty;
         return ValueListenableBuilder<TextEditingValue>(
-          valueListenable: ctrl,
-          builder: (context, value, _) {
-            final bool hasText = value.text.isNotEmpty;
-            return TextFormField(
-              controller: ctrl,
-              keyboardType: type,
-              obscureText: isPassword,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: kBlack87,
-              ),
-              decoration: InputDecoration(
-                labelText: label,
-                prefixIcon: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: HeroIcon(
-                    icon,
-                    color: filled ? kPrimaryColor : kBlack54,
-                    size: 20,
-                  ),
-                ),
-
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: kErrorColor),
-                ),
-                filled: true,
-                fillColor: const Color(0xFFF8F9FA),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: hasText ? kPrimaryColor : kGrey200,
-                    width: hasText ? 1.5 : 1.0,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: kPrimaryColor,
-                    width: 2.0,
-                  ),
-                ),
-                labelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kBlack54,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-                floatingLabelStyle: TextStyle(
-                  color: hasText ? kPrimaryColor : kPrimaryColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              validator: isMandatory
-                  ? (v) =>
-                        (v == null || v.isEmpty) ? '$label is required' : null
-                  : null,
-            );
-          },
-        );
+      valueListenable: ctrl,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextFormField(
+          controller: ctrl, keyboardType: type, obscureText: isPassword,
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
+          decoration: InputDecoration(
+            labelText: label, prefixIcon: Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: HeroIcon(icon, color: filled ? kPrimaryColor : kBlack54, size: 20),
+            ),
+             
+            
+            
+            
+            errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kErrorColor)),
+            filled: true,
+            fillColor: const Color(0xFFF8F9FA),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+            ),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+          ),
+          validator: isMandatory ? (v) => (v == null || v.isEmpty) ? '$label is required' : null : null,
+        
+);
+      },
+    );
       },
     );
   }
@@ -695,36 +529,15 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
   Widget _buildModernDropdown() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: kWhite,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kGrey200),
-      ),
+      decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
-          value: _selectedRole,
-          isExpanded: true,
-          icon: const HeroIcon(
-            HeroIcons.chevronDown,
-            color: kBlack54,
-            size: 20,
-          ),
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: kBlack87,
-          ),
+          value: _selectedRole, isExpanded: true, icon: const HeroIcon(HeroIcons.chevronDown, color: kBlack54, size: 20),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: kBlack87),
           items: _availableRoles.map((role) {
             return DropdownMenuItem<String>(
               value: role['name'],
-              child: Text(
-                role['name'],
-                style: const TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: kBlack87,
-                ),
-              ),
+              child: Text(role['name'], style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: kBlack87)),
             );
           }).toList(),
           onChanged: (v) => setState(() => _selectedRole = v!),
@@ -737,10 +550,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-        decoration: const BoxDecoration(
-          color: kWhite,
-          border: Border(top: BorderSide(color: kGrey200)),
-        ),
+        decoration: const BoxDecoration(color: kWhite, border: Border(top: BorderSide(color: kGrey200))),
         child: FutureBuilder<bool>(
           future: _canInviteMoreFuture,
           builder: (context, snapshot) {
@@ -751,15 +561,11 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _handleInvite,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isLocked
-                      ? const Color(0xFFFFF9EA)
-                      : kPrimaryColor,
+                  backgroundColor: isLocked ? const Color(0xFFFFF9EA) : kPrimaryColor,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: isLocked
-                        ? premiumLockBorderSide(true)
-                        : BorderSide.none,
+                    side: isLocked ? premiumLockBorderSide(true) : BorderSide.none,
                   ),
                 ),
                 child: Row(
@@ -775,9 +581,7 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      isLocked
-                          ? 'Send Invitation (Premium)'
-                          : 'Send Invitation',
+                      isLocked ? 'Send Invitation (Premium)' : 'Send Invitation',
                       style: TextStyle(
                         color: isLocked ? kPremiumLockIcon : kWhite,
                         fontWeight: FontWeight.w800,

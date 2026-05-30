@@ -11,6 +11,7 @@ import 'dart:convert';
 /// Direct thermal printer service for payment receipts
 /// Prints payment receipts directly without showing invoice preview
 class PaymentReceiptPrinter {
+  
   /// Print payment receipt directly to thermal printer
   static Future<void> printPaymentReceipt({
     required BuildContext context,
@@ -28,13 +29,15 @@ class PaymentReceiptPrinter {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(child: CircularProgressIndicator()),
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
 
       // Load store data
       final storeDoc = await FirestoreService().getCurrentStoreDoc();
       final storeData = storeDoc?.data() as Map<String, dynamic>?;
-
+      
       if (storeData == null) {
         Navigator.pop(context);
         _showError(context, 'Store data not found');
@@ -44,24 +47,22 @@ class PaymentReceiptPrinter {
       final businessName = storeData['businessName'] ?? '';
       final businessPhone = storeData['businessPhone'] ?? '';
       final businessLocation = storeData['businessLocation'] ?? '';
-      final currency = CurrencyService.getSymbolWithSpace(
-        storeData['currency'],
-      );
+      final currency = CurrencyService.getSymbolWithSpace(storeData['currency']);
 
       // Get connected printer (optional - continue if not available)
       final connectedDevices = await FlutterBluePlus.connectedSystemDevices;
       BluetoothDevice? printer;
       BluetoothCharacteristic? writeCharacteristic;
-
+      
       if (connectedDevices.isNotEmpty) {
         printer = connectedDevices.first;
-
+        
         try {
           await printer.connect();
 
           // Find write characteristic
           final services = await printer.discoverServices();
-
+          
           for (var service in services) {
             for (var char in service.characteristics) {
               if (char.properties.write) {
@@ -88,7 +89,7 @@ class PaymentReceiptPrinter {
 
       List<int> enc(String s) => utf8.encode(_toThermalSafe(s));
       final safeCurrency = _toThermalSafe(currency).trim();
-
+      
       // ESC/POS commands
       bytes.addAll([27, 64]); // Initialize printer
       bytes.addAll([27, 77, 0]); // Font A
@@ -96,20 +97,20 @@ class PaymentReceiptPrinter {
         bytes.addAll([29, 33, 0]); // Normal size for narrow paper
       }
       bytes.addAll([27, 97, 1]); // Center align
-
+      
       // Header - RECEIPT
       bytes.addAll([27, 33, 16]); // Double height
       bytes.addAll(enc('PAYMENT RECEIPT\n'));
       bytes.addAll([27, 33, 0]); // Normal text
-
+      
       bytes.addAll(enc('\n'));
-
+      
       // Date and Receipt Number
       bytes.addAll([27, 97, 0]); // Left align
       bytes.addAll(enc('$dateStr\n'));
       bytes.addAll(enc('Receipt No: $receiptNumber\n'));
       bytes.addAll(enc('${'-' * lineWidth}\n'));
-
+      
       // Business details
       bytes.addAll([27, 97, 1]); // Center align
       bytes.addAll([27, 33, 8]); // Bold
@@ -122,10 +123,10 @@ class PaymentReceiptPrinter {
         bytes.addAll(enc('Tel: $businessPhone\n'));
       }
       bytes.addAll(enc('\n'));
-
+      
       bytes.addAll([27, 97, 0]); // Left align
       bytes.addAll(enc('${'-' * lineWidth}\n'));
-
+      
       // Received From section
       bytes.addAll([27, 97, 1]); // Center align
       bytes.addAll([27, 33, 8]); // Bold
@@ -134,69 +135,46 @@ class PaymentReceiptPrinter {
       bytes.addAll(enc('\n'));
       bytes.addAll(enc('$customerName\n'));
       bytes.addAll(enc('Contact: $customerPhone\n'));
-
+      
       bytes.addAll([27, 97, 0]); // Left align
       bytes.addAll(enc('${'-' * lineWidth}\n'));
       bytes.addAll(enc('\n'));
-
+      
       // Credit details
-      bytes.addAll(
-        _formatLine(
-          'Previous Credit',
-          '$safeCurrency${previousCredit.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      );
+      bytes.addAll(_formatLine('Previous Credit', '$safeCurrency${previousCredit.toStringAsFixed(2)}', lineWidth));
       bytes.addAll(enc('\n'));
-      bytes.addAll(
-        _formatLine(
-          'Received',
-          '$safeCurrency${receivedAmount.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      );
+      bytes.addAll(_formatLine('Received', '$safeCurrency${receivedAmount.toStringAsFixed(2)}', lineWidth));
       bytes.addAll(enc('\n'));
       bytes.addAll(_formatLine('Payment Mode', paymentMode, lineWidth));
       bytes.addAll(enc('\n'));
       bytes.addAll(enc('${'-' * lineWidth}\n'));
       bytes.addAll([27, 33, 16]); // Double height
-      bytes.addAll(
-        _formatLine(
-          'Balance Amount',
-          '$safeCurrency${currentCredit.toStringAsFixed(2)}',
-          lineWidth,
-        ),
-      );
+      bytes.addAll(_formatLine('Balance Amount', '$safeCurrency${currentCredit.toStringAsFixed(2)}', lineWidth));
       bytes.addAll([27, 33, 0]); // Normal
       bytes.addAll(enc('${'-' * lineWidth}\n'));
-
+      
       // Invoice reference if bill settlement
       if (invoiceReference != null && invoiceReference.isNotEmpty) {
         bytes.addAll(enc('\n'));
         bytes.addAll(enc('For Invoice: $invoiceReference\n'));
       }
-
+      
       bytes.addAll(enc('\n'));
       bytes.addAll([27, 97, 1]); // Center align
       bytes.addAll(enc('Thank You\n'));
       bytes.addAll(enc('\n\n\n'));
-
+      
       // Cut paper
       bytes.addAll([29, 86, 1]);
-
+      
       // Send to printer if available
       if (writeCharacteristic != null) {
         try {
           // Send to printer in chunks
           const chunkSize = 20;
           for (var i = 0; i < bytes.length; i += chunkSize) {
-            final end = (i + chunkSize < bytes.length)
-                ? i + chunkSize
-                : bytes.length;
-            await writeCharacteristic.write(
-              bytes.sublist(i, end),
-              withoutResponse: true,
-            );
+            final end = (i + chunkSize < bytes.length) ? i + chunkSize : bytes.length;
+            await writeCharacteristic.write(bytes.sublist(i, end), withoutResponse: true);
             await Future.delayed(const Duration(milliseconds: 50));
           }
         } catch (e) {
@@ -206,19 +184,20 @@ class PaymentReceiptPrinter {
 
       // Close dialog
       Navigator.pop(context);
-
+      
       // Show success
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            writeCharacteristic != null
-                ? 'Receipt printed successfully!'
-                : 'Receipt saved! (Printer not connected)',
+            writeCharacteristic != null 
+              ? 'Receipt printed successfully!' 
+              : 'Receipt saved! (Printer not connected)',
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
       );
+      
     } catch (e) {
       debugPrint('Error printing payment receipt: $e');
       Navigator.pop(context);

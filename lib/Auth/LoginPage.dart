@@ -28,8 +28,7 @@ import 'dart:math' as math;
 // Web Client ID for Google Sign In
 // Get this from: https://console.cloud.google.com/ > APIs & Services > Credentials > OAuth 2.0 Client IDs (Web client)
 // Format: XXXXXXXXXXXX-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
-const String _webClientId =
-    '490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com';
+const String _webClientId = '490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,10 +69,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          msg,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-        ),
+        content: Text(msg, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         backgroundColor: isError ? kErrorColor : kPrimaryColor,
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
@@ -82,78 +78,47 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  void _navigate(String uid, String? identifier) async {
-    if (!mounted) return;
-
-    // Cache this user for future sessions
-    await AuthCacheService.instance.cacheCurrentUser();
-
-    final planProvider = Provider.of<PlanProvider>(context, listen: false);
-    await planProvider.initialize();
-    if (!mounted) return;
+   void _navigate(String uid, String? identifier) async {
+     if (!mounted) return;
+     
+     // Cache this user for future sessions
+     await AuthCacheService.instance.cacheCurrentUser();
+     
+     final planProvider = Provider.of<PlanProvider>(context, listen: false);
+     await planProvider.initialize();
+     if (!mounted) return;
 
     // Enforce: one account can be active on one device.
     // If already active on another device, ask whether to logout old device.
-    final sessionResult = await SingleSessionService.instance
-        .activateOrRequestTakeover(
-          uid: uid,
-          deviceLabel: identifier ?? 'This device',
-        );
+    final sessionResult = await SingleSessionService.instance.activateOrRequestTakeover(
+      uid: uid,
+      deviceLabel: identifier ?? 'This device',
+    );
     if (!mounted) return;
 
     if (sessionResult.needsApproval) {
-      final activeLabel = (sessionResult.activeDeviceLabel ?? 'another device')
-          .trim();
+      final activeLabel = (sessionResult.activeDeviceLabel ?? 'another device').trim();
       final confirm = await showDialog<bool>(
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
           backgroundColor: kWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Already logged in',
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              fontSize: 18,
-              color: kBlack87,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          title: const Text('Already logged in', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kBlack87)),
           content: Text(
             'This account is currently active on $activeLabel.\n\nDo you want to logout from the old device and continue here?',
-            style: const TextStyle(
-              color: kBlack54,
-              height: 1.5,
-              fontWeight: FontWeight.w500,
-            ),
+            style: const TextStyle(color: kBlack54, height: 1.5, fontWeight: FontWeight.w500),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text(
-                context.tr('close'),
-                style: const TextStyle(
-                  color: kBlack54,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 12,
-                ),
-              ),
+              child: Text(context.tr('close'), style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: 12)),
             ),
             ElevatedButton(
               onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text(
-                'Yes, Logout Old',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-              ),
-            ),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: const Text('Yes, Logout Old', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+            )
           ],
         ),
       );
@@ -181,10 +146,7 @@ class _LoginPageState extends State<LoginPage> {
           .doc(uid)
           .collection('takeoverRequests')
           .doc(reqId)
-          .set({
-            'status': 'approved',
-            'approvedAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
+          .set({'status': 'approved', 'approvedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
 
       final ok = await SingleSessionService.instance.waitForTakeoverDecision(
         uid: uid,
@@ -200,20 +162,15 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
 
-    if (identifier != null &&
-        identifier.toLowerCase() == 'maxmybillapp@gmail.com') {
+    if (identifier != null && identifier.toLowerCase() == 'maxmybillapp@gmail.com') {
       Navigator.pushReplacement(
         context,
-        CupertinoPageRoute(
-          builder: (context) => HomePage(uid: uid, userEmail: identifier),
-        ),
+        CupertinoPageRoute(builder: (context) => HomePage(uid: uid, userEmail: identifier)),
       );
     } else {
       Navigator.pushReplacement(
         context,
-        CupertinoPageRoute(
-          builder: (context) => NewSalePage(uid: uid, userEmail: identifier),
-        ),
+        CupertinoPageRoute(builder: (context) => NewSalePage(uid: uid, userEmail: identifier)),
       );
     }
   }
@@ -229,33 +186,12 @@ class _LoginPageState extends State<LoginPage> {
       builder: (context) => AlertDialog(
         backgroundColor: kWhite,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-            color: kBlack87,
-          ),
-        ),
-        content: Text(
-          message,
-          style: const TextStyle(
-            color: kBlack54,
-            height: 1.5,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kBlack87)),
+        content: Text(message, style: const TextStyle(color: kBlack54, height: 1.5, fontWeight: FontWeight.w500)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              context.tr('close'),
-              style: const TextStyle(
-                color: kBlack54,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-              ),
-            ),
+            child: Text(context.tr('close'), style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: 12)),
           ),
           if (onAction != null)
             ElevatedButton(
@@ -263,20 +199,8 @@ class _LoginPageState extends State<LoginPage> {
                 Navigator.pop(context);
                 onAction();
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                actionText,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: 12,
-                ),
-              ),
+              style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+              child: Text(actionText, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
             ),
         ],
       ),
@@ -301,10 +225,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      final cred = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: pass,
-      );
+      final cred = await _auth.signInWithEmailAndPassword(email: email, password: pass);
       User? user = cred.user;
       if (user == null) throw Exception('Login failed');
 
@@ -312,10 +233,10 @@ class _LoginPageState extends State<LoginPage> {
       user = _auth.currentUser;
       final bool isAuthVerified = user?.emailVerified ?? false;
 
-      QuerySnapshot storeUserQuery =
-          await (await _firestore_service.getStoreCollection(
-            'users',
-          )).where('uid', isEqualTo: user!.uid).limit(1).get();
+      QuerySnapshot storeUserQuery = await (await _firestore_service.getStoreCollection('users'))
+          .where('uid', isEqualTo: user!.uid)
+          .limit(1)
+          .get();
 
       DocumentReference? userRef;
       Map<String, dynamic> userData;
@@ -324,10 +245,7 @@ class _LoginPageState extends State<LoginPage> {
         userRef = storeUserQuery.docs.first.reference;
         userData = storeUserQuery.docs.first.data() as Map<String, dynamic>;
       } else {
-        final globalDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
+        final globalDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
         if (globalDoc.exists) {
           userRef = globalDoc.reference;
           userData = globalDoc.data() as Map<String, dynamic>;
@@ -340,30 +258,25 @@ class _LoginPageState extends State<LoginPage> {
       }
 
       if (isAuthVerified) {
-        Map<String, dynamic> updates = {
-          'lastLogin': FieldValue.serverTimestamp(),
-        };
+        Map<String, dynamic> updates = {'lastLogin': FieldValue.serverTimestamp()};
         if (!(userData['isEmailVerified'] ?? false)) {
           updates['isEmailVerified'] = true;
           updates['verifiedAt'] = FieldValue.serverTimestamp();
         }
-        if (userData.containsKey('tempPassword'))
-          updates['tempPassword'] = FieldValue.delete();
+        if (userData.containsKey('tempPassword')) updates['tempPassword'] = FieldValue.delete();
         await userRef.update(updates);
       } else {
         await userRef.update({'lastLogin': FieldValue.serverTimestamp()});
         await _auth.signOut();
         setState(() => _loading = false);
         _showDialog(
-          title: '📧 Verify Email',
-          message:
-              'Please check your inbox and verify your email address to continue.',
-          actionText: 'Resend Email',
-          onAction: () async {
-            await user?.sendEmailVerification();
-            _showMsg('Verification email sent!');
-          },
-        );
+            title: '📧 Verify Email',
+            message: 'Please check your inbox and verify your email address to continue.',
+            actionText: 'Resend Email',
+            onAction: () async {
+              await user?.sendEmailVerification();
+              _showMsg('Verification email sent!');
+            });
         return;
       }
 
@@ -403,10 +316,7 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
       final GoogleSignInAuthentication gAuth = await gUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: gAuth.accessToken,
-        idToken: gAuth.idToken,
-      );
+      final credential = GoogleAuthProvider.credential(accessToken: gAuth.accessToken, idToken: gAuth.idToken);
 
       final userEmail = gUser.email.toLowerCase().trim();
 
@@ -434,8 +344,7 @@ class _LoginPageState extends State<LoginPage> {
         final existingUserData = existingUserQuery.docs.first.data();
         final existingRole = existingUserData['role'] as String?;
         // Check if this is a staff account (not owner)
-        isStaffAccount =
-            existingRole != null && existingRole.toLowerCase() != 'owner';
+        isStaffAccount = existingRole != null && existingRole.toLowerCase() != 'owner';
       }
 
       // Proceed with Google sign-in
@@ -459,10 +368,7 @@ class _LoginPageState extends State<LoginPage> {
           );
         } else {
           // Check if this Google UID has a user document (existing business owner)
-          final userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .get();
+          final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
           if (userDoc.exists) {
             // Existing business owner - proceed to app
@@ -527,16 +433,10 @@ class _LoginPageState extends State<LoginPage> {
                     constraints: BoxConstraints(maxWidth: contentWidth),
                     child: SingleChildScrollView(
                       controller: _scrollController,
-                      // Add bottom padding equal to keyboard inset so content (e.g. terms) is not hidden when keyboard is open.
-                      padding: EdgeInsets.fromLTRB(
-                        16,
-                        20,
-                        16,
-                        MediaQuery.of(context).viewInsets.bottom + 20,
-                      ),
-                      keyboardDismissBehavior:
-                          ScrollViewKeyboardDismissBehavior.onDrag,
-                      child: Column(
+                       // Add bottom padding equal to keyboard inset so content (e.g. terms) is not hidden when keyboard is open.
+                       padding: EdgeInsets.fromLTRB(16, 20, 16, MediaQuery.of(context).viewInsets.bottom + 20),
+                       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const SizedBox(height: 24),
@@ -546,9 +446,7 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 20),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 300),
-                            child: _isStaff
-                                ? _buildEmailForm(context)
-                                : _buildGoogleForm(context),
+                            child: _isStaff ? _buildEmailForm(context) : _buildGoogleForm(context),
                           ),
                           const SizedBox(height: 20),
                           _buildPrimaryActionBtn(context),
@@ -575,15 +473,8 @@ class _LoginPageState extends State<LoginPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text(
-          context.tr('welcome_to'),
-          style: const TextStyle(
-            fontSize: 11,
-            color: kBlack54,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 2.0,
-          ),
-        ),
+        Text(context.tr('welcome_to'),
+            style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 2.0)),
         const SizedBox(height: 12),
         Image.asset(
           'assets/MAX_my_bill_mic.png',
@@ -605,11 +496,7 @@ class _LoginPageState extends State<LoginPage> {
     child: Row(
       children: [
         _tabItem(context.tr('Sign In / Sign up'), !_isStaff, true),
-        _tabItem(
-          '${context.tr('staff')} ${context.tr('login')}',
-          _isStaff,
-          false,
-        ),
+        _tabItem('${context.tr('staff')} ${context.tr('login')}', _isStaff, false),
       ],
     ),
   );
@@ -643,26 +530,15 @@ class _LoginPageState extends State<LoginPage> {
           color: active ? kPrimaryColor : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           // Avoid deprecated withOpacity; use withAlpha for consistent precision
-          boxShadow: active
-              ? [
-                  BoxShadow(
-                    color: kPrimaryColor.withAlpha((0.3 * 255).round()),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ]
-              : null,
+          boxShadow: active ? [BoxShadow(color: kPrimaryColor.withAlpha((0.3 * 255).round()), blurRadius: 10, offset: const Offset(0, 4))] : null,
         ),
         child: Center(
-          child: Text(
-            txt,
-            style: TextStyle(
-              color: active ? kWhite : kBlack54,
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0.5,
-            ),
-          ),
+          child: Text(txt,
+              style: TextStyle(
+                  color: active ? kWhite : kBlack54,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5)),
         ),
       ),
     ),
@@ -699,12 +575,7 @@ class _LoginPageState extends State<LoginPage> {
           onPressed: _loading ? null : _resetPass,
           child: Text(
             context.tr('forgot_password'),
-            style: const TextStyle(
-              color: kPrimaryColor,
-              fontWeight: FontWeight.w900,
-              fontSize: 10,
-              letterSpacing: 0.5,
-            ),
+            style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.5),
           ),
         ),
       ),
@@ -715,16 +586,7 @@ class _LoginPageState extends State<LoginPage> {
     key: const ValueKey('google_form'),
     children: [
       const SizedBox(height: 8),
-      Text(
-        context.tr('Sign In With Google'),
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 10,
-          color: kBlack54,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.0,
-        ),
-      ),
+      Text(context.tr('Sign In With Google'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
       const SizedBox(height: 32),
       SizedBox(
         width: double.infinity,
@@ -734,34 +596,17 @@ class _LoginPageState extends State<LoginPage> {
           style: OutlinedButton.styleFrom(
             backgroundColor: kGreyBg,
             side: const BorderSide(color: kGrey200, width: 1.5),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               SizedBox(
-                width: 24,
-                height: 24,
-                child: Image.asset(
-                  'assets/google.png',
-                  errorBuilder: (ctx, err, stack) => CustomPaint(
-                    size: const Size(22, 22),
-                    painter: GoogleGPainter(),
-                  ),
-                ),
+                width: 24, height: 24,
+                child: Image.asset('assets/google.png', errorBuilder: (ctx, err, stack) => CustomPaint(size: const Size(22, 22), painter: GoogleGPainter())),
               ),
               const SizedBox(width: 14),
-              const Text(
-                'Google Account',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: kBlack87,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
+              const Text('Google Account', style: TextStyle(fontSize: 14, color: kBlack87, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -770,13 +615,13 @@ class _LoginPageState extends State<LoginPage> {
   );
 
   Widget _buildTextField(
-    TextEditingController ctrl,
-    String label,
-    HeroIcons icon, {
-    bool obscure = false,
-    Widget? suffix,
-    TextInputType? keyboardType,
-  }) {
+      TextEditingController ctrl,
+      String label,
+      HeroIcons icon, {
+        bool obscure = false,
+        Widget? suffix,
+        TextInputType? keyboardType,
+      }) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: ctrl,
       builder: (context, value, _) {
@@ -785,53 +630,30 @@ class _LoginPageState extends State<LoginPage> {
           controller: ctrl,
           obscureText: obscure,
           keyboardType: keyboardType,
-          style: const TextStyle(
-            fontSize: 15,
-            color: kBlack87,
-            fontWeight: FontWeight.w700,
-          ),
+          style: const TextStyle(fontSize: 15, color: kBlack87, fontWeight: FontWeight.w700),
           decoration: InputDecoration(
             labelText: label,
             prefixIcon: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: HeroIcon(
-                icon,
-                color: hasText ? kPrimaryColor : kBlack54,
-                size: 20,
-              ),
+              child: HeroIcon(icon, color: hasText ? kPrimaryColor : kBlack54, size: 20),
             ),
             floatingLabelBehavior: FloatingLabelBehavior.auto,
-            labelStyle: TextStyle(
-              color: hasText ? kPrimaryColor : kBlack54,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
-            floatingLabelStyle: const TextStyle(
-              color: kPrimaryColor,
-              fontSize: 11,
-              fontWeight: FontWeight.w900,
-            ),
-
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+            
+            
+            
             suffixIcon: suffix,
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(
-                color: hasText ? kPrimaryColor : kGrey200,
-                width: hasText ? 1.5 : 1.0,
-              ),
+              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -852,26 +674,12 @@ class _LoginPageState extends State<LoginPage> {
         onPressed: _loading ? null : (_isStaff ? _emailLogin : _googleLogin),
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           elevation: 0,
         ),
         child: _loading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(strokeWidth: 3, color: kWhite),
-              )
-            : Text(
-                txt,
-                style: const TextStyle(
-                  color: kWhite,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.0,
-                ),
-              ),
+            ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 3, color: kWhite))
+            : Text(txt, style: const TextStyle(color: kWhite, fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.0)),
       ),
     );
   }
@@ -881,28 +689,14 @@ class _LoginPageState extends State<LoginPage> {
     child: RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        style: const TextStyle(
-          fontSize: 11,
-          color: kBlack54,
-          height: 1.6,
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 11, color: kBlack54, height: 1.6, fontWeight: FontWeight.w500),
         children: [
           TextSpan(text: "${context.tr('by_proceeding_agree')} "),
-          const TextSpan(
-            text: 'Terms & Conditions',
-            style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900),
-          ),
+          const TextSpan(text: 'Terms & Conditions', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900)),
           const TextSpan(text: ', '),
-          const TextSpan(
-            text: 'Privacy Policy',
-            style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900),
-          ),
+          const TextSpan(text: 'Privacy Policy', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900)),
           const TextSpan(text: ' & '),
-          const TextSpan(
-            text: 'Refund Policy',
-            style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900),
-          ),
+          const TextSpan(text: 'Refund Policy', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900)),
         ],
       ),
     ),
@@ -915,14 +709,8 @@ class GoogleGPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     final strokeWidth = size.width * 0.22;
-    final rect = Rect.fromCircle(
-      center: center,
-      radius: radius - strokeWidth / 2,
-    );
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
+    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+    final paint = Paint()..style = PaintingStyle.stroke..strokeWidth = strokeWidth..strokeCap = StrokeCap.round;
 
     const double startAngle = -3.14 / 4;
     final double sweep = 3.14 * 1.6;
@@ -936,23 +724,11 @@ class GoogleGPainter extends CustomPainter {
     paint.color = kPrimaryColor;
     canvas.drawArc(rect, startAngle + sweep * 0.69, sweep * 0.31, false, paint);
 
-    final innerPaint = Paint()
-      ..color = kWhite
-      ..style = PaintingStyle.fill;
+    final innerPaint = Paint()..color = kWhite..style = PaintingStyle.fill;
     canvas.drawCircle(center, radius - strokeWidth * 1.25, innerPaint);
 
-    final tailPaint = Paint()
-      ..color = kPrimaryColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth * 0.9
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(
-      Offset(center.dx + radius * 0.05, center.dy + radius * 0.25),
-      Offset(center.dx + radius * 0.45, center.dy + radius * 0.05),
-      tailPaint,
-    );
+    final tailPaint = Paint()..color = kPrimaryColor..style = PaintingStyle.stroke..strokeWidth = strokeWidth * 0.9..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(center.dx + radius * 0.05, center.dy + radius * 0.25), Offset(center.dx + radius * 0.45, center.dy + radius * 0.05), tailPaint);
   }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  @override bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

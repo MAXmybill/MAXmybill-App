@@ -125,9 +125,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
 
   Future<void> _initializeDefaultRoles() async {
     try {
-      final rolesCollection = await _firestoreService.getStoreCollection(
-        'roles',
-      );
+      final rolesCollection = await _firestoreService.getStoreCollection('roles');
 
       // Initialize default roles if they don't exist, or update with new permissions
       for (var entry in _defaultRoles.entries) {
@@ -143,14 +141,10 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
         } else {
           // Update existing role with any new permissions (preserve existing values)
           final existingData = roleDoc.data() as Map<String, dynamic>;
-          final existingPermissions = Map<String, bool>.from(
-            existingData['permissions'] ?? {},
-          );
+          final existingPermissions = Map<String, bool>.from(existingData['permissions'] ?? {});
 
           bool hasNewPermissions = false;
-          final updatedPermissions = Map<String, bool>.from(
-            existingPermissions,
-          );
+          final updatedPermissions = Map<String, bool>.from(existingPermissions);
 
           // Add any new permissions that don't exist yet
           for (var permKey in entry.value.keys) {
@@ -181,62 +175,40 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Create Custom Role',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Create Custom Role', style: TextStyle(fontWeight: FontWeight.w700)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ValueListenableBuilder<TextEditingValue>(
-              valueListenable: nameController,
-              builder: (context, value, _) {
-                final bool hasText = value.text.isNotEmpty;
-                return TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: 'Role Name',
-                    filled: true,
-                    fillColor: const Color(0xFFF8F9FA),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: hasText ? kPrimaryColor : kGrey200,
-                        width: hasText ? 1.5 : 1.0,
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: kPrimaryColor,
-                        width: 2.0,
-                      ),
-                    ),
-                    labelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kBlack54,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    floatingLabelStyle: TextStyle(
-                      color: hasText ? kPrimaryColor : kPrimaryColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                );
-              },
-            ),
+      valueListenable: nameController,
+      builder: (context, value, _) {
+        final bool hasText = value.text.isNotEmpty;
+        return TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Role Name',
+                filled: true,
+                fillColor: const Color(0xFFF8F9FA),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                ),
+                labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+              ),
+            
+);
+      },
+    ),
           ],
         ),
         actions: [
@@ -251,8 +223,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
               final roleName = nameController.text.trim();
 
               // Check if role already exists
-              final rolesCollection = await _firestoreService
-                  .getStoreCollection('roles');
+              final rolesCollection = await _firestoreService.getStoreCollection('roles');
               final existingRole = await rolesCollection.doc(roleName).get();
 
               if (existingRole.exists) {
@@ -295,9 +266,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Create', style: TextStyle(color: kWhite)),
           ),
@@ -306,11 +275,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
     );
   }
 
-  Future<void> _editRolePermissions(
-    String roleName,
-    Map<String, bool> currentPermissions,
-    bool isDefault,
-  ) async {
+  Future<void> _editRolePermissions(String roleName, Map<String, bool> currentPermissions, bool isDefault) async {
     final result = await Navigator.push<Map<String, bool>>(
       context,
       CupertinoPageRoute(
@@ -323,9 +288,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
     );
 
     if (result != null) {
-      final rolesCollection = await _firestoreService.getStoreCollection(
-        'roles',
-      );
+      final rolesCollection = await _firestoreService.getStoreCollection('roles');
 
       // 1. Update the role document
       await rolesCollection.doc(roleName).update({
@@ -336,9 +299,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
       // 2. Also sync updated permissions to all users who have this role
       //    so that changes take effect even on cached user documents.
       try {
-        final usersCollection = await _firestoreService.getStoreCollection(
-          'users',
-        );
+        final usersCollection = await _firestoreService.getStoreCollection('users');
         final usersSnapshot = await usersCollection
             .where('role', isEqualTo: roleName)
             .get();
@@ -359,6 +320,8 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
       } catch (e) {
         debugPrint('Error syncing permissions to users: $e');
       }
+
+
     }
   }
 
@@ -367,10 +330,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'Delete Role?',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Delete Role?', style: TextStyle(fontWeight: FontWeight.w700)),
         content: Text('Are you sure you want to delete the "$roleName" role?'),
         actions: [
           TextButton(
@@ -381,9 +341,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: kErrorColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
             child: const Text('Delete', style: TextStyle(color: kWhite)),
           ),
@@ -392,9 +350,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
     );
 
     if (confirm == true) {
-      final rolesCollection = await _firestoreService.getStoreCollection(
-        'roles',
-      );
+      final rolesCollection = await _firestoreService.getStoreCollection('roles');
       await rolesCollection.doc(roleName).delete();
 
       if (mounted) {
@@ -419,11 +375,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
         ),
         title: const Text(
           'Role Management',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-          ),
+          style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontSize: 18),
         ),
         backgroundColor: kPrimaryColor,
         elevation: 0,
@@ -434,14 +386,10 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
         ),
       ),
       body: FutureBuilder<QuerySnapshot>(
-        future: _firestoreService
-            .getStoreCollection('roles')
-            .then((col) => col.get()),
+        future: _firestoreService.getStoreCollection('roles').then((col) => col.get()),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: kPrimaryColor),
-            );
+            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -453,11 +401,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                   const SizedBox(height: 16),
                   const Text(
                     'No roles found',
-                    style: TextStyle(
-                      color: kBlack54,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(color: kBlack54, fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -474,9 +418,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
               final roleDoc = roles[index];
               final roleData = roleDoc.data() as Map<String, dynamic>;
               final roleName = roleData['name'] ?? roleDoc.id;
-              final permissions = Map<String, bool>.from(
-                roleData['permissions'] ?? {},
-              );
+              final permissions = Map<String, bool>.from(roleData['permissions'] ?? {});
               final isDefault = roleData['isDefault'] ?? false;
 
               final enabledCount = permissions.values.where((v) => v).length;
@@ -489,25 +431,18 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                 decoration: BoxDecoration(
                   color: kWhite,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isDefault ? kOrange.withOpacity(0.3) : kGrey200,
-                  ),
+                  border: Border.all(color: isDefault ? kOrange.withOpacity(0.3) : kGrey200),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       leading: Container(
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: isDefault
-                              ? kOrange.withOpacity(0.1)
-                              : kPrimaryColor.withOpacity(0.1),
+                          color: isDefault ? kOrange.withOpacity(0.1) : kPrimaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -528,10 +463,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                           ),
                           if (isDefault)
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
                                 color: kOrange.withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(6),
@@ -562,24 +494,12 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(
-                              Icons.edit,
-                              color: kPrimaryColor,
-                              size: 20,
-                            ),
-                            onPressed: () => _editRolePermissions(
-                              roleName,
-                              permissions,
-                              isDefault,
-                            ),
+                            icon: const Icon(Icons.edit, color: kPrimaryColor, size: 20),
+                            onPressed: () => _editRolePermissions(roleName, permissions, isDefault),
                           ),
                           if (!isDefault)
                             IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: kErrorColor,
-                                size: 20,
-                              ),
+                              icon: const Icon(Icons.delete, color: kErrorColor, size: 20),
                               onPressed: () => _deleteRole(roleName),
                             ),
                         ],
@@ -597,23 +517,20 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                           final hasAccess = enabled > 0;
                           final allEnabled = enabled == total;
                           return Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: allEnabled
                                   ? kGoogleGreen.withOpacity(0.1)
                                   : hasAccess
-                                  ? kOrange.withOpacity(0.1)
-                                  : kGrey100,
+                                      ? kOrange.withOpacity(0.1)
+                                      : kGrey100,
                               borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: allEnabled
                                     ? kGoogleGreen.withOpacity(0.3)
                                     : hasAccess
-                                    ? kOrange.withOpacity(0.3)
-                                    : kGrey200,
+                                        ? kOrange.withOpacity(0.3)
+                                        : kGrey200,
                               ),
                             ),
                             child: Row(
@@ -623,14 +540,14 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                                   allEnabled
                                       ? Icons.check_circle
                                       : hasAccess
-                                      ? Icons.remove_circle_outline
-                                      : Icons.cancel_outlined,
+                                          ? Icons.remove_circle_outline
+                                          : Icons.cancel_outlined,
                                   size: 12,
                                   color: allEnabled
                                       ? kGoogleGreen
                                       : hasAccess
-                                      ? kOrange
-                                      : kBlack54,
+                                          ? kOrange
+                                          : kBlack54,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -642,8 +559,8 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
                                     color: allEnabled
                                         ? kGoogleGreen
                                         : hasAccess
-                                        ? kOrange
-                                        : kBlack54,
+                                            ? kOrange
+                                            : kBlack54,
                                   ),
                                 ),
                               ],
@@ -663,22 +580,13 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
         onPressed: _createCustomRole,
         backgroundColor: kPrimaryColor,
         icon: const Icon(Icons.add, color: kWhite),
-        label: const Text(
-          'Create Role',
-          style: TextStyle(
-            color: kWhite,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Lato',
-          ),
-        ),
+        label: const Text('Create Role', style: TextStyle(color: kWhite, fontWeight: FontWeight.w700, fontFamily: 'Lato')),
       ),
     );
   }
 
   // Helper method to calculate category-wise permission status
-  Map<String, Map<String, int>> _getCategoryStatus(
-    Map<String, bool> permissions,
-  ) {
+  Map<String, Map<String, int>> _getCategoryStatus(Map<String, bool> permissions) {
     final categories = {
       'Estimation/Quotation': ['quotation'],
       'Manage Bills': ['billHistory'],
@@ -688,26 +596,9 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
       'Credits & Dues': ['creditDetails'],
       'Expenses': ['expenses'],
       'Staff Access & Roles': ['staffManagement', 'analytics'],
-      'Reports': [
-        'daybook',
-        'salesSummary',
-        'salesReport',
-        'itemSalesReport',
-        'topCustomer',
-        'stockReport',
-        'lowStockProduct',
-        'topProducts',
-        'topCategory',
-        'expensesReport',
-        'taxReport',
-        'staffSalesReport',
-      ],
+      'Reports': ['daybook', 'salesSummary', 'salesReport', 'itemSalesReport', 'topCustomer', 'stockReport', 'lowStockProduct', 'topProducts', 'topCategory', 'expensesReport', 'taxReport', 'staffSalesReport'],
       'Products': ['addProduct', 'addCategory'],
-      'Settings': [
-        'editBusinessProfile',
-        'receiptCustomization',
-        'taxSettings',
-      ],
+      'Settings': ['editBusinessProfile', 'receiptCustomization', 'taxSettings'],
     };
 
     final result = <String, Map<String, int>>{};
@@ -724,3 +615,4 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
     return result;
   }
 }
+
