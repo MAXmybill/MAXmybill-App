@@ -10,6 +10,7 @@ import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/components/premium_lock_ui.dart';
 import 'package:maxmybill/services/excel_import_service.dart';
 import 'package:maxmybill/utils/plan_permission_helper.dart';
+import 'package:maxmybill/utils/storage_saver.dart';
 
 // --- UI CONSTANTS ---
 const Color _primaryColor = kPrimaryColor;
@@ -374,6 +375,8 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                         context: stateContext,
                         builder: (BuildContext successDialogContext) {
                           final fileName = result.split(RegExp(r'[/\\]')).last;
+                          final locationMessage = StorageSaver.locationMessageForPath(
+                              result, fallbackMessage: 'Saved in app storage under MAXmybill/Templates');
                             return AlertDialog(
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                               backgroundColor: Colors.white,
@@ -409,9 +412,9 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Customer template has been downloaded to Downloads/MAXmybill folder',
-                                    style: TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
+                                  Text(
+                                    locationMessage,
+                                    style: const TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
                                   ),
                                   const SizedBox(height: 16),
                                   Container(
@@ -467,14 +470,14 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(color: kGoogleGreen.withOpacity(0.3)),
                                     ),
-                                    child: const Row(
+                                    child: Row(
                                       children: [
-                                        HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
-                                        SizedBox(width: 8),
+                                        const HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
+                                        const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
-                                            'Check Downloads/MAXmybill folder',
-                                            style: TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
+                                            locationMessage,
+                                            style: const TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
                                           ),
                                         ),
                                       ],

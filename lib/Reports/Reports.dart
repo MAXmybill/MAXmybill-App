@@ -13,6 +13,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:maxmybill/utils/storage_saver.dart';
 import 'package:heroicons/heroicons.dart';
 
 import 'package:maxmybill/components/common_bottom_nav.dart';
@@ -1309,159 +1310,77 @@ class ReportPdfGenerator {
       final fileName = '${reportTitle.replaceAll(' ', '_')}_${DateFormat('yyyyMMdd_HHmmss').format(now)}.pdf';
       final pdfBytes = await pdf.save();
 
-      if (Platform.isAndroid) {
-        var storageStatus = await Permission.storage.status;
-        if (!storageStatus.isGranted) {
-          storageStatus = await Permission.storage.request();
-          if (!storageStatus.isGranted) {
-            final manageStatus = await Permission.manageExternalStorage.request();
-            if (!manageStatus.isGranted) {
-              final openSettings = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  title: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(child: Text('Permission Required', style: TextStyle(fontSize: 18))),
-                    ],
-                  ),
-                  content: const Text(
-                    'Storage permission is needed to save PDF reports to Downloads folder.\n\nPlease enable storage permission in app settings.',
-                    style: TextStyle(fontSize: 14, color: kTextSecondary, height: 1.5),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: kPrimaryColor,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                      ),
-                      child: const Text('Open Settings', style: TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                  ],
-                ),
-              );
-              if (openSettings == true) await openAppSettings();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.white),
-                      SizedBox(width: 12),
-                      Expanded(child: Text('Storage permission denied. Cannot save PDF.')),
-                    ],
-                  ),
-                  backgroundColor: Colors.red,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  duration: const Duration(seconds: 3),
-                ),
-              );
-              return;
-            }
-          }
-        }
-      }
-
       String? savedPath;
-      bool savedToDownloads = false;
+      bool savedToAppStorage = false;
 
-      if (Platform.isAndroid) {
-        try {
-          print('=== PDF SAVE DEBUG ===');
-          print('Attempting to save PDF: $fileName');
-          final downloadsPath = '/storage/emulated/0/Download';
-          final downloadsDir = Directory(downloadsPath);
+      try {
+        print('=== PDF SAVE DEBUG ===');
+        print('Attempting to save PDF: $fileName');
 
-          if (await downloadsDir.exists()) {
-            print('Downloads directory exists: ${downloadsDir.path}');
-
-            // Create MAXmybill folder inside Downloads
-            final maxmybillDir = Directory('${downloadsDir.path}/MAXmybill');
-            if (!await maxmybillDir.exists()) {
-              await maxmybillDir.create(recursive: true);
-              print('✓ Created MAXmybill folder: ${maxmybillDir.path}');
+        // Attempt to save using the system Save dialog (SAF) on Android so the file
+        // is written to a user-visible location (appears in file manager) without
+        // requesting MANAGE_EXTERNAL_STORAGE.
+        if (Platform.isAndroid) {
+          try {
+            // Try to save directly to MediaStore Downloads (makes file visible in File Manager)
+            final msResult = await StorageSaver.saveToMediaStore(bytes: pdfBytes, fileName: fileName, mimeType: 'application/pdf', subFolder: 'MAXmybill');
+            if (msResult != null) {
+              print('✓ PDF saved via MediaStore: $msResult');
+              savedPath = msResult;
             } else {
-              print('MAXmybill folder already exists: ${maxmybillDir.path}');
-            }
-
-            // Save file in MAXmybill folder
-            final file = File('${maxmybillDir.path}/$fileName');
-            await file.writeAsBytes(pdfBytes, flush: true);
-            if (await file.exists()) {
-              final fileSize = await file.length();
-              print('✓ PDF saved to Downloads/MAXmybill: ${file.path}, Size: $fileSize bytes');
-              savedPath = file.path;
-              savedToDownloads = true;
-            }
-          } else {
-            final extDir = await getExternalStorageDirectory();
-            if (extDir != null) {
-              final parts = extDir.path.split('/');
-              final storageIndex = parts.indexOf('Android');
-              if (storageIndex > 0) {
-                final basePath = parts.sublist(0, storageIndex).join('/');
-                final downloadDir = Directory('$basePath/Download');
-                if (await downloadDir.exists()) {
-                  // Create MAXmybill folder
-                  final maxmybillDir = Directory('${downloadDir.path}/MAXmybill');
-                  if (!await maxmybillDir.exists()) {
-                    await maxmybillDir.create(recursive: true);
-                  }
-
-                  final file = File('${maxmybillDir.path}/$fileName');
-                  await file.writeAsBytes(pdfBytes, flush: true);
-                  if (await file.exists()) {
-                    savedPath = file.path;
-                    savedToDownloads = true;
-                    print('✓ PDF saved to Downloads/MAXmybill (fallback): ${file.path}');
-                  }
-                }
+              // Fallback to SAF (user picks location)
+              final safResult = await StorageSaver.saveFile(bytes: pdfBytes, fileName: fileName, mimeType: 'application/pdf');
+              if (safResult != null) {
+                print('✓ PDF saved via SAF: $safResult');
+                savedPath = safResult;
               }
             }
-          }
-          if (savedPath == null) {
-            print('Fallback: Saving to cache directory');
-            final cacheDir = await getTemporaryDirectory();
-            final tempFile = File('${cacheDir.path}/$fileName');
-            await tempFile.writeAsBytes(pdfBytes, flush: true);
-            if (await tempFile.exists()) {
-              print('✓ PDF saved to cache: ${tempFile.path}');
-              savedPath = tempFile.path;
-            }
-          }
-          print('=== END PDF SAVE DEBUG ===');
-        } catch (e, stackTrace) {
-          print('ERROR saving PDF: $e');
-          print('Stack trace: $stackTrace');
-          try {
-            final cacheDir = await getTemporaryDirectory();
-            final tempFile = File('${cacheDir.path}/$fileName');
-            await tempFile.writeAsBytes(pdfBytes, flush: true);
-            savedPath = tempFile.path;
-          } catch (e2) {
-            print('Cache fallback failed: $e2');
+          } catch (e) {
+            print('MediaStore/SAF save failed: $e');
           }
         }
-      } else {
-        final dir = await getApplicationDocumentsDirectory();
-        final file = File('${dir.path}/$fileName');
-        await file.writeAsBytes(pdfBytes);
-        savedPath = file.path;
+
+        // If SAF didn't save (user cancelled or platform not Android), fallback to
+        // app-specific storage so the file is still available to the app.
+        if (savedPath == null) {
+          final baseDir = await getApplicationDocumentsDirectory();
+          final reportsDir = Directory('${baseDir.path}${Platform.pathSeparator}MAXmybill${Platform.pathSeparator}Reports');
+          if (!await reportsDir.exists()) {
+            await reportsDir.create(recursive: true);
+          }
+
+          final file = File('${reportsDir.path}${Platform.pathSeparator}$fileName');
+          await file.writeAsBytes(pdfBytes, flush: true);
+          if (await file.exists()) {
+            final fileSize = await file.length();
+            print('✓ PDF saved to app storage: ${file.path}, Size: $fileSize bytes');
+            savedPath = file.path;
+            savedToAppStorage = true;
+          }
+        }
+
+        if (savedPath == null) {
+          final cacheDir = await getTemporaryDirectory();
+          final tempFile = File('${cacheDir.path}${Platform.pathSeparator}$fileName');
+          await tempFile.writeAsBytes(pdfBytes, flush: true);
+          if (await tempFile.exists()) {
+            print('✓ PDF saved to cache: ${tempFile.path}');
+            savedPath = tempFile.path;
+          }
+        }
+
+        print('=== END PDF SAVE DEBUG ===');
+      } catch (e, stackTrace) {
+        print('ERROR saving PDF: $e');
+        print('Stack trace: $stackTrace');
+        try {
+          final cacheDir = await getTemporaryDirectory();
+          final tempFile = File('${cacheDir.path}${Platform.pathSeparator}$fileName');
+          await tempFile.writeAsBytes(pdfBytes, flush: true);
+          savedPath = tempFile.path;
+        } catch (e2) {
+          print('Cache fallback failed: $e2');
+        }
       }
 
       if (savedPath != null) {
@@ -1505,8 +1424,8 @@ class ReportPdfGenerator {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    savedToDownloads
-                        ? 'Your PDF report has been saved to Downloads/MAXmybill folder'
+                    savedPath != null
+                        ? 'Your PDF report has been saved'
                         : 'Your PDF report has been generated successfully',
                     style: const TextStyle(fontSize: 14, color: kTextSecondary, height: 1.4),
                   ),
@@ -1556,7 +1475,7 @@ class ReportPdfGenerator {
                       ],
                     ),
                   ),
-                  if (savedToDownloads) ...[
+                  if (savedPath != null) ...[
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1569,10 +1488,12 @@ class ReportPdfGenerator {
                         children: [
                           Icon(Icons.folder_outlined, color: kIncomeGreen, size: 18),
                           const SizedBox(width: 8),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Check Downloads/MAXmybill folder',
-                              style: TextStyle(fontSize: 14, color: kIncomeGreen, fontWeight: FontWeight.w600),
+                              savedPath!.startsWith('content://')
+                                  ? 'Saved to the Downloads/MAXmybill'
+                                  : 'Saved in app storage under MAXmybill/Reports',
+                              style: const TextStyle(fontSize: 14, color: kIncomeGreen, fontWeight: FontWeight.w600),
                             ),
                           ),
                         ],

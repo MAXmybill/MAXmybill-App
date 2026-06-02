@@ -5,7 +5,7 @@ import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:maxmybill/utils/storage_saver.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 
@@ -13,44 +13,34 @@ class ExcelImportService {
   /// Download Customer Template
   static Future<String?> downloadCustomerTemplate() async {
     try {
-      // Request storage permission
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.request();
-        if (!status.isGranted) {
-          status = await Permission.manageExternalStorage.request();
-          if (!status.isGranted) {
-            return 'Error: Storage permission denied';
-          }
-        }
-      }
-
       // Load template from assets
       final ByteData data = await rootBundle.load('excel/Customer Templete.xlsx');
       final List<int> bytes = data.buffer.asUint8List();
 
-      // Get downloads directory
-      Directory? directory;
+      // Save file - try system save dialog on Android so the file appears in
+      // the user's chosen location (visible to File Manager) without needing
+      // MANAGE_EXTERNAL_STORAGE. If the user cancels or SAF fails, fallback to
+      // app-specific storage.
+      final String fileName = 'Customer_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+
       if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download/MAXmybill');
-        if (!await directory.exists()) {
-          await directory.create(recursive: true);
+        try {
+          final msResult = await StorageSaver.saveToMediaStore(bytes: Uint8List.fromList(bytes), fileName: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', subFolder: 'MAXmybill');
+          if (msResult != null) return msResult;
+
+          final safResult = await StorageSaver.saveFile(bytes: Uint8List.fromList(bytes), fileName: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          if (safResult != null) return safResult;
+        } catch (e) {
+          print('MediaStore/SAF save failed for customer template: $e');
         }
-      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-        // For desktop platforms, use downloads folder
-        final downloadsPath = Platform.isWindows
-            ? '${Platform.environment['Userprofile']}\\Downloads\\MAXmybill'
-            : '${Platform.environment['Home']}/Downloads/MAXmybill';
-        directory = Directory(downloadsPath);
-        if (!await directory.exists()) {
-          await directory.create(recursive: true);
-        }
-      } else {
-        directory = await getApplicationDocumentsDirectory();
       }
 
-      // Save file
-      final String fileName = 'Customer_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final File file = File('${directory.path}${Platform.pathSeparator}$fileName');
+      // Fallback: save inside app-specific storage
+      final customerBaseDirectory = await getApplicationDocumentsDirectory();
+      final fallbackDir = Directory('${customerBaseDirectory.path}${Platform.pathSeparator}MAXmybill${Platform.pathSeparator}Templates');
+      if (!await fallbackDir.exists()) await fallbackDir.create(recursive: true);
+
+      final File file = File('${fallbackDir.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
       // Verify file was created
@@ -67,44 +57,31 @@ class ExcelImportService {
   /// Download Product Template
   static Future<String?> downloadProductTemplate() async {
     try {
-      // Request storage permission
-      if (Platform.isAndroid) {
-        var status = await Permission.storage.request();
-        if (!status.isGranted) {
-          status = await Permission.manageExternalStorage.request();
-          if (!status.isGranted) {
-            return 'Error: Storage permission denied';
-          }
-        }
-      }
-
       // Load template from assets
       final ByteData data = await rootBundle.load('excel/Product Templete.xlsx');
       final List<int> bytes = data.buffer.asUint8List();
 
-      // Get downloads directory
-      Directory? directory;
+      // Save file - attempt SAF first on Android
+      final String fileName = 'Product_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+
       if (Platform.isAndroid) {
-        directory = Directory('/storage/emulated/0/Download/MAXmybill');
-        if (!await directory.exists()) {
-          await directory.create(recursive: true);
+        try {
+          final msResult = await StorageSaver.saveToMediaStore(bytes: Uint8List.fromList(bytes), fileName: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', subFolder: 'MAXmybill');
+          if (msResult != null) return msResult;
+
+          final safResult = await StorageSaver.saveFile(bytes: Uint8List.fromList(bytes), fileName: fileName, mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+          if (safResult != null) return safResult;
+        } catch (e) {
+          print('MediaStore/SAF save failed for product template: $e');
         }
-      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
-        // For desktop platforms, use downloads folder
-        final downloadsPath = Platform.isWindows
-            ? '${Platform.environment['Userprofile']}\\Downloads\\MAXmybill'
-            : '${Platform.environment['Home']}/Downloads/MAXmybill';
-        directory = Directory(downloadsPath);
-        if (!await directory.exists()) {
-          await directory.create(recursive: true);
-        }
-      } else {
-        directory = await getApplicationDocumentsDirectory();
       }
 
-      // Save file
-      final String fileName = 'Product_Template_${DateTime.now().millisecondsSinceEpoch}.xlsx';
-      final File file = File('${directory.path}${Platform.pathSeparator}$fileName');
+      // Fallback: save inside app-specific storage
+      final productBaseDirectory = await getApplicationDocumentsDirectory();
+      final fallbackDir = Directory('${productBaseDirectory.path}${Platform.pathSeparator}MAXmybill${Platform.pathSeparator}Templates');
+      if (!await fallbackDir.exists()) await fallbackDir.create(recursive: true);
+
+      final File file = File('${fallbackDir.path}${Platform.pathSeparator}$fileName');
       await file.writeAsBytes(bytes, flush: true);
 
       // Verify file was created

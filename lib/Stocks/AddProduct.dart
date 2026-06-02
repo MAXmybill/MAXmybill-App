@@ -12,6 +12,7 @@ import 'AddCategoryPopup.dart';
 import 'package:maxmybill/services/excel_import_service.dart';
 import 'package:maxmybill/components/premium_lock_ui.dart';
 import 'package:maxmybill/utils/plan_permission_helper.dart';
+import 'package:maxmybill/utils/storage_saver.dart';
 import 'package:heroicons/heroicons.dart';
 
 class AddProductPage extends StatefulWidget {
@@ -278,12 +279,12 @@ class _AddProductPageState extends State<AddProductPage> {
                     Navigator.pop(dialogContext);
 
                     if (result != null && !result.startsWith('Error') && !result.toLowerCase().contains('denied')) {
-                      // Show success dialog using STATE context
+                      // Prepare values and show success dialog using STATE context
+                      final fileName = result.split(RegExp(r'[/\\]')).last;
                       if (!mounted) return;
                       showDialog(
                         context: stateContext,
                         builder: (BuildContext successDialogContext) {
-                          final fileName = result.split(RegExp(r'[/\\]')).last;
                           return AlertDialog(
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                             backgroundColor: Colors.white,
@@ -319,9 +320,9 @@ class _AddProductPageState extends State<AddProductPage> {
                               mainAxisSize: MainAxisSize.min,
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Product template has been downloaded to Downloads/MAXmybill folder',
-                                  style: TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
+                                Text(
+                                  StorageSaver.locationMessageForPath(result, fallbackMessage: 'Saved in app storage under MAXmybill/Templates'),
+                                  style: const TextStyle(fontSize: 14, color: kBlack54, height: 1.4),
                                 ),
                                 const SizedBox(height: 16),
                                 Container(
@@ -377,16 +378,16 @@ class _AddProductPageState extends State<AddProductPage> {
                                     borderRadius: BorderRadius.circular(8),
                                     border: Border.all(color: kGoogleGreen.withValues(alpha: 0.3)),
                                   ),
-                                  child: const Row(
+                                  child: Row(
                                     children: [
-                                      HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
-                                      SizedBox(width: 8),
-                                      Expanded(
-                                        child: Text(
-                                          'Check Downloads/MAXmybill folder',
-                                          style: TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
+                                      const HeroIcon(HeroIcons.folder, color: kGoogleGreen, size: 18),
+                                      const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            StorageSaver.locationMessageForPath(result, fallbackMessage: 'Saved in app storage under MAXmybill/Templates'),
+                                            style: const TextStyle(fontSize: 14, color: kGoogleGreen, fontWeight: FontWeight.w600),
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ),
