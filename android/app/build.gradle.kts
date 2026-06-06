@@ -57,6 +57,24 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            
+            // Ensure bundle includes all necessary components
+            ndk {
+                debugSymbolLevel = "full"
+            }
+        }
+    }
+    
+    // Bundle configuration to ensure proper delivery
+    bundle {
+        language {
+            enableSplit = false
+        }
+        density {
+            enableSplit = true
+        }
+        abi {
+            enableSplit = true
         }
     }
 
@@ -88,4 +106,7 @@ dependencies {
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-analytics")
+    
+    // Play Integrity API - Required for Firebase App Check PlayIntegrity Provider
+    implementation("com.google.android.gms:play-services-integrity:1.3.0")
 }

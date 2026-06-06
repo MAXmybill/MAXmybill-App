@@ -475,25 +475,36 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
                 itemCount: taxes.length,
                 separatorBuilder: (_, __) => const Divider(height: 1, color: kGrey100),
                 itemBuilder: (context, index) {
-                  final taxData = taxes[index].data() as Map<String, dynamic>;
-                  final name = taxData['name'] ?? '';
-                  final perc = taxData['percentage'] ?? 0.0;
-                  final count = taxData['productCount'] ?? 0;
-                  return ListTile(
-                    onTap: () => _showTaxProducts(context, {...taxData, 'id': taxes[index].id}),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: CircleAvatar(backgroundColor: kPrimaryColor.withOpacity(0.1), radius: 18, child: Text(name[0], style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 14))),
-                    title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                    subtitle: Text('$perc% Rate', style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600)),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(6)), child: Text('$count ITEMS', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kBlack54))),
-                        const SizedBox(width: 4),
-                        IconButton(icon: const Icon(Icons.delete_outline_rounded, color: kErrorColor, size: 20), onPressed: () => _deleteTax(taxes[index].id, name)),
-                        const Icon(Icons.arrow_forward_ios_rounded, color: kGrey300, size: 12),
-                      ],
+                  final taxDoc = taxes[index];
+                  final data = taxDoc.data() as Map<String, dynamic>;
+                  final name = data['name'] ?? '';
+                  final perc = data['percentage'] ?? 0.0;
+                  final taxId = taxDoc.id;
+                  
+                  // Dynamically count products with this tax
+                  return FutureBuilder<QuerySnapshot>(
+                    future: FirestoreService().getStoreCollection('Products').then(
+                      (collection) => collection.where('taxId', isEqualTo: taxId).get()
                     ),
+                    builder: (context, countSnapshot) {
+                      final count = countSnapshot.hasData ? countSnapshot.data!.docs.length : 0;
+                      return ListTile(
+                        onTap: () => _showTaxProducts(context, {...data, 'id': taxId}),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        leading: CircleAvatar(backgroundColor: kPrimaryColor.withOpacity(0.1), radius: 18, child: Text(name[0], style: const TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w900, fontSize: 14))),
+                        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                        subtitle: Text('$perc% Rate', style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600)),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(6)), child: Text('$count ITEMS', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kBlack54))),
+                            const SizedBox(width: 4),
+                            IconButton(icon: const Icon(Icons.delete_outline_rounded, color: kErrorColor, size: 20), onPressed: () => _deleteTax(taxDoc.id, name)),
+                            const Icon(Icons.arrow_forward_ios_rounded, color: kGrey300, size: 12),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
               ),

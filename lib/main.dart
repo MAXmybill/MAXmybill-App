@@ -43,10 +43,25 @@ void main() async {
 
   // Activate App Check so Firebase requests use a real token instead of placeholder.
   if (!kIsWeb) {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
-      appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
-    );
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: kDebugMode ? AndroidProvider.debug : AndroidProvider.playIntegrity,
+        appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+      );
+    } catch (e) {
+      debugPrint('⚠️ Firebase App Check activation failed: $e');
+      debugPrint('⚠️ Retrying with safetyNet provider as fallback...');
+      try {
+        // Fallback to SafetyNet if PlayIntegrity fails (for compatibility)
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.safetyNet,
+          appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
+        );
+      } catch (fallbackError) {
+        debugPrint('⚠️ Firebase App Check fallback also failed: $fallbackError');
+        debugPrint('⚠️ App will continue, but Firebase operations may be restricted.');
+      }
+    }
   }
 
   // Initialize Hive for offline storage
