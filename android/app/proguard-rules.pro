@@ -88,7 +88,6 @@
 
 ## Hive - Local database
 -keep class com.hive.** { *; }
--keep int com.hive.** { *; }
 -dontwarn com.hive.**
 
 ## In-App Update library

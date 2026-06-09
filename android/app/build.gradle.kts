@@ -108,5 +108,5 @@ dependencies {
     implementation("com.google.firebase:firebase-analytics")
     
     // Play Integrity API - Required for Firebase App Check PlayIntegrity Provider
-    implementation("com.google.android.gms:play-services-integrity:1.3.0")
+    implementation("com.google.android.play:integrity:1.3.0")
 }
