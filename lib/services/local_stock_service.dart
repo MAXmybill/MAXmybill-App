@@ -13,8 +13,15 @@ class LocalStockService extends ChangeNotifier {
   static const String _pendingUpdatesKey = 'pending_stock_updates';
 
   // In-memory cache for fast access
-  final Map<String, int> _stockCache = {};
+  final Map<String, double> _stockCache = {};
   bool _initialized = false;
+
+  double? _getPrefDouble(SharedPreferences prefs, String key) {
+    final value = prefs.get(key);
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    return null;
+  }
 
   /// Initialize the service and load cached stock from SharedPreferences
   Future<void> init() async {
@@ -27,7 +34,7 @@ class LocalStockService extends ChangeNotifier {
       for (final key in keys) {
         if (key.startsWith(_stockPrefix)) {
           final productId = key.replaceFirst(_stockPrefix, '');
-          final stock = prefs.getInt(key);
+          final stock = _getPrefDouble(prefs, key);
           if (stock != null) {
             _stockCache[productId] = stock;
           }
@@ -41,20 +48,20 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Update stock locally for a product - NOTIFIES LISTENERS
-  Future<void> updateLocalStock(String productId, int quantityChange) async {
+  Future<void> updateLocalStock(String productId, double quantityChange, {double? currentFirestoreStock}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_stockPrefix$productId';
 
-      // Get current stock from memory cache or SharedPreferences
-      int currentStock = _stockCache[productId] ?? prefs.getInt(key) ?? 0;
+      // Get current stock from memory cache or SharedPreferences, or use the provided firestore stock
+      double currentStock = _stockCache[productId] ?? _getPrefDouble(prefs, key) ?? currentFirestoreStock ?? 0.0;
 
       // Calculate new stock (never go below 0)
-      final newStock = (currentStock + quantityChange).clamp(0, 999999);
+      final newStock = (currentStock + quantityChange).clamp(0.0, 999999.0);
 
       // Update both memory cache and SharedPreferences
       _stockCache[productId] = newStock;
-      await prefs.setInt(key, newStock);
+      await prefs.setDouble(key, newStock);
 
       print('📦 Stock updated for $productId: $currentStock -> $newStock (change: $quantityChange)');
 
@@ -69,8 +76,8 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Get stock for a product - uses memory cache for instant access
-  int getStock(String productId) {
-    return _stockCache[productId] ?? 0;
+  double getStock(String productId) {
+    return _stockCache[productId] ?? 0.0;
   }
 
   /// Check if stock is cached for a product
@@ -79,14 +86,14 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Cache stock value from Firestore (also saves to SharedPreferences)
-  Future<void> cacheStock(String productId, int stock) async {
+  Future<void> cacheStock(String productId, double stock) async {
     try {
       // Only update if different (to avoid unnecessary notifications)
       if (_stockCache[productId] != stock) {
         _stockCache[productId] = stock;
 
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setInt('$_stockPrefix$productId', stock);
+        await prefs.setDouble('$_stockPrefix$productId', stock);
       }
     } catch (e) {
       print('❌ Error caching stock: $e');
@@ -94,13 +101,13 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Bulk cache stock from Firestore products
-  Future<void> cacheStockBulk(Map<String, int> stockMap) async {
+  Future<void> cacheStockBulk(Map<String, double> stockMap) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
       for (final entry in stockMap.entries) {
         _stockCache[entry.key] = entry.value;
-        await prefs.setInt('$_stockPrefix${entry.key}', entry.value);
+        await prefs.setDouble('$_stockPrefix${entry.key}', entry.value);
       }
 
       // Notify after bulk update
@@ -111,13 +118,13 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Refresh stock from Firestore and notify listeners
-  Future<void> refreshFromFirestore(Map<String, int> firestoreStock) async {
+  Future<void> refreshFromFirestore(Map<String, double> firestoreStock) async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
       for (final entry in firestoreStock.entries) {
         _stockCache[entry.key] = entry.value;
-        await prefs.setInt('$_stockPrefix${entry.key}', entry.value);
+        await prefs.setDouble('$_stockPrefix${entry.key}', entry.value);
       }
 
       print('🔄 Stock refreshed from Firestore: ${firestoreStock.length} products');
@@ -133,7 +140,7 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Add pending stock update for later sync
-  Future<void> _addPendingUpdate(String productId, int quantityChange) async {
+  Future<void> _addPendingUpdate(String productId, double quantityChange) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final updatesJson = prefs.getString(_pendingUpdatesKey) ?? '[]';
@@ -144,7 +151,7 @@ class LocalStockService extends ChangeNotifier {
       if (existingIndex != -1) {
         // Accumulate the change
         updates[existingIndex]['quantityChange'] =
-            (updates[existingIndex]['quantityChange'] as int) + quantityChange;
+            ((updates[existingIndex]['quantityChange'] as num).toDouble()) + quantityChange;
       } else {
         // Add new pending update
         updates.add({
@@ -204,7 +211,7 @@ class LocalStockService extends ChangeNotifier {
   }
 
   /// Get all cached stock as a map
-  Map<String, int> getAllCachedStock() {
+  Map<String, double> getAllCachedStock() {
     return Map.from(_stockCache);
   }
 }

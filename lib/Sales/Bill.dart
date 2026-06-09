@@ -2602,7 +2602,31 @@ class _PaymentPageState extends State<PaymentPage> {
     });
   }
 
-  Future<void> _updateProductStock() async { final localStockService = context.read<LocalStockService>(); for (var cartItem in widget.cartItems) { if (cartItem.productId.startsWith('qs_')) continue; final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId); await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity.toInt()))}); await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity.toInt()); } }
+  Future<void> _updateProductStock() async {
+    final localStockService = context.read<LocalStockService>();
+    for (var cartItem in widget.cartItems) {
+      if (cartItem.productId.startsWith('qs_')) continue;
+      final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId);
+      
+      double? currentStock;
+      try {
+        final doc = await productRef.get(const GetOptions(source: Source.cache));
+        if (doc.exists) {
+          currentStock = ((doc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+        }
+      } catch (_) {
+        try {
+          final doc = await productRef.get();
+          if (doc.exists) {
+            currentStock = ((doc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+          }
+        } catch (_) {}
+      }
+      
+      await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity))});
+      await localStockService.updateLocalStock(cartItem.productId, -(cartItem.quantity), currentFirestoreStock: currentStock);
+    }
+  }
 
   /// Restores partial usage: deducts amount required from credit note(s).
   Future<void> _markCreditNotesAsUsed(String invoiceNumber, List<Map<String, dynamic>> selectedCreditNotes, double amountToDeduct) async {
@@ -3379,7 +3403,31 @@ class _SplitPaymentPageState extends State<SplitPaymentPage> {
     }
   }
 
-  Future<void> _updateProductStock() async { final localStockService = context.read<LocalStockService>(); for (var cartItem in widget.cartItems) { if (cartItem.productId.startsWith('qs_')) continue; final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId); await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity.toInt()))}); await localStockService.updateLocalStock(cartItem.productId, -cartItem.quantity.toInt()); } }
+  Future<void> _updateProductStock() async {
+    final localStockService = context.read<LocalStockService>();
+    for (var cartItem in widget.cartItems) {
+      if (cartItem.productId.startsWith('qs_')) continue;
+      final productRef = await FirestoreService().getDocumentReference('Products', cartItem.productId);
+      
+      double? currentStock;
+      try {
+        final doc = await productRef.get(const GetOptions(source: Source.cache));
+        if (doc.exists) {
+          currentStock = ((doc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+        }
+      } catch (_) {
+        try {
+          final doc = await productRef.get();
+          if (doc.exists) {
+            currentStock = ((doc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+          }
+        } catch (_) {}
+      }
+      
+      await productRef.update({'currentStock': FieldValue.increment(-(cartItem.quantity))});
+      await localStockService.updateLocalStock(cartItem.productId, -(cartItem.quantity), currentFirestoreStock: currentStock);
+    }
+  }
 
   Future<void> _markCreditNotesAsUsed(String invoiceNumber, List<Map<String, dynamic>> selectedCreditNotes, double amountToDeduct) async {
     double remainingToDeduct = amountToDeduct;

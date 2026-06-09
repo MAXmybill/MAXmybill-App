@@ -123,6 +123,8 @@ class SaleSyncService {
       if (items == null) return;
 
       final localStockService = LocalStockService();
+      final firestoreService = FirestoreService();
+      final productsCollection = await firestoreService.getStoreCollection('Products');
       
       for (var item in items) {
         final productId = item['productId'] as String?;
@@ -131,8 +133,24 @@ class SaleSyncService {
         // Skip Quick Sale items (qs_) and invalid items
         if (productId == null || quantity == null || productId.startsWith('qs_')) continue;
         
+        double? currentStock;
+        try {
+           final productDoc = await productsCollection.doc(productId).get(const GetOptions(source: Source.cache));
+           if (productDoc.exists) {
+              currentStock = ((productDoc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+           }
+        } catch (e) {
+           // Fallback to server if cache fails, or ignore
+           try {
+              final productDoc = await productsCollection.doc(productId).get();
+              if (productDoc.exists) {
+                 currentStock = ((productDoc.data() as Map<String, dynamic>?)?['currentStock'] as num?)?.toDouble();
+              }
+           } catch (_) {}
+        }
+
         // Update local stock (decrement)
-        await localStockService.updateLocalStock(productId, -(quantity.toInt()));
+        await localStockService.updateLocalStock(productId, -(quantity.toDouble()), currentFirestoreStock: currentStock);
       }
     } catch (e) {
       print('⚠️ Error updating local stock from sale: $e');
