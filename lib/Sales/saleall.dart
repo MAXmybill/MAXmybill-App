@@ -607,7 +607,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
   void _searchByBarcode(String barcode) async {
     try {
       final collection = await FirestoreService().getStoreCollection('Products');
-      final snap = await collection.where('barcode', isEqualTo: barcode).limit(1).get();
+      final snap = await collection.where('barcode', isEqualTo: barcode.trim()).limit(1).get();
 
       if (snap.docs.isEmpty) {
         if (mounted) CommonWidgets.showSnackBar(context, context.tr('product_not_found'), bgColor: kOrange);
@@ -631,7 +631,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
           ? localStockService.getStock(id).toDouble()
           : firestoreStock;
 
-      if (price > 0) {
+      if (price >= 0) {
         final taxes = _parseTaxesFromData(data);
         // Only show weight dialog for kg unit items
         if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {

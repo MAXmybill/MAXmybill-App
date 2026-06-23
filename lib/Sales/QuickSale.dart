@@ -404,8 +404,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
         qty = 1.0;
       }
       setState(() {
-        _items.insert(
-          0,
+        _items.add(
           QuickSaleItem(
             productId:
                 'qs_${DateTime.now().millisecondsSinceEpoch}_${_productIdCounter++}',
@@ -478,6 +477,14 @@ class _QuickSalePageState extends State<QuickSalePage> {
           .where('productCode', isEqualTo: productCode)
           .limit(1)
           .get();
+
+      // If not found by productCode, try by barcode
+      if (querySnapshot.docs.isEmpty) {
+        querySnapshot = await productsCollection
+            .where('barcode', isEqualTo: productCode)
+            .limit(1)
+            .get();
+      }
 
       if (mounted) Navigator.pop(context); // Close loading
 
@@ -554,8 +561,7 @@ class _QuickSalePageState extends State<QuickSalePage> {
           _items[existingIndex].quantity += qty;
         } else {
           // Product doesn't exist, add new item
-          _items.insert(
-            0,
+          _items.add(
             QuickSaleItem(
               productId: productDoc.id,
               name: productName,
