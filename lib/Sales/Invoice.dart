@@ -1909,19 +1909,22 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     // Calculate total quantity
     final totalQty = widget.items.fold<num>(0, (sum, item) => sum + ((item['quantity'] ?? 1) is int ? item['quantity'] : (item['quantity'] as num).toInt()));
 
-    // Helper: thermal text style with NotoSans for best clarity
-    TextStyle tStyle({double size = 9, FontWeight weight = FontWeight.normal, Color color = kBlack87}) =>
-        TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'NotoSans');
+    // Helper: thermal text style with monospace for authentic thermal receipt look
+    TextStyle tStyle({double size = 10, FontWeight weight = FontWeight.normal, Color color = kBlack87}) =>
+        TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'monospace', letterSpacing: -0.2);
 
     return Center(
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(maxWidth: 400),
-        padding: const EdgeInsets.all(16),
+        constraints: const BoxConstraints(maxWidth: 380),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: kBlack87, width: 2),
+          color: const Color(0xFFFDFDFB), // Soft receipt-paper color
+          borderRadius: BorderRadius.circular(2),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8)),
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
@@ -2005,17 +2008,18 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             const SizedBox(height: 12),
 
             // ========== BILL NO & DATE ROW ==========
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('Bill No: ${widget.invoiceNumber}', style: tStyle(size: 9, weight: FontWeight.w600)),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Date: $dateStr', style: tStyle(size: 9, weight: FontWeight.w600)),
                     Text('Time: $timeStr', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Text('Bill No: ${widget.invoiceNumber}', style: tStyle(size: 9, weight: FontWeight.w600)),
               ],
             ),
 
@@ -2099,9 +2103,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                           ],
                         ),
                       ),
-                      SizedBox(width: 32, child: Text('$qty', style: tStyle(size: 9), textAlign: TextAlign.center)),
-                      Expanded(flex: 2, child: Text(price.toStringAsFixed(2), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                      Expanded(flex: 2, child: Text(amount.toStringAsFixed(2), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                      SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
+                      Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                      Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
                     ],
                   ),
                 );
@@ -2118,7 +2122,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('TOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
-                      Text('${_subtotalWithTax.toStringAsFixed(2)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
+                      Text('${_formatDecimal(_subtotalWithTax)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -2126,7 +2130,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('SUBTOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
-                      Text('${widget.subtotal.toStringAsFixed(2)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
+                      Text('${_formatDecimal(widget.subtotal)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
                     ],
                   ),
                 ],
@@ -2159,7 +2163,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Discount', style: tStyle(size: 9, color: kBlack54)),
-                    Text('-${widget.discount.toStringAsFixed(2)}', style: tStyle(size: 9, weight: FontWeight.w600)),
+                    Text('-${_formatDecimal(widget.discount)}', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -2171,7 +2175,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Delivery Charge', style: tStyle(size: 9, color: kBlack54)),
-                    Text('+${widget.deliveryCharge.toStringAsFixed(2)}', style: tStyle(size: 9, weight: FontWeight.w600)),
+                    Text('+${_formatDecimal(widget.deliveryCharge)}', style: tStyle(size: 9, weight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -2184,7 +2188,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Total', style: tStyle(size: 12, weight: FontWeight.w900)),
-                  Text('$currency ${widget.total.toStringAsFixed(2)}', style: tStyle(size: 12, weight: FontWeight.w900)),
+                  Text('$currency ${_formatDecimal(widget.total)}', style: tStyle(size: 12, weight: FontWeight.w900)),
                 ],
               ),
             ),
@@ -2209,7 +2213,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Cash', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_splitCashAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kGoogleGreen)),
+                            Text('$currency ${_formatDecimal(_splitCashAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kGoogleGreen)),
                           ],
                         ),
                       if (_splitOnlineAmount > 0)
@@ -2217,7 +2221,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Online', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_splitOnlineAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kPrimaryColor)),
+                            Text('$currency ${_formatDecimal(_splitOnlineAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kPrimaryColor)),
                           ],
                         ),
                       if (_splitCreditAmount > 0)
@@ -2225,7 +2229,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text('Credit', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_splitCreditAmount.toStringAsFixed(2)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kOrange)),
+                            Text('$currency ${_formatDecimal(_splitCreditAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kOrange)),
                           ],
                         ),
                     ],
@@ -2239,7 +2243,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
                 decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(6), border: Border.all(color: kBlack54)),
-                child: Text('🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!', style: tStyle(size: 9, weight: FontWeight.w700)),
+                child: Text('🎉 You Saved $currency${_formatDecimal(widget.discount)}!', style: tStyle(size: 9, weight: FontWeight.w700)),
               ),
             ],
 
@@ -2298,7 +2302,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           SizedBox(
             width: 60,
             child: Text(
-              amount.toStringAsFixed(2),
+              _formatDecimal(amount),
               style: const TextStyle(fontSize: 9),
               textAlign: TextAlign.right,
             ),
@@ -2619,9 +2623,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.addAll([esc, 0x61, 0x00]); // Left align
       final dateStr = DateFormat('dd-MMM-yyyy').format(widget.dateTime);
       final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
-      bytes.addAll(enc(_formatTwoColumns('Bill No: ${widget.invoiceNumber}', 'Date: $dateStr', lineWidth)));
+      bytes.addAll(enc(_formatTwoColumns('Date: $dateStr', 'Time: $timeStr', lineWidth)));
       bytes.add(lf);
-      bytes.addAll(enc(_formatTwoColumns('', 'Time: $timeStr', lineWidth)));
+      bytes.addAll(enc('Bill No: ${widget.invoiceNumber}'));
       bytes.add(lf);
 
       // Customer Info
@@ -2672,7 +2676,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         totalQty += (qty is int ? qty : (qty as num).toInt());
 
         // No currency in table columns; no tax sub-line
-        List<String> itemLines = _formatTableRowMultiLine(name, '$qty', price.toStringAsFixed(2), amount.toStringAsFixed(2), lineWidth);
+        List<String> itemLines = _formatTableRowMultiLine(name, _formatQty(qty), _formatDecimal(price), _formatDecimal(amount), lineWidth);
         for (String line in itemLines) {
           bytes.addAll(enc(line));
           bytes.add(lf);
@@ -2685,8 +2689,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x08]);
-      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _subtotalWithTax.toStringAsFixed(2), lineWidth)));
-      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', widget.subtotal.toStringAsFixed(2), lineWidth)));
+      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _formatDecimal(_subtotalWithTax), lineWidth)));
+      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', _formatDecimal(widget.subtotal), lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
 
@@ -2697,22 +2701,22 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         for (var tax in widget.taxes!) {
           final taxName = tax['name'] ?? 'Tax';
           final taxAmount = (tax['amount'] ?? 0.0).toDouble();
-          bytes.addAll(enc(_formatTwoColumns(_toThermalSafe(taxName), taxAmount.toStringAsFixed(2), lineWidth)));
+          bytes.addAll(enc(_formatTwoColumns(_toThermalSafe(taxName), _formatDecimal(taxAmount), lineWidth)));
           bytes.add(lf);
         }
-        bytes.addAll(enc(_formatTwoColumns('Total Tax', _totalTaxAmount.toStringAsFixed(2), lineWidth)));
+        bytes.addAll(enc(_formatTwoColumns('Total Tax', _formatDecimal(_totalTaxAmount), lineWidth)));
         bytes.add(lf);
       }
 
       // Discount
       if (widget.discount > 0) {
-        bytes.addAll(enc(_formatTwoColumns('Discount', '-${widget.discount.toStringAsFixed(2)}', lineWidth)));
+        bytes.addAll(enc(_formatTwoColumns('Discount', '-${_formatDecimal(widget.discount)}', lineWidth)));
         bytes.add(lf);
       }
 
       // Delivery Charge
       if (widget.deliveryCharge > 0) {
-        bytes.addAll(enc(_formatTwoColumns('Delivery Charge', '+${widget.deliveryCharge.toStringAsFixed(2)}', lineWidth)));
+        bytes.addAll(enc(_formatTwoColumns('Delivery Charge', '+${_formatDecimal(widget.deliveryCharge)}', lineWidth)));
         bytes.add(lf);
       }
 
@@ -2721,7 +2725,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.add(lf);
       // 80mm: bold + double-height (0x18) | 58mm: just bold (0x08)
       bytes.addAll([esc, 0x21, printerWidth == '80mm' ? 0x18 : 0x08]);
-      bytes.addAll(enc(_formatTwoColumns('Total', '$tCur${widget.total.toStringAsFixed(2)}', lineWidth)));
+      bytes.addAll(enc(_formatTwoColumns('Total', '$tCur${_formatDecimal(widget.total)}', lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
       bytes.addAll(enc(dividerLine));
@@ -2733,15 +2737,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         bytes.add(lf);
         if (_isSplitPayment) {
           if (_splitCashAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Cash', '$tCur${_splitCashAmount.toStringAsFixed(2)}', lineWidth)));
+            bytes.addAll(enc(_formatTwoColumns('  Cash', '$tCur${_formatDecimal(_splitCashAmount)}', lineWidth)));
             bytes.add(lf);
           }
           if (_splitOnlineAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Online', '$tCur${_splitOnlineAmount.toStringAsFixed(2)}', lineWidth)));
+            bytes.addAll(enc(_formatTwoColumns('  Online', '$tCur${_formatDecimal(_splitOnlineAmount)}', lineWidth)));
             bytes.add(lf);
           }
           if (_splitCreditAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Credit', '$tCur${_splitCreditAmount.toStringAsFixed(2)}', lineWidth)));
+            bytes.addAll(enc(_formatTwoColumns('  Credit', '$tCur${_formatDecimal(_splitCreditAmount)}', lineWidth)));
             bytes.add(lf);
           }
         }
@@ -2749,7 +2753,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       // You Saved
       if (_thermalShowYouSaved && widget.discount > 0) {
-        bytes.addAll(enc(_truncateText('** You Saved $tCur${widget.discount.toStringAsFixed(2)}! **', lineWidth)));
+        bytes.addAll(enc(_truncateText('** You Saved $tCur${_formatDecimal(widget.discount)}! **', lineWidth)));
         bytes.add(lf);
       }
 
@@ -2903,6 +2907,33 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         .replaceAll('✓', 'OK')
     // Strip any remaining non-ASCII chars (codepoint > 127)
         .replaceAll(RegExp(r'[^\x00-\x7F]'), '?');
+  }
+
+  String _formatDecimal(double val) {
+    if (val % 1 == 0) {
+      return val.toInt().toString();
+    }
+    final fixed = val.toStringAsFixed(2);
+    if (fixed.endsWith('.00')) {
+      return val.toInt().toString();
+    }
+    return fixed;
+  }
+
+  String _formatQty(dynamic qty) {
+    if (qty == null) return '0';
+    final num val = qty is num ? qty : (double.tryParse(qty.toString()) ?? 0.0);
+    if (val % 1 == 0) {
+      return val.toInt().toString();
+    }
+    final fixed = val.toDouble().toStringAsFixed(2);
+    if (fixed.endsWith('.00')) {
+      return val.toInt().toString();
+    }
+    if (fixed.endsWith('0')) {
+      return fixed.substring(0, fixed.length - 1);
+    }
+    return fixed;
   }
 
   // ── Column-width helpers (shared by header + item rows) ────────────────────
