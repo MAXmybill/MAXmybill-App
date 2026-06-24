@@ -5,10 +5,7 @@ import 'package:heroicons/heroicons.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:provider/provider.dart';
 import 'package:maxmybill/models/cart_item.dart';
-import 'package:maxmybill/models/sale.dart';
-import 'package:maxmybill/Sales/Bill.dart' hide kPrimaryColor;
-import 'package:maxmybill/Sales/Quotation.dart';
-import 'package:maxmybill/Sales/Invoice.dart';
+import 'package:maxmybill/Sales/Bill.dart';
 import 'package:maxmybill/components/barcode_scanner.dart';
 import 'package:maxmybill/Sales/components/common_widgets.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
@@ -16,12 +13,8 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/amount_formatter.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
 import 'package:maxmybill/services/local_stock_service.dart';
-import 'package:maxmybill/services/number_generator_service.dart';
-import 'package:maxmybill/services/sale_sync_service.dart';
 import 'package:maxmybill/services/cart_service.dart';
 import 'package:maxmybill/services/currency_service.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:maxmybill/Stocks/Products.dart';
 
 import '../Stocks/Stock.dart';
 
@@ -201,6 +194,12 @@ class _SaleAllPageState extends State<SaleAllPage> {
     final collection = await FirestoreService().getStoreCollection('Products');
     final stream = collection.snapshots();
     _loadCategories();
+
+    // Start real-time stock sync: whenever currentStock changes in Firestore
+    // (from another device, a completed sale, or manual edit), the local
+    // cache is updated instantly so stock availability is always accurate.
+    LocalStockService().startListening(collection);
+
     if (mounted) {
       setState(() {
         _productsStream = stream;
@@ -241,6 +240,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
   @override
   void dispose() {
+    LocalStockService().stopListening();
     _searchCtrl.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -547,7 +547,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
     );
   }
 
-  void _addToCart(String id, String name, double price, double cost, bool stockEnabled, double stock, double quantity,
+  bool _addToCart(String id, String name, double price, double cost, bool stockEnabled, double stock, double quantity,
       {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes}) {
     final idx = _cart.indexWhere((item) => item.productId == id);
 
@@ -558,13 +558,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
           context.tr('max_stock_reached').replaceFirst('{0}', stock.toInt().toString()),
           bgColor: kErrorColor,
         );
-        return;
+        return false;
       }
       _cart[idx].quantity += quantity;
     } else {
       if (stockEnabled && stock < quantity) {
         CommonWidgets.showSnackBar(context, context.tr('out_of_stock'), bgColor: kErrorColor);
-        return;
+        return false;
       }
       _cart.add(CartItem(
         productId: id,
@@ -577,6 +577,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
         taxPercentage: taxPercentage,
         taxType: taxType,
       ));
+    }
+
+    // Update CartService BEFORE setState to keep them in sync during the rebuild.
+    // This prevents the build() method from seeing cartService.cartItems.isEmpty
+    // while _cart is non-empty, which would wrongly schedule a cart clear.
+    if (!widget.isQuotationMode) {
+      context.read<CartService>().updateCart(List<CartItem>.from(_cart));
     }
 
     setState(() {
@@ -593,6 +600,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
     });
 
     widget.onCartChanged?.call(_cart);
+    return true;
   }
 
   void _openScanner() async {
@@ -604,70 +612,86 @@ class _SaleAllPageState extends State<SaleAllPage> {
     );
   }
 
-  void _searchByBarcode(String barcode) async {
+  Future<bool> _searchByBarcode(String barcode) async {
+    // Cache context-dependent values before async gaps
+    final localStockService = context.read<LocalStockService>();
+
     try {
       final collection = await FirestoreService().getStoreCollection('Products');
-      final snap = await collection.where('barcode', isEqualTo: barcode.trim()).limit(1).get();
+      final snap = await collection
+          .where('barcode', isEqualTo: barcode.trim())
+          .limit(1)
+          .get();
+
+      if (!mounted) return false;
 
       if (snap.docs.isEmpty) {
-        if (mounted) CommonWidgets.showSnackBar(context, context.tr('product_not_found'), bgColor: kOrange);
-        return;
+        CommonWidgets.showSnackBar(
+          context,
+          context.tr('product_not_found'),
+          bgColor: kOrange,
+        );
+        return false;
       }
 
       final doc = snap.docs.first;
       final data = doc.data() as Map<String, dynamic>;
       final id = doc.id;
-      final name = data['itemName'] ?? context.tr('unnamed');
+      final name = (data['itemName'] as String?) ?? 'Product';
       final price = (data['price'] ?? 0.0).toDouble();
       final cost = (data['costPrice'] ?? 0.0).toDouble();
-      final stockEnabled = data['stockEnabled'] ?? false;
+      final stockEnabled = data['stockEnabled'] == true;
       final firestoreStock = (data['currentStock'] ?? 0.0).toDouble();
-      final unit = data['stockUnit'] ?? '';
+      final unit = (data['stockUnit'] ?? '').toString();
 
-      final localStockService = context.read<LocalStockService>();
-      localStockService.cacheStock(id, firestoreStock.toInt());
+      // Cache the stock as double (NOT .toInt() — that was causing a type error)
+      await localStockService.cacheStock(id, firestoreStock);
+
+      if (!mounted) return false;
 
       final stock = localStockService.hasStock(id)
-          ? localStockService.getStock(id).toDouble()
+          ? localStockService.getStock(id)
           : firestoreStock;
 
-      if (price >= 0) {
-        final taxes = _parseTaxesFromData(data);
-        // Only show weight dialog for kg unit items
-        if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
-          _showWeightInputDialog(
-            id,
-            name,
-            price,
-            cost,
-            stockEnabled,
-            stock,
-            taxName: data['taxName'],
-            taxPercentage: data['taxPercentage'],
-            taxType: data['taxType'],
-            taxes: taxes,
-          );
-        } else {
-          // For non-kg items, add directly with quantity 1
-          _addToCart(
-            id,
-            name,
-            price,
-            cost,
-            stockEnabled,
-            stock,
-            1.0,
-            taxName: data['taxName'],
-            taxPercentage: data['taxPercentage'],
-            taxType: data['taxType'],
-            taxes: taxes,
-          );
-        }
+      final taxes = _parseTaxesFromData(data);
+      final String? taxName = data['taxName'] as String?;
+      final double? taxPercentage =
+          data['taxPercentage'] != null ? (data['taxPercentage'] as num).toDouble() : null;
+      final String? taxType = data['taxType'] as String?;
+
+      // Weight-based items: show dialog first
+      if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
+        _showWeightInputDialog(
+          id, name, price, cost, stockEnabled, stock,
+          taxName: taxName,
+          taxPercentage: taxPercentage,
+          taxType: taxType,
+          taxes: taxes,
+        );
+        return true;
       }
-    } catch (e) {
-      debugPrint(e.toString());
+
+      // All other items: add 1 unit directly
+      return _addToCart(
+        id, name, price, cost, stockEnabled, stock, 1.0,
+        taxName: taxName,
+        taxPercentage: taxPercentage,
+        taxType: taxType,
+        taxes: taxes,
+      );
+    } catch (e, stack) {
+      debugPrint('❌ _searchByBarcode error: $e\n$stack');
+      if (mounted) {
+        CommonWidgets.showSnackBar(
+          context,
+          'Error: ${e.toString()}',
+          bgColor: kErrorColor,
+        );
+      }
+      return false;
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -679,9 +703,17 @@ class _SaleAllPageState extends State<SaleAllPage> {
     if (!widget.isQuotationMode) {
       final cartService = Provider.of<CartService>(context);
 
-      // Sync local cart state with CartService
+      // IMPORTANT: Only clear _cart when CartService is empty AND _cart was never
+      // recently updated by _addToCart (which now pre-syncs CartService before setState).
+      // We detect a genuine external clear by checking that CartService is empty
+      // while _cart still has items — but only act if _cart items are NOT already
+      // reflected in CartService (i.e., _addToCart did NOT just update it).
+      //
+      // Since _addToCart now calls CartService.updateCart before setState, after a
+      // scan both cartService.cartItems and _cart will be non-empty during build,
+      // so this block will NOT fire incorrectly.
       if (cartService.cartItems.isEmpty && _cart.isNotEmpty) {
-        // Cart was cleared externally (e.g., from Bill page)
+        // Cart was cleared externally (e.g., after completing a sale in Bill page)
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             setState(() {

@@ -10,6 +10,7 @@ import 'package:maxmybill/services/currency_service.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:intl/intl.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:maxmybill/services/local_stock_service.dart';
 
 class ProductsPage extends StatefulWidget {
   final String uid;
@@ -677,6 +678,7 @@ class _ProductsPageState extends State<ProductsPage> {
                 final val = double.tryParse(ctrl.text) ?? current;
                 if (val < 0) return;
                 await FirestoreService().updateDocument('Products', id, {'currentStock': val});
+                await LocalStockService().cacheStock(id, val);
                 Navigator.pop(context);
               },
               child: const Text('Save', style: TextStyle(color: kWhite, fontWeight: FontWeight.w800)),

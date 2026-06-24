@@ -14,6 +14,7 @@ import 'package:maxmybill/components/premium_lock_ui.dart';
 import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/utils/storage_saver.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:maxmybill/services/local_stock_service.dart';
 
 class AddProductPage extends StatefulWidget {
   final String uid;
@@ -1735,8 +1736,13 @@ class _AddProductPageState extends State<AddProductPage> {
       'isFavorite': _isFavorite,
       'updatedAt': FieldValue.serverTimestamp(),
     };
-    if (widget.productId != null) await FirestoreService().updateDocument('Products', widget.productId!, pData);
-    else await FirestoreService().addDocument('Products', pData);
+    if (widget.productId != null) {
+      await FirestoreService().updateDocument('Products', widget.productId!, pData);
+      await LocalStockService().cacheStock(widget.productId!, pData['currentStock'] as double);
+    } else {
+      final docRef = await FirestoreService().addDocument('Products', pData);
+      await LocalStockService().cacheStock(docRef.id, pData['currentStock'] as double);
+    }
     if (mounted) Navigator.pop(context);
   }
 }

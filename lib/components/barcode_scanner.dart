@@ -97,7 +97,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
     return false; // Allow event to propagate if necessary
   }
 
-  void _handleBarcodeScan(String barcode) {
+  void _handleBarcodeScan(String barcode) async {
     if (!_isScanning || barcode == _lastScannedCode) return;
 
     // Vibrate when product is added (from either camera or hardware scanner)
@@ -107,30 +107,33 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
       _lastScannedCode = barcode;
     });
 
-    widget.onBarcodeScanned(barcode);
+    final dynamic result = widget.onBarcodeScanned(barcode);
+    final resolvedResult = (result is Future) ? await result : result;
 
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.qr_code_scanner, color: Colors.white, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                '${context.tr('product_added_scanned')}: $barcode',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: R.sp(context, 13)),
+    if (resolvedResult != false && mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.qr_code_scanner, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '${context.tr('product_added_scanned')}: $barcode',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: R.sp(context, 13)),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
+          backgroundColor: kPrimaryColor,
+          duration: const Duration(milliseconds: 1200),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)),
+          margin: EdgeInsets.only(bottom: R.sp(context, 110), left: R.sp(context, 24), right: R.sp(context, 24)),
         ),
-        backgroundColor: kPrimaryColor,
-        duration: const Duration(milliseconds: 1200),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: R.radius(context, 12)),
-        margin: EdgeInsets.only(bottom: R.sp(context, 110), left: R.sp(context, 24), right: R.sp(context, 24)),
-      ),
-    );
+      );
+    }
 
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {

@@ -135,6 +135,35 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   bool _isLoading = true;
   String? _storeId;
 
+  double get _subtotalWithTax {
+    double total = 0.0;
+    for (var item in widget.items) {
+      final qty = item['quantity'] ?? 1;
+      final price = (item['price'] ?? 0.0).toDouble();
+      final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+      final taxType = item['taxType'] as String?;
+      final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
+      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+        total += baseTotal;
+      } else if (taxType != null) {
+        total += baseTotal + taxAmt;
+      } else {
+        total += (item['total'] ?? baseTotal).toDouble();
+      }
+    }
+    return total;
+  }
+
+  double get _totalTaxAmount {
+    double total = 0.0;
+    if (widget.taxes != null) {
+      for (var tax in widget.taxes!) {
+        total += (tax['amount'] ?? 0.0).toDouble();
+      }
+    }
+    return total;
+  }
+
   // Celebration animation
   late AnimationController _celebrationController;
   bool _showCelebration = false;
@@ -1658,11 +1687,13 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                           ),
                           child: Column(
                             children: [
-                              _buildScaledTotalRow('Subtotal', '$currency${widget.subtotal.toStringAsFixed(2)}', fs),
+                              _buildScaledTotalRow('TOTAL', '$currency${_subtotalWithTax.toStringAsFixed(2)}', fs),
+                              _buildScaledTotalRow('SUBTOTAL', '$currency${widget.subtotal.toStringAsFixed(2)}', fs),
                               if (widget.discount > 0)
                                 _buildScaledTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', fs, isGreen: true),
                               if (_a4ShowTaxDetails && widget.taxes != null)
                                 ...widget.taxes!.map((tax) => _buildScaledTotalRow(tax['name'] ?? 'Tax', '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}', fs)),
+                              _buildScaledTotalRow('Total Tax', '$currency${_totalTaxAmount.toStringAsFixed(2)}', fs),
                               if (widget.deliveryCharge > 0)
                                 _buildScaledTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', fs),
                               Divider(height: sp(14), color: const Color(0xFFE5E7EB)),
@@ -2081,17 +2112,23 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.symmetric(vertical: 8),
               decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack87, width: 1))),
-              child: Row(
+              child: Column(
                 children: [
-                  Expanded(flex: 5, child: Text('Subtotal', style: tStyle(size: 10, weight: FontWeight.w600))),
-                  SizedBox(
-                    width: 32,
-                    child: _thermalShowTotalItemQuantity
-                        ? Text('${totalQty.toInt()}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.center)
-                        : const SizedBox.shrink(),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('TOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
+                      Text('${_subtotalWithTax.toStringAsFixed(2)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
+                    ],
                   ),
-                  Expanded(flex: 2, child: const SizedBox.shrink()),
-                  Expanded(flex: 2, child: Text(widget.subtotal.toStringAsFixed(2), style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right)),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('SUBTOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
+                      Text('${widget.subtotal.toStringAsFixed(2)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -2108,6 +2145,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       tax['name'] ?? 'Tax',
                       (tax['amount'] ?? 0.0).toDouble(),
                     )),
+                    const SizedBox(height: 4),
+                    _buildTaxRow('Total Tax', _totalTaxAmount),
                   ],
                 ),
               ),
@@ -2646,7 +2685,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
       bytes.addAll([esc, 0x21, 0x08]);
-      bytes.addAll(enc(_formatTableRow('Subtotal', '$totalQty', '', widget.subtotal.toStringAsFixed(2), lineWidth)));
+      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _subtotalWithTax.toStringAsFixed(2), lineWidth)));
+      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', widget.subtotal.toStringAsFixed(2), lineWidth)));
       bytes.addAll([esc, 0x21, 0x00]);
       bytes.add(lf);
 
@@ -2660,6 +2700,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           bytes.addAll(enc(_formatTwoColumns(_toThermalSafe(taxName), taxAmount.toStringAsFixed(2), lineWidth)));
           bytes.add(lf);
         }
+        bytes.addAll(enc(_formatTwoColumns('Total Tax', _totalTaxAmount.toStringAsFixed(2), lineWidth)));
+        bytes.add(lf);
       }
 
       // Discount
@@ -3359,7 +3401,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       ),
                       child: pw.Column(
                         children: [
-                          _invoicePdfTotalRow('Subtotal', '$currency${widget.subtotal.toStringAsFixed(2)}', ttf, ttfBold),
+                          _invoicePdfTotalRow('TOTAL', '$currency${_subtotalWithTax.toStringAsFixed(2)}', ttf, ttfBold),
+                          _invoicePdfTotalRow('SUBTOTAL', '$currency${widget.subtotal.toStringAsFixed(2)}', ttf, ttfBold),
                           if (widget.discount > 0)
                             _invoicePdfTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', ttf, ttfBold, isDiscount: true),
                           if (widget.taxes != null && widget.taxes!.isNotEmpty)
@@ -3368,6 +3411,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                               '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
                               ttf, ttfBold,
                             )),
+                          _invoicePdfTotalRow('Total Tax', '$currency${_totalTaxAmount.toStringAsFixed(2)}', ttf, ttfBold),
                           if (widget.deliveryCharge > 0)
                             _invoicePdfTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', ttf, ttfBold),
                           pw.Container(height: 1, color: PdfColors.grey300),
