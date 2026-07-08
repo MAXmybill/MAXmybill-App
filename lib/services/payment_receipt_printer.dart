@@ -92,16 +92,19 @@ class PaymentReceiptPrinter {
       
       // ESC/POS commands
       bytes.addAll([27, 64]); // Initialize printer
-      bytes.addAll([27, 77, 0]); // Font A
-      if (!is80mm) {
-        bytes.addAll([29, 33, 0]); // Normal size for narrow paper
-      }
+      // Always use Font A (27, 77, 0) for both 80mm and 58mm
+      bytes.addAll([27, 77, 0]);
+      bytes.addAll([29, 33, 0]); // Ensure normal size
+
+      final int normalMode = 0;
+      final int boldMode = 8;
+      final int doubleHeightMode = 16;
       bytes.addAll([27, 97, 1]); // Center align
       
       // Header - RECEIPT
-      bytes.addAll([27, 33, 16]); // Double height
+      bytes.addAll([27, 33, doubleHeightMode]); // Double height
       bytes.addAll(enc('PAYMENT RECEIPT\n'));
-      bytes.addAll([27, 33, 0]); // Normal text
+      bytes.addAll([27, 33, normalMode]); // Normal text
       
       bytes.addAll(enc('\n'));
       
@@ -113,9 +116,9 @@ class PaymentReceiptPrinter {
       
       // Business details
       bytes.addAll([27, 97, 1]); // Center align
-      bytes.addAll([27, 33, 8]); // Bold
+      bytes.addAll([27, 33, boldMode]); // Bold
       bytes.addAll(enc('$businessName\n'));
-      bytes.addAll([27, 33, 0]); // Normal
+      bytes.addAll([27, 33, normalMode]); // Normal
       if (businessLocation.isNotEmpty) {
         bytes.addAll(enc('$businessLocation\n'));
       }
@@ -129,9 +132,9 @@ class PaymentReceiptPrinter {
       
       // Received From section
       bytes.addAll([27, 97, 1]); // Center align
-      bytes.addAll([27, 33, 8]); // Bold
+      bytes.addAll([27, 33, boldMode]); // Bold
       bytes.addAll(enc('Received From\n'));
-      bytes.addAll([27, 33, 0]); // Normal
+      bytes.addAll([27, 33, normalMode]); // Normal
       bytes.addAll(enc('\n'));
       bytes.addAll(enc('$customerName\n'));
       bytes.addAll(enc('Contact: $customerPhone\n'));
@@ -148,9 +151,9 @@ class PaymentReceiptPrinter {
       bytes.addAll(_formatLine('Payment Mode', paymentMode, lineWidth));
       bytes.addAll(enc('\n'));
       bytes.addAll(enc('${'-' * lineWidth}\n'));
-      bytes.addAll([27, 33, 16]); // Double height
+      bytes.addAll([27, 33, doubleHeightMode]); // Double height
       bytes.addAll(_formatLine('Balance Amount', '$safeCurrency${currentCredit.toStringAsFixed(2)}', lineWidth));
-      bytes.addAll([27, 33, 0]); // Normal
+      bytes.addAll([27, 33, normalMode]); // Normal
       bytes.addAll(enc('${'-' * lineWidth}\n'));
       
       // Invoice reference if bill settlement

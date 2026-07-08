@@ -307,6 +307,16 @@ class _ProductsPageState extends State<ProductsPage> {
     final category = data['category'] ?? 'General';
     final isFavorite = data['isFavorite'] ?? false;
 
+    // Expiry check
+    final expiryDateStr = data['expiryDate'] as String?;
+    bool isExpired = false;
+    if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
+      try {
+        final expiryDate = DateTime.parse(expiryDateStr);
+        isExpired = expiryDate.isBefore(DateTime.now());
+      } catch (_) {}
+    }
+
     // Read multiple taxes (new format) or fall back to single tax (legacy)
     final List<Map<String, dynamic>> taxesList = [];
     final rawTaxes = data['taxes'];
@@ -329,9 +339,19 @@ class _ProductsPageState extends State<ProductsPage> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isSelected ? kPrimaryColor.withOpacity(0.05) : kWhite,
+        color: isExpired
+            ? Colors.black.withOpacity(0.05)
+            : isSelected
+                ? kPrimaryColor.withOpacity(0.05)
+                : kWhite,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isSelected ? kPrimaryColor : kGrey200, width: isSelected ? 1.5 : 1),
+        border: Border.all(
+            color: isExpired
+                ? Colors.black.withOpacity(0.5)
+                : isSelected
+                    ? kPrimaryColor
+                    : kGrey200,
+            width: isSelected ? 1.5 : 1),
       ),
       child: Material(
         color: Colors.transparent,
@@ -414,8 +434,17 @@ class _ProductsPageState extends State<ProductsPage> {
                             _formatCategoryName(category),
                             style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5),
                           ),
-                          if (stockEnabled)
-                            _buildStockBadge(stock, isOutOfStock, isLowStock),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isExpired) ...[
+                                _buildExpiredBadge(),
+                                const SizedBox(width: 6),
+                              ],
+                              if (stockEnabled)
+                                _buildStockBadge(stock, isOutOfStock, isLowStock),
+                            ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -471,6 +500,20 @@ class _ProductsPageState extends State<ProductsPage> {
       child: Text(
         isOut ? 'Out Of Stock' : 'QTY: ${AmountFormatter.format(stock)}',
         style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.2),
+      ),
+    );
+  }
+
+  Widget _buildExpiredBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: const Text(
+        'Expired',
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.black, letterSpacing: 0.2),
       ),
     );
   }

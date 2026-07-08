@@ -868,7 +868,7 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       final prefs = await SharedPreferences.getInstance();
       final selectedPrinterId = prefs.getString('selected_printer_id');
       final printerWidth = ThermalPrinterConfig.resolveWidthFromPrefs(prefs);
-      final int lineWidth = printerWidth == '80mm' ? 48 : 32;
+      final int lineWidth = ThermalPrinterConfig.charsPerLine(printerWidth);
 
       int numberOfCopies = 1;
       try {
@@ -993,19 +993,20 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
 
     bytes.addAll([esc, 0x40]); // init printer
     final bool is80mm = lineWidth >= 48;
-    // Use Font A for both widths to avoid font-B compatibility issues
+    // Always use Font A (0x00) for both 80mm (3-inch) and 58mm (2-inch) printers
     bytes.addAll([esc, 0x4D, 0x00]);
-    if (!is80mm) {
-      bytes.addAll([gs, 0x21, 0x00]); // Ensure normal size on narrow paper
-    }
+    bytes.addAll([gs, 0x21, 0x00]); // Ensure normal size
+
+    final int normalMode = 0x00;
+    final int boldMode = 0x08;
 
     // ── HEADER (center) ──────────────────────────────
     bytes.addAll([esc, 0x61, 0x01]); // center
-    // 80mm: double-height+bold (0x30) | 58mm: just bold (0x08)
-    bytes.addAll([esc, 0x21, lineWidth == 48 ? 0x30 : 0x08]);
-    bytes.addAll(enc(_trunc(widget.businessName, lineWidth ~/ (lineWidth == 48 ? 2 : 1))));
+    // 80mm: double-height+bold (0x30) | 58mm: just bold (0x08 because of Font A)
+    bytes.addAll([esc, 0x21, is80mm ? 0x30 : 0x08]);
+    bytes.addAll(enc(_trunc(widget.businessName, lineWidth ~/ (is80mm ? 2 : 1))));
     bytes.add(lf);
-    bytes.addAll([esc, 0x21, 0x00]); // normal
+    bytes.addAll([esc, 0x21, normalMode]); // normal
 
     if (_showBusinessLocation && widget.businessLocation.isNotEmpty) {
       for (final line in _wrapLine(widget.businessLocation, lineWidth)) {
@@ -1018,19 +1019,19 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       bytes.add(lf);
     }
     if (_showBusinessGSTIN && widget.businessGSTIN != null && widget.businessGSTIN!.isNotEmpty) {
-      bytes.addAll([esc, 0x21, 0x08]); // bold
+      bytes.addAll([esc, 0x21, boldMode]); // bold
       bytes.addAll(enc(_toThermalSafe(widget.businessGSTIN!)));
-      bytes.addAll([esc, 0x21, 0x00]);
+      bytes.addAll([esc, 0x21, normalMode]);
       bytes.add(lf);
     }
     bytes.add(lf);
 
     // ── TITLE ────────────────────────────────────────
     bytes.addAll([esc, 0x61, 0x01]);
-    // 80mm: double-height+bold (0x18) | 58mm: just bold (0x08)
-    bytes.addAll([esc, 0x21, lineWidth == 48 ? 0x18 : 0x08]);
+    // 80mm: double-height+bold (0x18) | 58mm: just bold (0x09 because of Font B)
+    bytes.addAll([esc, 0x21, is80mm ? 0x18 : 0x09]);
     bytes.addAll(enc('Payment Receipt'));
-    bytes.addAll([esc, 0x21, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
     bytes.add(lf);
     bytes.addAll(enc(divider));
     bytes.add(lf);
@@ -1046,9 +1047,9 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
 
     // ── RECEIVED FROM ────────────────────────────────
     bytes.addAll([esc, 0x61, 0x01]);
-    bytes.addAll([esc, 0x21, 0x08]); // bold
+    bytes.addAll([esc, 0x21, boldMode]); // bold
     bytes.addAll(enc('Received From'));
-    bytes.addAll([esc, 0x21, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
     bytes.add(lf);
     bytes.addAll([esc, 0x61, 0x00]);
     for (final line in _wrapLine(widget.customerName, lineWidth)) {
@@ -1069,11 +1070,11 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
         '$tCur ${widget.previousCredit.toStringAsFixed(2)}', lineWidth)));
     bytes.add(lf);
 
-    bytes.addAll([esc, 0x21, 0x08]); // bold
+    bytes.addAll([esc, 0x21, boldMode]); // bold
     bytes.addAll(enc(_twoCols(
         widget.isManualCredit ? 'Amount Given' : 'Received',
         '$tCur ${widget.receivedAmount.toStringAsFixed(2)}', lineWidth)));
-    bytes.addAll([esc, 0x21, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
     bytes.add(lf);
 
     if (_showPaymentMode) {
@@ -1086,10 +1087,10 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
 
     // ── CURRENT CREDIT ───────────────────────────────
     // 80mm: double-height+bold (0x18) | 58mm: just bold (0x08)
-    bytes.addAll([esc, 0x21, lineWidth == 48 ? 0x18 : 0x08]);
+    bytes.addAll([esc, 0x21, is80mm ? 0x18 : 0x09]);
     bytes.addAll(enc(_twoCols('Balance Amount',
         '$tCur ${widget.currentCredit.toStringAsFixed(2)}', lineWidth)));
-    bytes.addAll([esc, 0x21, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
     bytes.add(lf);
     bytes.addAll(enc(divider));
     bytes.add(lf);
@@ -1109,13 +1110,13 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
     // ── FOOTER ───────────────────────────────────────
     bytes.addAll([esc, 0x61, 0x01]);
     bytes.add(lf);
-    bytes.addAll([esc, 0x21, 0x08]); // bold
+    bytes.addAll([esc, 0x21, boldMode]); // bold
     final footerStr = _footerText.isNotEmpty ? _footerText : 'Thank You';
     for (final line in _wrapLine(footerStr, lineWidth)) {
       bytes.addAll(enc(line));
       bytes.add(lf);
     }
-    bytes.addAll([esc, 0x21, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
 
     bytes.add(lf);
     bytes.add(lf);

@@ -105,7 +105,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     {
       'name': 'MAX One',
       'rank': 1,
-      'price': {'1': 299, '12': 2499},
+      'price': {'1': 199, '12': 1910},
       'icon': HeroIcons.briefcase,
       'themeColor': kPrimaryColor,
       'staffText': '1 Admin Account',
@@ -135,7 +135,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     {
       'name': 'MAX Plus',
       'rank': 2,
-      'price': {'1': 449, '12': 3999},
+      'price': {'1': 499, '12': 4790},
       'icon': HeroIcons.chartBar,
       'themeColor': Colors.purple,
       'popular': true,
@@ -166,7 +166,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     {
       'name': 'MAX Pro',
       'rank': 3,
-      'price': {'1': 599, '12': 5499},
+      'price': {'1': 999, '12': 9590},
       'icon': HeroIcons.academicCap,
       'themeColor': kGoogleGreen,
       'staffText': 'Admin + 9 Users',

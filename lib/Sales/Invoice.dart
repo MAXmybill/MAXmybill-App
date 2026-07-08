@@ -2063,10 +2063,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 ),
                 child: Row(
                   children: [
-                    Expanded(flex: 5, child: Text('Item', style: tStyle(size: 9, weight: FontWeight.w800))),
+                    Expanded(flex: 4, child: Text('Item', style: tStyle(size: 9, weight: FontWeight.w800))),
                     SizedBox(width: 32, child: Text('Qty', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.center)),
                     Expanded(flex: 2, child: Text('Price', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
-                    Expanded(flex: 2, child: Text('Amt', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
+                    Expanded(flex: 2, child: Text('Tax%', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
+                    Expanded(flex: 2, child: Text('Total', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
                   ],
                 ),
               ),
@@ -2088,26 +2089,42 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 } else {
                   amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
                 }
+
+                final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+                final taxStr = taxPct > 0 ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%' : '0%';
+
+                final isLengthy = name.toString().length > 11;
+
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGrey300, width: 0.5))),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: Column(
+                  child: isLengthy
+                      ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(name, style: tStyle(size: 9), softWrap: true),
+                            Text(name, style: tStyle(size: 9)),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                const Expanded(flex: 4, child: SizedBox()),
+                                SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
+                                Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                                Expanded(flex: 2, child: Text(taxStr, style: tStyle(size: 9), textAlign: TextAlign.right)),
+                                Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                              ],
+                            ),
+                          ],
+                        )
+                      : Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 4, child: Text(name, style: tStyle(size: 9))),
+                            SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
+                            Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
+                            Expanded(flex: 2, child: Text(taxStr, style: tStyle(size: 9), textAlign: TextAlign.right)),
+                            Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
                           ],
                         ),
-                      ),
-                      SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
-                      Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                      Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                    ],
-                  ),
                 );
               }),
             ],
@@ -2133,27 +2150,19 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       Text('${_formatDecimal(widget.subtotal)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
                     ],
                   ),
+                  if (_totalTaxAmount > 0) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Total Tax', style: tStyle(size: 10, weight: FontWeight.w600)),
+                        Text('${_formatDecimal(_totalTaxAmount)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
-
-            // ========== TAX BREAKDOWN (Only show if taxes passed from previous page) ==========
-            if (_thermalShowTaxDetails && widget.taxes != null && widget.taxes!.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack54, width: 1))),
-                child: Column(
-                  children: [
-                    // Show only real taxes from widget.taxes (passed from previous page)
-                    ...widget.taxes!.map((tax) => _buildTaxRow(
-                      tax['name'] ?? 'Tax',
-                      (tax['amount'] ?? 0.0).toDouble(),
-                    )),
-                    const SizedBox(height: 4),
-                    _buildTaxRow('Total Tax', _totalTaxAmount),
-                  ],
-                ),
-              ),
 
             // ========== DISCOUNT ==========
             if (widget.discount > 0)
@@ -2183,15 +2192,24 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             // ========== GRAND TOTAL ==========
             Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack87, width: 1.5))),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: kBlack87, width: 1.5),
+                  bottom: BorderSide(color: kBlack87, width: 1.5),
+                ),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Total', style: tStyle(size: 12, weight: FontWeight.w900)),
-                  Text('$currency ${_formatDecimal(widget.total)}', style: tStyle(size: 12, weight: FontWeight.w900)),
+                  Text('Total', style: tStyle(size: 15, weight: FontWeight.w900)),
+                  Text('$currency ${_formatDecimal(widget.total)}', style: tStyle(size: 15, weight: FontWeight.w900)),
                 ],
               ),
             ),
+
+            // ========== TAX DETAILS TABLE ==========
+            if (_thermalShowTaxDetails)
+              _buildUiTaxDetailsTable(tStyle),
 
             // ========== PAYMENT MODE ==========
             if (_showPaymentMode)
@@ -2533,11 +2551,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       // Init Printer
       bytes.addAll([esc, 0x40]);
-      // Use Font A for both widths; avoids printer-specific Font B quirks
+      // Always use Font A (0x00) for both 80mm (3-inch) and 58mm (2-inch) printers
       bytes.addAll([esc, 0x4D, 0x00]);
-      if (!is80mm) {
-        bytes.addAll([gs, 0x21, 0x00]); // Ensure normal size on narrow paper
-      }
+      bytes.addAll([gs, 0x21, 0x00]); // Ensure normal size
+
+      final int normalMode = 0x00;
+      final int boldMode = 0x08;
 
       // ── Helper: encode string safely for thermal printer ──
       List<int> enc(String s) => utf8.encode(_toThermalSafe(s));
@@ -2588,11 +2607,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       // Header
       bytes.addAll([esc, 0x61, 0x01]); // Center align
-      // 80mm: double-height+width (0x30) | 58mm: just bold (0x08) — smaller, fits paper
-      bytes.addAll([esc, 0x21, printerWidth == '80mm' ? 0x30 : 0x08]);
-      bytes.addAll(enc(_truncateText(businessName, lineWidth ~/ (printerWidth == '80mm' ? 2 : 1))));
+      // 80mm: double-height+width (0x30) | 58mm: just bold (0x08 because of Font A) — smaller, fits paper
+      bytes.addAll([esc, 0x21, is80mm ? 0x30 : 0x08]);
+      bytes.addAll(enc(_truncateText(businessName, lineWidth ~/ (is80mm ? 2 : 1))));
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, 0x00]); // Reset to normal
+      bytes.addAll([esc, 0x21, normalMode]); // Reset to normal
 
       if (_showLocation && businessLocation.isNotEmpty) {
         for (final line in _wrapText(businessLocation, lineWidth)) {
@@ -2605,15 +2624,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         bytes.add(lf);
       }
       if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty) {
-        bytes.addAll([esc, 0x21, 0x08]);
+        bytes.addAll([esc, 0x21, boldMode]);
         bytes.addAll(enc(_truncateText('${businessTaxTypeName ?? 'Tax'}: $businessGSTIN', lineWidth)));
-        bytes.addAll([esc, 0x21, 0x00]);
+        bytes.addAll([esc, 0x21, normalMode]);
         bytes.add(lf);
       }
       if (_thermalShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty) {
-        bytes.addAll([esc, 0x21, 0x08]);
+        bytes.addAll([esc, 0x21, boldMode]);
         bytes.addAll(enc(_truncateText('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', lineWidth)));
-        bytes.addAll([esc, 0x21, 0x00]);
+        bytes.addAll([esc, 0x21, normalMode]);
         bytes.add(lf);
       }
 
@@ -2633,9 +2652,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         bytes.addAll(enc(thinDivider));
         bytes.add(lf);
         bytes.addAll([esc, 0x61, 0x00]);
-        bytes.addAll([esc, 0x21, 0x08]);
+        bytes.addAll([esc, 0x21, boldMode]);
         bytes.addAll(enc(_truncateText('Customer: ${widget.customerName!}', lineWidth)));
-        bytes.addAll([esc, 0x21, 0x00]);
+        bytes.addAll([esc, 0x21, normalMode]);
         bytes.add(lf);
         if (widget.customerPhone != null) {
           bytes.addAll(enc(_truncateText('Contact: ${widget.customerPhone}', lineWidth)));
@@ -2644,11 +2663,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       }
 
       // Items header
+      final bool showTaxCol = true;
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, 0x08]); // Bold
-      bytes.addAll(enc(_formatTableRow('Item', 'Qty', 'Price', 'Amt', lineWidth)));
-      bytes.addAll([esc, 0x21, 0x00]);
+      bytes.addAll([esc, 0x21, boldMode]); // Bold
+      bytes.addAll(enc(_formatTableRow('ITEM', 'QTY', 'PRICE', 'TOTAL', lineWidth, tax: 'TAX%')));
+      bytes.addAll([esc, 0x21, normalMode]);
       bytes.add(lf);
       bytes.addAll(enc(thinDivider));
       bytes.add(lf);
@@ -2675,8 +2695,18 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
         totalQty += (qty is int ? qty : (qty as num).toInt());
 
+        final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+        final taxStr = taxPct > 0 ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%' : '0%';
+
         // No currency in table columns; no tax sub-line
-        List<String> itemLines = _formatTableRowMultiLine(name, _formatQty(qty), _formatDecimal(price), _formatDecimal(amount), lineWidth);
+        List<String> itemLines = _formatTableRowMultiLine(
+          name, 
+          _formatQty(qty), 
+          _formatDecimal(price), 
+          _formatDecimal(amount), 
+          lineWidth,
+          tax: showTaxCol ? taxStr : null,
+        );
         for (String line in itemLines) {
           bytes.addAll(enc(line));
           bytes.add(lf);
@@ -2688,22 +2718,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       // Subtotal — align qty under the Qty column, amount under Amt column
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, 0x08]);
-      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _formatDecimal(_subtotalWithTax), lineWidth)));
-      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', _formatDecimal(widget.subtotal), lineWidth)));
-      bytes.addAll([esc, 0x21, 0x00]);
+      bytes.addAll([esc, 0x21, boldMode]);
+      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _formatDecimal(_subtotalWithTax), lineWidth, tax: showTaxCol ? '' : null)));
       bytes.add(lf);
+      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', _formatDecimal(widget.subtotal), lineWidth, tax: showTaxCol ? '' : null)));
+      bytes.add(lf);
+      bytes.addAll([esc, 0x21, normalMode]);
 
-      // Tax breakdown
-      if (_thermalShowTaxDetails && widget.taxes != null && widget.taxes!.isNotEmpty) {
-        bytes.addAll(enc(thinDivider));
-        bytes.add(lf);
-        for (var tax in widget.taxes!) {
-          final taxName = tax['name'] ?? 'Tax';
-          final taxAmount = (tax['amount'] ?? 0.0).toDouble();
-          bytes.addAll(enc(_formatTwoColumns(_toThermalSafe(taxName), _formatDecimal(taxAmount), lineWidth)));
-          bytes.add(lf);
-        }
+      // Total Tax
+      if (_totalTaxAmount > 0) {
         bytes.addAll(enc(_formatTwoColumns('Total Tax', _formatDecimal(_totalTaxAmount), lineWidth)));
         bytes.add(lf);
       }
@@ -2723,13 +2746,96 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       // Total
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
-      // 80mm: bold + double-height (0x18) | 58mm: just bold (0x08)
-      bytes.addAll([esc, 0x21, printerWidth == '80mm' ? 0x18 : 0x08]);
+      // Bold + double-height (0x18) on both 80mm and 58mm (Font A)
+      bytes.addAll([esc, 0x21, 0x18]);
       bytes.addAll(enc(_formatTwoColumns('Total', '$tCur${_formatDecimal(widget.total)}', lineWidth)));
-      bytes.addAll([esc, 0x21, 0x00]);
+      bytes.addAll([esc, 0x21, normalMode]);
       bytes.add(lf);
       bytes.addAll(enc(dividerLine));
       bytes.add(lf);
+
+      // Tax details table at the bottom (after Total)
+      if (_thermalShowTaxDetails) {
+        final Map<String, _TaxRowData> taxGroup = {};
+        for (var item in widget.items) {
+          final qty = (item['quantity'] ?? 1.0).toDouble();
+          final price = (item['price'] ?? 0.0).toDouble();
+          final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+          final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+          final taxType = item['taxType'] as String?;
+
+          if (taxAmt == 0.0 || taxPct == 0.0) continue;
+
+          // Determine item base (taxable amount)
+          double baseAmt = price * qty;
+          if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+            baseAmt = baseAmt - taxAmt;
+          } else if (taxType == 'Add Tax at Billing' || taxType == 'Price is without Tax') {
+            baseAmt = baseAmt;
+          } else {
+            // Fallback detection
+            final total = (item['total'] ?? (price * qty)).toDouble();
+            if (total > (price * qty) && taxAmt > 0) {
+              baseAmt = price * qty;
+            } else {
+              baseAmt = (price * qty) - taxAmt;
+            }
+          }
+
+          // Group by sub-taxes list if present
+          final taxesList = item['taxes'] as List?;
+          if (taxesList != null && taxesList.isNotEmpty) {
+            for (var t in taxesList) {
+              final tMap = t as Map;
+              final name = tMap['name']?.toString() ?? 'Tax';
+              final pct = ((tMap['percentage'] ?? 0.0) as num).toDouble();
+              if (pct > 0) {
+                final shareAmt = taxAmt * (pct / taxPct);
+                final shareBase = baseAmt * (pct / taxPct);
+                final key = '${name}_$pct';
+                if (!taxGroup.containsKey(key)) {
+                  taxGroup[key] = _TaxRowData(name, pct);
+                }
+                taxGroup[key]!.baseAmount += shareBase;
+                taxGroup[key]!.taxAmount += shareAmt;
+              }
+            }
+          } else {
+            final taxName = item['taxName']?.toString() ?? 'Tax';
+            final key = '${taxName}_$taxPct';
+            if (!taxGroup.containsKey(key)) {
+              taxGroup[key] = _TaxRowData(taxName, taxPct);
+            }
+            taxGroup[key]!.baseAmount += baseAmt;
+            taxGroup[key]!.taxAmount += taxAmt;
+          }
+        }
+
+        if (taxGroup.isNotEmpty) {
+          bytes.addAll([esc, 0x21, boldMode]); // Bold
+          bytes.addAll(enc('Tax Details'));
+          bytes.addAll([esc, 0x21, normalMode]); // Reset to normal
+          bytes.add(lf);
+          bytes.addAll(enc(_formatTaxTableRow('Tax', 'Amount', 'Rate%', 'Tax Amount', lineWidth)));
+          bytes.add(lf);
+          bytes.addAll(enc(thinDivider));
+          bytes.add(lf);
+          for (var entry in taxGroup.values) {
+            final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+            bytes.addAll(enc(_formatTaxTableRow(
+              _toThermalSafe(entry.name),
+              _formatDecimal(entry.baseAmount),
+              rateStr,
+              _formatDecimal(entry.taxAmount),
+              lineWidth,
+            )));
+            bytes.add(lf);
+          }
+          bytes.addAll(enc(thinDivider));
+          bytes.add(lf);
+          bytes.add(lf); // Extra spacing
+        }
+      }
 
       // Payment Mode
       if (_showPaymentMode) {
@@ -2797,17 +2903,17 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       // Footer
       bytes.addAll([esc, 0x61, 0x01]); // Center
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, 0x08]);
+      bytes.addAll([esc, 0x21, boldMode]);
       final footerStr = _thermalSaleInvoiceText.isNotEmpty ? _thermalSaleInvoiceText : 'Thank You';
       for (final line in _wrapText(footerStr, lineWidth)) {
         bytes.addAll(enc(line));
         bytes.add(lf);
       }
-      bytes.addAll([esc, 0x21, 0x00]);
+      bytes.addAll([esc, 0x21, normalMode]);
       // Watermark for free plan users
       if (!_isPaidPlan) {
         bytes.add(lf);
-        bytes.addAll([esc, 0x21, 0x00]);
+        bytes.addAll([esc, 0x21, normalMode]);
         const wmLine1 = 'Generated by Maxmybill';
         const wmLine2 = 'www.maxmybill.com';
         bytes.addAll(enc(wmLine1.padLeft((lineWidth + wmLine1.length) ~/ 2)));
@@ -2851,6 +2957,32 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   String _truncateText(String text, int maxWidth) {
     if (text.length <= maxWidth) return text;
     return '${text.substring(0, maxWidth - 1)}.';
+  }
+
+  String _formatToWidth(String val, int width, {bool alignRight = true}) {
+    if (val.length <= width) {
+      return alignRight ? val.padLeft(width) : val.padRight(width);
+    }
+    if (val.contains('.')) {
+      final parts = val.split('.');
+      final integerPart = parts[0];
+      if (integerPart.length <= width) {
+        final allowedDecimals = width - integerPart.length - 1;
+        if (allowedDecimals > 0) {
+          try {
+            return double.parse(val).toStringAsFixed(allowedDecimals).padLeft(width);
+          } catch (_) {}
+        } else {
+          try {
+            return double.parse(val).toStringAsFixed(0).padLeft(width);
+          } catch (_) {}
+        }
+      }
+    }
+    // Fallback: strictly truncate
+    return alignRight 
+        ? val.substring(val.length - width) 
+        : val.substring(0, width);
   }
 
   /// Prints left text left-aligned and right text right-aligned on the same line.
@@ -2909,6 +3041,32 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         .replaceAll(RegExp(r'[^\x00-\x7F]'), '?');
   }
 
+  String _formatTaxTableRow(String tax, String amount, String rate, String taxAmount, int lineWidth) {
+    final int taxW;
+    final int amtW;
+    final int rateW;
+    final int taxAmtW;
+
+    if (lineWidth <= 32) {
+      taxW = 5;
+      amtW = 8;
+      rateW = 5;
+      taxAmtW = lineWidth - taxW - amtW - rateW - 3;
+    } else {
+      taxW = 10;
+      amtW = 13;
+      rateW = 10;
+      taxAmtW = lineWidth - taxW - amtW - rateW - 3;
+    }
+
+    final String taxStr = tax.length > taxW ? tax.substring(0, taxW) : tax.padRight(taxW);
+    final String amtStr = _formatToWidth(amount, amtW);
+    final String rateStr = _formatToWidth(rate, rateW);
+    final String taxAmtStr = _formatToWidth(taxAmount, taxAmtW);
+
+    return '$taxStr $amtStr $rateStr $taxAmtStr';
+  }
+
   String _formatDecimal(double val) {
     if (val % 1 == 0) {
       return val.toInt().toString();
@@ -2937,67 +3095,96 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   }
 
   // ── Column-width helpers (shared by header + item rows) ────────────────────
-  // 58mm paper → lineWidth = 32 chars total (Font A)
-  //   item=14  qty=4  price=7  amt=7   (14+4+7+7 = 32)
+  // 58mm paper → lineWidth = 30-32 chars total (Font A)
   // 80mm paper → lineWidth = 48 chars total (Font A)
-  //   item=24  qty=4  price=10  amt=10  (24+4+10+10 = 48)
-  int _qtyW(int lw)   => 4;
-  int _priceW(int lw) => lw <= 32 ? 7 : (lw <= 42 ? 8 : 10);
-  int _amtW(int lw)   => lw <= 32 ? 7 : (lw <= 42 ? 8 : 10);
-  int _itemW(int lw)  => lw - _qtyW(lw) - _priceW(lw) - _amtW(lw);
+  String _formatTableRow(String item, String qty, String price, String amt, int lineWidth, {String? tax}) {
+    final bool showTax = tax != null;
+    final int qtyW;
+    final int priceW;
+    final int taxW;
+    final int amtW;
+    final int itemW;
 
-  String _formatTableRow(String item, String qty, String price, String amt, int lineWidth) {
-    final itemW  = _itemW(lineWidth);
-    final qtyW   = _qtyW(lineWidth);
-    final priceW = _priceW(lineWidth);
-    final amtW   = _amtW(lineWidth);
+    if (lineWidth <= 32) {
+      qtyW = 2;
+      priceW = showTax ? 5 : 6;
+      taxW = showTax ? 4 : 0;
+      amtW = showTax ? 5 : 6;
+      final int numSpaces = showTax ? 4 : 3;
+      itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
+    } else {
+      qtyW = showTax ? 3 : 4;
+      priceW = showTax ? 8 : 10;
+      taxW = showTax ? 6 : 0;
+      amtW = showTax ? 8 : 10;
+      final int numSpaces = showTax ? 4 : 3;
+      itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
+    }
 
-    String itemStr = item.length > itemW ? '${item.substring(0, itemW - 1)}.' : item.padRight(itemW);
+    final String itemStr = item.length > itemW ? '${item.substring(0, itemW - 1)}.' : item.padRight(itemW);
+    final String qtyStr = _formatToWidth(qty, qtyW);
+    final String priceStr = _formatToWidth(price, priceW);
+    final String taxStr = showTax ? _formatToWidth(tax, taxW) : '';
+    final String amtStr = _formatToWidth(amt, amtW);
 
-    return '$itemStr'
-        '${qty.padLeft(qtyW)}'
-        '${price.padLeft(priceW)}'
-        '${amt.padLeft(amtW)}';
+    if (showTax) {
+      return '$itemStr $qtyStr $priceStr $taxStr $amtStr';
+    } else {
+      return '$itemStr $qtyStr $priceStr $amtStr';
+    }
   }
 
   /// Format table row with full item name support (wraps to multiple lines).
-  /// Layout:
-  ///   • If name fits on one line  → single row: [NAME_____][QTY][PRICE][AMT]
-  ///   • If name is too long       → name wraps across rows inside the item column,
-  ///                                  and the final wrapped line carries the values.
-  List<String> _formatTableRowMultiLine(String item, String qty, String price, String amt, int lineWidth) {
-    final itemW  = _itemW(lineWidth);
-    final qtyW   = _qtyW(lineWidth);
-    final priceW = _priceW(lineWidth);
-    final amtW   = _amtW(lineWidth);
+  List<String> _formatTableRowMultiLine(String item, String qty, String price, String amt, int lineWidth, {String? tax}) {
+    final bool showTax = tax != null;
+    final int qtyW;
+    final int priceW;
+    final int taxW;
+    final int amtW;
+    final int itemW;
+
+    if (lineWidth <= 32) {
+      qtyW = 2;
+      priceW = showTax ? 5 : 6;
+      taxW = showTax ? 4 : 0;
+      amtW = showTax ? 5 : 6;
+      final int numSpaces = showTax ? 4 : 3;
+      itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
+    } else {
+      qtyW = showTax ? 3 : 4;
+      priceW = showTax ? 8 : 10;
+      taxW = showTax ? 6 : 0;
+      amtW = showTax ? 8 : 10;
+      final int numSpaces = showTax ? 4 : 3;
+      itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
+    }
 
     List<String> lines = [];
+    final taxStr = showTax ? _formatToWidth(tax, taxW) : '';
+    final qtyStr = _formatToWidth(qty, qtyW);
+    final priceStr = _formatToWidth(price, priceW);
+    final amtStr = _formatToWidth(amt, amtW);
 
     if (item.length <= itemW) {
-      // ── Single line ──────────────────────────────────────────────────────────
-      lines.add(
-        '${item.padRight(itemW)}'
-            '${qty.padLeft(qtyW)}'
-            '${price.padLeft(priceW)}'
-            '${amt.padLeft(amtW)}',
-      );
-    } else {
-      // ── Multi-line item name ─────────────────────────────────────────────────
-      final itemChunks = _wrapText(item, itemW);
-
-      // All chunks except the last are printed as full-width wrapped lines.
-      for (int i = 0; i < itemChunks.length - 1; i++) {
-        lines.add(itemChunks[i].padRight(lineWidth));
+      final String itemStr = item.padRight(itemW);
+      if (showTax) {
+        lines.add('$itemStr $qtyStr $priceStr $taxStr $amtStr');
+      } else {
+        lines.add('$itemStr $qtyStr $priceStr $amtStr');
       }
-
-      // Final wrapped line: name chunk + Qty/Price/Amt on the same line.
-      final lastChunk = itemChunks.last.padRight(itemW);
-      lines.add(
-        '$lastChunk'
-            '${qty.padLeft(qtyW)}'
-            '${price.padLeft(priceW)}'
-            '${amt.padLeft(amtW)}',
-      );
+    } else {
+      // Use the full line width for lengthy items
+      final itemChunks = _wrapText(item, lineWidth);
+      for (String chunk in itemChunks) {
+        lines.add(chunk);
+      }
+      // Print values on the second line under their columns
+      final padding = ' ' * itemW;
+      if (showTax) {
+        lines.add('$padding $qtyStr $priceStr $taxStr $amtStr');
+      } else {
+        lines.add('$padding $qtyStr $priceStr $amtStr');
+      }
     }
 
     return lines;
@@ -3462,6 +3649,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                     ),
                   ),
 
+                  // Tax details table (A4/PDF version)
+                  if (_thermalShowTaxDetails)
+                    _buildPdfTaxDetailsTable(ttf, ttfBold, themeColor, currency),
+
                   // Bill Notes
                   if (widget.customNote != null && widget.customNote!.isNotEmpty) ...[
                     pw.SizedBox(height: 14),
@@ -3553,6 +3744,121 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     );
   }
 
+  pw.Widget _buildPdfTaxDetailsTable(pw.Font ttf, pw.Font ttfBold, PdfColor themeColor, String currency) {
+    final Map<String, _TaxRowData> taxGroup = {};
+    for (var item in widget.items) {
+      final qty = (item['quantity'] ?? 1.0).toDouble();
+      final price = (item['price'] ?? 0.0).toDouble();
+      final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+      final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+      final taxType = item['taxType'] as String?;
+
+      if (taxAmt == 0.0 || taxPct == 0.0) continue;
+
+      double baseAmt = price * qty;
+      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+        baseAmt = baseAmt - taxAmt;
+      } else {
+        final total = (item['total'] ?? (price * qty)).toDouble();
+        if (total > (price * qty) && taxAmt > 0) {
+          baseAmt = price * qty;
+        } else {
+          baseAmt = (price * qty) - taxAmt;
+        }
+      }
+
+      final taxesList = item['taxes'] as List?;
+      if (taxesList != null && taxesList.isNotEmpty) {
+        for (var t in taxesList) {
+          final tMap = t as Map;
+          final name = tMap['name']?.toString() ?? 'Tax';
+          final pct = ((tMap['percentage'] ?? 0.0) as num).toDouble();
+          if (pct > 0) {
+            final shareAmt = taxAmt * (pct / taxPct);
+            final shareBase = baseAmt * (pct / taxPct);
+            final key = '${name}_$pct';
+            if (!taxGroup.containsKey(key)) {
+              taxGroup[key] = _TaxRowData(name, pct);
+            }
+            taxGroup[key]!.baseAmount += shareBase;
+            taxGroup[key]!.taxAmount += shareAmt;
+          }
+        }
+      } else {
+        final taxName = item['taxName']?.toString() ?? 'Tax';
+        final key = '${taxName}_$taxPct';
+        if (!taxGroup.containsKey(key)) {
+          taxGroup[key] = _TaxRowData(taxName, taxPct);
+        }
+        taxGroup[key]!.baseAmount += baseAmt;
+        taxGroup[key]!.taxAmount += taxAmt;
+      }
+    }
+
+    if (taxGroup.isEmpty) return pw.SizedBox();
+
+    return pw.Column(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.SizedBox(height: 16),
+        pw.Text(
+          'Tax Details',
+          style: pw.TextStyle(font: ttfBold, fontSize: 10, fontWeight: pw.FontWeight.bold, color: themeColor),
+        ),
+        pw.SizedBox(height: 6),
+        pw.Table(
+          border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
+          children: [
+            pw.TableRow(
+              decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+              children: [
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(6),
+                  child: pw.Text('Tax', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(6),
+                  child: pw.Text('Amount', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(6),
+                  child: pw.Text('Rate%', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                ),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(6),
+                  child: pw.Text('Tax Amount', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                ),
+              ],
+            ),
+            ...taxGroup.values.map((entry) {
+              final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+              return pw.TableRow(
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text(entry.name, style: const pw.TextStyle(fontSize: 8)),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text('$currency${entry.baseAmount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text(rateStr, style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text('$currency${entry.taxAmount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                  ),
+                ],
+              );
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+
   /// Reusable PDF table cell
   pw.Widget _pdfCell(
       String text,
@@ -3576,6 +3882,123 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               ? PdfColors.white
               : (color ?? PdfColors.black),
         ),
+      ),
+    );
+  }
+
+  Widget _buildUiTaxDetailsTable(TextStyle Function({double size, FontWeight weight, Color color}) tStyle) {
+    final Map<String, _TaxRowData> taxGroup = {};
+    for (var item in widget.items) {
+      final qty = (item['quantity'] ?? 1.0).toDouble();
+      final price = (item['price'] ?? 0.0).toDouble();
+      final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+      final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+      final taxType = item['taxType'] as String?;
+
+      if (taxAmt == 0.0 || taxPct == 0.0) continue;
+
+      double baseAmt = price * qty;
+      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+        baseAmt = baseAmt - taxAmt;
+      } else {
+        final total = (item['total'] ?? (price * qty)).toDouble();
+        if (total > (price * qty) && taxAmt > 0) {
+          baseAmt = price * qty;
+        } else {
+          baseAmt = (price * qty) - taxAmt;
+        }
+      }
+
+      final taxesList = item['taxes'] as List?;
+      if (taxesList != null && taxesList.isNotEmpty) {
+        for (var t in taxesList) {
+          final tMap = t as Map;
+          final name = tMap['name']?.toString() ?? 'Tax';
+          final pct = ((tMap['percentage'] ?? 0.0) as num).toDouble();
+          if (pct > 0) {
+            final shareAmt = taxAmt * (pct / taxPct);
+            final shareBase = baseAmt * (pct / taxPct);
+            final key = '${name}_$pct';
+            if (!taxGroup.containsKey(key)) {
+              taxGroup[key] = _TaxRowData(name, pct);
+            }
+            taxGroup[key]!.baseAmount += shareBase;
+            taxGroup[key]!.taxAmount += shareAmt;
+          }
+        }
+      } else {
+        final taxName = item['taxName']?.toString() ?? 'Tax';
+        final key = '${taxName}_$taxPct';
+        if (!taxGroup.containsKey(key)) {
+          taxGroup[key] = _TaxRowData(taxName, taxPct);
+        }
+        taxGroup[key]!.baseAmount += baseAmt;
+        taxGroup[key]!.taxAmount += taxAmt;
+      }
+    }
+
+    if (taxGroup.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: kBlack54, width: 1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Tax Details', style: tStyle(size: 10, weight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          Table(
+            border: TableBorder.all(color: Colors.grey.shade300, width: 0.5),
+            children: [
+              TableRow(
+                decoration: BoxDecoration(color: Colors.grey.shade100),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text('Tax', style: tStyle(size: 8, weight: FontWeight.bold)),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text('Amount', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text('Rate%', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text('Tax Amount', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                  ),
+                ],
+              ),
+              ...taxGroup.values.map((entry) {
+                final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+                return TableRow(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(entry.name, style: tStyle(size: 8)),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(_formatDecimal(entry.baseAmount), style: tStyle(size: 8), textAlign: TextAlign.right),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(rateStr, style: tStyle(size: 8), textAlign: TextAlign.right),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(6),
+                      child: Text(_formatDecimal(entry.taxAmount), style: tStyle(size: 8), textAlign: TextAlign.right),
+                    ),
+                  ],
+                );
+              }),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -3624,4 +4047,13 @@ class _ConfettiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+}
+
+class _TaxRowData {
+  final String name;
+  final double rate;
+  double baseAmount = 0.0;
+  double taxAmount = 0.0;
+
+  _TaxRowData(this.name, this.rate);
 }
