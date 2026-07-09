@@ -3025,7 +3025,7 @@ class _DayBookPageState extends State<DayBookPage> {
                         const SizedBox(height: 8),
                         ...items.take(3).map((item) {
                           String itemName = item['name']?.toString() ?? 'Item';
-                          int qty = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+                          int qty = (double.tryParse(item['quantity']?.toString() ?? '0') ?? 0).toInt();
                           double itemPrice = double.tryParse(item['total']?.toString() ?? '0') ?? 0;
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 4),
@@ -6839,7 +6839,7 @@ class ItemSalesPage extends StatelessWidget {
                     continue; // Skip quick items
                   }
 
-                  int q = int.tryParse(item['quantity']?.toString() ?? '0') ?? 0;
+                  int q = (double.tryParse(item['quantity']?.toString() ?? '0') ?? 0).toInt();
                   qtyMap[name] = (qtyMap[name] ?? 0) + q;
                 }
               }
