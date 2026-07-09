@@ -6844,7 +6844,7 @@ class ItemSalesPage extends StatelessWidget {
                 }
               }
             }
-            var sorted = qtyMap.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+            var sorted = qtyMap.entries.where((e) => e.value > 0).toList()..sort((a, b) => b.value.compareTo(a.value));
             var top6 = sorted.take(6).toList();
             int grandTotal = sorted.fold(0, (sum, e) => sum + e.value);
             final bool hasTopSalesChartData = top6.any((e) => e.value > 0);
@@ -6894,7 +6894,7 @@ class ItemSalesPage extends StatelessWidget {
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
 
                         sorted.isEmpty
-                            ? const SliverFillRemaining(child: EmptyStateWidget(message: "No sales recorded"))
+                            ? const SliverFillRemaining(child: EmptyStateWidget(message: "no item sold yet"))
                             : SliverToBoxAdapter(
                           child: _buildItemSalesTable(sorted),
                         ),
