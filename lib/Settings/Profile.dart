@@ -2373,6 +2373,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
           _SwitchTile('Show Logo', _thermalShowLogo, (v) { setState(() => _thermalShowLogo = v); _saveSettings(); }),
           _SwitchTile('Show Customer Information', _thermalShowCustomerInfo, (v) { setState(() => _thermalShowCustomerInfo = v); _saveSettings(); }),
           _SwitchTile('Show Item Table', _thermalShowItemTable, (v) { setState(() => _thermalShowItemTable = v); _saveSettings(); }),
+          _SwitchTile('Show Tax Column in Table', _thermalShowTaxColumnInTable, (v) { setState(() => _thermalShowTaxColumnInTable = v); _saveSettings(); }),
           _SwitchTile('Show License Number', _thermalShowLicense, (v) { setState(() => _thermalShowLicense = v); _saveSettings(); }, showDivider: false),
         ]),
         const SizedBox(height: 16),

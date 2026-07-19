@@ -278,84 +278,75 @@ class PrinterService {
               pw.Divider(),
               pw.SizedBox(height: 3),
 
-              // Subtotal, Discount, Tax breakdown
-              if (discount > 0) ...[
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Subtotal', style: const pw.TextStyle(fontSize: 10)),
-                    pw.Text(
-                      ' ${subtotal.toStringAsFixed(2)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 2),
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Discount', style: const pw.TextStyle(fontSize: 10)),
-                    pw.Text(
-                      '- ${discount.toStringAsFixed(2)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 2),
-              ],
-              if (tax > 0) ...[
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Tax', style: const pw.TextStyle(fontSize: 10)),
-                    pw.Text(
-                      ' ${tax.toStringAsFixed(2)}',
-                      style: const pw.TextStyle(fontSize: 10),
-                    ),
-                  ],
-                ),
-                pw.SizedBox(height: 2),
-              ],
-
+              // Table footer: TOTAL
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('TOTAL', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                  pw.Text(' ${(subtotal + tax).toStringAsFixed(2)}', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                ],
+              ),
+              pw.SizedBox(height: 5),
               pw.Divider(),
               pw.SizedBox(height: 3),
 
-              // Total
+              // Row division (subtotal, total tax, discount)
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                 children: [
-                  pw.Text(
-                    'Total',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
-                  pw.Text(
-                    ' ${total.toStringAsFixed(2)}',
-                    style: pw.TextStyle(
-                      fontSize: 14,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
-                  ),
+                  pw.Text('Subtotal:', style: const pw.TextStyle(fontSize: 10)),
+                  pw.Text(' ${subtotal.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
                 ],
               ),
+              if (tax > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Total Tax:', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text(' ${tax.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ],
+              if (discount > 0) ...[
+                pw.SizedBox(height: 2),
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text('Discount:', style: const pw.TextStyle(fontSize: 10)),
+                    pw.Text('- ${discount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ],
 
+              pw.SizedBox(height: 5),
+              pw.Divider(),
               pw.SizedBox(height: 3),
 
-              // Payment Mode
-              pw.Row(
-                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                children: [
-                  pw.Text('Payment', style: const pw.TextStyle(fontSize: 9)),
-                  pw.Text(
-                    paymentMode,
-                    style: pw.TextStyle(
-                      fontSize: 9,
-                      fontWeight: pw.FontWeight.bold,
-                    ),
+              // Grand Total: Centered and Bold
+              pw.Center(
+                child: pw.Text(
+                  'Total: ${total.toStringAsFixed(2)}',
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
                   ),
-                ],
+                ),
+              ),
+
+              pw.SizedBox(height: 5),
+              pw.Divider(),
+              pw.SizedBox(height: 5),
+
+              // Payment Mode: Centered
+              pw.Center(
+                child: pw.Text(
+                  'Payment Mode: $paymentMode',
+                  style: pw.TextStyle(
+                    fontSize: 9,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
               ),
 
               pw.SizedBox(height: 10),

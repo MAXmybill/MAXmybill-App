@@ -71,6 +71,10 @@ dependencies:
   in_app_update: ^4.2.5
   flutter_svg: ^2.0.10
   firebase_app_check: ^0.3.2+10
+  esc_pos_utils_plus: ^2.0.4
+  print_bluetooth_thermal: ^1.2.1
+  screenshot: ^3.0.0
+  image: ^4.3.0
 
 dev_dependencies:
   flutter_test:
@@ -78,7 +82,6 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
   flutter_native_splash: ^2.4.0
-  image: ^4.3.0
 
 flutter_launcher_icons:
   android: true

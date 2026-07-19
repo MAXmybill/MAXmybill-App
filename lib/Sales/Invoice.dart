@@ -18,11 +18,15 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:share_plus/share_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:screenshot/screenshot.dart';
+import 'package:maxmybill/utils/esc_pos_image_converter.dart';
 import 'package:maxmybill/utils/thermal_printer_config.dart';
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 import 'package:path_provider/path_provider.dart';
@@ -33,10 +37,10 @@ import 'package:heroicons/heroicons.dart';
 
 // Invoice Template Types
 enum InvoiceTemplate {
-  classic,    // Black & White Professional
-  modern,     // Blue Accent Modern
-  minimal,    // Clean Minimal
-  colorful,   // Colorful Creative
+  classic, // Black & White Professional
+  modern, // Blue Accent Modern
+  minimal, // Clean Minimal
+  colorful, // Colorful Creative
 }
 
 // Template Colors - Classic (Black & White)
@@ -131,7 +135,8 @@ class InvoicePage extends StatefulWidget {
   State<InvoicePage> createState() => _InvoicePageState();
 }
 
-class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin {
+class _InvoicePageState extends State<InvoicePage>
+    with TickerProviderStateMixin {
   bool _isLoading = true;
   String? _storeId;
 
@@ -143,7 +148,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
       final taxType = item['taxType'] as String?;
       final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
-      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+      if (taxType == 'Tax Included in Price' ||
+          taxType == 'Price includes Tax') {
         total += baseTotal;
       } else if (taxType != null) {
         total += baseTotal + taxAmt;
@@ -164,6 +170,109 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     return total;
   }
 
+  // ────────────────────────────────────────────────────────────────────────
+  // IMAGE PRINTING IMPLEMENTATION
+  // ────────────────────────────────────────────────────────────────────────
+  Future<void> _handleImagePrint(BuildContext context) async {
+    try {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final prefs = await SharedPreferences.getInstance();
+      final is80mm =
+          ThermalPrinterConfig.resolveWidthFromPrefs(prefs) == '80mm';
+
+      final screenshotController = ScreenshotController();
+      final imageBytes = await screenshotController.captureFromWidget(
+        _buildThermalReceiptContent(true, is80mm: is80mm),
+        delay: const Duration(milliseconds: 100),
+      );
+
+      final escPosBytes = await EscPosImageConverter.convertToMonochromeRaster(
+        imageBytes,
+        is80mm ? 576 : 384,
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+      }
+
+      final selectedPrinterId = prefs.getString('selected_printer_id');
+
+      bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
+      if (!connectionStatus) {
+        if (selectedPrinterId != null) {
+          bool result = await PrintBluetoothThermal.connect(
+            macPrinterAddress: selectedPrinterId,
+          );
+          if (!result) {
+            if (context.mounted) {
+              CommonWidgets.showSnackBar(
+                context,
+                'Could not connect to printer',
+                bgColor: kErrorColor,
+              );
+            }
+            return;
+          }
+        } else {
+          if (context.mounted) {
+            CommonWidgets.showSnackBar(
+              context,
+              'No printer selected. Please connect first.',
+              bgColor: kErrorColor,
+            );
+          }
+          return;
+        }
+      }
+
+      // Print multiple copies if needed
+      int numberOfCopies = 1;
+      try {
+        final storeDoc = await FirestoreService().getCurrentStoreDoc();
+        if (storeDoc != null && storeDoc.exists) {
+          final data = storeDoc.data() as Map<String, dynamic>?;
+          numberOfCopies = data?['thermalNumberOfCopies'] ?? 1;
+        }
+      } catch (_) {}
+
+      for (int i = 0; i < numberOfCopies; i++) {
+        bool printed = await PrintBluetoothThermal.writeBytes(escPosBytes);
+        if (!printed && i == 0) {
+          if (context.mounted) {
+            CommonWidgets.showSnackBar(
+              context,
+              'Printing failed. Please check printer.',
+              bgColor: kErrorColor,
+            );
+          }
+          return;
+        }
+      }
+
+      if (context.mounted) {
+        CommonWidgets.showSnackBar(
+          context,
+          'Printing successful',
+          bgColor: kGoogleGreen,
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+        CommonWidgets.showSnackBar(
+          context,
+          'Print error: $e',
+          bgColor: kErrorColor,
+        );
+      }
+    }
+  }
+
   // Celebration animation
   late AnimationController _celebrationController;
   bool _showCelebration = false;
@@ -177,7 +286,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   String? businessEmail;
   String? businessLogoUrl;
   String? businessLicenseNumber;
-  String? businessLicenseTypeName; // License type name like "FSSAI", "Drug License", etc.
+  String?
+  businessLicenseTypeName; // License type name like "FSSAI", "Drug License", etc.
   String _currencySymbol = ''; // Will be loaded from store data
 
   // Header Info Settings (shared for display)
@@ -219,7 +329,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   bool _thermalShowDelivery = false;
   bool _thermalShowLicense = true;
   String _thermalSaleInvoiceText = 'Thank you for your purchase!';
-  bool _thermalShowTaxColumn = false; // Tax column hidden by default for thermal
+  bool _thermalShowTaxColumn =
+      false; // Tax column hidden by default for thermal
+  bool _thermalUseImagePrinting = false; // Use raster printing for custom fonts
 
   // ==========================================
   // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -237,7 +349,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   String _a4SaleInvoiceText = 'Thank you for your purchase!';
   bool _a4ShowTaxColumn = true; // Tax column shown by default for A4
   bool _a4ShowSignature = false;
-  String _a4ColorTheme = 'blue'; // Color theme for A4: blue, black, green, purple, red
+  String _a4ColorTheme =
+      'blue'; // Color theme for A4: blue, black, green, purple, red
 
   // Preview mode TabController
   late TabController _previewTabController;
@@ -256,7 +369,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   bool _ratingDialogShown = false;
 
   // Plan gate - watermark shown for free users
-  bool _isPaidPlan = true; // default true to avoid flash of watermark on paid users
+  bool _isPaidPlan =
+      true; // default true to avoid flash of watermark on paid users
 
   @override
   void initState() {
@@ -296,7 +410,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       }
     });
 
-    _storeDataSubscription = FirestoreService().storeDataStream.listen((storeData) {
+    _storeDataSubscription = FirestoreService().storeDataStream.listen((
+      storeData,
+    ) {
       if (mounted) {
         setState(() {
           businessLogoUrl = storeData['logoUrl'];
@@ -334,7 +450,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             }
           }
         });
-        debugPrint('Invoice: Store data updated via stream - logo=$businessLogoUrl, email=$businessEmail, taxType=$businessTaxTypeName $businessGSTIN');
+        debugPrint(
+          'Invoice: Store data updated via stream - logo=$businessLogoUrl, email=$businessEmail, taxType=$businessTaxTypeName $businessGSTIN',
+        );
       }
     });
   }
@@ -363,8 +481,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       // Add a delay to ensure purchaseCount has been updated
       await Future.delayed(const Duration(milliseconds: 1000));
 
-      final customersCollection = await FirestoreService().getStoreCollection('customers');
-      final customerDoc = await customersCollection.doc(widget.customerPhone).get();
+      final customersCollection = await FirestoreService().getStoreCollection(
+        'customers',
+      );
+      final customerDoc = await customersCollection
+          .doc(widget.customerPhone)
+          .get();
 
       debugPrint('📊 Checking rating for customer: ${widget.customerPhone}');
 
@@ -387,10 +509,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             _showRatingDialog();
           }
         } else {
-          debugPrint('❌ Rating dialog: purchaseCount=$purchaseCount, hasRating=$hasRating');
+          debugPrint(
+            '❌ Rating dialog: purchaseCount=$purchaseCount, hasRating=$hasRating',
+          );
         }
       } else {
-        debugPrint('❌ Rating dialog: Customer document does not exist - might be new customer');
+        debugPrint(
+          '❌ Rating dialog: Customer document does not exist - might be new customer',
+        );
         // For brand new customers that don't have a document yet, show rating dialog
         debugPrint('✅ Showing rating dialog for brand new customer');
         await Future.delayed(const Duration(milliseconds: 2500));
@@ -414,7 +540,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             backgroundColor: Colors.white,
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -485,7 +613,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         child: HeroIcon(
                           HeroIcons.star,
-                          style: index < selectedRating ? HeroIconStyle.solid : HeroIconStyle.outline,
+                          style: index < selectedRating
+                              ? HeroIconStyle.solid
+                              : HeroIconStyle.outline,
                           size: 40,
                           color: index < selectedRating ? kOrange : kGrey300,
                         ),
@@ -547,9 +677,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       child: ElevatedButton(
                         onPressed: selectedRating > 0
                             ? () {
-                          _submitCustomerRating(selectedRating);
-                          Navigator.pop(context);
-                        }
+                                _submitCustomerRating(selectedRating);
+                                Navigator.pop(context);
+                              }
                             : null,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
@@ -585,7 +715,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     if (widget.customerPhone == null || widget.customerPhone!.isEmpty) return;
 
     try {
-      final customersCollection = await FirestoreService().getStoreCollection('customers');
+      final customersCollection = await FirestoreService().getStoreCollection(
+        'customers',
+      );
       await customersCollection.doc(widget.customerPhone).set({
         'rating': rating,
         'ratedAt': FieldValue.serverTimestamp(),
@@ -596,7 +728,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           SnackBar(
             content: Row(
               children: [
-                const HeroIcon(HeroIcons.star, style: HeroIconStyle.solid, color: kOrange, size: 20),
+                const HeroIcon(
+                  HeroIcons.star,
+                  style: HeroIconStyle.solid,
+                  color: kOrange,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Customer rated $rating star${rating > 1 ? 's' : ''}',
@@ -606,7 +743,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             ),
             backgroundColor: kGoogleGreen,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
         );
       }
@@ -618,14 +757,23 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   void _generateConfetti() {
     final random = Random();
     for (int i = 0; i < 50; i++) {
-      _confettiParticles.add(_Confetti(
-        x: random.nextDouble(),
-        y: random.nextDouble() * -1, // Start above screen
-        color: [kPrimaryColor, kOrange, kGoogleGreen, Colors.purple, Colors.pink, Colors.amber][random.nextInt(6)],
-        size: random.nextDouble() * 8 + 4,
-        speed: random.nextDouble() * 0.5 + 0.3,
-        rotation: random.nextDouble() * 360,
-      ));
+      _confettiParticles.add(
+        _Confetti(
+          x: random.nextDouble(),
+          y: random.nextDouble() * -1, // Start above screen
+          color: [
+            kPrimaryColor,
+            kOrange,
+            kGoogleGreen,
+            Colors.purple,
+            Colors.pink,
+            Colors.amber,
+          ][random.nextInt(6)],
+          size: random.nextDouble() * 8 + 4,
+          speed: random.nextDouble() * 0.5 + 0.3,
+          rotation: random.nextDouble() * 360,
+        ),
+      );
     }
   }
 
@@ -683,7 +831,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       final prefs = await SharedPreferences.getInstance();
       setState(() {
         // Header Info (general)
-        _receiptHeader = widget.isPaymentReceipt ? 'Payment Receipt' : (prefs.getString('receipt_header') ?? 'Invoice');
+        _receiptHeader = widget.isPaymentReceipt
+            ? 'Payment Receipt'
+            : (prefs.getString('receipt_header') ?? 'Invoice');
         _showLogo = prefs.getBool('receipt_show_logo') ?? true;
         _showEmail = prefs.getBool('receipt_show_email') ?? true;
         _showPhone = prefs.getBool('receipt_show_phone') ?? true;
@@ -692,36 +842,50 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         _showLocation = prefs.getBool('receipt_show_location') ?? true;
 
         // Item Table (general)
-        _showCustomerDetails = prefs.getBool('receipt_show_customer_details') ?? true;
-        _showMeasuringUnit = prefs.getBool('receipt_show_measuring_unit') ?? true;
+        _showCustomerDetails =
+            prefs.getBool('receipt_show_customer_details') ?? true;
+        _showMeasuringUnit =
+            prefs.getBool('receipt_show_measuring_unit') ?? true;
         _showMRP = prefs.getBool('receipt_show_mrp') ?? false;
         _showPaymentMode = prefs.getBool('receipt_show_payment_mode') ?? true;
         _showTotalItems = prefs.getBool('receipt_show_total_items') ?? true;
         _showTotalQty = prefs.getBool('receipt_show_total_qty') ?? false;
-        _showSaveAmountMessage = prefs.getBool('receipt_show_save_amount') ?? true;
+        _showSaveAmountMessage =
+            prefs.getBool('receipt_show_save_amount') ?? true;
 
         // Invoice Footer (general)
-        _footerDescription = prefs.getString('receipt_footer_description') ?? 'Thank you for your business!';
+        _footerDescription =
+            prefs.getString('receipt_footer_description') ??
+            'Thank you for your business!';
         _footerImageUrl = prefs.getString('receipt_footer_image');
 
         // Quotation Footer
-        _quotationFooterDescription = prefs.getString('quotation_footer_description') ?? 'Thank You';
+        _quotationFooterDescription =
+            prefs.getString('quotation_footer_description') ?? 'Thank You';
 
         // ==========================================
         // THERMAL PRINTER SPECIFIC SETTINGS
         // ==========================================
         _thermalShowHeader = prefs.getBool('thermal_show_header') ?? true;
         _thermalShowLogo = prefs.getBool('thermal_show_logo') ?? true;
-        _thermalShowCustomerInfo = prefs.getBool('thermal_show_customer_info') ?? true;
-        _thermalShowItemTable = prefs.getBool('thermal_show_item_table') ?? true;
-        _thermalShowTotalItemQuantity = prefs.getBool('thermal_show_total_item_quantity') ?? true;
-        _thermalShowTaxDetails = prefs.getBool('thermal_show_tax_details') ?? true;
+        _thermalShowCustomerInfo =
+            prefs.getBool('thermal_show_customer_info') ?? true;
+        _thermalShowItemTable =
+            prefs.getBool('thermal_show_item_table') ?? true;
+        _thermalShowTotalItemQuantity =
+            prefs.getBool('thermal_show_total_item_quantity') ?? true;
+        _thermalShowTaxDetails =
+            prefs.getBool('thermal_show_tax_details') ?? true;
         _thermalShowYouSaved = prefs.getBool('thermal_show_you_saved') ?? true;
-        _thermalShowDescription = prefs.getBool('thermal_show_description') ?? false;
+        _thermalShowDescription =
+            prefs.getBool('thermal_show_description') ?? false;
         _thermalShowDelivery = prefs.getBool('thermal_show_delivery') ?? false;
         _thermalShowLicense = prefs.getBool('thermal_show_license') ?? true;
-        _thermalSaleInvoiceText = prefs.getString('thermal_sale_invoice_text') ?? 'Thank you for your purchase!';
-        _thermalShowTaxColumn = prefs.getBool('thermal_show_tax_column') ?? false;
+        _thermalSaleInvoiceText =
+            prefs.getString('thermal_sale_invoice_text') ??
+            'Thank you for your purchase!';
+        _thermalShowTaxColumn =
+            prefs.getBool('thermal_show_tax_column') ?? false;
 
         // ==========================================
         // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -730,13 +894,16 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         _a4ShowLogo = prefs.getBool('a4_show_logo') ?? true;
         _a4ShowCustomerInfo = prefs.getBool('a4_show_customer_info') ?? true;
         _a4ShowItemTable = prefs.getBool('a4_show_item_table') ?? true;
-        _a4ShowTotalItemQuantity = prefs.getBool('a4_show_total_item_quantity') ?? true;
+        _a4ShowTotalItemQuantity =
+            prefs.getBool('a4_show_total_item_quantity') ?? true;
         _a4ShowTaxDetails = prefs.getBool('a4_show_tax_details') ?? true;
         _a4ShowYouSaved = prefs.getBool('a4_show_you_saved') ?? true;
         _a4ShowDescription = prefs.getBool('a4_show_description') ?? false;
         _a4ShowDelivery = prefs.getBool('a4_show_delivery') ?? false;
         _a4ShowLicense = prefs.getBool('a4_show_license') ?? true;
-        _a4SaleInvoiceText = prefs.getString('a4_sale_invoice_text') ?? 'Thank you for your purchase!';
+        _a4SaleInvoiceText =
+            prefs.getString('a4_sale_invoice_text') ??
+            'Thank you for your purchase!';
         _a4ShowTaxColumn = prefs.getBool('a4_show_tax_column') ?? true;
         _a4ShowSignature = prefs.getBool('a4_show_signature') ?? false;
         _a4ColorTheme = prefs.getString('a4_color_theme') ?? 'blue';
@@ -756,7 +923,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         setState(() {
           businessName = data['businessName'] ?? widget.businessName;
           businessPhone = data['businessPhone'] ?? widget.businessPhone;
-          businessLocation = data['businessLocation'] ?? widget.businessLocation;
+          businessLocation =
+              data['businessLocation'] ?? widget.businessLocation;
 
           // Parse taxType - stored as "Type Number" format (e.g., "GSTIN 27AAFCV2449G1Z7")
           final taxType = data['taxType'] ?? data['gstin'] ?? '';
@@ -764,7 +932,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             final taxParts = taxType.toString().split(' ');
             if (taxParts.length > 1) {
               businessTaxTypeName = taxParts[0]; // e.g., "GSTIN"
-              businessGSTIN = taxParts.sublist(1).join(' '); // e.g., "27AAFCV2449G1Z7"
+              businessGSTIN = taxParts
+                  .sublist(1)
+                  .join(' '); // e.g., "27AAFCV2449G1Z7"
             } else {
               businessTaxTypeName = 'GSTIN'; // Default name
               businessGSTIN = taxType;
@@ -784,7 +954,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             final licenseParts = licenseNumber.toString().trim().split(' ');
             if (licenseParts.length > 1) {
               businessLicenseTypeName = licenseParts[0]; // e.g., "FSSAI"
-              businessLicenseNumber = licenseParts.sublist(1).join(' '); // e.g., "123456789"
+              businessLicenseNumber = licenseParts
+                  .sublist(1)
+                  .join(' '); // e.g., "123456789"
             } else {
               // Only one token — treat it as the number, use 'License' as label
               businessLicenseTypeName = 'License';
@@ -797,17 +969,21 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           _currencySymbol = CurrencyService.getSymbolWithSpace(currencyCode);
           _isLoading = false;
         });
-        debugPrint('Invoice: Store data loaded - name=$businessName, logo=$businessLogoUrl, email=$businessEmail, gstin=$businessGSTIN, license=$businessLicenseNumber, location=$businessLocation, currency=$_currencySymbol');
+        debugPrint(
+          'Invoice: Store data loaded - name=$businessName, logo=$businessLogoUrl, email=$businessEmail, gstin=$businessGSTIN, license=$businessLicenseNumber, location=$businessLocation, currency=$_currencySymbol',
+        );
         return;
       }
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
     } catch (e) {
       debugPrint('Error loading store data: $e');
-      setState(() { _isLoading = false; });
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -823,7 +999,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         elevation: 0,
         centerTitle: true,
         title: Text(
-          widget.isPaymentReceipt ? 'Payment Receipt' : (widget.isQuotation ? 'Quotation Details' : 'Invoice Details'),
+          widget.isPaymentReceipt
+              ? 'Payment Receipt'
+              : (widget.isQuotation ? 'Quotation Details' : 'Invoice Details'),
           style: const TextStyle(
             color: kWhite,
             fontWeight: FontWeight.w700,
@@ -835,8 +1013,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           icon: const HeroIcon(HeroIcons.xMark, color: kWhite, size: 18),
           onPressed: () => Navigator.pushAndRemoveUntil(
             context,
-            CupertinoPageRoute(builder: (context) => NewSalePage(uid: widget.uid, userEmail: widget.userEmail)),
-                (route) => false,
+            CupertinoPageRoute(
+              builder: (context) =>
+                  NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
+            ),
+            (route) => false,
           ),
         ),
         actions: [
@@ -845,7 +1026,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             tooltip: 'Printer Setup',
             onPressed: () => Navigator.push(
               context,
-              CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
+              CupertinoPageRoute(
+                builder: (_) =>
+                    PrinterSetupPage(onBack: () => Navigator.pop(context)),
+              ),
             ),
           ),
           IconButton(
@@ -879,10 +1063,32 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 dividerColor: Colors.transparent,
                 labelColor: kWhite,
                 unselectedLabelColor: kBlack54,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 11,
+                  letterSpacing: 0.5,
+                ),
                 tabs: const [
-                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.print_rounded, size: 16), SizedBox(width: 8), Text('Thermal')])),
-                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.picture_as_pdf_rounded, size: 16), SizedBox(width: 8), Text('A4 / PDF')])),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.print_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('Thermal'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.picture_as_pdf_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('A4 / PDF'),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -892,22 +1098,24 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       body: Stack(
         children: [
           _isLoading
-              ? const Center(child: CircularProgressIndicator(color: kPrimaryColor))
+              ? const Center(
+                  child: CircularProgressIndicator(color: kPrimaryColor),
+                )
               : TabBarView(
-            controller: _previewTabController,
-            children: [
-              // Thermal Preview Tab
-              SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                child: _buildThermalPreview(),
-              ),
-              // A4/PDF Preview Tab
-              SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
-                child: _buildA4Preview(templateColors),
-              ),
-            ],
-          ),
+                  controller: _previewTabController,
+                  children: [
+                    // Thermal Preview Tab
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                      child: _buildThermalPreview(),
+                    ),
+                    // A4/PDF Preview Tab
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
+                      child: _buildA4Preview(templateColors),
+                    ),
+                  ],
+                ),
           // Celebration confetti overlay
           if (_showCelebration)
             AnimatedBuilder(
@@ -930,11 +1138,16 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               animation: _celebrationController,
               builder: (context, child) {
                 // Scale animation: grow from 0 to 1 in first 30% of animation
-                final scaleProgress = (_celebrationController.value / 0.3).clamp(0.0, 1.0);
+                final scaleProgress = (_celebrationController.value / 0.3)
+                    .clamp(0.0, 1.0);
                 final scale = Curves.elasticOut.transform(scaleProgress);
 
                 // Fade out in last 20% of animation
-                final fadeProgress = ((_celebrationController.value - 0.8) / 0.2).clamp(0.0, 1.0);
+                final fadeProgress =
+                    ((_celebrationController.value - 0.8) / 0.2).clamp(
+                      0.0,
+                      1.0,
+                    );
                 final opacity = 1.0 - fadeProgress;
 
                 return IgnorePointer(
@@ -969,7 +1182,6 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 );
               },
             ),
-
         ],
       ),
       bottomNavigationBar: _buildBottomActionBar(),
@@ -1030,7 +1242,6 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     });
   }
 
-
   Widget _buildExpandableSection({
     required String title,
     required bool isExpanded,
@@ -1044,7 +1255,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: kGrey200),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
@@ -1057,9 +1272,18 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: kBlack87)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      color: kBlack87,
+                    ),
+                  ),
                   Icon(
-                    isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
+                    isExpanded
+                        ? Icons.keyboard_arrow_up_rounded
+                        : Icons.keyboard_arrow_down_rounded,
                     color: _getTemplateColors(_selectedTemplate)['primary'],
                   ),
                 ],
@@ -1081,7 +1305,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildTextFieldInModal(TextEditingController controller, String label, Function(String) onChanged) {
+  Widget _buildTextFieldInModal(
+    TextEditingController controller,
+    String label,
+    Function(String) onChanged,
+  ) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -1094,29 +1322,49 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             labelText: label,
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+              borderSide: BorderSide(
+                color: hasText ? kPrimaryColor : kGrey200,
+                width: hasText ? 1.5 : 1.0,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+              borderSide: BorderSide(
+                color: hasText ? kPrimaryColor : kGrey200,
+                width: hasText ? 1.5 : 1.0,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
             ),
-            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
-            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+            labelStyle: TextStyle(
+              color: hasText ? kPrimaryColor : kBlack54,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            floatingLabelStyle: TextStyle(
+              color: hasText ? kPrimaryColor : kPrimaryColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-
         );
       },
     );
   }
 
-  Widget _buildMultilineTextFieldInModal(TextEditingController controller, String hint, Function(String) onChanged) {
+  Widget _buildMultilineTextFieldInModal(
+    TextEditingController controller,
+    String hint,
+    Function(String) onChanged,
+  ) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -1128,39 +1376,89 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: kGrey400, fontWeight: FontWeight.w400),
+            hintStyle: const TextStyle(
+              color: kGrey400,
+              fontWeight: FontWeight.w400,
+            ),
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+              borderSide: BorderSide(
+                color: hasText ? kPrimaryColor : kGrey200,
+                width: hasText ? 1.5 : 1.0,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
+              borderSide: BorderSide(
+                color: hasText ? kPrimaryColor : kGrey200,
+                width: hasText ? 1.5 : 1.0,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
             ),
-            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
-            floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+            labelStyle: TextStyle(
+              color: hasText ? kPrimaryColor : kBlack54,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+            floatingLabelStyle: TextStyle(
+              color: hasText ? kPrimaryColor : kPrimaryColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-
         );
       },
     );
   }
 
-  Widget _buildSectionLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 12, left: 4), child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.0)));
+  Widget _buildSectionLabel(String text) => Padding(
+    padding: const EdgeInsets.only(bottom: 12, left: 4),
+    child: Text(
+      text,
+      style: const TextStyle(
+        fontSize: 10,
+        fontWeight: FontWeight.w900,
+        color: kBlack54,
+        letterSpacing: 1.0,
+      ),
+    ),
+  );
 
   List<Widget> _buildTemplateOptions(StateSetter setModalState) {
     final templates = [
-      {'index': 0, 'title': 'Classic Professional', 'icon': Icons.article_rounded, 'color': Colors.black},
-      {'index': 1, 'title': 'Modern Business', 'icon': Icons.receipt_long_rounded, 'color': const Color(0xFF2F7CF6)},
-      {'index': 2, 'title': 'Compact Receipt', 'icon': Icons.description_rounded, 'color': const Color(0xFF37474F)},
-      {'index': 3, 'title': 'Detailed Creative', 'icon': Icons.summarize_rounded, 'color': const Color(0xFF6A1B9A)},
+      {
+        'index': 0,
+        'title': 'Classic Professional',
+        'icon': Icons.article_rounded,
+        'color': Colors.black,
+      },
+      {
+        'index': 1,
+        'title': 'Modern Business',
+        'icon': Icons.receipt_long_rounded,
+        'color': const Color(0xFF2F7CF6),
+      },
+      {
+        'index': 2,
+        'title': 'Compact Receipt',
+        'icon': Icons.description_rounded,
+        'color': const Color(0xFF37474F),
+      },
+      {
+        'index': 3,
+        'title': 'Detailed Creative',
+        'icon': Icons.summarize_rounded,
+        'color': const Color(0xFF6A1B9A),
+      },
     ];
 
     return templates.map((template) {
@@ -1169,8 +1467,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         padding: const EdgeInsets.only(bottom: 10),
         child: InkWell(
           onTap: () {
-            setState(() => _selectedTemplate = InvoiceTemplate.values[template['index'] as int]);
-            setModalState(() => _selectedTemplate = InvoiceTemplate.values[template['index'] as int]);
+            setState(
+              () => _selectedTemplate =
+                  InvoiceTemplate.values[template['index'] as int],
+            );
+            setModalState(
+              () => _selectedTemplate =
+                  InvoiceTemplate.values[template['index'] as int],
+            );
           },
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -1184,19 +1488,30 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             ),
             child: Row(
               children: [
-                Icon(template['icon'] as IconData, color: isSelected ? template['color'] as Color : kBlack54, size: 24),
+                Icon(
+                  template['icon'] as IconData,
+                  color: isSelected ? template['color'] as Color : kBlack54,
+                  size: 24,
+                ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     template['title'] as String,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       color: isSelected ? template['color'] as Color : kBlack87,
                     ),
                   ),
                 ),
-                if (isSelected) Icon(Icons.check_circle_rounded, color: template['color'] as Color, size: 20),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: template['color'] as Color,
+                    size: 20,
+                  ),
               ],
             ),
           ),
@@ -1216,7 +1531,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       child: ListTile(
         dense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: kBlack87)),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: kBlack87,
+          ),
+        ),
         trailing: AppMiniSwitch(value: value, onChanged: onChanged),
       ),
     );
@@ -1239,7 +1561,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       await prefs.setBool('receipt_show_location', _showLocation);
 
       // Item Table Settings
-      await prefs.setBool('receipt_show_customer_details', _showCustomerDetails);
+      await prefs.setBool(
+        'receipt_show_customer_details',
+        _showCustomerDetails,
+      );
       await prefs.setBool('receipt_show_measuring_unit', _showMeasuringUnit);
       await prefs.setBool('receipt_show_mrp', _showMRP);
       await prefs.setBool('receipt_show_payment_mode', _showPaymentMode);
@@ -1249,7 +1574,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       // Footer Settings
       await prefs.setString('receipt_footer_description', _footerDescription);
-      await prefs.setString('quotation_footer_description', _quotationFooterDescription);
+      await prefs.setString(
+        'quotation_footer_description',
+        _quotationFooterDescription,
+      );
       if (_footerImageUrl != null) {
         await prefs.setString('receipt_footer_image', _footerImageUrl!);
       }
@@ -1258,28 +1586,31 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       try {
         final storeId = await FirestoreService().getCurrentStoreId();
         if (storeId != null) {
-          await FirebaseFirestore.instance.collection('store').doc(storeId).update({
-            'invoiceSettings': {
-              'template': _selectedTemplate.index,
-              'header': _receiptHeader,
-              'showLogo': _showLogo,
-              'showEmail': _showEmail,
-              'showPhone': _showPhone,
-              'showGST': _showGST,
-              'showLicense': _showLicenseNumber,
-              'showLocation': _showLocation,
-              'showCustomerDetails': _showCustomerDetails,
-              'showMeasuringUnit': _showMeasuringUnit,
-              'showMRP': _showMRP,
-              'showPaymentMode': _showPaymentMode,
-              'showTotalItems': _showTotalItems,
-              'showTotalQty': _showTotalQty,
-              'showSaveAmount': _showSaveAmountMessage,
-              'footerDescription': _footerDescription,
-              'footerImageUrl': _footerImageUrl,
-              'quotationFooter': _quotationFooterDescription,
-            }
-          });
+          await FirebaseFirestore.instance
+              .collection('store')
+              .doc(storeId)
+              .update({
+                'invoiceSettings': {
+                  'template': _selectedTemplate.index,
+                  'header': _receiptHeader,
+                  'showLogo': _showLogo,
+                  'showEmail': _showEmail,
+                  'showPhone': _showPhone,
+                  'showGST': _showGST,
+                  'showLicense': _showLicenseNumber,
+                  'showLocation': _showLocation,
+                  'showCustomerDetails': _showCustomerDetails,
+                  'showMeasuringUnit': _showMeasuringUnit,
+                  'showMRP': _showMRP,
+                  'showPaymentMode': _showPaymentMode,
+                  'showTotalItems': _showTotalItems,
+                  'showTotalQty': _showTotalQty,
+                  'showSaveAmount': _showSaveAmountMessage,
+                  'footerDescription': _footerDescription,
+                  'footerImageUrl': _footerImageUrl,
+                  'quotationFooter': _quotationFooterDescription,
+                },
+              });
         }
       } catch (e) {
         debugPrint('Error saving to Firestore: $e');
@@ -1287,7 +1618,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Receipt settings updated'), backgroundColor: kGoogleGreen, behavior: SnackBarBehavior.floating),
+          const SnackBar(
+            content: Text('Receipt settings updated'),
+            backgroundColor: kGoogleGreen,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     } catch (e) {
@@ -1295,7 +1630,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     }
   }
 
-  Widget _buildInvoiceByTemplate(InvoiceTemplate template, Map<String, Color> colors) {
+  Widget _buildInvoiceByTemplate(
+    InvoiceTemplate template,
+    Map<String, Color> colors,
+  ) {
     switch (template) {
       case InvoiceTemplate.classic:
         return _buildClassicLayout(colors);
@@ -1314,39 +1652,107 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   Map<String, Color> _getA4ThemeColors() {
     switch (_a4ColorTheme) {
       case 'gold':
-        return {'primary': const Color(0xFFC9A441), 'accent': const Color(0xFFD4B856), 'light': const Color(0xFFFDF8E8)};
+        return {
+          'primary': const Color(0xFFC9A441),
+          'accent': const Color(0xFFD4B856),
+          'light': const Color(0xFFFDF8E8),
+        };
       case 'lavender':
-        return {'primary': const Color(0xFF9A96D8), 'accent': const Color(0xFFB0ACE5), 'light': const Color(0xFFF3F2FC)};
+        return {
+          'primary': const Color(0xFF9A96D8),
+          'accent': const Color(0xFFB0ACE5),
+          'light': const Color(0xFFF3F2FC),
+        };
       case 'green':
-        return {'primary': const Color(0xFF1CB466), 'accent': const Color(0xFF2ECC7A), 'light': const Color(0xFFE6F9EF)};
+        return {
+          'primary': const Color(0xFF1CB466),
+          'accent': const Color(0xFF2ECC7A),
+          'light': const Color(0xFFE6F9EF),
+        };
       case 'brown':
-        return {'primary': const Color(0xFFAF4700), 'accent': const Color(0xFFC55A15), 'light': const Color(0xFFFEF3E8)};
+        return {
+          'primary': const Color(0xFFAF4700),
+          'accent': const Color(0xFFC55A15),
+          'light': const Color(0xFFFEF3E8),
+        };
       case 'blue':
-        return {'primary': const Color(0xFF6488E0), 'accent': const Color(0xFF7A9AEB), 'light': const Color(0xFFEEF3FC)};
+        return {
+          'primary': const Color(0xFF6488E0),
+          'accent': const Color(0xFF7A9AEB),
+          'light': const Color(0xFFEEF3FC),
+        };
       case 'peach':
-        return {'primary': const Color(0xFFFAA774), 'accent': const Color(0xFFFBB88A), 'light': const Color(0xFFFFF5EE)};
+        return {
+          'primary': const Color(0xFFFAA774),
+          'accent': const Color(0xFFFBB88A),
+          'light': const Color(0xFFFFF5EE),
+        };
       case 'red':
-        return {'primary': const Color(0xFFDB4747), 'accent': const Color(0xFFE56060), 'light': const Color(0xFFFDECEC)};
+        return {
+          'primary': const Color(0xFFDB4747),
+          'accent': const Color(0xFFE56060),
+          'light': const Color(0xFFFDECEC),
+        };
       case 'purple':
-        return {'primary': const Color(0xFF7A1FA2), 'accent': const Color(0xFF9333B5), 'light': const Color(0xFFF5E8F9)};
+        return {
+          'primary': const Color(0xFF7A1FA2),
+          'accent': const Color(0xFF9333B5),
+          'light': const Color(0xFFF5E8F9),
+        };
       case 'orange':
-        return {'primary': const Color(0xFFF45715), 'accent': const Color(0xFFF76E35), 'light': const Color(0xFFFEEDE6)};
+        return {
+          'primary': const Color(0xFFF45715),
+          'accent': const Color(0xFFF76E35),
+          'light': const Color(0xFFFEEDE6),
+        };
       case 'pink':
-        return {'primary': const Color(0xFFE2A9F1), 'accent': const Color(0xFFEBBCF6), 'light': const Color(0xFFFCF3FE)};
+        return {
+          'primary': const Color(0xFFE2A9F1),
+          'accent': const Color(0xFFEBBCF6),
+          'light': const Color(0xFFFCF3FE),
+        };
       case 'copper':
-        return {'primary': const Color(0xFFB36A22), 'accent': const Color(0xFFC47F3A), 'light': const Color(0xFFFBF2E8)};
+        return {
+          'primary': const Color(0xFFB36A22),
+          'accent': const Color(0xFFC47F3A),
+          'light': const Color(0xFFFBF2E8),
+        };
       case 'black':
-        return {'primary': const Color(0xFF000000), 'accent': const Color(0xFF333333), 'light': const Color(0xFFF5F5F5)};
+        return {
+          'primary': const Color(0xFF000000),
+          'accent': const Color(0xFF333333),
+          'light': const Color(0xFFF5F5F5),
+        };
       case 'olive':
-        return {'primary': const Color(0xFF9B9B6E), 'accent': const Color(0xFFADAD85), 'light': const Color(0xFFF6F6F0)};
+        return {
+          'primary': const Color(0xFF9B9B6E),
+          'accent': const Color(0xFFADAD85),
+          'light': const Color(0xFFF6F6F0),
+        };
       case 'navy':
-        return {'primary': const Color(0xFF2F6798), 'accent': const Color(0xFF4279AA), 'light': const Color(0xFFEAF1F7)};
+        return {
+          'primary': const Color(0xFF2F6798),
+          'accent': const Color(0xFF4279AA),
+          'light': const Color(0xFFEAF1F7),
+        };
       case 'grey':
-        return {'primary': const Color(0xFF737373), 'accent': const Color(0xFF8A8A8A), 'light': const Color(0xFFF2F2F2)};
+        return {
+          'primary': const Color(0xFF737373),
+          'accent': const Color(0xFF8A8A8A),
+          'light': const Color(0xFFF2F2F2),
+        };
       case 'forest':
-        return {'primary': const Color(0xFF4F6F1F), 'accent': const Color(0xFF628535), 'light': const Color(0xFFEFF3E7)};
+        return {
+          'primary': const Color(0xFF4F6F1F),
+          'accent': const Color(0xFF628535),
+          'light': const Color(0xFFEFF3E7),
+        };
       default:
-        return {'primary': const Color(0xFF6488E0), 'accent': const Color(0xFF7A9AEB), 'light': const Color(0xFFEEF3FC)};
+        return {
+          'primary': const Color(0xFF6488E0),
+          'accent': const Color(0xFF7A9AEB),
+          'light': const Color(0xFFEEF3FC),
+        };
     }
   }
 
@@ -1356,7 +1762,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   Widget _buildA4Preview(Map<String, Color> templateColors) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final availW = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width - 32;
+        final availW = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : MediaQuery.of(context).size.width - 32;
         // Scale factor: designed for 460px, shrinks on smaller screens
         final scale = (availW / 460).clamp(0.6, 1.0);
         return _buildA4PreviewContent(scale);
@@ -1374,346 +1782,745 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     // Scaled helpers
     double fs(double size) => size * scale;
     double sp(double size) => size * scale;
-    EdgeInsets hp(double h, double v) => EdgeInsets.symmetric(horizontal: sp(h), vertical: sp(v));
+    EdgeInsets hp(double h, double v) =>
+        EdgeInsets.symmetric(horizontal: sp(h), vertical: sp(v));
 
     return Center(
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 500),
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(25),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top accent strip — always visible at very top
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(maxWidth: 500),
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(25),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top accent strip — always visible at very top
+            Container(width: double.infinity, height: 4, color: themeColor),
+
+            // Header — white bsg, bottom divider, dark text
+            if (_a4ShowHeader)
               Container(
                 width: double.infinity,
-                height: 4,
-                color: themeColor,
-              ),
-
-              // Header — white bsg, bottom divider, dark text
-              if (_a4ShowHeader)
-                Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
-                    ),
-                  ),
-                  padding: hp(20, 14),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Logo
-                      if (_a4ShowLogo)
-                        Container(
-                          width: sp(46), height: sp(46),
-                          margin: EdgeInsets.only(right: sp(12)),
-                          decoration: BoxDecoration(
-                            color: themeColor.withAlpha(18),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: themeColor.withAlpha(60)),
-                          ),
-                          child: businessLogoUrl != null && businessLogoUrl!.isNotEmpty
-                              ? ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(businessLogoUrl!, fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Center(child: Text(businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B', style: TextStyle(fontSize: fs(20), fontWeight: FontWeight.w900, color: themeColor))),
-                            ),
-                          )
-                              : Center(child: Text(businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B', style: TextStyle(fontSize: fs(20), fontWeight: FontWeight.w900, color: themeColor))),
-                        ),
-                      // Business Info
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(businessName, style: TextStyle(fontSize: fs(15), fontWeight: FontWeight.w900, color: kBlack87), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            if (_showLocation && businessLocation.isNotEmpty)
-                              Text(businessLocation, style: TextStyle(fontSize: fs(10), color: kBlack54), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            if (_showPhone && businessPhone.isNotEmpty)
-                              Text('Tel: $businessPhone', style: TextStyle(fontSize: fs(10), color: kBlack54)),
-                            if (_showEmail && businessEmail != null && businessEmail!.isNotEmpty)
-                              Text('Email: $businessEmail', style: TextStyle(fontSize: fs(10), color: kBlack54), maxLines: 1, overflow: TextOverflow.ellipsis),
-                            if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty)
-                              Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w700, color: kBlack87)),
-                            if (_a4ShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty)
-                              Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w700, color: kBlack87)),
-                          ],
-                        ),
-                      ),
-                      SizedBox(width: sp(8)),
-                      // Invoice Info badge — small coloured tag
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: hp(8, 4),
-                            decoration: BoxDecoration(color: themeColor, borderRadius: BorderRadius.circular(4)),
-                            child: Text(widget.isQuotation ? 'Quotation' : 'Tax Invoice', style: TextStyle(color: Colors.white, fontSize: fs(9), fontWeight: FontWeight.w900)),
-                          ),
-                          SizedBox(height: sp(4)),
-                          Text('#${widget.invoiceNumber}', style: TextStyle(fontSize: fs(12), fontWeight: FontWeight.w700, color: kBlack87)),
-                          Text(dateStr, style: TextStyle(fontSize: fs(10), color: kBlack54)),
-                          Text(timeStr, style: TextStyle(fontSize: fs(10), color: kBlack54)),
-                        ],
-                      ),
-                    ],
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  border: Border(
+                    bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
                   ),
                 ),
-
-              // Content area
-              Padding(
-                padding: EdgeInsets.all(sp(16)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: hp(20, 14),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Customer Section — plain grey box, theme colour only for label
-                    if (_a4ShowCustomerInfo && widget.customerName != null) ...[
+                    // Logo
+                    if (_a4ShowLogo)
                       Container(
-                        padding: hp(12, 10),
+                        width: sp(46),
+                        height: sp(46),
+                        margin: EdgeInsets.only(right: sp(12)),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                          color: themeColor.withAlpha(18),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: themeColor.withAlpha(60)),
                         ),
-                        child: Row(
-                          children: [
-                            Text('Customer: ', style: TextStyle(fontSize: fs(12), fontWeight: FontWeight.w700, color: themeColor)),
-                            Expanded(child: Text(widget.customerName!, style: TextStyle(fontSize: fs(12), color: kBlack87), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                            if (widget.customerPhone != null)
-                              Text(' | Contact: ${widget.customerPhone}', style: TextStyle(fontSize: fs(11), color: kBlack54)),
-                          ],
-                        ),
+                        child:
+                            businessLogoUrl != null &&
+                                businessLogoUrl!.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  businessLogoUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Center(
+                                    child: Text(
+                                      businessName.isNotEmpty
+                                          ? businessName[0].toUpperCase()
+                                          : 'B',
+                                      style: TextStyle(
+                                        fontSize: fs(20),
+                                        fontWeight: FontWeight.w900,
+                                        color: themeColor,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  businessName.isNotEmpty
+                                      ? businessName[0].toUpperCase()
+                                      : 'B',
+                                  style: TextStyle(
+                                    fontSize: fs(20),
+                                    fontWeight: FontWeight.w900,
+                                    color: themeColor,
+                                  ),
+                                ),
+                              ),
                       ),
-                      SizedBox(height: sp(14)),
-                    ],
-
-                    // Items Table — keep as-is (table header uses themeColor — perfect)
-                    if (_a4ShowItemTable) ...[
-                      // Table Header
-                      Container(
-                        decoration: BoxDecoration(
-                          color: themeColor,
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
-                          border: Border.all(color: themeColor),
+                    // Business Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            businessName,
+                            style: TextStyle(
+                              fontSize: fs(15),
+                              fontWeight: FontWeight.w900,
+                              color: kBlack87,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (_showLocation && businessLocation.isNotEmpty)
+                            Text(
+                              businessLocation,
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                color: kBlack54,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          if (_showPhone && businessPhone.isNotEmpty)
+                            Text(
+                              'Tel: $businessPhone',
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                color: kBlack54,
+                              ),
+                            ),
+                          if (_showEmail &&
+                              businessEmail != null &&
+                              businessEmail!.isNotEmpty)
+                            Text(
+                              'Email: $businessEmail',
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                color: kBlack54,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          if (_showGST &&
+                              businessGSTIN != null &&
+                              businessGSTIN!.isNotEmpty)
+                            Text(
+                              '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                fontWeight: FontWeight.w700,
+                                color: kBlack87,
+                              ),
+                            ),
+                          if (_a4ShowLicense &&
+                              businessLicenseNumber != null &&
+                              businessLicenseNumber!.isNotEmpty)
+                            Text(
+                              '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                fontWeight: FontWeight.w700,
+                                color: kBlack87,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(width: sp(8)),
+                    // Invoice Info badge — small coloured tag
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: hp(8, 4),
+                          decoration: BoxDecoration(
+                            color: themeColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.isQuotation ? 'Quotation' : 'Tax Invoice',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: fs(9),
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 5,
-                              child: Padding(
-                                padding: hp(6, 8),
-                                child: Text('Item Description', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white)),
+                        SizedBox(height: sp(4)),
+                        Text(
+                          '#${widget.invoiceNumber}',
+                          style: TextStyle(
+                            fontSize: fs(12),
+                            fontWeight: FontWeight.w700,
+                            color: kBlack87,
+                          ),
+                        ),
+                        Text(
+                          dateStr,
+                          style: TextStyle(fontSize: fs(10), color: kBlack54),
+                        ),
+                        Text(
+                          timeStr,
+                          style: TextStyle(fontSize: fs(10), color: kBlack54),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+            // Content area
+            Padding(
+              padding: EdgeInsets.all(sp(16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Customer Section — plain grey box, theme colour only for label
+                  if (_a4ShowCustomerInfo && widget.customerName != null) ...[
+                    Container(
+                      padding: hp(12, 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Customer: ',
+                            style: TextStyle(
+                              fontSize: fs(12),
+                              fontWeight: FontWeight.w700,
+                              color: themeColor,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              widget.customerName!,
+                              style: TextStyle(
+                                fontSize: fs(12),
+                                color: kBlack87,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (widget.customerPhone != null)
+                            Text(
+                              ' | Contact: ${widget.customerPhone}',
+                              style: TextStyle(
+                                fontSize: fs(11),
+                                color: kBlack54,
                               ),
                             ),
-                            SizedBox(
-                              width: sp(34),
-                              child: Padding(
-                                padding: hp(2, 8),
-                                child: Text('QTY.', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: sp(14)),
+                  ],
+
+                  // Items Table — keep as-is (table header uses themeColor — perfect)
+                  if (_a4ShowItemTable) ...[
+                    // Table Header
+                    Container(
+                      decoration: BoxDecoration(
+                        color: themeColor,
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(6),
+                        ),
+                        border: Border.all(color: themeColor),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Padding(
+                              padding: hp(6, 8),
+                              child: Text(
+                                'Item Description',
+                                style: TextStyle(
+                                  fontSize: fs(10),
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
+                          ),
+                          SizedBox(
+                            width: sp(34),
+                            child: Padding(
+                              padding: hp(2, 8),
+                              child: Text(
+                                'QTY.',
+                                style: TextStyle(
+                                  fontSize: fs(10),
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            flex: 2,
+                            child: Padding(
+                              padding: hp(4, 8),
+                              child: Text(
+                                'Price',
+                                style: TextStyle(
+                                  fontSize: fs(10),
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          ),
+                          if (_a4ShowTaxColumn)
                             Expanded(
                               flex: 2,
                               child: Padding(
                                 padding: hp(4, 8),
-                                child: Text('Price', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
-                              ),
-                            ),
-                            if (_a4ShowTaxColumn)
-                              Expanded(
-                                flex: 2,
-                                child: Padding(
-                                  padding: hp(4, 8),
-                                  child: Text('Tax', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
+                                child: Text(
+                                  'Tax',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.right,
                                 ),
                               ),
-                            Expanded(
-                              flex: 2,
-                              child: Padding(
-                                padding: hp(6, 8),
-                                child: Text('Amount', style: TextStyle(fontSize: fs(10), fontWeight: FontWeight.w800, color: Colors.white), textAlign: TextAlign.right),
+                            ),
+                          Expanded(
+                            flex: 2,
+                            child: Padding(
+                              padding: hp(6, 8),
+                              child: Text(
+                                'Amount',
+                                style: TextStyle(
+                                  fontSize: fs(10),
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.right,
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Table Body — alternating white / very-light-grey (no theme tint)
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
+                        borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(6),
                         ),
                       ),
-                      // Table Body — alternating white / very-light-grey (no theme tint)
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(6)),
-                        ),
-                        child: Column(
-                          children: widget.items.asMap().entries.map((entry) {
-                            final idx = entry.key;
-                            final item = entry.value;
-                            final name = (item['name'] ?? 'Item') as String;
-                            final qty = item['quantity'] ?? 1;
-                            final rate = (item['price'] ?? item['rate'] ?? 0.0).toDouble();
-                            final taxPerc = (item['taxPercentage'] ?? 0).toDouble();
-                            final taxName = (item['taxName'] ?? '') as String;
-                            final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
-                            final taxType = item['taxType'] as String?;
-                            final baseTotal = rate * (qty is num ? qty.toDouble() : 1.0);
-                            // Compute amount respecting tax type
-                            final double amount;
-                            if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
-                              amount = baseTotal; // price already has tax
-                            } else if (taxType != null) {
-                              amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
-                            } else {
-                              amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
-                            }
-                            // Subtle alternating: white vs very-light-grey (no theme tint)
-                            final rowBg = idx.isEven ? Colors.white : const Color(0xFFF9FAFB);
-                            return Container(
-                              color: rowBg,
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    flex: 5,
-                                    child: Padding(
-                                      padding: hp(6, 8),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(name, style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kBlack87), maxLines: 3, overflow: TextOverflow.ellipsis),
-                                          if (taxName.isNotEmpty && taxPerc > 0)
-                                            Text('$taxName ${taxPerc.toStringAsFixed(0)}%', style: TextStyle(fontSize: fs(9), color: kBlack54)),
-                                        ],
-                                      ),
+                      child: Column(
+                        children: widget.items.asMap().entries.map((entry) {
+                          final idx = entry.key;
+                          final item = entry.value;
+                          final name = (item['name'] ?? 'Item') as String;
+                          final qty = item['quantity'] ?? 1;
+                          final rate = (item['price'] ?? item['rate'] ?? 0.0)
+                              .toDouble();
+                          final taxPerc = (item['taxPercentage'] ?? 0)
+                              .toDouble();
+                          final taxName = (item['taxName'] ?? '') as String;
+                          final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+                          final taxType = item['taxType'] as String?;
+                          final baseTotal =
+                              rate * (qty is num ? qty.toDouble() : 1.0);
+                          // Compute amount respecting tax type
+                          final double amount;
+                          if (taxType == 'Tax Included in Price' ||
+                              taxType == 'Price includes Tax') {
+                            amount = baseTotal; // price already has tax
+                          } else if (taxType != null) {
+                            amount =
+                                baseTotal +
+                                taxAmt; // add tax for 'Add Tax at Billing' etc.
+                          } else {
+                            amount = (item['total'] ?? baseTotal)
+                                .toDouble(); // fresh sale: total is already totalWithTax
+                          }
+                          // Subtle alternating: white vs very-light-grey (no theme tint)
+                          final rowBg = idx.isEven
+                              ? Colors.white
+                              : const Color(0xFFF9FAFB);
+                          return Container(
+                            color: rowBg,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  flex: 5,
+                                  child: Padding(
+                                    padding: hp(6, 8),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: TextStyle(
+                                            fontSize: fs(11),
+                                            fontWeight: FontWeight.w700,
+                                            color: kBlack87,
+                                          ),
+                                          maxLines: 3,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (taxName.isNotEmpty && taxPerc > 0)
+                                          Text(
+                                            '$taxName ${taxPerc.toStringAsFixed(0)}%',
+                                            style: TextStyle(
+                                              fontSize: fs(9),
+                                              color: kBlack54,
+                                            ),
+                                          ),
+                                      ],
                                     ),
                                   ),
-                                  SizedBox(
-                                    width: sp(34),
-                                    child: Padding(
-                                      padding: hp(2, 8),
-                                      child: Text(
-                                        qty is double && qty % 1 != 0 ? qty.toStringAsFixed(2) : '$qty',
-                                        style: TextStyle(fontSize: fs(11), color: kBlack87),
-                                        textAlign: TextAlign.center,
+                                ),
+                                SizedBox(
+                                  width: sp(34),
+                                  child: Padding(
+                                    padding: hp(2, 8),
+                                    child: Text(
+                                      qty is double && qty % 1 != 0
+                                          ? qty.toStringAsFixed(2)
+                                          : '$qty',
+                                      style: TextStyle(
+                                        fontSize: fs(11),
+                                        color: kBlack87,
                                       ),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Padding(
+                                    padding: hp(4, 8),
+                                    child: Text(
+                                      rate.toStringAsFixed(2),
+                                      style: TextStyle(
+                                        fontSize: fs(11),
+                                        color: kBlack87,
+                                      ),
+                                      textAlign: TextAlign.right,
+                                    ),
+                                  ),
+                                ),
+                                if (_a4ShowTaxColumn)
                                   Expanded(
                                     flex: 2,
                                     child: Padding(
                                       padding: hp(4, 8),
-                                      child: Text(rate.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), color: kBlack87), textAlign: TextAlign.right),
+                                      child: taxPerc > 0
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  taxAmt.toStringAsFixed(2),
+                                                  style: TextStyle(
+                                                    fontSize: fs(11),
+                                                    color: kBlack87,
+                                                  ),
+                                                  textAlign: TextAlign.right,
+                                                ),
+                                                Text(
+                                                  '(${taxPerc.toStringAsFixed(0)}%)',
+                                                  style: TextStyle(
+                                                    fontSize: fs(8),
+                                                    color: kBlack54,
+                                                  ),
+                                                  textAlign: TextAlign.right,
+                                                ),
+                                              ],
+                                            )
+                                          : Text(
+                                              '-',
+                                              style: TextStyle(
+                                                fontSize: fs(11),
+                                                color: kBlack54,
+                                              ),
+                                              textAlign: TextAlign.right,
+                                            ),
                                     ),
                                   ),
-                                  if (_a4ShowTaxColumn)
-                                    Expanded(
-                                      flex: 2,
-                                      child: Padding(
-                                        padding: hp(4, 8),
-                                        child: taxPerc > 0
-                                            ? Column(
-                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  Text(taxAmt.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), color: kBlack87), textAlign: TextAlign.right),
-                                                  Text('(${taxPerc.toStringAsFixed(0)}%)', style: TextStyle(fontSize: fs(8), color: kBlack54), textAlign: TextAlign.right),
-                                                ],
-                                              )
-                                            : Text('-', style: TextStyle(fontSize: fs(11), color: kBlack54), textAlign: TextAlign.right),
+                                Expanded(
+                                  flex: 2,
+                                  child: Padding(
+                                    padding: hp(6, 8),
+                                    // Keep theme colour on total amount — matches reference image
+                                    child: Text(
+                                      amount.toStringAsFixed(2),
+                                      style: TextStyle(
+                                        fontSize: fs(11),
+                                        fontWeight: FontWeight.w800,
+                                        color: themeColor,
                                       ),
-                                    ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Padding(
-                                      padding: hp(6, 8),
-                                      // Keep theme colour on total amount — matches reference image
-                                      child: Text(amount.toStringAsFixed(2), style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w800, color: themeColor), textAlign: TextAlign.right),
+                                      textAlign: TextAlign.right,
                                     ),
                                   ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                    SizedBox(height: sp(14)),
+                  ],
+
+                  // Totals Section
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // You Saved / Item count
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (_a4ShowYouSaved && widget.discount > 0)
+                              Container(
+                                padding: EdgeInsets.all(sp(8)),
+                                margin: EdgeInsets.only(bottom: sp(6)),
+                                decoration: BoxDecoration(
+                                  color: kGoogleGreen.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: kGoogleGreen.withAlpha(60),
+                                  ),
+                                ),
+                                child: Text(
+                                  '🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!',
+                                  style: TextStyle(
+                                    fontSize: fs(11),
+                                    fontWeight: FontWeight.w700,
+                                    color: kGoogleGreen,
+                                  ),
+                                ),
                               ),
-                            );
-                          }).toList(),
+                            if (_a4ShowTotalItemQuantity)
+                              Text(
+                                'Items: ${widget.items.length} | Qty: ${widget.items.fold<num>(0, (s, i) => s + ((i['quantity'] ?? 1) is int ? i['quantity'] : (i['quantity'] as num).toInt()))}',
+                                style: TextStyle(
+                                  fontSize: fs(11),
+                                  color: kBlack54,
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      SizedBox(height: sp(14)),
+                      SizedBox(width: sp(8)),
+                      // Totals Box — grey border, white bg, theme colour only on total row text
+                      Container(
+                        width: sp(180),
+                        padding: EdgeInsets.all(sp(10)),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFE5E7EB)),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildScaledTotalRow(
+                              'TOTAL',
+                              '$currency${_subtotalWithTax.toStringAsFixed(2)}',
+                              fs,
+                            ),
+                            _buildScaledTotalRow(
+                              'SUBTOTAL',
+                              '$currency${widget.subtotal.toStringAsFixed(2)}',
+                              fs,
+                            ),
+                            if (widget.discount > 0)
+                              _buildScaledTotalRow(
+                                'Discount',
+                                '-$currency${widget.discount.toStringAsFixed(2)}',
+                                fs,
+                                isGreen: true,
+                              ),
+                            if (_a4ShowTaxDetails && widget.taxes != null)
+                              ...widget.taxes!.map(
+                                (tax) => _buildScaledTotalRow(
+                                  tax['name'] ?? 'Tax',
+                                  '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
+                                  fs,
+                                ),
+                              ),
+                            _buildScaledTotalRow(
+                              'Total Tax',
+                              '$currency${_totalTaxAmount.toStringAsFixed(2)}',
+                              fs,
+                            ),
+                            if (widget.deliveryCharge > 0)
+                              _buildScaledTotalRow(
+                                'Delivery',
+                                '+$currency${widget.deliveryCharge.toStringAsFixed(2)}',
+                                fs,
+                              ),
+                            Divider(
+                              height: sp(14),
+                              color: const Color(0xFFE5E7EB),
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: fs(13),
+                                    fontWeight: FontWeight.w900,
+                                    color: themeColor,
+                                  ),
+                                ),
+                                Text(
+                                  '$currency${widget.total.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: fs(14),
+                                    fontWeight: FontWeight.w900,
+                                    color: themeColor,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
+                  ),
+                  SizedBox(height: sp(12)),
 
-                    // Totals Section
-                    Row(
+                  // Payment Mode — plain grey
+                  Container(
+                    padding: hp(10, 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFE5E7EB)),
+                    ),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // You Saved / Item count
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (_a4ShowYouSaved && widget.discount > 0)
-                                Container(
-                                  padding: EdgeInsets.all(sp(8)),
-                                  margin: EdgeInsets.only(bottom: sp(6)),
-                                  decoration: BoxDecoration(color: kGoogleGreen.withAlpha(20), borderRadius: BorderRadius.circular(6), border: Border.all(color: kGoogleGreen.withAlpha(60))),
-                                  child: Text('🎉 You Saved $currency${widget.discount.toStringAsFixed(2)}!', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kGoogleGreen)),
-                                ),
-                              if (_a4ShowTotalItemQuantity)
-                                Text(
-                                  'Items: ${widget.items.length} | Qty: ${widget.items.fold<num>(0, (s, i) => s + ((i['quantity'] ?? 1) is int ? i['quantity'] : (i['quantity'] as num).toInt()))}',
-                                  style: TextStyle(fontSize: fs(11), color: kBlack54),
-                                ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(width: sp(8)),
-                        // Totals Box — grey border, white bg, theme colour only on total row text
-                        Container(
-                          width: sp(180),
-                          padding: EdgeInsets.all(sp(10)),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: const Color(0xFFE5E7EB)),
-                          ),
-                          child: Column(
-                            children: [
-                              _buildScaledTotalRow('TOTAL', '$currency${_subtotalWithTax.toStringAsFixed(2)}', fs),
-                              _buildScaledTotalRow('SUBTOTAL', '$currency${widget.subtotal.toStringAsFixed(2)}', fs),
-                              if (widget.discount > 0)
-                                _buildScaledTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', fs, isGreen: true),
-                              if (_a4ShowTaxDetails && widget.taxes != null)
-                                ...widget.taxes!.map((tax) => _buildScaledTotalRow(tax['name'] ?? 'Tax', '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}', fs)),
-                              _buildScaledTotalRow('Total Tax', '$currency${_totalTaxAmount.toStringAsFixed(2)}', fs),
-                              if (widget.deliveryCharge > 0)
-                                _buildScaledTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', fs),
-                              Divider(height: sp(14), color: const Color(0xFFE5E7EB)),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Total', style: TextStyle(fontSize: fs(13), fontWeight: FontWeight.w900, color: themeColor)),
-                                  Text('$currency${widget.total.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(14), fontWeight: FontWeight.w900, color: themeColor)),
-                                ],
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.payment_rounded,
+                              size: fs(13),
+                              color: kBlack54,
+                            ),
+                            SizedBox(width: sp(6)),
+                            Text(
+                              widget.paymentMode != "quotation"
+                                  ? widget.paymentMode
+                                  : 'Paid via ${widget.paymentMode}',
+                              style: TextStyle(
+                                fontSize: fs(11),
+                                fontWeight: FontWeight.w700,
+                                color: kBlack87,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
+                        if (_isSplitPayment) ...[
+                          SizedBox(height: sp(6)),
+                          if (_splitCashAmount > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Cash',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kBlack54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '$currency${_splitCashAmount.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kGoogleGreen,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (_splitOnlineAmount > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Online',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kBlack54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '$currency${_splitOnlineAmount.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kPrimaryColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (_splitCreditAmount > 0)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Credit',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kBlack54,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '$currency${_splitCreditAmount.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: fs(10),
+                                    color: kOrange,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
                       ],
                     ),
-                    SizedBox(height: sp(12)),
+                  ),
 
-                    // Payment Mode — plain grey
+                  // Bill Notes — plain grey
+                  if (widget.customNote != null &&
+                      widget.customNote!.isNotEmpty) ...[
+                    SizedBox(height: sp(10)),
                     Container(
-                      padding: hp(10, 7),
+                      width: double.infinity,
+                      padding: EdgeInsets.all(sp(10)),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF7F8FA),
                         borderRadius: BorderRadius.circular(6),
@@ -1722,197 +2529,184 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.payment_rounded, size: fs(13), color: kBlack54),
-                              SizedBox(width: sp(6)),
-                              Text(
-                                widget.paymentMode != "quotation" ? widget.paymentMode : 'Paid via ${widget.paymentMode}',
-                                style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w700, color: kBlack87),
-                              ),
-                            ],
+                          Text(
+                            'Note:',
+                            style: TextStyle(
+                              fontSize: fs(11),
+                              fontWeight: FontWeight.bold,
+                              color: kBlack54,
+                            ),
                           ),
-                          if (_isSplitPayment) ...[
-                            SizedBox(height: sp(6)),
-                            if (_splitCashAmount > 0)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Cash', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
-                                  Text('$currency${_splitCashAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kGoogleGreen, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            if (_splitOnlineAmount > 0)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Online', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
-                                  Text('$currency${_splitOnlineAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kPrimaryColor, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            if (_splitCreditAmount > 0)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text('Credit', style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600)),
-                                  Text('$currency${_splitCreditAmount.toStringAsFixed(2)}', style: TextStyle(fontSize: fs(10), color: kOrange, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                          ],
+                          SizedBox(height: sp(3)),
+                          Text(
+                            widget.customNote!,
+                            style: TextStyle(fontSize: fs(11), color: kBlack87),
+                          ),
                         ],
                       ),
                     ),
+                  ],
 
-                    // Bill Notes — plain grey
-                    if (widget.customNote != null && widget.customNote!.isNotEmpty) ...[
-                      SizedBox(height: sp(10)),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(sp(10)),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Note:', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.bold, color: kBlack54)),
-                            SizedBox(height: sp(3)),
-                            Text(widget.customNote!, style: TextStyle(fontSize: fs(11), color: kBlack87)),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    // Delivery Address — plain grey
-                    if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
-                      SizedBox(height: sp(8)),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(sp(10)),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F8FA),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Delivery Address:', style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.bold, color: kBlack54)),
-                            SizedBox(height: sp(3)),
-                            Text(widget.deliveryAddress!, style: TextStyle(fontSize: fs(11), color: kBlack87)),
-                          ],
-                        ),
-                      ),
-                    ],
-
-                    if (_a4ShowSignature) ...[
-                      SizedBox(height: sp(16)),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: SizedBox(
-                          width: sp(170),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              SizedBox(height: sp(30)),
-                              Container(height: 1, color: kBlack54),
-                              SizedBox(height: sp(4)),
-                              Text(
-                                'Authorized Signature',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: fs(10), color: kBlack54, fontWeight: FontWeight.w600),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-
-                    SizedBox(height: sp(20)),
-
-                    // Footer — light grey bg, dark text, small theme accent
+                  // Delivery Address — plain grey
+                  if (widget.deliveryAddress != null &&
+                      widget.deliveryAddress!.isNotEmpty) ...[
+                    SizedBox(height: sp(8)),
                     Container(
                       width: double.infinity,
-                      padding: hp(16, 12),
+                      padding: EdgeInsets.all(sp(10)),
                       decoration: BoxDecoration(
                         color: const Color(0xFFF7F8FA),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border(left: BorderSide(color: themeColor, width: 4)),
+                        border: Border.all(color: const Color(0xFFE5E7EB)),
                       ),
-                      child: Center(
-                        child: Text(
-                          _a4SaleInvoiceText.isNotEmpty ? _a4SaleInvoiceText : 'Thank you for your business!',
-                          style: TextStyle(fontSize: fs(13), fontWeight: FontWeight.w700, color: kBlack87),
-                          textAlign: TextAlign.center,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Delivery Address:',
+                            style: TextStyle(
+                              fontSize: fs(11),
+                              fontWeight: FontWeight.bold,
+                              color: kBlack54,
+                            ),
+                          ),
+                          SizedBox(height: sp(3)),
+                          Text(
+                            widget.deliveryAddress!,
+                            style: TextStyle(fontSize: fs(11), color: kBlack87),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  if (_a4ShowSignature) ...[
+                    SizedBox(height: sp(16)),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: SizedBox(
+                        width: sp(170),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            SizedBox(height: sp(30)),
+                            Container(height: 1, color: kBlack54),
+                            SizedBox(height: sp(4)),
+                            Text(
+                              'Authorized Signature',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: fs(10),
+                                color: kBlack54,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ],
-                ),
+
+                  SizedBox(height: sp(20)),
+
+                  // Footer — light grey bg, dark text, small theme accent
+                  Container(
+                    width: double.infinity,
+                    padding: hp(16, 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF7F8FA),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border(
+                        left: BorderSide(color: themeColor, width: 4),
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        _a4SaleInvoiceText.isNotEmpty
+                            ? _a4SaleInvoiceText
+                            : 'Thank you for your business!',
+                        style: TextStyle(
+                          fontSize: fs(13),
+                          fontWeight: FontWeight.w700,
+                          color: kBlack87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ));
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Scaled total row for preview
-    Widget _buildScaledTotalRow(String label, String value, double Function(double) fs, {bool isGreen = false}) {
+  Widget _buildScaledTotalRow(
+    String label,
+    String value,
+    double Function(double) fs, {
+    bool isGreen = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontSize: fs(11), color: kBlack54, fontWeight: FontWeight.w600)),
-          Text(value, style: TextStyle(fontSize: fs(11), fontWeight: FontWeight.w800, color: isGreen ? kGoogleGreen : kBlack87)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: fs(11),
+              color: kBlack54,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: fs(11),
+              fontWeight: FontWeight.w800,
+              color: isGreen ? kGoogleGreen : kBlack87,
+            ),
+          ),
         ],
       ),
     );
-    }
+  }
 
-    bool get _isSplitPayment => widget.paymentMode.toLowerCase() == 'split';
+  bool get _isSplitPayment => widget.paymentMode.toLowerCase() == 'split';
 
-    double _safeAmount(dynamic value) {
+  double _safeAmount(dynamic value) {
     if (value is num) return value.toDouble();
     return double.tryParse(value?.toString() ?? '0') ?? 0.0;
-    }
+  }
 
-    double get _splitCashAmount {
+  double get _splitCashAmount {
     if (!_isSplitPayment) return 0.0;
     final explicit = _safeAmount(widget.cashReceived_split);
     if (explicit > 0) return explicit;
     return _safeAmount(widget.cashReceived);
-    }
+  }
 
-    double get _splitOnlineAmount {
+  double get _splitOnlineAmount {
     if (!_isSplitPayment) return 0.0;
     return _safeAmount(widget.onlineReceived_split);
-    }
+  }
 
-    double get _splitCreditAmount {
+  double get _splitCreditAmount {
     if (!_isSplitPayment) return 0.0;
     final explicit = _safeAmount(widget.creditIssued_split);
     if (explicit > 0) return explicit;
     final inferred = widget.total - _splitCashAmount - _splitOnlineAmount;
     return inferred > 0 ? inferred : 0.0;
-    }
+  }
 
   // ==========================================
   // THERMAL RECEIPT PREVIEW
   // ==========================================
   Widget _buildThermalPreview() {
-    final currency = _currencySymbol;
-    final dateStr = DateFormat('dd - MMM - yyyy').format(widget.dateTime);
-    final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
-
-    // Calculate total quantity
-    final totalQty = widget.items.fold<num>(0, (sum, item) => sum + ((item['quantity'] ?? 1) is int ? item['quantity'] : (item['quantity'] as num).toInt()));
-
-    // Helper: thermal text style with monospace for authentic thermal receipt look
-    TextStyle tStyle({double size = 10, FontWeight weight = FontWeight.normal, Color color = kBlack87}) =>
-        TextStyle(fontSize: size, fontWeight: weight, color: color, fontFamily: 'monospace', letterSpacing: -0.2);
-
     return Center(
       child: Container(
         width: double.infinity,
@@ -1922,389 +2716,644 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           color: const Color(0xFFFDFDFB), // Soft receipt-paper color
           borderRadius: BorderRadius.circular(2),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 8)),
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // ========== HEADER SECTION ==========
-            // Logo - Always show if available
-            if (_thermalShowLogo) ...[
-              if (businessLogoUrl != null && businessLogoUrl!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: Image.network(
-                      businessLogoUrl!,
-                      height: 60,
-                      width: 60,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 60,
-                        width: 60,
-                        decoration: BoxDecoration(
-                          color: kGrey200,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Icon(Icons.store, color: kBlack54, size: 30),
-                      ),
-                    ),
-                  ),
-                )
-              else
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Container(
+        child: _buildThermalReceiptContent(false),
+      ),
+    );
+  }
+
+  Widget _buildThermalReceiptContent(bool forPrint, {bool is80mm = false}) {
+    final currency = _currencySymbol;
+    final dateStr = DateFormat('dd - MMM - yyyy').format(widget.dateTime);
+    final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
+
+    // Calculate total quantity
+    final totalQty = widget.items.fold<num>(
+      0,
+      (sum, item) =>
+          sum +
+          ((item['quantity'] ?? 1) is int
+              ? item['quantity']
+              : (item['quantity'] as num).toInt()),
+    );
+
+    final double scale = forPrint ? (is80mm ? 2.25 : 1.5) : 1.35;
+
+    // Helper: thermal text style with Roboto font
+    TextStyle tStyle({
+      double size = 10,
+      FontWeight weight = FontWeight.normal,
+      Color color = kBlack87,
+    }) => TextStyle(
+      fontSize: size * scale,
+      fontWeight: weight,
+      color: forPrint ? Colors.black : color,
+      fontFamily: 'Roboto',
+      letterSpacing: -0.2,
+    );
+
+    return Container(
+      color: Colors.white,
+      width: forPrint ? (is80mm ? 576 : 384) : (is80mm ? 380.0 : 280.0),
+      padding: forPrint ? EdgeInsets.all(12 * scale) : EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // ========== HEADER SECTION ==========
+          // Logo - Always show if available
+          if (_thermalShowLogo) ...[
+            if (businessLogoUrl != null && businessLogoUrl!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: Image.network(
+                    businessLogoUrl!,
                     height: 60,
                     width: 60,
-                    decoration: BoxDecoration(
-                      color: kGrey200,
-                      borderRadius: BorderRadius.circular(4),
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 60,
+                      width: 60,
+                      decoration: BoxDecoration(
+                        color: kGrey200,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Icon(Icons.store, color: kBlack54, size: 30),
                     ),
-                    child: Center(
-                      child: Text(
-                        businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B',
-                        style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: kBlack87),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Container(
+                  height: 60,
+                  width: 60,
+                  decoration: BoxDecoration(
+                    color: kGrey200,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Center(
+                    child: Text(
+                      businessName.isNotEmpty
+                          ? businessName[0].toUpperCase()
+                          : 'B',
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: kBlack87,
                       ),
                     ),
                   ),
                 ),
-            ],
-
-            // Business Name (Bold, Large)
-            if (_thermalShowHeader) ...[
-              Text(
-                businessName,
-                style: tStyle(size: 14, weight: FontWeight.w900),
-                textAlign: TextAlign.center,
               ),
-              if (_showLocation && businessLocation.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(businessLocation, style: tStyle(size: 9), textAlign: TextAlign.center),
-                ),
-              if (_showPhone && businessPhone.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text('PHONE: $businessPhone', style: tStyle(size: 9), textAlign: TextAlign.center),
-                ),
-              if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
-                      style: tStyle(size: 9, weight: FontWeight.w600), textAlign: TextAlign.center),
-                ),
-              if (_thermalShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
-                      style: tStyle(size: 9, weight: FontWeight.w600), textAlign: TextAlign.center),
-                ),
-            ],
+          ],
 
-            const SizedBox(height: 12),
-
-            // ========== BILL NO & DATE ROW ==========
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Date: $dateStr', style: tStyle(size: 9, weight: FontWeight.w600)),
-                    Text('Time: $timeStr', style: tStyle(size: 9, weight: FontWeight.w600)),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text('Bill No: ${widget.invoiceNumber}', style: tStyle(size: 9, weight: FontWeight.w600)),
-              ],
+          // Business Name (Bold, Large)
+          if (_thermalShowHeader) ...[
+            Text(
+              businessName,
+              style: tStyle(size: 15, weight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-
-            // ========== CUSTOMER INFO ==========
-            if (_thermalShowCustomerInfo && widget.customerName != null) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: kBlack54, width: 1),
-                    bottom: BorderSide(color: kBlack54, width: 1),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Customer: ${widget.customerName}', style: tStyle(size: 9, weight: FontWeight.w600)),
-                    if (widget.customerPhone != null)
-                      Text('Contact: ${widget.customerPhone}', style: tStyle(size: 9, color: kBlack54)),
-                    if (widget.customerGSTIN != null && widget.customerGSTIN!.isNotEmpty)
-                      Text('Tax: ${widget.customerGSTIN}', style: tStyle(size: 9, color: kBlack54)),
-                  ],
+            if (_showLocation && businessLocation.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  businessLocation,
+                  style: tStyle(size: 9),
+                  textAlign: TextAlign.center,
                 ),
               ),
-            ],
-
-            const SizedBox(height: 8),
-
-            // ========== ITEMS TABLE ==========
-            if (_thermalShowItemTable) ...[
-              // Items Table Header
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: kBlack87, width: 1.5),
-                    bottom: BorderSide(color: kBlack87, width: 1),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(flex: 4, child: Text('Item', style: tStyle(size: 9, weight: FontWeight.w800))),
-                    SizedBox(width: 32, child: Text('Qty', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.center)),
-                    Expanded(flex: 2, child: Text('Price', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
-                    Expanded(flex: 2, child: Text('Tax%', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
-                    Expanded(flex: 2, child: Text('Total', style: tStyle(size: 9, weight: FontWeight.w800), textAlign: TextAlign.right)),
-                  ],
+            if (_showPhone && businessPhone.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'PHONE: $businessPhone',
+                  style: tStyle(size: 9),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              // Items List
-              ...widget.items.asMap().entries.map((entry) {
-                final item = entry.value;
-                final name = item['name'] ?? 'Item';
-                final qty = item['quantity'] ?? 1;
-                final price = (item['price'] ?? 0.0).toDouble();
-                final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
-                final taxType = item['taxType'] as String?;
-                final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
-                // Compute amount respecting tax type
-                final double amount;
-                if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
-                  amount = baseTotal; // price already has tax
-                } else if (taxType != null) {
-                  amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
-                } else {
-                  amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
-                }
+            if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
+                  style: tStyle(size: 9, weight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            if (_thermalShowLicense &&
+                businessLicenseNumber != null &&
+                businessLicenseNumber!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
+                  style: tStyle(size: 9, weight: FontWeight.w600),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+          ],
 
-                final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
-                final taxStr = taxPct > 0 ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%' : '0%';
+          const SizedBox(height: 12),
 
-                final isLengthy = name.toString().length > 11;
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: kGrey300, width: 0.5))),
-                  child: isLengthy
-                      ? Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(name, style: tStyle(size: 9)),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Expanded(flex: 4, child: SizedBox()),
-                                SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
-                                Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                                Expanded(flex: 2, child: Text(taxStr, style: tStyle(size: 9), textAlign: TextAlign.right)),
-                                Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                              ],
-                            ),
-                          ],
-                        )
-                      : Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(flex: 4, child: Text(name, style: tStyle(size: 9))),
-                            SizedBox(width: 32, child: Text(_formatQty(qty), style: tStyle(size: 9), textAlign: TextAlign.center)),
-                            Expanded(flex: 2, child: Text(_formatDecimal(price), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                            Expanded(flex: 2, child: Text(taxStr, style: tStyle(size: 9), textAlign: TextAlign.right)),
-                            Expanded(flex: 2, child: Text(_formatDecimal(amount), style: tStyle(size: 9), textAlign: TextAlign.right)),
-                          ],
-                        ),
-                );
-              }),
-            ],
-
-            // ========== SUBTOTAL ROW ==========
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: const BoxDecoration(border: Border(top: BorderSide(color: kBlack87, width: 1))),
-              child: Column(
+          // ========== BILL NO & DATE ROW ==========
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('TOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
-                      Text('${_formatDecimal(_subtotalWithTax)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
-                    ],
+                  Text(
+                    dateStr,
+                    style: tStyle(size: 9, weight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('SUBTOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
-                      Text('${_formatDecimal(widget.subtotal)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
-                    ],
+                  Text(
+                    timeStr,
+                    style: tStyle(size: 9, weight: FontWeight.w600),
                   ),
-                  if (_totalTaxAmount > 0) ...[
-                    const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Total Tax', style: tStyle(size: 10, weight: FontWeight.w600)),
-                        Text('${_formatDecimal(_totalTaxAmount)}', style: tStyle(size: 10, weight: FontWeight.w600), textAlign: TextAlign.right),
-                      ],
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Bill No: ${widget.invoiceNumber}',
+                style: tStyle(size: 9, weight: FontWeight.w600),
+              ),
+            ],
+          ),
+
+          // ========== CUSTOMER INFO ==========
+          if (_thermalShowCustomerInfo && widget.customerName != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              decoration: const BoxDecoration(
+                border: Border(
+                  top: BorderSide(color: kBlack54, width: 1),
+                  bottom: BorderSide(color: kBlack54, width: 1),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Customer: ${widget.customerName}',
+                    style: tStyle(size: 9, weight: FontWeight.w600),
+                  ),
+                  if (widget.customerPhone != null)
+                    Text(
+                      'Contact: ${widget.customerPhone}',
+                      style: tStyle(size: 9, color: kBlack54),
                     ),
-                  ],
+                  if (widget.customerGSTIN != null &&
+                      widget.customerGSTIN!.isNotEmpty)
+                    Text(
+                      'Tax: ${widget.customerGSTIN}',
+                      style: tStyle(size: 9, color: kBlack54),
+                    ),
                 ],
               ),
             ),
+          ],
 
-            // ========== DISCOUNT ==========
-            if (widget.discount > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Discount', style: tStyle(size: 9, color: kBlack54)),
-                    Text('-${_formatDecimal(widget.discount)}', style: tStyle(size: 9, weight: FontWeight.w600)),
-                  ],
-                ),
-              ),
-            // ========== DELIVERY CHARGE ==========
-            if (widget.deliveryCharge > 0)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text('Delivery Charge', style: tStyle(size: 9, color: kBlack54)),
-                    Text('+${_formatDecimal(widget.deliveryCharge)}', style: tStyle(size: 9, weight: FontWeight.w600)),
-                  ],
-                ),
-              ),
+          const SizedBox(height: 8),
 
-            // ========== GRAND TOTAL ==========
+          // ========== ITEMS TABLE ==========
+          if (_thermalShowItemTable) ...[
+            // Items Table Header
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(vertical: 6),
               decoration: const BoxDecoration(
                 border: Border(
                   top: BorderSide(color: kBlack87, width: 1.5),
-                  bottom: BorderSide(color: kBlack87, width: 1.5),
+                  bottom: BorderSide(color: kBlack87, width: 1),
                 ),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Total', style: tStyle(size: 15, weight: FontWeight.w900)),
-                  Text('$currency ${_formatDecimal(widget.total)}', style: tStyle(size: 15, weight: FontWeight.w900)),
+                  Expanded(
+                    flex: 5,
+                    child: Text(
+                      'Item',
+                      style: tStyle(size: 9, weight: FontWeight.w800),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 3,
+                    child: Text(
+                      'Qty',
+                      style: tStyle(size: 9, weight: FontWeight.w800),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      'Price',
+                      style: tStyle(size: 9, weight: FontWeight.w800),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                  if (_thermalShowTaxColumn)
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        'Tax%',
+                        style: tStyle(size: 9, weight: FontWeight.w800),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      'Total',
+                      style: tStyle(size: 9, weight: FontWeight.w800),
+                      textAlign: TextAlign.right,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Items List
+            ...widget.items.asMap().entries.map((entry) {
+              final item = entry.value;
+              final name = item['name'] ?? 'Item';
+              final qty = item['quantity'] ?? 1;
+              final price = (item['price'] ?? 0.0).toDouble();
+              final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+              final taxType = item['taxType'] as String?;
+              final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
+              // Compute amount respecting tax type
+              final double amount;
+              if (taxType == 'Tax Included in Price' ||
+                  taxType == 'Price includes Tax') {
+                amount = baseTotal; // price already has tax
+              } else if (taxType != null) {
+                amount =
+                    baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
+              } else {
+                amount = (item['total'] ?? baseTotal)
+                    .toDouble(); // fresh sale: total is already totalWithTax
+              }
+
+              final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+              final taxStr = taxPct > 0
+                  ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%'
+                  : '0%';
+
+              final isLengthy = name.toString().length > 11;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(color: kGrey300, width: 0.5),
+                  ),
+                ),
+                child: isLengthy
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: tStyle(size: 9)),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Expanded(flex: 5, child: SizedBox()),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  _formatQty(qty),
+                                  style: tStyle(size: 8),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                              Expanded(
+                                flex: 4,
+                                child: Text(
+                                  _formatDecimal(price),
+                                  style: tStyle(size: 8),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                              if (_thermalShowTaxColumn)
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    taxStr,
+                                    style: tStyle(size: 8),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
+                              Expanded(
+                                flex: 4,
+                                child: Text(
+                                  _formatDecimal(amount),
+                                  style: tStyle(size: 8),
+                                  textAlign: TextAlign.right,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 5,
+                            child: Text(name, style: tStyle(size: 9)),
+                          ),
+                          Expanded(
+                            flex: 3,
+                            child: Text(
+                              _formatQty(qty),
+                              style: tStyle(size: 8),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          Expanded(
+                            flex: 4,
+                            child: Text(
+                              _formatDecimal(price),
+                              style: tStyle(size: 8),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                          if (_thermalShowTaxColumn)
+                            Expanded(
+                              flex: 3,
+                              child: Text(
+                                taxStr,
+                                style: tStyle(size: 8),
+                                textAlign: TextAlign.right,
+                              ),
+                            ),
+                          Expanded(
+                            flex: 4,
+                            child: Text(
+                              _formatDecimal(amount),
+                              style: tStyle(size: 8),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        ],
+                      ),
+              );
+            }),
+          ],
+
+          // ========== SUBTOTAL ROW ==========
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: kBlack87, width: 1)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('TOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
+                Text(
+                  '${_formatDecimal(_subtotalWithTax)}',
+                  style: tStyle(size: 10, weight: FontWeight.w600),
+                  textAlign: TextAlign.right,
+                ),
+              ],
+            ),
+          ),
+
+          // ========== ROW DIVISION (SUBTOTAL & TAX) ==========
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: kBlack87, width: 1)),
+            ),
+            child: Table(
+              columnWidths: const {
+                0: FlexColumnWidth(4),
+                1: FixedColumnWidth(10),
+                2: FlexColumnWidth(4),
+              },
+              children: [
+                TableRow(
+                  children: [
+                    Text(
+                      'Subtotal',
+                      style: tStyle(size: 10, weight: FontWeight.w600),
+                    ),
+                    Text(
+                      ':',
+                      style: tStyle(size: 10, weight: FontWeight.w600),
+                      textAlign: TextAlign.center,
+                    ),
+                    Text(
+                      '${_formatDecimal(_subtotalWithTax - _totalTaxAmount)}',
+                      style: tStyle(size: 10, weight: FontWeight.w600),
+                      textAlign: TextAlign.right,
+                    ),
+                  ],
+                ),
+                if (_totalTaxAmount > 0)
+                  TableRow(
+                    children: [
+                      Text(
+                        'Total Tax',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                      ),
+                      Text(
+                        ':',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '${_formatDecimal(_totalTaxAmount)}',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.right,
+                      ),
+                    ],
+                  ),
+                if (widget.discount > 0)
+                  TableRow(
+                    children: [
+                      Text(
+                        'Discount',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                      ),
+                      Text(
+                        ':',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '-${_formatDecimal(widget.discount)}',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.right,
+                      ),
+                    ],
+                  ),
+                if (widget.deliveryCharge > 0)
+                  TableRow(
+                    children: [
+                      Text(
+                        'Delivery Charge',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                      ),
+                      Text(
+                        ':',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '+${_formatDecimal(widget.deliveryCharge)}',
+                        style: tStyle(size: 10, weight: FontWeight.w600),
+                        textAlign: TextAlign.right,
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+
+          // ========== GRAND TOTAL ==========
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: const BoxDecoration(
+              border: Border(
+                top: BorderSide(color: kBlack87, width: 1),
+                bottom: BorderSide(color: kBlack87, width: 1),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'Total: $currency ${_formatDecimal(widget.total)}',
+                style: tStyle(size: 15, weight: FontWeight.w900),
+              ),
+            ),
+          ),
+
+          // ========== TAX DETAILS TABLE ==========
+          if (_thermalShowTaxDetails) _buildUiTaxDetailsTable(tStyle),
+
+          // ========== PAYMENT MODE ==========
+          if (_showPaymentMode)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Payment Mode: ${widget.paymentMode}',
+                    style: tStyle(size: 10, weight: FontWeight.w800),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (_isSplitPayment) ...[
+                    const SizedBox(height: 4),
+                    if (_splitCashAmount > 0)
+                      Text(
+                        'Cash: $currency ${_formatDecimal(_splitCashAmount)}',
+                        style: tStyle(
+                          size: 9,
+                          weight: FontWeight.w700,
+                          color: kGoogleGreen,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    if (_splitOnlineAmount > 0)
+                      Text(
+                        'Online: $currency ${_formatDecimal(_splitOnlineAmount)}',
+                        style: tStyle(
+                          size: 9,
+                          weight: FontWeight.w700,
+                          color: kPrimaryColor,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    if (_splitCreditAmount > 0)
+                      Text(
+                        'Credit: $currency ${_formatDecimal(_splitCreditAmount)}',
+                        style: tStyle(
+                          size: 9,
+                          weight: FontWeight.w700,
+                          color: kOrange,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                  ],
                 ],
               ),
             ),
 
-            // ========== TAX DETAILS TABLE ==========
-            if (_thermalShowTaxDetails)
-              _buildUiTaxDetailsTable(tStyle),
-
-            // ========== PAYMENT MODE ==========
-            if (_showPaymentMode)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text('Payment:', style: tStyle(size: 9, color: kBlack54)),
-                        Text(widget.paymentMode, style: tStyle(size: 9, weight: FontWeight.w700)),
-                      ],
-                    ),
-                    if (_isSplitPayment) ...[
-                      if (_splitCashAmount > 0)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Cash', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_formatDecimal(_splitCashAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kGoogleGreen)),
-                          ],
-                        ),
-                      if (_splitOnlineAmount > 0)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Online', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_formatDecimal(_splitOnlineAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kPrimaryColor)),
-                          ],
-                        ),
-                      if (_splitCreditAmount > 0)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Credit', style: tStyle(size: 8, color: kBlack54)),
-                            Text('$currency ${_formatDecimal(_splitCreditAmount)}', style: tStyle(size: 8, weight: FontWeight.w700, color: kOrange)),
-                          ],
-                        ),
-                    ],
-                  ],
-                ),
+          // ========== YOU SAVED ==========
+          if (_thermalShowYouSaved && widget.discount > 0) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+              decoration: BoxDecoration(
+                color: kGrey200,
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: kBlack54),
               ),
-
-            // ========== YOU SAVED ==========
-            if (_thermalShowYouSaved && widget.discount > 0) ...[
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(6), border: Border.all(color: kBlack54)),
-                child: Text('🎉 You Saved $currency${_formatDecimal(widget.discount)}!', style: tStyle(size: 9, weight: FontWeight.w700)),
+              child: Text(
+                '🎉 You Saved $currency${_formatDecimal(widget.discount)}!',
+                style: tStyle(size: 9, weight: FontWeight.w700),
               ),
-            ],
-
-            // ========== TOTAL ITEMS/QTY ==========
-            if (_thermalShowTotalItemQuantity) ...[
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text('Items: ${widget.items.length}', style: tStyle(size: 8, color: kBlack54)),
-                  Text(' | ', style: tStyle(size: 8, color: kBlack54)),
-                  Text('Qty: ${totalQty.toInt()}', style: tStyle(size: 8, color: kBlack54)),
-                ],
-              ),
-            ],
-
-            // ========== DELIVERY ADDRESS ==========
-            if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: kGrey200, borderRadius: BorderRadius.circular(6), border: Border.all(color: kGrey300)),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Customer Notes:', style: tStyle(size: 8, weight: FontWeight.w700)),
-                    const SizedBox(height: 2),
-                    Text(widget.deliveryAddress!, style: tStyle(size: 8)),
-                  ],
-                ),
-              ),
-            ],
-
-            // ========== FOOTER ==========
-            const SizedBox(height: 12),
-            Text(
-              _thermalSaleInvoiceText.isNotEmpty ? _thermalSaleInvoiceText : 'Thank You',
-              style: tStyle(size: 10, weight: FontWeight.w700),
-              textAlign: TextAlign.center,
             ),
           ],
-        ),
+
+          // ========== TOTAL ITEMS/QTY ==========
+          if (_thermalShowTotalItemQuantity) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Items: ${widget.items.length}',
+                  style: tStyle(size: 8, color: kBlack54),
+                ),
+                Text(' | ', style: tStyle(size: 8, color: kBlack54)),
+                Text(
+                  'Qty: ${totalQty.toInt()}',
+                  style: tStyle(size: 8, color: kBlack54),
+                ),
+              ],
+            ),
+          ],
+
+          // ========== DELIVERY ADDRESS ==========
+          if (widget.deliveryAddress != null &&
+              widget.deliveryAddress!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(4),
+              child: Text('Delivery: ${widget.deliveryAddress}', style: tStyle(size: 9)),
+            ),
+          ],
+
+          // ========== FOOTER ==========
+          const SizedBox(height: 12),
+          Text(
+            _thermalSaleInvoiceText.isNotEmpty
+                ? _thermalSaleInvoiceText
+                : 'Thank You',
+            style: tStyle(size: 10, weight: FontWeight.w700),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
@@ -2330,34 +3379,56 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     );
   }
 
-
-
   // Template Layouts
   Widget _buildClassicLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('Classic Layout', style: TextStyle(fontSize: 14))),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors['primary']!, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: Text('Classic Layout', style: TextStyle(fontSize: 14)),
+      ),
     );
   }
 
   Widget _buildModernLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('Modern Layout', style: TextStyle(fontSize: 14))),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors['primary']!, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: Text('Modern Layout', style: TextStyle(fontSize: 14)),
+      ),
     );
   }
 
   Widget _buildCompactLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('Compact Layout', style: TextStyle(fontSize: 14))),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors['primary']!, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: Text('Compact Layout', style: TextStyle(fontSize: 14)),
+      ),
     );
   }
 
   Widget _buildDetailedLayout(Map<String, Color> colors) {
     return Container(
-      decoration: BoxDecoration(border: Border.all(color: colors['primary']!, width: 1.5), color: Colors.white, borderRadius: BorderRadius.circular(4)),
-      child: const Center(child: Text('Detailed Layout', style: TextStyle(fontSize: 14))),
+      decoration: BoxDecoration(
+        border: Border.all(color: colors['primary']!, width: 1.5),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: const Center(
+        child: Text('Detailed Layout', style: TextStyle(fontSize: 14)),
+      ),
     );
   }
 
@@ -2368,19 +3439,38 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black.withAlpha(15), blurRadius: 10, offset: const Offset(0, -5))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(15),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            _buildBtn(Icons.print_rounded, "Print", () => _handlePrint(context), true),
+            _buildBtn(
+              Icons.print_rounded,
+              "Print",
+              () => _handlePrint(context),
+              true,
+            ),
             const SizedBox(width: 12),
-            _buildBtn(Icons.share_rounded, "Share", () => _handleShare(context), true),
+            _buildBtn(
+              Icons.share_rounded,
+              "Share",
+              () => _handleShare(context),
+              true,
+            ),
             const SizedBox(width: 12),
             _buildBtn(Icons.add_rounded, "New Sale", () {
               Navigator.pushAndRemoveUntil(
                 context,
-                CupertinoPageRoute(builder: (context) => NewSalePage(uid: widget.uid, userEmail: widget.userEmail)),
-                    (route) => false,
+                CupertinoPageRoute(
+                  builder: (context) =>
+                      NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
+                ),
+                (route) => false,
               );
             }, false),
           ],
@@ -2389,7 +3479,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     );
   }
 
-  Widget _buildBtn(IconData icon, String label, VoidCallback onTap, bool isSec) {
+  Widget _buildBtn(
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+    bool isSec,
+  ) {
     return Expanded(
       child: ElevatedButton(
         onPressed: onTap,
@@ -2400,7 +3495,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
-            side: isSec ? const BorderSide(color: kPrimaryColor, width: 1.5) : BorderSide.none,
+            side: isSec
+                ? const BorderSide(color: kPrimaryColor, width: 1.5)
+                : BorderSide.none,
           ),
         ),
         child: Row(
@@ -2408,7 +3505,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           children: [
             Icon(icon, size: 18),
             const SizedBox(width: 6),
-            Text(label, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+            ),
           ],
         ),
       ),
@@ -2418,7 +3523,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   // Print Handler
   Future<void> _handlePrint(BuildContext context) async {
     try {
-      BluetoothAdapterState adapterState = await FlutterBluePlus.adapterState.first;
+      BluetoothAdapterState adapterState =
+          await FlutterBluePlus.adapterState.first;
       if (adapterState == BluetoothAdapterState.off) {
         if (Platform.isAndroid) {
           try {
@@ -2437,17 +3543,53 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             context: context,
             builder: (ctx) => AlertDialog(
               backgroundColor: kWhite,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              title: const Text('Bluetooth Required', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: kBlack87)),
-              content: const Text('Bluetooth is currently disabled. Please enable it in settings to connect with your printer.', style: TextStyle(color: kBlack54, fontWeight: FontWeight.w500)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Text(
+                'Bluetooth Required',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: kBlack87,
+                ),
+              ),
+              content: const Text(
+                'Bluetooth is currently disabled. Please enable it in settings to connect with your printer.',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  color: kBlack54,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK', style: TextStyle(fontWeight: FontWeight.w800, color: kPrimaryColor))),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w800,
+                      color: kPrimaryColor,
+                    ),
+                  ),
+                ),
               ],
             ),
           );
         }
         return;
       }
+
+      // ────────────────────────────────────────────────────────────────────────
+      // NEW RASTER IMAGE PRINTER ENGINE (REMOVED)
+      // ────────────────────────────────────────────────────────────────────────
+      // if (_thermalUseImagePrinting) {
+      //   await _handleImagePrint(context);
+      //   return;
+      // }
+      // ────────────────────────────────────────────────────────────────────────
 
       showDialog(
         context: context,
@@ -2462,7 +3604,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 children: [
                   CircularProgressIndicator(color: kPrimaryColor),
                   SizedBox(height: 16),
-                  Text('PRINTING...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: kPrimaryColor)),
+                  Text(
+                    'PRINTING...',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: kPrimaryColor,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -2503,7 +3653,7 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       // 58mm → Font A, 32 chars/line (more reliable across printers)
       final bool is80mm = printerWidth == '80mm';
       final int lineWidth = ThermalPrinterConfig.charsPerLine(printerWidth);
-      final String dividerLine = '=' * lineWidth;
+      final String dividerLine = '-' * lineWidth;
       final String thinDivider = '-' * lineWidth;
 
       if (selectedPrinterId == null) {
@@ -2511,7 +3661,10 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         if (context.mounted) {
           final result = await Navigator.push(
             context,
-            CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
+            CupertinoPageRoute(
+              builder: (_) =>
+                  PrinterSetupPage(onBack: () => Navigator.pop(context)),
+            ),
           );
           // If user came back after setting up a printer, retry print
           if (result == true && context.mounted) {
@@ -2521,27 +3674,35 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         return;
       }
 
-      final devices = await FlutterBluePlus.bondedDevices;
-      BluetoothDevice device;
+      // Connect using print_bluetooth_thermal
       try {
-        device = devices.firstWhere((d) => d.remoteId.toString() == selectedPrinterId);
-      } catch (_) {
-        // Printer saved but no longer bonded — go to setup
-        Navigator.pop(context);
+        bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
+        if (!connectionStatus) {
+          bool result = await PrintBluetoothThermal.connect(
+            macPrinterAddress: selectedPrinterId,
+          );
+          if (!result) {
+            Navigator.pop(context); // dismiss loading dialog
+            if (context.mounted) {
+              CommonWidgets.showSnackBar(
+                context,
+                "Failed to connect to printer. Please check if it's turned on.",
+                bgColor: kErrorColor,
+              );
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        Navigator.pop(context); // dismiss loading dialog
         if (context.mounted) {
-          CommonWidgets.showSnackBar(context, "Printer not found. Please set up again.", bgColor: kOrange);
-          await Navigator.push(
+          CommonWidgets.showSnackBar(
             context,
-            CupertinoPageRoute(builder: (_) => PrinterSetupPage(onBack: () => Navigator.pop(context))),
+            "Error connecting to printer: $e",
+            bgColor: kErrorColor,
           );
         }
         return;
-      }
-
-
-      if (device.isConnected == false) {
-        await device.connect(timeout: const Duration(seconds: 10));
-        await Future.delayed(const Duration(milliseconds: 500));
       }
 
       List<int> bytes = [];
@@ -2555,8 +3716,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.addAll([esc, 0x4D, 0x00]);
       bytes.addAll([gs, 0x21, 0x00]); // Ensure normal size
 
-      final int normalMode = 0x00;
-      final int boldMode = 0x08;
+      // User requested the subtotal font (0x02) for the full printout.
+      final int normalMode = 0x02; 
+      final int boldMode = 0x0A; // 0x02 (Font) + 0x08 (Bold)
+      final int fontBNormal = 0x02; // Use same font everywhere
+      final int fontBBold = 0x0A;
 
       // ── Helper: encode string safely for thermal printer ──
       List<int> enc(String s) => utf8.encode(_toThermalSafe(s));
@@ -2564,15 +3728,23 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       final tCur = _toThermalSafe(_currencySymbol).trim();
 
       // Print Logo if available
-      if (_thermalShowLogo && businessLogoUrl != null && businessLogoUrl!.isNotEmpty) {
+      if (_thermalShowLogo &&
+          businessLogoUrl != null &&
+          businessLogoUrl!.isNotEmpty) {
         try {
           // Download image and convert to bitmap for thermal printer
-          final response = await HttpClient().getUrl(Uri.parse(businessLogoUrl!));
+          final response = await HttpClient().getUrl(
+            Uri.parse(businessLogoUrl!),
+          );
           final httpResponse = await response.close();
-          final imageBytes = await consolidateHttpClientResponseBytes(httpResponse);
+          final imageBytes = await consolidateHttpClientResponseBytes(
+            httpResponse,
+          );
 
           // Decode image
-          final codec = await ui.instantiateImageCodec(Uint8List.fromList(imageBytes));
+          final codec = await ui.instantiateImageCodec(
+            Uint8List.fromList(imageBytes),
+          );
           final frame = await codec.getNextFrame();
           final image = frame.image;
 
@@ -2582,10 +3754,17 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           final targetHeight = (image.height * scale).toInt();
 
           // Convert to bitmap bytes for ESC/POS
-          final byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+          final byteData = await image.toByteData(
+            format: ui.ImageByteFormat.rawRgba,
+          );
           if (byteData != null) {
             // Convert RGBA to monochrome bitmap
-            final List<int> bitmapBytes = _convertToMonochromeBitmap(byteData.buffer.asUint8List(), image.width, image.height, targetWidth);
+            final List<int> bitmapBytes = _convertToMonochromeBitmap(
+              byteData.buffer.asUint8List(),
+              image.width,
+              image.height,
+              targetWidth,
+            );
 
             // Center align for logo
             bytes.addAll([esc, 0x61, 0x01]);
@@ -2593,8 +3772,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
             // Print bitmap using GS v 0 command
             final widthBytes = (targetWidth + 7) ~/ 8;
             bytes.addAll([gs, 0x76, 0x30, 0x00]); // GS v 0 - raster bit image
-            bytes.addAll([widthBytes & 0xFF, (widthBytes >> 8) & 0xFF]); // xL, xH
-            bytes.addAll([targetHeight & 0xFF, (targetHeight >> 8) & 0xFF]); // yL, yH
+            bytes.addAll([
+              widthBytes & 0xFF,
+              (widthBytes >> 8) & 0xFF,
+            ]); // xL, xH
+            bytes.addAll([
+              targetHeight & 0xFF,
+              (targetHeight >> 8) & 0xFF,
+            ]); // yL, yH
             bytes.addAll(bitmapBytes);
 
             bytes.add(lf);
@@ -2606,43 +3791,68 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       }
 
       // Header
-      bytes.addAll([esc, 0x61, 0x01]); // Center align
-      // 80mm: double-height+width (0x30) | 58mm: just bold (0x08 because of Font A) — smaller, fits paper
-      bytes.addAll([esc, 0x21, is80mm ? 0x30 : 0x08]);
-      bytes.addAll(enc(_truncateText(businessName, lineWidth ~/ (is80mm ? 2 : 1))));
-      bytes.add(lf);
-      bytes.addAll([esc, 0x21, normalMode]); // Reset to normal
+      if (_thermalShowHeader) {
+        bytes.addAll([esc, 0x61, 0x01]); // Center align
+        if (businessName.length <= lineWidth ~/ 2) {
+          bytes.addAll([esc, 0x21, 0x38]); // Bold + Double Height + Double Width
+          bytes.addAll(enc(businessName));
+          bytes.add(lf);
+        } else {
+          bytes.addAll([esc, 0x21, 0x18]); // Bold + Double Height
+          for (final line in _wrapText(businessName, lineWidth)) {
+            bytes.addAll(enc(line));
+            bytes.add(lf);
+          }
+        }
+        bytes.addAll([esc, 0x21, normalMode]); // Reset to normal
 
-      if (_showLocation && businessLocation.isNotEmpty) {
-        for (final line in _wrapText(businessLocation, lineWidth)) {
-          bytes.addAll(enc(line));
+        if (_showLocation && businessLocation.isNotEmpty) {
+          for (final line in _wrapText(businessLocation, lineWidth)) {
+            bytes.addAll(enc(line));
+            bytes.add(lf);
+          }
+        }
+        if (_showPhone && businessPhone.isNotEmpty) {
+          bytes.addAll(enc(_truncateText('PHONE: $businessPhone', lineWidth)));
           bytes.add(lf);
         }
-      }
-      if (_showPhone && businessPhone.isNotEmpty) {
-        bytes.addAll(enc(_truncateText('PHONE: $businessPhone', lineWidth)));
-        bytes.add(lf);
-      }
-      if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty) {
-        bytes.addAll([esc, 0x21, boldMode]);
-        bytes.addAll(enc(_truncateText('${businessTaxTypeName ?? 'Tax'}: $businessGSTIN', lineWidth)));
-        bytes.addAll([esc, 0x21, normalMode]);
-        bytes.add(lf);
-      }
-      if (_thermalShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty) {
-        bytes.addAll([esc, 0x21, boldMode]);
-        bytes.addAll(enc(_truncateText('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', lineWidth)));
-        bytes.addAll([esc, 0x21, normalMode]);
-        bytes.add(lf);
-      }
+        if (_showGST && businessGSTIN != null && businessGSTIN!.isNotEmpty) {
+          bytes.addAll([esc, 0x21, boldMode]);
+          bytes.addAll(
+            enc(
+              _truncateText(
+                '${businessTaxTypeName ?? 'Tax'}: $businessGSTIN',
+                lineWidth,
+              ),
+            ),
+          );
+          bytes.addAll([esc, 0x21, normalMode]);
+          bytes.add(lf);
+        }
+        if (_thermalShowLicense &&
+            businessLicenseNumber != null &&
+            businessLicenseNumber!.isNotEmpty) {
+          bytes.addAll([esc, 0x21, boldMode]);
+          bytes.addAll(
+            enc(
+              _truncateText(
+                '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
+                lineWidth,
+              ),
+            ),
+          );
+          bytes.addAll([esc, 0x21, normalMode]);
+          bytes.add(lf);
+        }
 
-      bytes.add(lf);
+        bytes.add(lf);
+      }
 
       // Bill No & Date
       bytes.addAll([esc, 0x61, 0x00]); // Left align
       final dateStr = DateFormat('dd-MMM-yyyy').format(widget.dateTime);
       final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
-      bytes.addAll(enc(_formatTwoColumns('Date: $dateStr', 'Time: $timeStr', lineWidth)));
+      bytes.addAll(enc(_formatTwoColumns(dateStr, timeStr, lineWidth)));
       bytes.add(lf);
       bytes.addAll(enc('Bill No: ${widget.invoiceNumber}'));
       bytes.add(lf);
@@ -2653,105 +3863,190 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         bytes.add(lf);
         bytes.addAll([esc, 0x61, 0x00]);
         bytes.addAll([esc, 0x21, boldMode]);
-        bytes.addAll(enc(_truncateText('Customer: ${widget.customerName!}', lineWidth)));
+        bytes.addAll(
+          enc(_truncateText('Customer: ${widget.customerName!}', lineWidth)),
+        );
         bytes.addAll([esc, 0x21, normalMode]);
         bytes.add(lf);
         if (widget.customerPhone != null) {
-          bytes.addAll(enc(_truncateText('Contact: ${widget.customerPhone}', lineWidth)));
+          bytes.addAll(
+            enc(_truncateText('Contact: ${widget.customerPhone}', lineWidth)),
+          );
           bytes.add(lf);
         }
       }
 
-      // Items header
-      final bool showTaxCol = true;
-      bytes.addAll(enc(dividerLine));
+      // Items header & list
+      int totalQty = 0;
+      if (_thermalShowItemTable) {
+        final bool showTaxCol = _thermalShowTaxColumn;
+        bytes.addAll(enc(dividerLine));
+        bytes.add(lf);
+        bytes.addAll([esc, 0x21, boldMode]); // Bold
+        bytes.addAll(
+          enc(
+            _formatTableRow(
+              'ITEM',
+              'QTY',
+              'PRICE',
+              'TOTAL',
+              lineWidth,
+              tax: showTaxCol ? 'TAX' : null,
+            ),
+          ),
+        );
+        bytes.addAll([esc, 0x21, normalMode]); // Normal
+        bytes.add(lf);
+        bytes.addAll(enc(thinDivider));
+        bytes.add(lf);
+
+        // Items
+        for (int i = 0; i < widget.items.length; i++) {
+          final item = widget.items[i];
+          final name = (item['name'] ?? 'Item') as String;
+          final qty = item['quantity'] ?? 1;
+          final price = (item['price'] ?? 0.0).toDouble();
+          final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
+          final taxType = item['taxType'] as String?;
+          final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
+          // Compute amount respecting tax type
+          final double amount;
+          if (taxType == 'Tax Included in Price' ||
+              taxType == 'Price includes Tax') {
+            amount = baseTotal; // price already has tax
+          } else if (taxType != null) {
+            amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
+          } else {
+            amount = (item['total'] ?? baseTotal)
+                .toDouble(); // fresh sale: total is already totalWithTax
+          }
+
+          totalQty += (qty is int ? qty : (qty as num).toInt());
+
+          final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
+          final taxStr = taxPct > 0
+              ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%'
+              : '0%';
+
+          // No currency in table columns; no tax sub-line
+          // Print the item name in standard Font A (large)
+          bytes.addAll([esc, 0x21, normalMode]);
+          for (final line in _wrapText(name, lineWidth)) {
+            bytes.addAll(enc(line));
+            bytes.add(lf);
+          }
+
+          // Print the column values on the next line
+          final String valuesLine = _formatTableRow(
+            '',
+            _formatQty(qty),
+            _formatDecimal(price),
+            _formatDecimal(amount),
+            lineWidth, // Use standard line width since the font is the same
+            tax: showTaxCol ? taxStr : null,
+          );
+
+          bytes.addAll([
+            esc,
+            0x21,
+            fontBNormal,
+          ]); // Switch to Font B (smaller font) for values
+          bytes.addAll(enc(valuesLine));
+          bytes.add(lf);
+          bytes.addAll([esc, 0x21, normalMode]); // Restore to default Font A
+          // Add spacing between items
+          bytes.add(lf);
+        }
+      } else {
+        // Just compute totalQty if we're not showing the table
+        for (int i = 0; i < widget.items.length; i++) {
+          final qty = widget.items[i]['quantity'] ?? 1;
+          totalQty += (qty is int ? qty : (qty as num).toInt());
+        }
+      }
+
+      // Table total with a divider above it
+      bytes.addAll(enc(thinDivider));
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, boldMode]); // Bold
-      bytes.addAll(enc(_formatTableRow('ITEM', 'QTY', 'PRICE', 'TOTAL', lineWidth, tax: 'TAX%')));
+      bytes.addAll(
+        enc(
+          _formatTwoColumns(
+            'TOTAL',
+            _formatDecimal(_subtotalWithTax),
+            lineWidth,
+          ),
+        ),
+      );
+      bytes.add(lf);
       bytes.addAll([esc, 0x21, normalMode]);
-      bytes.add(lf);
+
+      // Row division (subtotal, total tax, discount, delivery charge)
       bytes.addAll(enc(thinDivider));
       bytes.add(lf);
 
-      // Items
-      int totalQty = 0;
-      for (int i = 0; i < widget.items.length; i++) {
-        final item = widget.items[i];
-        final name = (item['name'] ?? 'Item') as String;
-        final qty = item['quantity'] ?? 1;
-        final price = (item['price'] ?? 0.0).toDouble();
-        final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
-        final taxType = item['taxType'] as String?;
-        final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
-        // Compute amount respecting tax type
-        final double amount;
-        if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
-          amount = baseTotal; // price already has tax
-        } else if (taxType != null) {
-          amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
-        } else {
-          amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
-        }
+      bytes.addAll([esc, 0x21, 0x02]); // Switch to Font C (0x02)
 
-        totalQty += (qty is int ? qty : (qty as num).toInt());
-
-        final taxPct = (item['taxPercentage'] ?? 0.0).toDouble();
-        final taxStr = taxPct > 0 ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%' : '0%';
-
-        // No currency in table columns; no tax sub-line
-        List<String> itemLines = _formatTableRowMultiLine(
-          name, 
-          _formatQty(qty), 
-          _formatDecimal(price), 
-          _formatDecimal(amount), 
-          lineWidth,
-          tax: showTaxCol ? taxStr : null,
-        );
-        for (String line in itemLines) {
-          bytes.addAll(enc(line));
-          bytes.add(lf);
-        }
-        // Add spacing between items
-        bytes.add(lf);
-      }
-
-      // Subtotal — align qty under the Qty column, amount under Amt column
-      bytes.addAll(enc(dividerLine));
+      bytes.addAll(
+        enc(
+          _formatAlignedColonLine(
+            'Subtotal',
+            _formatDecimal(_subtotalWithTax - _totalTaxAmount),
+            lineWidth,
+          ),
+        ),
+      );
       bytes.add(lf);
-      bytes.addAll([esc, 0x21, boldMode]);
-      bytes.addAll(enc(_formatTableRow('TOTAL', '$totalQty', '', _formatDecimal(_subtotalWithTax), lineWidth, tax: showTaxCol ? '' : null)));
-      bytes.add(lf);
-      bytes.addAll(enc(_formatTableRow('SUBTOTAL', '', '', _formatDecimal(widget.subtotal), lineWidth, tax: showTaxCol ? '' : null)));
-      bytes.add(lf);
-      bytes.addAll([esc, 0x21, normalMode]);
 
-      // Total Tax
       if (_totalTaxAmount > 0) {
-        bytes.addAll(enc(_formatTwoColumns('Total Tax', _formatDecimal(_totalTaxAmount), lineWidth)));
+        bytes.addAll(
+          enc(
+            _formatAlignedColonLine(
+              'Total Tax',
+              _formatDecimal(_totalTaxAmount),
+              lineWidth,
+            ),
+          ),
+        );
         bytes.add(lf);
       }
 
-      // Discount
       if (widget.discount > 0) {
-        bytes.addAll(enc(_formatTwoColumns('Discount', '-${_formatDecimal(widget.discount)}', lineWidth)));
+        bytes.addAll(
+          enc(
+            _formatAlignedColonLine(
+              'Discount',
+              '-${_formatDecimal(widget.discount)}',
+              lineWidth,
+            ),
+          ),
+        );
         bytes.add(lf);
       }
 
-      // Delivery Charge
       if (widget.deliveryCharge > 0) {
-        bytes.addAll(enc(_formatTwoColumns('Delivery Charge', '+${_formatDecimal(widget.deliveryCharge)}', lineWidth)));
+        bytes.addAll(
+          enc(
+            _formatAlignedColonLine(
+              'Delivery Charge',
+              '+${_formatDecimal(widget.deliveryCharge)}',
+              lineWidth,
+            ),
+          ),
+        );
         bytes.add(lf);
       }
 
-      // Total
-      bytes.addAll(enc(dividerLine));
+      bytes.addAll([esc, 0x21, normalMode]); // Reset to Font A
+      // Grand Total: centered with highlighted bold
+      bytes.addAll(enc(thinDivider));
       bytes.add(lf);
-      // Bold + double-height (0x18) on both 80mm and 58mm (Font A)
-      bytes.addAll([esc, 0x21, 0x18]);
-      bytes.addAll(enc(_formatTwoColumns('Total', '$tCur${_formatDecimal(widget.total)}', lineWidth)));
+      bytes.addAll([esc, 0x21, 0x18]); // Bold + double height
+      bytes.addAll([esc, 0x61, 0x01]); // Center align
+      bytes.addAll(enc('Total: $tCur ${_formatDecimal(widget.total)}'));
+      bytes.add(lf);
       bytes.addAll([esc, 0x21, normalMode]);
-      bytes.add(lf);
-      bytes.addAll(enc(dividerLine));
+      bytes.addAll([esc, 0x61, 0x00]); // Reset alignment to left
+      bytes.addAll(enc(thinDivider));
       bytes.add(lf);
 
       // Tax details table at the bottom (after Total)
@@ -2768,9 +4063,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
           // Determine item base (taxable amount)
           double baseAmt = price * qty;
-          if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+          if (taxType == 'Tax Included in Price' ||
+              taxType == 'Price includes Tax') {
             baseAmt = baseAmt - taxAmt;
-          } else if (taxType == 'Add Tax at Billing' || taxType == 'Price is without Tax') {
+          } else if (taxType == 'Add Tax at Billing' ||
+              taxType == 'Price is without Tax') {
             baseAmt = baseAmt;
           } else {
             // Fallback detection
@@ -2812,23 +4109,41 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         }
 
         if (taxGroup.isNotEmpty) {
+          bytes.addAll([esc, 0x61, 0x01]); // Center align
           bytes.addAll([esc, 0x21, boldMode]); // Bold
           bytes.addAll(enc('Tax Details'));
+          bytes.add(lf); // Send line feed while centered!
           bytes.addAll([esc, 0x21, normalMode]); // Reset to normal
-          bytes.add(lf);
-          bytes.addAll(enc(_formatTaxTableRow('Tax', 'Amount', 'Rate%', 'Tax Amount', lineWidth)));
+          bytes.addAll([esc, 0x61, 0x00]); // Reset alignment to left
+          bytes.add(lf); // Leave space below tax details header
+          bytes.addAll(
+            enc(
+              _formatTaxTableRow(
+                'Tax',
+                'Amount',
+                'Rate%',
+                'Tax Amount',
+                lineWidth,
+              ),
+            ),
+          );
           bytes.add(lf);
           bytes.addAll(enc(thinDivider));
           bytes.add(lf);
           for (var entry in taxGroup.values) {
-            final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
-            bytes.addAll(enc(_formatTaxTableRow(
-              _toThermalSafe(entry.name),
-              _formatDecimal(entry.baseAmount),
-              rateStr,
-              _formatDecimal(entry.taxAmount),
-              lineWidth,
-            )));
+            final rateStr =
+                '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+            bytes.addAll(
+              enc(
+                _formatTaxTableRow(
+                  _toThermalSafe(entry.name),
+                  _formatDecimal(entry.baseAmount),
+                  rateStr,
+                  _formatDecimal(entry.taxAmount),
+                  lineWidth,
+                ),
+              ),
+            );
             bytes.add(lf);
           }
           bytes.addAll(enc(thinDivider));
@@ -2839,28 +4154,47 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       // Payment Mode
       if (_showPaymentMode) {
-        bytes.addAll(enc(_formatTwoColumns('Payment:', widget.paymentMode, lineWidth)));
+        bytes.addAll([esc, 0x61, 0x01]); // Center align
+        bytes.addAll([esc, 0x21, boldMode]);
+        bytes.addAll(enc('Payment Mode: ${widget.paymentMode}'));
+        bytes.addAll([esc, 0x21, normalMode]);
         bytes.add(lf);
         if (_isSplitPayment) {
           if (_splitCashAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Cash', '$tCur${_formatDecimal(_splitCashAmount)}', lineWidth)));
+            bytes.addAll(
+              enc('Cash: $tCur ${_formatDecimal(_splitCashAmount)}'),
+            );
             bytes.add(lf);
           }
           if (_splitOnlineAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Online', '$tCur${_formatDecimal(_splitOnlineAmount)}', lineWidth)));
+            bytes.addAll(
+              enc('Online: $tCur ${_formatDecimal(_splitOnlineAmount)}'),
+            );
             bytes.add(lf);
           }
           if (_splitCreditAmount > 0) {
-            bytes.addAll(enc(_formatTwoColumns('  Credit', '$tCur${_formatDecimal(_splitCreditAmount)}', lineWidth)));
+            bytes.addAll(
+              enc('Credit: $tCur ${_formatDecimal(_splitCreditAmount)}'),
+            );
             bytes.add(lf);
           }
         }
+        bytes.addAll([esc, 0x61, 0x00]); // Reset alignment to left
       }
 
       // You Saved
       if (_thermalShowYouSaved && widget.discount > 0) {
-        bytes.addAll(enc(_truncateText('** You Saved $tCur${_formatDecimal(widget.discount)}! **', lineWidth)));
+        bytes.addAll([esc, 0x61, 0x01]); // Center align
+        bytes.addAll(
+          enc(
+            _truncateText(
+              '** You Saved $tCur ${_formatDecimal(widget.discount)}! **',
+              lineWidth,
+            ),
+          ),
+        );
         bytes.add(lf);
+        bytes.addAll([esc, 0x61, 0x00]); // Reset to left
       }
 
       // Items/Qty count
@@ -2871,19 +4205,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         bytes.addAll([esc, 0x61, 0x00]);
       }
 
-      // Bill Notes (if provided)
-      if (widget.customNote != null && widget.customNote!.isNotEmpty) {
-        bytes.addAll([esc, 0x61, 0x00]); // Left align
-        for (final line in _wrapText('Note: ${widget.customNote}', lineWidth)) {
-          bytes.addAll(enc(line));
-          bytes.add(lf);
-        }
-      }
-
       // Delivery Address (if provided)
-      if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) {
+      if (widget.deliveryAddress != null &&
+          widget.deliveryAddress!.isNotEmpty) {
+        bytes.add(lf);
         bytes.addAll([esc, 0x61, 0x00]); // Left align
-        for (final line in _wrapText('Delivery: ${widget.deliveryAddress}', lineWidth)) {
+        for (final line in _wrapText(
+          'Delivery: ${widget.deliveryAddress}',
+          lineWidth,
+        )) {
           bytes.addAll(enc(line));
           bytes.add(lf);
         }
@@ -2904,7 +4234,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.addAll([esc, 0x61, 0x01]); // Center
       bytes.add(lf);
       bytes.addAll([esc, 0x21, boldMode]);
-      final footerStr = _thermalSaleInvoiceText.isNotEmpty ? _thermalSaleInvoiceText : 'Thank You';
+      final footerStr = _thermalSaleInvoiceText.isNotEmpty
+          ? _thermalSaleInvoiceText
+          : 'Thank You';
       for (final line in _wrapText(footerStr, lineWidth)) {
         bytes.addAll(enc(line));
         bytes.add(lf);
@@ -2926,31 +4258,30 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       bytes.add(lf);
       bytes.addAll([gs, 0x56, 0x00]); // Cut
 
-      final services = await device.discoverServices();
-      BluetoothCharacteristic? writeChar;
-      for (var s in services) {
-        for (var c in s.characteristics) {
-          if (c.properties.write) { writeChar = c; break; }
+      for (int copy = 0; copy < numberOfCopies; copy++) {
+        bool printed = await PrintBluetoothThermal.writeBytes(bytes);
+        if (!printed) {
+          throw Exception("Printer rejected the data.");
         }
-      }
-      if (writeChar != null) {
-        for (int copy = 0; copy < numberOfCopies; copy++) {
-          const chunk = 20;
-          for (int i = 0; i < bytes.length; i += chunk) {
-            final end = (i + chunk < bytes.length) ? i + chunk : bytes.length;
-            await writeChar.write(bytes.sublist(i, end), withoutResponse: true);
-            await Future.delayed(const Duration(milliseconds: 20));
-          }
-          if (copy < numberOfCopies - 1) {
-            await Future.delayed(const Duration(milliseconds: 500));
-          }
+        if (copy < numberOfCopies - 1) {
+          await Future.delayed(const Duration(milliseconds: 1500));
         }
       }
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(context, numberOfCopies > 1 ? '$numberOfCopies copies printed successfully' : 'Receipt printed successfully', bgColor: kGoogleGreen);
+      CommonWidgets.showSnackBar(
+        context,
+        numberOfCopies > 1
+            ? '$numberOfCopies copies printed successfully'
+            : 'Receipt printed successfully',
+        bgColor: kGoogleGreen,
+      );
     } catch (e) {
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(context, 'Printing failed: $e', bgColor: kErrorColor);
+      CommonWidgets.showSnackBar(
+        context,
+        'Printing failed: $e',
+        bgColor: kErrorColor,
+      );
     }
   }
 
@@ -2970,7 +4301,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         final allowedDecimals = width - integerPart.length - 1;
         if (allowedDecimals > 0) {
           try {
-            return double.parse(val).toStringAsFixed(allowedDecimals).padLeft(width);
+            return double.parse(
+              val,
+            ).toStringAsFixed(allowedDecimals).padLeft(width);
           } catch (_) {}
         } else {
           try {
@@ -2980,8 +4313,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       }
     }
     // Fallback: strictly truncate
-    return alignRight 
-        ? val.substring(val.length - width) 
+    return alignRight
+        ? val.substring(val.length - width)
         : val.substring(0, width);
   }
 
@@ -2989,8 +4322,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   /// Always right-aligns [right]; [left] is truncated if needed to make room.
   String _formatTwoColumns(String left, String right, int lineWidth) {
     // Clamp right to lineWidth
-    final safeRight = right.length > lineWidth ? right.substring(0, lineWidth) : right;
-    final availLeft = lineWidth - safeRight.length - 1; // at least 1 space separator
+    final safeRight = right.length > lineWidth
+        ? right.substring(0, lineWidth)
+        : right;
+    final availLeft =
+        lineWidth - safeRight.length - 1; // at least 1 space separator
 
     if (availLeft <= 0) {
       // Right side alone fills the line — just print right flush-right
@@ -3005,43 +4341,71 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     return '$safeLeft${' ' * spaces}$safeRight';
   }
 
+  String _formatCenteredLabelRightValue(
+    String label,
+    String value,
+    int lineWidth,
+  ) {
+    final int valLen = value.length;
+    final int remainingSpace = lineWidth - valLen;
+    if (remainingSpace <= label.length) {
+      return label.padRight(lineWidth - valLen) + value;
+    }
+    final int padLeft = (remainingSpace - label.length) ~/ 2;
+    final int padRight = remainingSpace - label.length - padLeft;
+    return ' ' * padLeft + label + ' ' * padRight + value;
+  }
+
+  String _formatAlignedColonLine(String label, String value, int lineWidth) {
+    final int colonPos = lineWidth <= 32 ? 14 : 20;
+    final String leftPart = label.padLeft(colonPos) + ':';
+    final int rightLen = lineWidth - leftPart.length;
+    return leftPart + value.padLeft(rightLen);
+  }
+
   /// Convert a string to thermal-printer-safe ASCII.
   /// Replaces Unicode currency symbols and other multi-byte chars with
   /// their ASCII fallbacks so ESC/POS printers render them correctly.
   String _toThermalSafe(String text) {
     return text
-        .replaceAll('₹', 'Rs.')  // Indian Rupee
-        .replaceAll('€', 'EUR')  // Euro
-        .replaceAll('£', 'GBP')  // Pound
-        .replaceAll('¥', 'JPY')  // Yen/Yuan
-        .replaceAll('₩', 'KRW')  // Korean Won
-        .replaceAll('₪', 'ILS')  // Shekel
-        .replaceAll('₺', 'TRY')  // Turkish Lira
-        .replaceAll('₴', 'UAH')  // Hryvnia
-        .replaceAll('₸', 'KZT')  // Tenge
-        .replaceAll('₮', 'MNT')  // Tugrik
-        .replaceAll('₭', 'LAK')  // Kip
-        .replaceAll('₱', 'PHP')  // Philippine Peso
-        .replaceAll('₦', 'NGN')  // Naira
-        .replaceAll('₡', 'CRC')  // Colon
-        .replaceAll('₲', 'PYG')  // Guarani
-        .replaceAll('₼', 'AZN')  // Manat
-        .replaceAll('₾', 'GEL')  // Lari
-        .replaceAll('₽', 'RUB')  // Ruble
-        .replaceAll('฿', 'THB')  // Baht
-        .replaceAll('﷼', 'SAR')  // Riyal
-        .replaceAll('₨', 'Rs.')  // Rupee sign
-        .replaceAll('৳', 'BDT')  // Taka
-        .replaceAll('₫', 'VND')  // Dong
-        .replaceAll('₢', 'Cr.')  // Cruzeiro
-        .replaceAll('₵', 'GHS')  // Cedi
-        .replaceAll('🎉', '')    // Emoji — not printable
+        .replaceAll('₹', 'Rs') // Indian Rupee
+        .replaceAll('€', 'EUR') // Euro
+        .replaceAll('£', 'GBP') // Pound
+        .replaceAll('¥', 'JPY') // Yen/Yuan
+        .replaceAll('₩', 'KRW') // Korean Won
+        .replaceAll('₪', 'ILS') // Shekel
+        .replaceAll('₺', 'TRY') // Turkish Lira
+        .replaceAll('₴', 'UAH') // Hryvnia
+        .replaceAll('₸', 'KZT') // Tenge
+        .replaceAll('₮', 'MNT') // Tugrik
+        .replaceAll('₭', 'LAK') // Kip
+        .replaceAll('₱', 'PHP') // Philippine Peso
+        .replaceAll('₦', 'NGN') // Naira
+        .replaceAll('₡', 'CRC') // Colon
+        .replaceAll('₲', 'PYG') // Guarani
+        .replaceAll('₼', 'AZN') // Manat
+        .replaceAll('₾', 'GEL') // Lari
+        .replaceAll('₽', 'RUB') // Ruble
+        .replaceAll('฿', 'THB') // Baht
+        .replaceAll('﷼', 'SAR') // Riyal
+        .replaceAll('₨', 'Rs') // Rupee sign
+        .replaceAll('৳', 'BDT') // Taka
+        .replaceAll('₫', 'VND') // Dong
+        .replaceAll('₢', 'Cr.') // Cruzeiro
+        .replaceAll('₵', 'GHS') // Cedi
+        .replaceAll('🎉', '') // Emoji — not printable
         .replaceAll('✓', 'OK')
-    // Strip any remaining non-ASCII chars (codepoint > 127)
+        // Strip any remaining non-ASCII chars (codepoint > 127)
         .replaceAll(RegExp(r'[^\x00-\x7F]'), '?');
   }
 
-  String _formatTaxTableRow(String tax, String amount, String rate, String taxAmount, int lineWidth) {
+  String _formatTaxTableRow(
+    String tax,
+    String amount,
+    String rate,
+    String taxAmount,
+    int lineWidth,
+  ) {
     final int taxW;
     final int amtW;
     final int rateW;
@@ -3059,7 +4423,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       taxAmtW = lineWidth - taxW - amtW - rateW - 3;
     }
 
-    final String taxStr = tax.length > taxW ? tax.substring(0, taxW) : tax.padRight(taxW);
+    final String taxStr = tax.length > taxW
+        ? tax.substring(0, taxW)
+        : tax.padRight(taxW);
     final String amtStr = _formatToWidth(amount, amtW);
     final String rateStr = _formatToWidth(rate, rateW);
     final String taxAmtStr = _formatToWidth(taxAmount, taxAmtW);
@@ -3097,7 +4463,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   // ── Column-width helpers (shared by header + item rows) ────────────────────
   // 58mm paper → lineWidth = 30-32 chars total (Font A)
   // 80mm paper → lineWidth = 48 chars total (Font A)
-  String _formatTableRow(String item, String qty, String price, String amt, int lineWidth, {String? tax}) {
+  String _formatTableRow(
+    String item,
+    String qty,
+    String price,
+    String amt,
+    int lineWidth, {
+    String? tax,
+  }) {
     final bool showTax = tax != null;
     final int qtyW;
     final int priceW;
@@ -3106,22 +4479,24 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     final int itemW;
 
     if (lineWidth <= 32) {
-      qtyW = 2;
-      priceW = showTax ? 5 : 6;
+      qtyW = showTax ? 4 : 5;
+      priceW = showTax ? 6 : 7;
       taxW = showTax ? 4 : 0;
-      amtW = showTax ? 5 : 6;
+      amtW = showTax ? 6 : 8;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     } else {
-      qtyW = showTax ? 3 : 4;
-      priceW = showTax ? 8 : 10;
-      taxW = showTax ? 6 : 0;
-      amtW = showTax ? 8 : 10;
+      qtyW = showTax ? 6 : 8;
+      priceW = showTax ? 10 : 12;
+      taxW = showTax ? 8 : 0;
+      amtW = showTax ? 10 : 13;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     }
 
-    final String itemStr = item.length > itemW ? '${item.substring(0, itemW - 1)}.' : item.padRight(itemW);
+    final String itemStr = item.length > itemW
+        ? '${item.substring(0, itemW - 1)}.'
+        : item.padRight(itemW);
     final String qtyStr = _formatToWidth(qty, qtyW);
     final String priceStr = _formatToWidth(price, priceW);
     final String taxStr = showTax ? _formatToWidth(tax, taxW) : '';
@@ -3135,7 +4510,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   }
 
   /// Format table row with full item name support (wraps to multiple lines).
-  List<String> _formatTableRowMultiLine(String item, String qty, String price, String amt, int lineWidth, {String? tax}) {
+  List<String> _formatTableRowMultiLine(
+    String item,
+    String qty,
+    String price,
+    String amt,
+    int lineWidth, {
+    String? tax,
+  }) {
     final bool showTax = tax != null;
     final int qtyW;
     final int priceW;
@@ -3144,9 +4526,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     final int itemW;
 
     if (lineWidth <= 32) {
-      qtyW = 2;
-      priceW = showTax ? 5 : 6;
-      taxW = showTax ? 4 : 0;
+      qtyW = 3;
+      priceW = showTax ? 5 : 5;
+      taxW = showTax ? 3 : 0;
       amtW = showTax ? 5 : 6;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
@@ -3205,7 +4587,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           // Force-break a very long word
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
+            int end = (start + maxWidth < word.length)
+                ? start + maxWidth
+                : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -3219,7 +4603,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         if (word.length > maxWidth) {
           int start = 0;
           while (start < word.length) {
-            int end = (start + maxWidth < word.length) ? start + maxWidth : word.length;
+            int end = (start + maxWidth < word.length)
+                ? start + maxWidth
+                : word.length;
             lines.add(word.substring(start, end));
             start = end;
           }
@@ -3238,7 +4624,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
   }
 
   /// Convert RGBA image bytes to monochrome bitmap for thermal printer
-  List<int> _convertToMonochromeBitmap(Uint8List rgba, int width, int height, int targetWidth) {
+  List<int> _convertToMonochromeBitmap(
+    Uint8List rgba,
+    int width,
+    int height,
+    int targetWidth,
+  ) {
     final scale = targetWidth / width;
     final targetHeight = (height * scale).toInt();
     final widthBytes = (targetWidth + 7) ~/ 8;
@@ -3284,7 +4675,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 children: [
                   CircularProgressIndicator(color: kPrimaryColor),
                   SizedBox(height: 16),
-                  Text('Generating PDF...', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Generating PDF...',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -3299,13 +4697,16 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
       Navigator.pop(context);
 
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'Invoice #${widget.invoiceNumber}',
-      );
+      await Share.shareXFiles([
+        XFile(file.path),
+      ], text: 'Invoice #${widget.invoiceNumber}');
     } catch (e) {
       Navigator.pop(context);
-      CommonWidgets.showSnackBar(context, 'Error sharing: $e', bgColor: kErrorColor);
+      CommonWidgets.showSnackBar(
+        context,
+        'Error sharing: $e',
+        bgColor: kErrorColor,
+      );
     }
   }
 
@@ -3327,7 +4728,9 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       try {
         final response = await HttpClient().getUrl(Uri.parse(businessLogoUrl!));
         final httpResponse = await response.close();
-        final imageBytes = await consolidateHttpClientResponseBytes(httpResponse);
+        final imageBytes = await consolidateHttpClientResponseBytes(
+          httpResponse,
+        );
         logoImage = pw.MemoryImage(Uint8List.fromList(imageBytes));
       } catch (e) {
         debugPrint('Error loading logo for PDF: $e');
@@ -3346,12 +4749,18 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
           final themeColor = PdfColor.fromInt(a4Colors['primary']!.toARGB32());
           return pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+            padding: const pw.EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 24,
+            ),
             decoration: pw.BoxDecoration(
               color: PdfColors.white,
               border: pw.Border(
                 top: pw.BorderSide(color: themeColor, width: 5),
-                bottom: const pw.BorderSide(color: PdfColors.grey300, width: 0.5),
+                bottom: const pw.BorderSide(
+                  color: PdfColors.grey300,
+                  width: 0.5,
+                ),
               ),
             ),
             child: pw.Row(
@@ -3360,23 +4769,43 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 // Logo
                 if (_a4ShowLogo && logoImage != null)
                   pw.Container(
-                    width: 52, height: 52,
+                    width: 52,
+                    height: 52,
                     margin: const pw.EdgeInsets.only(right: 16),
                     child: pw.Image(logoImage, fit: pw.BoxFit.cover),
                   )
                 else if (_a4ShowLogo)
                   pw.Container(
-                    width: 52, height: 52,
+                    width: 52,
+                    height: 52,
                     margin: const pw.EdgeInsets.only(right: 16),
                     decoration: pw.BoxDecoration(
-                      color: PdfColor(themeColor.red, themeColor.green, themeColor.blue, 0.08),
-                      border: pw.Border.all(color: PdfColor(themeColor.red, themeColor.green, themeColor.blue, 0.3)),
+                      color: PdfColor(
+                        themeColor.red,
+                        themeColor.green,
+                        themeColor.blue,
+                        0.08,
+                      ),
+                      border: pw.Border.all(
+                        color: PdfColor(
+                          themeColor.red,
+                          themeColor.green,
+                          themeColor.blue,
+                          0.3,
+                        ),
+                      ),
                       borderRadius: pw.BorderRadius.circular(8),
                     ),
                     child: pw.Center(
                       child: pw.Text(
-                        businessName.isNotEmpty ? businessName[0].toUpperCase() : 'B',
-                        style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold, color: themeColor),
+                        businessName.isNotEmpty
+                            ? businessName[0].toUpperCase()
+                            : 'B',
+                        style: pw.TextStyle(
+                          fontSize: 24,
+                          fontWeight: pw.FontWeight.bold,
+                          color: themeColor,
+                        ),
                       ),
                     ),
                   ),
@@ -3385,26 +4814,69 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                   child: pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text(businessName, style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                      pw.Text(
+                        businessName,
+                        style: pw.TextStyle(
+                          fontSize: 20,
+                          fontWeight: pw.FontWeight.bold,
+                          color: PdfColors.black,
+                        ),
+                      ),
                       if (_showLocation && businessLocation.isNotEmpty) ...[
                         pw.SizedBox(height: 3),
-                        pw.Text(businessLocation, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(
+                          businessLocation,
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
                       ],
                       if (_showPhone && businessPhone.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text('Tel: $businessPhone', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(
+                          'Tel: $businessPhone',
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
                       ],
-                      if (_showEmail && businessEmail != null && businessEmail!.isNotEmpty) ...[
+                      if (_showEmail &&
+                          businessEmail != null &&
+                          businessEmail!.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text('Email: $businessEmail', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                        pw.Text(
+                          'Email: $businessEmail',
+                          style: const pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.grey700,
+                          ),
+                        ),
                       ],
                       if (_showGST && businessGSTIN != null) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text('${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN', style: pw.TextStyle(fontSize: 10, color: PdfColors.black, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          '${businessTaxTypeName ?? 'GSTIN'}: $businessGSTIN',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.black,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
-                      if (_a4ShowLicense && businessLicenseNumber != null && businessLicenseNumber!.isNotEmpty) ...[
+                      if (_a4ShowLicense &&
+                          businessLicenseNumber != null &&
+                          businessLicenseNumber!.isNotEmpty) ...[
                         pw.SizedBox(height: 2),
-                        pw.Text('${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber', style: pw.TextStyle(fontSize: 10, color: PdfColors.black, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(
+                          '${businessLicenseTypeName ?? 'License'}: $businessLicenseNumber',
+                          style: pw.TextStyle(
+                            fontSize: 10,
+                            color: PdfColors.black,
+                            fontWeight: pw.FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ],
                   ),
@@ -3414,21 +4886,51 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
                     pw.Container(
-                      padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const pw.EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
                       decoration: pw.BoxDecoration(
                         color: themeColor,
                         borderRadius: pw.BorderRadius.circular(4),
                       ),
                       child: pw.Text(
-                        widget.isPaymentReceipt ? 'Payment Receipt' : (widget.isQuotation ? 'Quotation' : 'Tax Invoice'),
-                        style: pw.TextStyle(color: PdfColors.white, fontSize: 11, fontWeight: pw.FontWeight.bold),
+                        widget.isPaymentReceipt
+                            ? 'Payment Receipt'
+                            : (widget.isQuotation
+                                  ? 'Quotation'
+                                  : 'Tax Invoice'),
+                        style: pw.TextStyle(
+                          color: PdfColors.white,
+                          fontSize: 11,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
                       ),
                     ),
                     pw.SizedBox(height: 6),
-                    pw.Text('#${widget.invoiceNumber}', style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.black)),
+                    pw.Text(
+                      '#${widget.invoiceNumber}',
+                      style: pw.TextStyle(
+                        fontSize: 13,
+                        fontWeight: pw.FontWeight.bold,
+                        color: PdfColors.black,
+                      ),
+                    ),
                     pw.SizedBox(height: 2),
-                    pw.Text(dateStr, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
-                    pw.Text(timeStr, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                    pw.Text(
+                      dateStr,
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
+                    pw.Text(
+                      timeStr,
+                      style: const pw.TextStyle(
+                        fontSize: 10,
+                        color: PdfColors.grey700,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -3438,11 +4940,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
         // ── FOOTER — last page only ───────────────────────────────────────
         footer: (pw.Context context) {
-          if (context.pageNumber < context.pagesCount) return pw.SizedBox.shrink();
+          if (context.pageNumber < context.pagesCount)
+            return pw.SizedBox.shrink();
           final themeColor = PdfColor.fromInt(a4Colors['primary']!.toARGB32());
           return pw.Container(
             width: double.infinity,
-            padding: const pw.EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+            padding: const pw.EdgeInsets.symmetric(
+              horizontal: 40,
+              vertical: 16,
+            ),
             decoration: pw.BoxDecoration(
               color: const PdfColor.fromInt(0xFFF7F8FA),
               border: pw.Border(
@@ -3455,8 +4961,15 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               children: [
                 pw.Expanded(
                   child: pw.Text(
-                    _a4SaleInvoiceText.isNotEmpty ? _a4SaleInvoiceText : 'Thank you for your business!',
-                    style: pw.TextStyle(font: ttfBold, fontSize: 13, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                    _a4SaleInvoiceText.isNotEmpty
+                        ? _a4SaleInvoiceText
+                        : 'Thank you for your business!',
+                    style: pw.TextStyle(
+                      font: ttfBold,
+                      fontSize: 13,
+                      fontWeight: pw.FontWeight.bold,
+                      color: PdfColors.black,
+                    ),
                     textAlign: pw.TextAlign.center,
                   ),
                 ),
@@ -3466,14 +4979,31 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.end,
                         children: [
-                          pw.Text('Generated by Maxmybill', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
-                          pw.Text('www.maxmybill.com', style: pw.TextStyle(font: ttfBold, fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                          pw.Text(
+                            'Generated by Maxmybill',
+                            style: const pw.TextStyle(
+                              fontSize: 8,
+                              color: PdfColors.grey600,
+                            ),
+                          ),
+                          pw.Text(
+                            'www.maxmybill.com',
+                            style: pw.TextStyle(
+                              font: ttfBold,
+                              fontSize: 8,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
                         ],
                       ),
                     pw.SizedBox(width: 8),
                     pw.Text(
                       'Page ${context.pageNumber} of ${context.pagesCount}',
-                      style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600),
+                      style: const pw.TextStyle(
+                        fontSize: 8,
+                        color: PdfColors.grey600,
+                      ),
                     ),
                   ],
                 ),
@@ -3504,13 +5034,40 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Customer', style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: themeColor, letterSpacing: 1.2)),
+                          pw.Text(
+                            'Customer',
+                            style: pw.TextStyle(
+                              fontSize: 9,
+                              fontWeight: pw.FontWeight.bold,
+                              color: themeColor,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
                           pw.SizedBox(height: 4),
-                          pw.Text(widget.customerName!, style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
+                          pw.Text(
+                            widget.customerName!,
+                            style: pw.TextStyle(
+                              fontSize: 14,
+                              fontWeight: pw.FontWeight.bold,
+                            ),
+                          ),
                           if (widget.customerPhone != null)
-                            pw.Text('Contact: ${widget.customerPhone!}', style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
-                          if (widget.customerGSTIN != null && widget.customerGSTIN!.isNotEmpty)
-                            pw.Text('GSTIN: ${widget.customerGSTIN}', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
+                            pw.Text(
+                              'Contact: ${widget.customerPhone!}',
+                              style: const pw.TextStyle(
+                                fontSize: 11,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
+                          if (widget.customerGSTIN != null &&
+                              widget.customerGSTIN!.isNotEmpty)
+                            pw.Text(
+                              'GSTIN: ${widget.customerGSTIN}',
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                color: PdfColors.grey700,
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -3519,30 +5076,59 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
                   // ── ITEMS TABLE ──
                   pw.Table(
-                    border: pw.TableBorder.all(color: PdfColors.grey300, width: 0.5),
-                    columnWidths: _a4ShowTaxColumn ? {
-                      0: const pw.FlexColumnWidth(4.5),
-                      1: const pw.FixedColumnWidth(36),
-                      2: const pw.FlexColumnWidth(1.6),
-                      3: const pw.FlexColumnWidth(1.4),
-                      4: const pw.FlexColumnWidth(1.6),
-                    } : {
-                      0: const pw.FlexColumnWidth(5),
-                      1: const pw.FixedColumnWidth(36),
-                      2: const pw.FlexColumnWidth(1.8),
-                      3: const pw.FlexColumnWidth(1.8),
-                    },
+                    border: pw.TableBorder.all(
+                      color: PdfColors.grey300,
+                      width: 0.5,
+                    ),
+                    columnWidths: _a4ShowTaxColumn
+                        ? {
+                            0: const pw.FlexColumnWidth(4.5),
+                            1: const pw.FixedColumnWidth(36),
+                            2: const pw.FlexColumnWidth(1.6),
+                            3: const pw.FlexColumnWidth(1.4),
+                            4: const pw.FlexColumnWidth(1.6),
+                          }
+                        : {
+                            0: const pw.FlexColumnWidth(5),
+                            1: const pw.FixedColumnWidth(36),
+                            2: const pw.FlexColumnWidth(1.8),
+                            3: const pw.FlexColumnWidth(1.8),
+                          },
                     children: [
                       // Header row
                       pw.TableRow(
                         decoration: pw.BoxDecoration(color: themeColor),
                         children: [
-                          _pdfCell('Item / Description', ttfBold, isHeader: true),
-                          _pdfCell('Qty', ttfBold, isHeader: true, align: pw.TextAlign.center),
-                          _pdfCell('Rate', ttfBold, isHeader: true, align: pw.TextAlign.right),
+                          _pdfCell(
+                            'Item / Description',
+                            ttfBold,
+                            isHeader: true,
+                          ),
+                          _pdfCell(
+                            'Qty',
+                            ttfBold,
+                            isHeader: true,
+                            align: pw.TextAlign.center,
+                          ),
+                          _pdfCell(
+                            'Rate',
+                            ttfBold,
+                            isHeader: true,
+                            align: pw.TextAlign.right,
+                          ),
                           if (_a4ShowTaxColumn)
-                            _pdfCell('Tax', ttfBold, isHeader: true, align: pw.TextAlign.right),
-                          _pdfCell('Amount', ttfBold, isHeader: true, align: pw.TextAlign.right),
+                            _pdfCell(
+                              'Tax',
+                              ttfBold,
+                              isHeader: true,
+                              align: pw.TextAlign.right,
+                            ),
+                          _pdfCell(
+                            'Amount',
+                            ttfBold,
+                            isHeader: true,
+                            align: pw.TextAlign.right,
+                          ),
                         ],
                       ),
                       // ALL item rows — MultiPage handles page breaks automatically
@@ -3556,51 +5142,114 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                         final taxName = (item['taxName'] ?? '') as String;
                         final taxAmt = (item['taxAmount'] ?? 0.0).toDouble();
                         final taxType = item['taxType'] as String?;
-                        final baseTotal = price * (qty is num ? qty.toDouble() : 1.0);
+                        final baseTotal =
+                            price * (qty is num ? qty.toDouble() : 1.0);
                         // Compute amount respecting tax type
                         final double amount;
-                        if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+                        if (taxType == 'Tax Included in Price' ||
+                            taxType == 'Price includes Tax') {
                           amount = baseTotal; // price already has tax
                         } else if (taxType != null) {
-                          amount = baseTotal + taxAmt; // add tax for 'Add Tax at Billing' etc.
+                          amount =
+                              baseTotal +
+                              taxAmt; // add tax for 'Add Tax at Billing' etc.
                         } else {
-                          amount = (item['total'] ?? baseTotal).toDouble(); // fresh sale: total is already totalWithTax
+                          amount = (item['total'] ?? baseTotal)
+                              .toDouble(); // fresh sale: total is already totalWithTax
                         }
                         final isEven = idx.isEven;
-                        final rowBg = isEven ? PdfColors.white : const PdfColor.fromInt(0xFFF9FAFB);
+                        final rowBg = isEven
+                            ? PdfColors.white
+                            : const PdfColor.fromInt(0xFFF9FAFB);
                         return pw.TableRow(
                           decoration: pw.BoxDecoration(color: rowBg),
                           children: [
                             pw.Padding(
-                              padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                              padding: const pw.EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 7,
+                              ),
                               child: pw.Column(
                                 crossAxisAlignment: pw.CrossAxisAlignment.start,
                                 children: [
-                                  pw.Text(name, style: pw.TextStyle(font: ttfBold, fontSize: 10)),
+                                  pw.Text(
+                                    name,
+                                    style: pw.TextStyle(
+                                      font: ttfBold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
                                   if (taxName.isNotEmpty && taxPerc > 0)
-                                    pw.Text('$taxName ${taxPerc.toStringAsFixed(0)}%', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey600)),
+                                    pw.Text(
+                                      '$taxName ${taxPerc.toStringAsFixed(0)}%',
+                                      style: const pw.TextStyle(
+                                        fontSize: 8,
+                                        color: PdfColors.grey600,
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
                             _pdfCell(
-                              qty is double && qty % 1 != 0 ? qty.toStringAsFixed(2) : '$qty',
-                              ttf, align: pw.TextAlign.center, isEven: isEven,
+                              qty is double && qty % 1 != 0
+                                  ? qty.toStringAsFixed(2)
+                                  : '$qty',
+                              ttf,
+                              align: pw.TextAlign.center,
+                              isEven: isEven,
                             ),
-                            _pdfCell(price.toStringAsFixed(2), ttf, align: pw.TextAlign.right, isEven: isEven),
+                            _pdfCell(
+                              price.toStringAsFixed(2),
+                              ttf,
+                              align: pw.TextAlign.right,
+                              isEven: isEven,
+                            ),
                             if (_a4ShowTaxColumn)
                               pw.Padding(
-                                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+                                padding: const pw.EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 7,
+                                ),
                                 child: taxPerc > 0
                                     ? pw.Column(
-                                        crossAxisAlignment: pw.CrossAxisAlignment.end,
+                                        crossAxisAlignment:
+                                            pw.CrossAxisAlignment.end,
                                         children: [
-                                          pw.Text(taxAmt.toStringAsFixed(2), style: pw.TextStyle(font: ttf, fontSize: 10)),
-                                          pw.Text('(${taxPerc.toStringAsFixed(0)}%)', style: pw.TextStyle(font: ttf, fontSize: 7, color: PdfColors.grey600)),
+                                          pw.Text(
+                                            taxAmt.toStringAsFixed(2),
+                                            style: pw.TextStyle(
+                                              font: ttf,
+                                              fontSize: 10,
+                                            ),
+                                          ),
+                                          pw.Text(
+                                            '(${taxPerc.toStringAsFixed(0)}%)',
+                                            style: pw.TextStyle(
+                                              font: ttf,
+                                              fontSize: 7,
+                                              color: PdfColors.grey600,
+                                            ),
+                                          ),
                                         ],
                                       )
-                                    : pw.Text('-', textAlign: pw.TextAlign.right, style: pw.TextStyle(font: ttf, fontSize: 10, color: PdfColors.grey600)),
+                                    : pw.Text(
+                                        '-',
+                                        textAlign: pw.TextAlign.right,
+                                        style: pw.TextStyle(
+                                          font: ttf,
+                                          fontSize: 10,
+                                          color: PdfColors.grey600,
+                                        ),
+                                      ),
                               ),
-                            _pdfCell(amount.toStringAsFixed(2), ttfBold, align: pw.TextAlign.right, isEven: isEven, bold: true, color: themeColor),
+                            _pdfCell(
+                              amount.toStringAsFixed(2),
+                              ttfBold,
+                              align: pw.TextAlign.right,
+                              isEven: isEven,
+                              bold: true,
+                              color: themeColor,
+                            ),
                           ],
                         );
                       }),
@@ -3619,28 +5268,77 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       ),
                       child: pw.Column(
                         children: [
-                          _invoicePdfTotalRow('TOTAL', '$currency${_subtotalWithTax.toStringAsFixed(2)}', ttf, ttfBold),
-                          _invoicePdfTotalRow('SUBTOTAL', '$currency${widget.subtotal.toStringAsFixed(2)}', ttf, ttfBold),
+                          _invoicePdfTotalRow(
+                            'TOTAL',
+                            '$currency${_subtotalWithTax.toStringAsFixed(2)}',
+                            ttf,
+                            ttfBold,
+                          ),
+                          _invoicePdfTotalRow(
+                            'SUBTOTAL',
+                            '$currency${widget.subtotal.toStringAsFixed(2)}',
+                            ttf,
+                            ttfBold,
+                          ),
                           if (widget.discount > 0)
-                            _invoicePdfTotalRow('Discount', '-$currency${widget.discount.toStringAsFixed(2)}', ttf, ttfBold, isDiscount: true),
+                            _invoicePdfTotalRow(
+                              'Discount',
+                              '-$currency${widget.discount.toStringAsFixed(2)}',
+                              ttf,
+                              ttfBold,
+                              isDiscount: true,
+                            ),
                           if (widget.taxes != null && widget.taxes!.isNotEmpty)
-                            ...widget.taxes!.map((tax) => _invoicePdfTotalRow(
-                              tax['name'] ?? 'Tax',
-                              '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
-                              ttf, ttfBold,
-                            )),
-                          _invoicePdfTotalRow('Total Tax', '$currency${_totalTaxAmount.toStringAsFixed(2)}', ttf, ttfBold),
+                            ...widget.taxes!.map(
+                              (tax) => _invoicePdfTotalRow(
+                                tax['name'] ?? 'Tax',
+                                '$currency${(tax['amount'] ?? 0.0).toStringAsFixed(2)}',
+                                ttf,
+                                ttfBold,
+                              ),
+                            ),
+                          _invoicePdfTotalRow(
+                            'Total Tax',
+                            '$currency${_totalTaxAmount.toStringAsFixed(2)}',
+                            ttf,
+                            ttfBold,
+                          ),
                           if (widget.deliveryCharge > 0)
-                            _invoicePdfTotalRow('Delivery', '+$currency${widget.deliveryCharge.toStringAsFixed(2)}', ttf, ttfBold),
+                            _invoicePdfTotalRow(
+                              'Delivery',
+                              '+$currency${widget.deliveryCharge.toStringAsFixed(2)}',
+                              ttf,
+                              ttfBold,
+                            ),
                           pw.Container(height: 1, color: PdfColors.grey300),
                           pw.Container(
                             color: PdfColors.white,
-                            padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            padding: const pw.EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
                             child: pw.Row(
-                              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  pw.MainAxisAlignment.spaceBetween,
                               children: [
-                                pw.Text('Total', style: pw.TextStyle(font: ttfBold, fontSize: 13, fontWeight: pw.FontWeight.bold, color: themeColor)),
-                                pw.Text('$currency${widget.total.toStringAsFixed(2)}', style: pw.TextStyle(font: ttfBold, fontSize: 14, fontWeight: pw.FontWeight.bold, color: themeColor)),
+                                pw.Text(
+                                  'Total',
+                                  style: pw.TextStyle(
+                                    font: ttfBold,
+                                    fontSize: 13,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: themeColor,
+                                  ),
+                                ),
+                                pw.Text(
+                                  '$currency${widget.total.toStringAsFixed(2)}',
+                                  style: pw.TextStyle(
+                                    font: ttfBold,
+                                    fontSize: 14,
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: themeColor,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -3651,10 +5349,16 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
                   // Tax details table (A4/PDF version)
                   if (_thermalShowTaxDetails)
-                    _buildPdfTaxDetailsTable(ttf, ttfBold, themeColor, currency),
+                    _buildPdfTaxDetailsTable(
+                      ttf,
+                      ttfBold,
+                      themeColor,
+                      currency,
+                    ),
 
                   // Bill Notes
-                  if (widget.customNote != null && widget.customNote!.isNotEmpty) ...[
+                  if (widget.customNote != null &&
+                      widget.customNote!.isNotEmpty) ...[
                     pw.SizedBox(height: 14),
                     pw.Container(
                       width: double.infinity,
@@ -3667,16 +5371,27 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Note:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                          pw.Text(
+                            'Note:',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
                           pw.SizedBox(height: 4),
-                          pw.Text(widget.customNote!, style: const pw.TextStyle(fontSize: 10)),
+                          pw.Text(
+                            widget.customNote!,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
                         ],
                       ),
                     ),
                   ],
 
                   // Delivery Address
-                  if (widget.deliveryAddress != null && widget.deliveryAddress!.isNotEmpty) ...[
+                  if (widget.deliveryAddress != null &&
+                      widget.deliveryAddress!.isNotEmpty) ...[
                     pw.SizedBox(height: 10),
                     pw.Container(
                       width: double.infinity,
@@ -3689,9 +5404,19 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                       child: pw.Column(
                         crossAxisAlignment: pw.CrossAxisAlignment.start,
                         children: [
-                          pw.Text('Delivery Address:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700)),
+                          pw.Text(
+                            'Delivery Address:',
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              fontWeight: pw.FontWeight.bold,
+                              color: PdfColors.grey700,
+                            ),
+                          ),
                           pw.SizedBox(height: 4),
-                          pw.Text(widget.deliveryAddress!, style: const pw.TextStyle(fontSize: 10)),
+                          pw.Text(
+                            widget.deliveryAddress!,
+                            style: const pw.TextStyle(fontSize: 10),
+                          ),
                         ],
                       ),
                     ),
@@ -3712,7 +5437,11 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                             pw.Text(
                               'Authorized Signature',
                               textAlign: pw.TextAlign.center,
-                              style: pw.TextStyle(font: ttf, fontSize: 9, color: PdfColors.grey700),
+                              style: pw.TextStyle(
+                                font: ttf,
+                                fontSize: 9,
+                                color: PdfColors.grey700,
+                              ),
                             ),
                           ],
                         ),
@@ -3731,20 +5460,45 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
     return pdf;
   }
 
-  pw.Widget _invoicePdfTotalRow(String label, String value, pw.Font ttf, pw.Font ttfBold, {bool isDiscount = false}) {
+  pw.Widget _invoicePdfTotalRow(
+    String label,
+    String value,
+    pw.Font ttf,
+    pw.Font ttfBold, {
+    bool isDiscount = false,
+  }) {
     return pw.Container(
       padding: const pw.EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text(label, style: pw.TextStyle(font: ttf, fontSize: 10, color: isDiscount ? PdfColors.green700 : PdfColors.grey800)),
-          pw.Text(value, style: pw.TextStyle(font: ttfBold, fontSize: 10, color: isDiscount ? PdfColors.green700 : PdfColors.black)),
+          pw.Text(
+            label,
+            style: pw.TextStyle(
+              font: ttf,
+              fontSize: 10,
+              color: isDiscount ? PdfColors.green700 : PdfColors.grey800,
+            ),
+          ),
+          pw.Text(
+            value,
+            style: pw.TextStyle(
+              font: ttfBold,
+              fontSize: 10,
+              color: isDiscount ? PdfColors.green700 : PdfColors.black,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  pw.Widget _buildPdfTaxDetailsTable(pw.Font ttf, pw.Font ttfBold, PdfColor themeColor, String currency) {
+  pw.Widget _buildPdfTaxDetailsTable(
+    pw.Font ttf,
+    pw.Font ttfBold,
+    PdfColor themeColor,
+    String currency,
+  ) {
     final Map<String, _TaxRowData> taxGroup = {};
     for (var item in widget.items) {
       final qty = (item['quantity'] ?? 1.0).toDouble();
@@ -3756,7 +5510,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       if (taxAmt == 0.0 || taxPct == 0.0) continue;
 
       double baseAmt = price * qty;
-      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+      if (taxType == 'Tax Included in Price' ||
+          taxType == 'Price includes Tax') {
         baseAmt = baseAmt - taxAmt;
       } else {
         final total = (item['total'] ?? (price * qty)).toDouble();
@@ -3803,7 +5558,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         pw.SizedBox(height: 16),
         pw.Text(
           'Tax Details',
-          style: pw.TextStyle(font: ttfBold, fontSize: 10, fontWeight: pw.FontWeight.bold, color: themeColor),
+          style: pw.TextStyle(
+            font: ttfBold,
+            fontSize: 10,
+            fontWeight: pw.FontWeight.bold,
+            color: themeColor,
+          ),
         ),
         pw.SizedBox(height: 6),
         pw.Table(
@@ -3814,41 +5574,88 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
               children: [
                 pw.Padding(
                   padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text('Tax', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                  child: pw.Text(
+                    'Tax',
+                    style: pw.TextStyle(
+                      font: ttfBold,
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                  ),
                 ),
                 pw.Padding(
                   padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text('Amount', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                  child: pw.Text(
+                    'Amount',
+                    style: pw.TextStyle(
+                      font: ttfBold,
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
                 ),
                 pw.Padding(
                   padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text('Rate%', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                  child: pw.Text(
+                    'Rate%',
+                    style: pw.TextStyle(
+                      font: ttfBold,
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
                 ),
                 pw.Padding(
                   padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text('Tax Amount', style: pw.TextStyle(font: ttfBold, fontSize: 9, fontWeight: pw.FontWeight.bold), textAlign: pw.TextAlign.right),
+                  child: pw.Text(
+                    'Tax Amount',
+                    style: pw.TextStyle(
+                      font: ttfBold,
+                      fontSize: 9,
+                      fontWeight: pw.FontWeight.bold,
+                    ),
+                    textAlign: pw.TextAlign.right,
+                  ),
                 ),
               ],
             ),
             ...taxGroup.values.map((entry) {
-              final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+              final rateStr =
+                  '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
               return pw.TableRow(
                 children: [
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(6),
-                    child: pw.Text(entry.name, style: const pw.TextStyle(fontSize: 8)),
+                    child: pw.Text(
+                      entry.name,
+                      style: const pw.TextStyle(fontSize: 8),
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(6),
-                    child: pw.Text('$currency${entry.baseAmount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                    child: pw.Text(
+                      '$currency${entry.baseAmount.toStringAsFixed(2)}',
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(6),
-                    child: pw.Text(rateStr, style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                    child: pw.Text(
+                      rateStr,
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
                   pw.Padding(
                     padding: const pw.EdgeInsets.all(6),
-                    child: pw.Text('$currency${entry.taxAmount.toStringAsFixed(2)}', style: const pw.TextStyle(fontSize: 8), textAlign: pw.TextAlign.right),
+                    child: pw.Text(
+                      '$currency${entry.taxAmount.toStringAsFixed(2)}',
+                      style: const pw.TextStyle(fontSize: 8),
+                      textAlign: pw.TextAlign.right,
+                    ),
                   ),
                 ],
               );
@@ -3861,14 +5668,14 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
 
   /// Reusable PDF table cell
   pw.Widget _pdfCell(
-      String text,
-      pw.Font font, {
-        bool isHeader = false,
-        bool bold = false,
-        bool isEven = true,
-        pw.TextAlign align = pw.TextAlign.left,
-        PdfColor? color,
-      }) {
+    String text,
+    pw.Font font, {
+    bool isHeader = false,
+    bool bold = false,
+    bool isEven = true,
+    pw.TextAlign align = pw.TextAlign.left,
+    PdfColor? color,
+  }) {
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       child: pw.Text(
@@ -3877,16 +5684,18 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
         style: pw.TextStyle(
           font: font,
           fontSize: isHeader ? 9 : 10,
-          fontWeight: (isHeader || bold) ? pw.FontWeight.bold : pw.FontWeight.normal,
-          color: isHeader
-              ? PdfColors.white
-              : (color ?? PdfColors.black),
+          fontWeight: (isHeader || bold)
+              ? pw.FontWeight.bold
+              : pw.FontWeight.normal,
+          color: isHeader ? PdfColors.white : (color ?? PdfColors.black),
         ),
       ),
     );
   }
 
-  Widget _buildUiTaxDetailsTable(TextStyle Function({double size, FontWeight weight, Color color}) tStyle) {
+  Widget _buildUiTaxDetailsTable(
+    TextStyle Function({double size, FontWeight weight, Color color}) tStyle,
+  ) {
     final Map<String, _TaxRowData> taxGroup = {};
     for (var item in widget.items) {
       final qty = (item['quantity'] ?? 1.0).toDouble();
@@ -3898,7 +5707,8 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       if (taxAmt == 0.0 || taxPct == 0.0) continue;
 
       double baseAmt = price * qty;
-      if (taxType == 'Tax Included in Price' || taxType == 'Price includes Tax') {
+      if (taxType == 'Tax Included in Price' ||
+          taxType == 'Price includes Tax') {
         baseAmt = baseAmt - taxAmt;
       } else {
         final total = (item['total'] ?? (price * qty)).toDouble();
@@ -3947,7 +5757,12 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Tax Details', style: tStyle(size: 10, weight: FontWeight.w700)),
+          Center(
+            child: Text(
+              'Tax Details',
+              style: tStyle(size: 10, weight: FontWeight.w700),
+            ),
+          ),
           const SizedBox(height: 6),
           Table(
             border: TableBorder.all(color: Colors.grey.shade300, width: 0.5),
@@ -3957,24 +5772,40 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Text('Tax', style: tStyle(size: 8, weight: FontWeight.bold)),
+                    child: Text(
+                      'Tax',
+                      style: tStyle(size: 8, weight: FontWeight.bold),
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Text('Amount', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                    child: Text(
+                      'Amount',
+                      style: tStyle(size: 8, weight: FontWeight.bold),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Text('Rate%', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                    child: Text(
+                      'Rate%',
+                      style: tStyle(size: 8, weight: FontWeight.bold),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(6),
-                    child: Text('Tax Amount', style: tStyle(size: 8, weight: FontWeight.bold), textAlign: TextAlign.right),
+                    child: Text(
+                      'Tax Amount',
+                      style: tStyle(size: 8, weight: FontWeight.bold),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                 ],
               ),
               ...taxGroup.values.map((entry) {
-                final rateStr = '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
+                final rateStr =
+                    '${entry.rate % 1 == 0 ? entry.rate.toInt() : entry.rate.toStringAsFixed(1)}%';
                 return TableRow(
                   children: [
                     Padding(
@@ -3983,15 +5814,27 @@ class _InvoicePageState extends State<InvoicePage> with TickerProviderStateMixin
                     ),
                     Padding(
                       padding: const EdgeInsets.all(6),
-                      child: Text(_formatDecimal(entry.baseAmount), style: tStyle(size: 8), textAlign: TextAlign.right),
+                      child: Text(
+                        _formatDecimal(entry.baseAmount),
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.right,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(6),
-                      child: Text(rateStr, style: tStyle(size: 8), textAlign: TextAlign.right),
+                      child: Text(
+                        rateStr,
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.right,
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.all(6),
-                      child: Text(_formatDecimal(entry.taxAmount), style: tStyle(size: 8), textAlign: TextAlign.right),
+                      child: Text(
+                        _formatDecimal(entry.taxAmount),
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.right,
+                      ),
                     ),
                   ],
                 );
@@ -4033,14 +5876,22 @@ class _ConfettiPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     for (var particle in particles) {
-      final paint = Paint()..color = particle.color.withAlpha((255 * (1 - progress)).toInt());
+      final paint = Paint()
+        ..color = particle.color.withAlpha((255 * (1 - progress)).toInt());
       final x = particle.x * size.width;
       final y = (particle.y + progress * particle.speed * 3) * size.height;
 
       canvas.save();
       canvas.translate(x, y);
       canvas.rotate(particle.rotation + progress * 10);
-      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: particle.size, height: particle.size * 0.6), paint);
+      canvas.drawRect(
+        Rect.fromCenter(
+          center: Offset.zero,
+          width: particle.size,
+          height: particle.size * 0.6,
+        ),
+        paint,
+      );
       canvas.restore();
     }
   }

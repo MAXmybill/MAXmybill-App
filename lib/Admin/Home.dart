@@ -25,7 +25,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -88,11 +88,12 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
                 dividerColor: Colors.transparent,
                 labelColor: kWhite,
                 unselectedLabelColor: kBlack54,
-                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11, letterSpacing: 0.5),
+                labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.2),
                 tabs: const [
-                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.buildingStorefront, size: 16), SizedBox(width: 8), Text('Stores')])),
-                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.bookOpen, size: 16), SizedBox(width: 8), Text('Knowledge')])),
-                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.lifebuoy, size: 16), SizedBox(width: 8), Text('Support')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.buildingStorefront, size: 14), SizedBox(width: 4), Text('Stores')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.bookOpen, size: 14), SizedBox(width: 4), Text('Knowledge')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.lifebuoy, size: 14), SizedBox(width: 4), Text('Support')])),
+                  Tab(child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [HeroIcon(HeroIcons.wrenchScrewdriver, size: 14), SizedBox(width: 4), Text('Maintenance')])),
                 ],
               ),
             ),
@@ -105,6 +106,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           StoresTab(adminEmail: widget.userEmail),
           const KnowledgeTab(),
           const SupportTab(),
+          const MaintenanceTab(),
         ],
       ),
     );
@@ -865,3 +867,570 @@ Widget _buildEmptyState(HeroIcons icon, String msg) {
     ),
   );
 }
+
+// ==========================================
+// MAINTENANCE MODE TAB
+// ==========================================
+class MaintenanceTab extends StatefulWidget {
+  const MaintenanceTab({super.key});
+
+  @override
+  State<MaintenanceTab> createState() => _MaintenanceTabState();
+}
+
+class _MaintenanceTabState extends State<MaintenanceTab> {
+  final _messageController = TextEditingController(
+      text: 'We are currently performing scheduled maintenance to improve your experience. Please check back later.');
+  final _customMinutesController = TextEditingController(text: '30');
+
+  String _mode = 'now'; // 'now' or 'schedule'
+  int _selectedDurationMinutes = 30; // Predefined minutes
+  bool _isCustomDuration = false;
+
+  DateTime? _scheduledDateTime;
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _customMinutesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDateTime(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(minutes: 5)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(primary: kPrimaryColor),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && mounted) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: const ColorScheme.light(primary: kPrimaryColor),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        setState(() {
+          _scheduledDateTime = DateTime(
+            pickedDate.year,
+            pickedDate.month,
+            pickedDate.day,
+            pickedTime.hour,
+            pickedTime.minute,
+          );
+        });
+      }
+    }
+  }
+
+  Future<void> _saveMaintenanceSettings() async {
+    int durationMinutes = _selectedDurationMinutes;
+    if (_isCustomDuration) {
+      final customVal = int.tryParse(_customMinutesController.text);
+      if (customVal == null || customVal <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid custom duration in minutes.'), backgroundColor: kErrorColor),
+        );
+        return;
+      }
+      durationMinutes = customVal;
+    }
+
+    DateTime startedAt;
+    DateTime endAt;
+    DateTime? scheduledAt;
+
+    if (_mode == 'now') {
+      startedAt = DateTime.now();
+      endAt = startedAt.add(Duration(minutes: durationMinutes));
+      scheduledAt = null;
+    } else {
+      if (_scheduledDateTime == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a scheduled start time.'), backgroundColor: kErrorColor),
+        );
+        return;
+      }
+      if (_scheduledDateTime!.isBefore(DateTime.now())) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Scheduled time must be in the future.'), backgroundColor: kErrorColor),
+        );
+        return;
+      }
+      startedAt = _scheduledDateTime!;
+      endAt = startedAt.add(Duration(minutes: durationMinutes));
+      scheduledAt = startedAt;
+    }
+
+    try {
+      await FirebaseFirestore.instance.collection('settings').doc('maintenance').set({
+        'enabled': true,
+        'startedAt': startedAt,
+        'endAt': endAt,
+        'message': _messageController.text.trim(),
+        'scheduledAt': scheduledAt,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_mode == 'now'
+                ? 'Maintenance Mode activated successfully!'
+                : 'Maintenance Mode scheduled successfully!'),
+            backgroundColor: kGoogleGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update settings: $e'), backgroundColor: kErrorColor),
+        );
+      }
+    }
+  }
+
+  Future<void> _disableMaintenance() async {
+    try {
+      await FirebaseFirestore.instance.collection('settings').doc('maintenance').set({
+        'enabled': false,
+        'startedAt': null,
+        'endAt': null,
+        'message': '',
+        'scheduledAt': null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Maintenance Mode deactivated.'), backgroundColor: kGoogleGreen),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to deactivate maintenance: $e'), backgroundColor: kErrorColor),
+        );
+      }
+    }
+  }
+
+  DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is Timestamp) return value.toDate();
+    if (value is String) return DateTime.tryParse(value);
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection('settings').doc('maintenance').snapshots(),
+      builder: (context, snapshot) {
+        final data = snapshot.hasData && snapshot.data!.exists
+            ? snapshot.data!.data() as Map<String, dynamic>
+            : null;
+
+        final bool isEnabled = data?['enabled'] ?? false;
+        final DateTime? startedAt = _parseDateTime(data?['startedAt']);
+        final DateTime? endAt = _parseDateTime(data?['endAt']);
+        final String message = data?['message'] ?? '';
+
+        String statusText = 'Inactive';
+        Color statusColor = kBlack54;
+        bool isCurrentlyActive = false;
+
+        if (isEnabled && startedAt != null && endAt != null) {
+          final now = DateTime.now();
+          if (now.isAfter(startedAt) && now.isBefore(endAt)) {
+            statusText = 'Active';
+            statusColor = kErrorColor;
+            isCurrentlyActive = true;
+          } else if (now.isBefore(startedAt)) {
+            statusText = 'Scheduled';
+            statusColor = kOrange;
+          }
+        }
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Current Status Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: kGrey200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Maintenance Status',
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: kBlack87),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: statusColor.withOpacity(0.15)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                statusText,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w900,
+                                  color: statusColor,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (isEnabled && startedAt != null && endAt != null) ...[
+                      const SizedBox(height: 16),
+                      const Divider(height: 1, color: kGrey200),
+                      const SizedBox(height: 16),
+                      _statusDetailRow(
+                        HeroIcons.calendar,
+                        'Start Time',
+                        DateFormat('dd MMM yyyy, hh:mm a').format(startedAt),
+                      ),
+                      const SizedBox(height: 8),
+                      _statusDetailRow(
+                        HeroIcons.clock,
+                        'End Time',
+                        DateFormat('dd MMM yyyy, hh:mm a').format(endAt),
+                      ),
+                      const SizedBox(height: 8),
+                      _statusDetailRow(
+                        HeroIcons.chatBubbleLeftEllipsis,
+                        'Notice Message',
+                        message,
+                      ),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 48,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: kErrorColor.withOpacity(0.08),
+                            elevation: 0,
+                            side: const BorderSide(color: kErrorColor, width: 1.0),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          onPressed: _disableMaintenance,
+                          icon: const HeroIcon(HeroIcons.power, color: kErrorColor, size: 18),
+                          label: const Text(
+                            'End / Cancel Maintenance',
+                            style: TextStyle(color: kErrorColor, fontWeight: FontWeight.w900, fontSize: 13),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      const Text(
+                        'The application is fully operational. All regular users can log in and use it normally.',
+                        style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w500),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+              _buildSectionLabel('CONFIGURE NEW MAINTENANCE'),
+
+              // Config Card
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: kWhite,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: kGrey200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mode Selection
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _modeSelectButton('now', 'Start Immediately', HeroIcons.bolt),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _modeSelectButton('schedule', 'Schedule Time', HeroIcons.calendarDays),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Date & Time Picker for Schedule Mode
+                    if (_mode == 'schedule') ...[
+                      const Text(
+                        'Schedule Start Date & Time',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5),
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () => _selectDateTime(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            color: kGreyBg,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: kGrey200),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _scheduledDateTime == null
+                                    ? 'Tap to select schedule date & time'
+                                    : DateFormat('dd MMM yyyy, hh:mm a').format(_scheduledDateTime!),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13,
+                                  color: _scheduledDateTime == null ? kBlack54 : kBlack87,
+                                ),
+                              ),
+                              const HeroIcon(HeroIcons.chevronDown, color: kBlack54, size: 16),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
+
+                    // Duration Selection
+                    const Text(
+                      'Maintenance Duration',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _durationChip(5, '5 Mins'),
+                        _durationChip(15, '15 Mins'),
+                        _durationChip(30, '30 Mins'),
+                        _durationChip(60, '1 Hour'),
+                        _durationChip(120, '2 Hours'),
+                        _durationChip(-1, 'Custom', isCustom: true),
+                      ],
+                    ),
+                    if (_isCustomDuration) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _customMinutesController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                        decoration: InputDecoration(
+                          hintText: 'Enter duration in minutes',
+                          labelText: 'Custom Minutes',
+                          fillColor: kGreyBg,
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: kGrey200),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+
+                    // Custom Message
+                    const Text(
+                      'Broadcast Notice Message',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _messageController,
+                      maxLines: 3,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+                      decoration: InputDecoration(
+                        hintText: 'Enter custom maintenance notice message',
+                        fillColor: kGreyBg,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: kGrey200),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: kPrimaryColor,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        onPressed: _saveMaintenanceSettings,
+                        child: Text(
+                          _mode == 'now' ? 'Start Maintenance Mode' : 'Schedule Maintenance Mode',
+                          style: const TextStyle(color: kWhite, fontWeight: FontWeight.w900, fontSize: 13),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSectionLabel(String text) => Padding(
+        padding: const EdgeInsets.only(left: 4, bottom: 12),
+        child: Text(
+          text,
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 1.5),
+        ),
+      );
+
+  Widget _statusDetailRow(HeroIcons icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        HeroIcon(icon, color: kPrimaryColor, size: 16),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kBlack87),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _modeSelectButton(String modeVal, String label, HeroIcons icon) {
+    final bool isSelected = _mode == modeVal;
+    final Color color = isSelected ? kPrimaryColor : kBlack87;
+    return InkWell(
+      onTap: () {
+        setState(() {
+          _mode = modeVal;
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? kPrimaryColor.withOpacity(0.08) : kWhite,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? kPrimaryColor : kGrey200,
+            width: isSelected ? 1.5 : 1.0,
+          ),
+        ),
+        child: Column(
+          children: [
+            HeroIcon(icon, color: color, size: 20),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: color),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _durationChip(int minutes, String label, {bool isCustom = false}) {
+    final bool isSelected = isCustom ? _isCustomDuration : (!_isCustomDuration && _selectedDurationMinutes == minutes);
+    return ChoiceChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? kWhite : kBlack87,
+          fontWeight: FontWeight.w900,
+          fontSize: 11,
+        ),
+      ),
+      selected: isSelected,
+      selectedColor: kPrimaryColor,
+      backgroundColor: kGreyBg,
+      checkmarkColor: kWhite,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: isSelected ? kPrimaryColor : kGrey200),
+      ),
+      onSelected: (bool selected) {
+        setState(() {
+          if (isCustom) {
+            _isCustomDuration = true;
+          } else {
+            _isCustomDuration = false;
+            _selectedDurationMinutes = minutes;
+          }
+        });
+      },
+    );
+  }
+}
+

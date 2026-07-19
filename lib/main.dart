@@ -14,6 +14,7 @@ import 'utils/theme_notifier.dart';
 import 'utils/language_provider.dart';
 import 'utils/plan_provider.dart';
 import 'utils/keyboard_helper.dart';
+import 'utils/maintenance_wrapper.dart';
 import 'models/sale.dart';
 import 'services/sale_sync_service.dart';
 import 'services/local_stock_service.dart';
@@ -196,7 +197,9 @@ class MyApp extends StatelessWidget {
             // Disable text scaling to improve performance
             textScaler: const TextScaler.linear(1.0),
           ),
-          child: child ?? const SizedBox.shrink(),
+          child: MaintenanceWrapper(
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
       },
     );
