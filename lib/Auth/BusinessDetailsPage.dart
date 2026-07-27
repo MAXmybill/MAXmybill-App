@@ -7,17 +7,21 @@ import 'package:maxmybill/Sales/NewSale.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:maxmybill/Auth/LoginPage.dart';
 
 class BusinessDetailsPage extends StatefulWidget {
   final String uid;
   final String? email;
   final String? displayName;
+  final String? phoneNumber;
 
   const BusinessDetailsPage({
     super.key,
     required this.uid,
     this.email,
     this.displayName,
+    this.phoneNumber,
   });
 
   @override
@@ -216,6 +220,25 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     if (widget.displayName != null && widget.displayName!.isNotEmpty) {
       _ownerNameCtrl.text = widget.displayName!;
     }
+    if (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty) {
+      String phone = widget.phoneNumber!;
+      Map<String, String>? matchedCode;
+      for (var c in _countryCodes) {
+        final code = c['code']!;
+        if (phone.startsWith(code)) {
+          if (matchedCode == null || code.length > matchedCode['code']!.length) {
+            matchedCode = c;
+          }
+        }
+      }
+      if (matchedCode != null) {
+        _selectedCountryCode = matchedCode['code']!;
+        _selectedCountryFlag = matchedCode['flag']!;
+        _businessPhoneCtrl.text = phone.substring(matchedCode['code']!.length);
+      } else {
+        _businessPhoneCtrl.text = phone;
+      }
+    }
   }
 
   @override
@@ -334,7 +357,16 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         centerTitle: true,
         leading: IconButton(
           icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+            await FirebaseAuth.instance.signOut();
+            if (context.mounted) {
+              Navigator.pushAndRemoveUntil(
+                context,
+                CupertinoPageRoute(builder: (context) => const LoginPage()),
+                (route) => false,
+              );
+            }
+          },
         ),
       ),
       body: Column(

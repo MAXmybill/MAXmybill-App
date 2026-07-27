@@ -13,6 +13,7 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
 import 'package:maxmybill/services/single_session_service.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
+import 'package:maxmybill/utils/phone_country_codes.dart';
 
 // Ensure these imports match your file structure
 import 'package:maxmybill/Sales/NewSale.dart';
@@ -40,6 +41,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
+  final _otpCtrl = TextEditingController();
   final _auth = FirebaseAuth.instance;
   final _firestore_service = FirestoreService();
 
@@ -50,6 +53,11 @@ class _LoginPageState extends State<LoginPage> {
   bool _hidePass = true;
   bool _loading = false;
 
+  String _selectedCountryCode = '+91';
+  String _selectedCountryFlag = '🇮🇳';
+  String? _verificationId;
+  bool _otpSent = false;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +67,8 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailCtrl.dispose();
     _passCtrl.dispose();
+    _phoneCtrl.dispose();
+    _otpCtrl.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -302,6 +312,112 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _sendOTP() async {
+    final phone = _phoneCtrl.text.trim();
+    if (phone.isEmpty || phone.length < 5) {
+      _showMsg('Please enter a valid phone number', isError: true);
+      return;
+    }
+
+    setState(() => _loading = true);
+    final fullPhone = '$_selectedCountryCode$phone';
+
+    try {
+      await _auth.verifyPhoneNumber(
+        phoneNumber: fullPhone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          final userCred = await _auth.signInWithCredential(credential);
+          final user = userCred.user;
+          if (user != null) {
+            _onPhoneAuthSuccess(user);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          setState(() => _loading = false);
+          _showMsg(e.message ?? 'Verification failed. Please try again.', isError: true);
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          setState(() {
+            _loading = false;
+            _verificationId = verificationId;
+            _otpSent = true;
+          });
+          _showMsg('OTP sent successfully!');
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
+      );
+    } catch (e) {
+      setState(() => _loading = false);
+      _showMsg('Error sending OTP: $e', isError: true);
+    }
+  }
+
+  Future<void> _verifyOTP() async {
+    final otp = _otpCtrl.text.trim();
+    if (otp.isEmpty || otp.length < 6) {
+      _showMsg('Please enter a valid 6-digit OTP', isError: true);
+      return;
+    }
+
+    if (_verificationId == null) {
+      _showMsg('Verification session expired. Please resend OTP.', isError: true);
+      return;
+    }
+
+    setState(() => _loading = true);
+
+    try {
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+
+      final userCred = await _auth.signInWithCredential(credential);
+      final user = userCred.user;
+      if (user != null) {
+        await _onPhoneAuthSuccess(user);
+      } else {
+        throw Exception('User was null after sign in');
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _loading = false);
+      _showMsg(e.message ?? 'Invalid OTP code', isError: true);
+    } catch (e) {
+      setState(() => _loading = false);
+      _showMsg('Verification error: $e', isError: true);
+    }
+  }
+
+  Future<void> _onPhoneAuthSuccess(User user) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        await _firestore_service.notifyStoreDataChanged();
+        if (mounted) setState(() => _loading = false);
+        _navigate(user.uid, user.phoneNumber ?? user.email);
+      } else {
+        if (mounted) setState(() => _loading = false);
+        Navigator.push(
+          context,
+          CupertinoPageRoute(
+            builder: (context) => BusinessDetailsPage(
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              phoneNumber: user.phoneNumber,
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+      _showMsg('Authentication redirect error: $e', isError: true);
+    }
+  }
+
   Future<void> _googleLogin() async {
     setState(() => _loading = true);
     try {
@@ -448,8 +564,6 @@ class _LoginPageState extends State<LoginPage> {
                             duration: const Duration(milliseconds: 300),
                             child: _isStaff ? _buildEmailForm(context) : _buildGoogleForm(context),
                           ),
-                          const SizedBox(height: 20),
-                          _buildPrimaryActionBtn(context),
                           const SizedBox(height: 28),
                           _buildTerms(context),
                         ],
@@ -579,40 +693,238 @@ class _LoginPageState extends State<LoginPage> {
           ),
         ),
       ),
+      const SizedBox(height: 8),
+      _buildPrimaryActionBtn(context),
     ],
   );
 
-  Widget _buildGoogleForm(BuildContext context) => Column(
-    key: const ValueKey('google_form'),
-    children: [
-      const SizedBox(height: 8),
-      Text(context.tr('Sign In With Google'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0)),
-      const SizedBox(height: 32),
-      SizedBox(
-        width: double.infinity,
-        height: 56,
-        child: OutlinedButton(
-          onPressed: _loading ? null : _googleLogin,
-          style: OutlinedButton.styleFrom(
-            backgroundColor: kGreyBg,
-            side: const BorderSide(color: kGrey200, width: 1.5),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  Widget _buildGoogleForm(BuildContext context) {
+    return Column(
+      key: const ValueKey('google_phone_form'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (!_otpSent) ...[
+          const SizedBox(height: 8),
+          const Text(
+            "Sign In / Sign Up with Phone",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          const SizedBox(height: 16),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _phoneCtrl,
+            builder: (context, value, child) {
+              final bool isFilled = value.text.isNotEmpty;
+              return TextFormField(
+                controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87),
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  hintText: 'Enter phone number',
+                  hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
+                  prefixIcon: GestureDetector(
+                    onTap: _showCountryCodePicker,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_selectedCountryFlag, style: const TextStyle(fontSize: 18)),
+                          const SizedBox(width: 4),
+                          Text(
+                            _selectedCountryCode,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: isFilled ? kPrimaryColor : kBlack54,
+                            ),
+                          ),
+                          const SizedBox(width: 2),
+                          Icon(Icons.arrow_drop_down, size: 16, color: isFilled ? kPrimaryColor : kBlack54),
+                        ],
+                      ),
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8F9FA),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                  ),
+                  labelStyle: TextStyle(color: isFilled ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                  floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                ),
+              );
+            },
+          ),
+        ] else ...[
+          const SizedBox(height: 8),
+          const Text(
+            "Verify OTP",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            _otpCtrl,
+            "Enter 6-digit OTP",
+            HeroIcons.lockClosed,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              SizedBox(
-                width: 24, height: 24,
-                child: Image.asset('assets/google.png', errorBuilder: (ctx, err, stack) => CustomPaint(size: const Size(22, 22), painter: GoogleGPainter())),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _otpSent = false;
+                    _otpCtrl.clear();
+                  });
+                },
+                child: const Text("Edit Phone", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
               ),
-              const SizedBox(width: 14),
-              const Text('Google Account', style: TextStyle(fontSize: 14, color: kBlack87, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              TextButton(
+                onPressed: _loading ? null : _sendOTP,
+                child: const Text("Resend OTP", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
+              ),
             ],
           ),
+        ],
+        const SizedBox(height: 20),
+        _buildPrimaryActionBtn(context),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            const Expanded(child: Divider(color: kGrey200, thickness: 1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(context.tr('or'), style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600)),
+            ),
+            const Expanded(child: Divider(color: kGrey200, thickness: 1)),
+          ],
         ),
-      ),
-    ],
-  );
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          height: 56,
+          child: OutlinedButton(
+            onPressed: _loading ? null : _googleLogin,
+            style: OutlinedButton.styleFrom(
+              backgroundColor: kGreyBg,
+              side: const BorderSide(color: kGrey200, width: 1.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 24, height: 24,
+                  child: Image.asset('assets/google.png', errorBuilder: (ctx, err, stack) => CustomPaint(size: const Size(22, 22), painter: GoogleGPainter())),
+                ),
+                const SizedBox(width: 14),
+                const Text('Google Account', style: TextStyle(fontSize: 14, color: kBlack87, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showCountryCodePicker() {
+    String searchQuery = '';
+    final countryCodes = PhoneCountryCodes.list;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: kWhite,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filtered = countryCodes.where((c) {
+              if (searchQuery.isEmpty) return true;
+              final q = searchQuery.toLowerCase();
+              return c['name']!.toLowerCase().contains(q) || c['code']!.contains(q);
+            }).toList();
+
+            return SizedBox(
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                    child: Column(
+                      children: [
+                        const Text("Select Country Code",
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: kBlack87)),
+                        const SizedBox(height: 14),
+                        TextField(
+                          autofocus: false,
+                          decoration: InputDecoration(
+                            hintText: 'Search country...',
+                            hintStyle: const TextStyle(fontSize: 13, color: kGrey400),
+                            prefixIcon: const Padding(
+                              padding: EdgeInsets.all(12.0),
+                              child: Icon(Icons.search, color: kPrimaryColor),
+                            ),
+                            filled: true,
+                            fillColor: kGreyBg,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (value) {
+                            setModalState(() {
+                              searchQuery = value;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final c = filtered[index];
+                        return ListTile(
+                          leading: Text(c['flag']!, style: const TextStyle(fontSize: 24)),
+                          title: Text(c['name']!),
+                          trailing: Text(c['code']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          onTap: () {
+                            setState(() {
+                              _selectedCountryCode = c['code']!;
+                              _selectedCountryFlag = c['flag']!;
+                            });
+                            Navigator.pop(ctx);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   Widget _buildTextField(
       TextEditingController ctrl,
@@ -666,12 +978,22 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget _buildPrimaryActionBtn(BuildContext context) {
-    String txt = _isStaff ? context.tr('login_staff') : "Continue With Google";
+    String txt = _isStaff
+        ? context.tr('login_staff')
+        : (_otpSent ? "Verify OTP" : "Send OTP");
+
+    VoidCallback? action;
+    if (_isStaff) {
+      action = _emailLogin;
+    } else {
+      action = _otpSent ? _verifyOTP : _sendOTP;
+    }
+
     return SizedBox(
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: _loading ? null : (_isStaff ? _emailLogin : _googleLogin),
+        onPressed: _loading ? null : action,
         style: ElevatedButton.styleFrom(
           backgroundColor: kPrimaryColor,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
