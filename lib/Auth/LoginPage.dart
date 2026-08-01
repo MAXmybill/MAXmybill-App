@@ -13,6 +13,7 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
 import 'package:maxmybill/services/single_session_service.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
+import 'package:maxmybill/services/didit_auth_service.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
 
 // Ensure these imports match your file structure
@@ -57,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
   String _selectedCountryFlag = '🇮🇳';
   String? _verificationId;
   bool _otpSent = false;
+  bool _showPhoneInput = false;
 
   @override
   void initState() {
@@ -323,31 +325,12 @@ class _LoginPageState extends State<LoginPage> {
     final fullPhone = '$_selectedCountryCode$phone';
 
     try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: fullPhone,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          final userCred = await _auth.signInWithCredential(credential);
-          final user = userCred.user;
-          if (user != null) {
-            _onPhoneAuthSuccess(user);
-          }
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          setState(() => _loading = false);
-          _showMsg(e.message ?? 'Verification failed. Please try again.', isError: true);
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          setState(() {
-            _loading = false;
-            _verificationId = verificationId;
-            _otpSent = true;
-          });
-          _showMsg('OTP sent successfully!');
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-      );
+      await DiditAuthService.sendOTP(fullPhone);
+      setState(() {
+        _loading = false;
+        _otpSent = true;
+      });
+      _showMsg('OTP sent successfully!');
     } catch (e) {
       setState(() => _loading = false);
       _showMsg('Error sending OTP: $e', isError: true);
@@ -361,20 +344,12 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
-    if (_verificationId == null) {
-      _showMsg('Verification session expired. Please resend OTP.', isError: true);
-      return;
-    }
-
     setState(() => _loading = true);
+    final fullPhone = '$_selectedCountryCode${_phoneCtrl.text.trim()}';
 
     try {
-      final credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: otp,
-      );
-
-      final userCred = await _auth.signInWithCredential(credential);
+      final customToken = await DiditAuthService.verifyOTP(fullPhone, otp);
+      final userCred = await _auth.signInWithCustomToken(customToken);
       final user = userCred.user;
       if (user != null) {
         await _onPhoneAuthSuccess(user);
@@ -699,17 +674,99 @@ class _LoginPageState extends State<LoginPage> {
   );
 
   Widget _buildGoogleForm(BuildContext context) {
+    if (!_showPhoneInput) {
+      return Column(
+        key: const ValueKey('google_phone_form'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton(
+              onPressed: () => setState(() => _showPhoneInput = true),
+              style: OutlinedButton.styleFrom(
+                backgroundColor: kWhite,
+                side: const BorderSide(color: kPrimaryColor, width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const HeroIcon(HeroIcons.devicePhoneMobile, color: kPrimaryColor, size: 22),
+                  const SizedBox(width: 14),
+                  const Text('Continue with Phone Number', style: TextStyle(fontSize: 14, color: kPrimaryColor, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: kGrey200, thickness: 1)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(context.tr('or'), style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600)),
+              ),
+              const Expanded(child: Divider(color: kGrey200, thickness: 1)),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton(
+              onPressed: _loading ? null : _googleLogin,
+              style: OutlinedButton.styleFrom(
+                backgroundColor: kGreyBg,
+                side: const BorderSide(color: kGrey200, width: 1.5),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 24, height: 24,
+                    child: Image.asset('assets/google.png', errorBuilder: (ctx, err, stack) => CustomPaint(size: const Size(22, 22), painter: GoogleGPainter())),
+                  ),
+                  const SizedBox(width: 14),
+                  const Text('Continue with Google Account', style: TextStyle(fontSize: 14, color: kBlack87, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
-      key: const ValueKey('google_phone_form'),
+      key: const ValueKey('google_phone_form_input'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: kBlack87),
+              onPressed: () {
+                setState(() {
+                  _showPhoneInput = false;
+                  _otpSent = false;
+                  _phoneCtrl.clear();
+                  _otpCtrl.clear();
+                });
+              },
+            ),
+            const Expanded(
+              child: Text(
+                "Sign In / Sign Up with Phone",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+              ),
+            ),
+            const SizedBox(width: 48), // balance the back button
+          ],
+        ),
         if (!_otpSent) ...[
-          const SizedBox(height: 8),
-          const Text(
-            "Sign In / Sign Up with Phone",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
-          ),
           const SizedBox(height: 16),
           ValueListenableBuilder<TextEditingValue>(
             valueListenable: _phoneCtrl,
@@ -804,41 +861,6 @@ class _LoginPageState extends State<LoginPage> {
         ],
         const SizedBox(height: 20),
         _buildPrimaryActionBtn(context),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            const Expanded(child: Divider(color: kGrey200, thickness: 1)),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(context.tr('or'), style: const TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w600)),
-            ),
-            const Expanded(child: Divider(color: kGrey200, thickness: 1)),
-          ],
-        ),
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: OutlinedButton(
-            onPressed: _loading ? null : _googleLogin,
-            style: OutlinedButton.styleFrom(
-              backgroundColor: kGreyBg,
-              side: const BorderSide(color: kGrey200, width: 1.5),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(
-                  width: 24, height: 24,
-                  child: Image.asset('assets/google.png', errorBuilder: (ctx, err, stack) => CustomPaint(size: const Size(22, 22), painter: GoogleGPainter())),
-                ),
-                const SizedBox(width: 14),
-                const Text('Google Account', style: TextStyle(fontSize: 14, color: kBlack87, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }

@@ -8,12 +8,110 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:490905109908:android:e2b78733448c36fb07fb81",
+        "android_client_info": {
+          "package_name": "com.example.maxbillup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "490905109908-1nc4kbjokgo3u3dcp11ag6j4h71elup9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.maxbillup",
+            "certificate_hash": "2608f5806aab6a3231eda6c4badc5fbaa83e1d35"
+          }
+        },
+        {
+          "client_id": "490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAarypDsma-UFSw0gFw2lv99s1f_bsh4QA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:490905109908:android:f858f9498ce1462007fb81",
+        "android_client_info": {
+          "package_name": "com.example.maxmybill"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "490905109908-jdc016cbo96uobfcp3aths4ngptt0udk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.maxmybill",
+            "certificate_hash": "2608f5806aab6a3231eda6c4badc5fbaa83e1d35"
+          }
+        },
+        {
+          "client_id": "490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAarypDsma-UFSw0gFw2lv99s1f_bsh4QA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:490905109908:android:87c9f6d82400690607fb81",
         "android_client_info": {
           "package_name": "com.maxmybill.app"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "490905109908-1595jl4qiqoechnvg9n6h3o9pvpjufff.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maxmybill.app",
+            "certificate_hash": "e57c6c52d52ab206d467a5bb620c559c7fe446f8"
+          }
+        },
+        {
+          "client_id": "490905109908-a4ivvea64ajs2jkkdjdjv3b3j7803olj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maxmybill.app",
+            "certificate_hash": "2608f5806aab6a3231eda6c4badc5fbaa83e1d35"
+          }
+        },
+        {
+          "client_id": "490905109908-p51pnqg3v3fng9p8h8t1dhhi29lqc6k1.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.maxmybill.app",
+            "certificate_hash": "9a155b57dd93af8a9881138fd1101987920bd9fd"
+          }
+        },
         {
           "client_id": "490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com",
           "client_type": 3

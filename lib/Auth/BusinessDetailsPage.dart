@@ -45,6 +45,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   bool _loading = false;
   bool _showAdvancedDetails = false;
   String _selectedCurrency = 'INR';
+  bool _isPhoneLocked = false;
 
   // Country code data
   String _selectedCountryCode = '+91';
@@ -221,6 +222,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       _ownerNameCtrl.text = widget.displayName!;
     }
     if (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty) {
+      _isPhoneLocked = true;
       String phone = widget.phoneNumber!;
       Map<String, String>? matchedCode;
       for (var c in _countryCodes) {
@@ -434,15 +436,16 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           final bool isFilled = value.text.isNotEmpty;
           return TextFormField(
             controller: _businessPhoneCtrl,
+            enabled: !_isPhoneLocked,
             keyboardType: TextInputType.phone,
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isPhoneLocked ? kBlack54 : kBlack87),
             decoration: InputDecoration(
               labelText: 'Business Number *',
               hintText: 'Enter business number',
               hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
               prefixIcon: GestureDetector(
-                onTap: _showCountryCodePicker,
+                onTap: _isPhoneLocked ? null : _showCountryCodePicker,
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
                   child: Row(
