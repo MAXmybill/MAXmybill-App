@@ -20,6 +20,7 @@ class PlanProvider extends ChangeNotifier {
   String _rawPlan = PLAN_FREE; // Store the original plan from Firestore (before expiry check)
   DateTime? _cachedExpiryDate;
   bool _isInitialized = false;
+  bool _isTrial = false;
 
   /// Get cached plan instantly (no async wait)
   /// Returns 'Free' if the plan has expired
@@ -60,6 +61,12 @@ class PlanProvider extends ChangeNotifier {
   /// Check if provider is initialized
   bool get isInitialized => _isInitialized;
 
+  /// Check if the current plan is a trial
+  bool get isTrial {
+    if (_isPlanFree(cachedPlan)) return false;
+    return _isTrial;
+  }
+
   /// Initialize the plan listener - call this once at app startup
   Future<void> initialize() async {
     await _startPlanListener();
@@ -94,6 +101,7 @@ class PlanProvider extends ChangeNotifier {
         _cachedPlan = PLAN_FREE;
         _rawPlan = PLAN_FREE;
         _cachedExpiryDate = null;
+        _isTrial = false;
         return;
       }
 
@@ -112,6 +120,8 @@ class PlanProvider extends ChangeNotifier {
       // Get raw plan from Firestore (without expiry check)
       final rawPlanValue = data['plan']?.toString();
       _rawPlan = (rawPlanValue != null && rawPlanValue.trim().isNotEmpty) ? rawPlanValue.trim() : PLAN_FREE;
+      
+      _isTrial = data['isTrial'] == true;
 
       // Get plan (with expiry check applied)
       _cachedPlan = await getCurrentPlan();
@@ -157,6 +167,8 @@ class PlanProvider extends ChangeNotifier {
               debugPrint('📱 PlanProvider: Real-time update - Plan changed to $newPlan');
               _cachedPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
             }
+
+            _isTrial = data['isTrial'] == true;
 
             // Update expiry date
             final expiryDateStr = data['subscriptionExpiryDate']?.toString();

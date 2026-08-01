@@ -328,12 +328,10 @@ class _MenuPageState extends State<MenuPage> {
             return _hasPermission('daybook');
           }
 
-          // For paid features, staff needs both explicit permission and required plan rank.
+          // For paid features, staff needs explicit permission
           if (!_hasPermission(permission)) return false;
 
-          // Otherwise enforce plan-based rank requirements (paid features)
-          if (requiredRank > 0 && planRank < requiredRank) return false;
-
+          // We no longer hide features based on plan rank, so Free users can see what they are missing (with a lock icon).
           return true;
         }
 
@@ -735,6 +733,7 @@ class _MenuPageState extends State<MenuPage> {
 
   Widget _buildPlanBadge(PlanProvider planProvider) {
     final plan = planProvider.cachedPlan;
+    final String displayText = planProvider.isTrial ? '$plan (Trial)' : plan;
     final isPremium = !plan.toLowerCase().contains('free') && !plan.toLowerCase().contains('starter');
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -744,7 +743,7 @@ class _MenuPageState extends State<MenuPage> {
         children: [
           const HeroIcon(HeroIcons.star, style: HeroIconStyle.solid, color: kWhite, size: 10),
           const SizedBox(width: 4),
-          Text(plan, style: const TextStyle(color: kWhite, fontSize: 9, fontWeight: FontWeight.w900)),
+          Text(displayText, style: const TextStyle(color: kWhite, fontSize: 9, fontWeight: FontWeight.w900)),
         ],
       ),
     );

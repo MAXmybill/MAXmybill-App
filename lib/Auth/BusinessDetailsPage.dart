@@ -9,6 +9,9 @@ import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maxmybill/Auth/LoginPage.dart';
+import 'package:maxmybill/Onboarding/SignupTourPage.dart';
+import 'package:provider/provider.dart';
+import 'package:maxmybill/utils/plan_provider.dart';
 
 class BusinessDetailsPage extends StatefulWidget {
   final String uid;
@@ -293,6 +296,9 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       final licenseNumber = '${_licenseTypeCtrl.text.trim()} ${_licenseNumberCtrl.text.trim()}'.trim();
       final fullBusinessPhone = '$_selectedCountryCode${_businessPhoneCtrl.text.trim()}';
 
+      final now = DateTime.now();
+      final trialExpires = now.add(const Duration(days: 15));
+
       final storeData = {
         'storeId': storeId,
         'businessName': _businessNameCtrl.text.trim(),
@@ -307,7 +313,9 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         'ownerName': _ownerNameCtrl.text.trim(),
         'ownerEmail': widget.email,
         'ownerUid': widget.uid,
-        'plan': 'Free',
+        'plan': 'MAX Plus',
+        'isTrial': true,
+        'subscriptionExpiryDate': trialExpires.toIso8601String(),
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -329,11 +337,14 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       await firestore.collection('users').doc(widget.uid).set(userData);
 
       if (mounted) {
+        // Re-initialize PlanProvider so it starts listening to the newly created store
+        await Provider.of<PlanProvider>(context, listen: false).initialize();
+
         _showMsg(context.tr('business_registered_success'));
         Navigator.pushReplacement(
           context,
           CupertinoPageRoute(
-            builder: (context) => NewSalePage(uid: widget.uid, userEmail: widget.email),
+            builder: (context) => SignupTourPage(uid: widget.uid, userEmail: widget.email),
           ),
         );
       }

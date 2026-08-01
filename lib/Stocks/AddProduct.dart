@@ -11,10 +11,12 @@ import 'package:intl/intl.dart';
 import 'AddCategoryPopup.dart';
 import 'package:maxmybill/services/excel_import_service.dart';
 import 'package:maxmybill/components/premium_lock_ui.dart';
-import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/utils/storage_saver.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/services/local_stock_service.dart';
+import 'package:maxmybill/Sales/NewSale.dart';
 
 class AddProductPage extends StatefulWidget {
   final String uid;
@@ -1743,6 +1745,23 @@ class _AddProductPageState extends State<AddProductPage> {
       final docRef = await FirestoreService().addDocument('Products', pData);
       await LocalStockService().cacheStock(docRef.id, pData['currentStock'] as double);
     }
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      final bool isTour = prefs.getBool('isTourActive') ?? false;
+
+      if (isTour) {
+        Navigator.pushReplacement(
+          context,
+          CupertinoPageRoute(
+            builder: (_) => NewSalePage(
+              uid: widget.uid,
+              userEmail: widget.userEmail,
+            ),
+          ),
+        );
+      } else {
+        Navigator.pop(context);
+      }
+    }
   }
 }

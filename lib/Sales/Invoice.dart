@@ -11,6 +11,7 @@ import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/amount_formatter.dart';
 import 'package:maxmybill/components/app_mini_switch.dart';
 import 'package:maxmybill/Settings/Profile.dart';
+import 'package:maxmybill/Menu/Menu.dart' hide kPrimaryColor, kWhite;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:intl/intl.dart';
@@ -139,6 +140,7 @@ class _InvoicePageState extends State<InvoicePage>
     with TickerProviderStateMixin {
   bool _isLoading = true;
   String? _storeId;
+  bool _isTourActive = false;
 
   double get _subtotalWithTax {
     double total = 0.0;
@@ -380,6 +382,7 @@ class _InvoicePageState extends State<InvoicePage>
     businessPhone = widget.businessPhone;
     businessGSTIN = widget.businessGSTIN;
     _loadStoreData();
+    _checkTourState();
     _loadReceiptSettings();
     _loadTemplatePreference();
     _loadPdfFonts();
@@ -796,6 +799,13 @@ class _InvoicePageState extends State<InvoicePage>
     if (mounted) {
       setState(() => _showCelebration = false);
     }
+  }
+
+  Future<void> _checkTourState() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isTourActive = prefs.getBool('isTourActive') ?? false;
+    });
   }
 
   Future<void> _loadTemplatePreference() async {
@@ -3463,16 +3473,38 @@ class _InvoicePageState extends State<InvoicePage>
               true,
             ),
             const SizedBox(width: 12),
-            _buildBtn(Icons.add_rounded, "New Sale", () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                CupertinoPageRoute(
-                  builder: (context) =>
-                      NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
-                ),
-                (route) => false,
-              );
-            }, false),
+            _isTourActive
+                ? _buildBtn(Icons.print_rounded, "Next: Printer Setup", () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('isTourActive', false);
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) => PrinterSetupPage(
+                          onBack: () {
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              CupertinoPageRoute(
+                                builder: (context) => MenuPage(uid: widget.uid, userEmail: widget.userEmail),
+                              ),
+                              (route) => false,
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }, false)
+                : _buildBtn(Icons.add_rounded, "New Sale", () {
+                    Navigator.pushAndRemoveUntil(
+                      context,
+                      CupertinoPageRoute(
+                        builder: (context) =>
+                            NewSalePage(uid: widget.uid, userEmail: widget.userEmail),
+                      ),
+                      (route) => false,
+                    );
+                  }, false),
           ],
         ),
       ),
