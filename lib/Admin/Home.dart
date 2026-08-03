@@ -534,11 +534,12 @@ class _StoreDetailPageState extends State<StoreDetailPage> {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('store').doc(widget.storeId).snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.red)));
           }
 
-          final storeData = snapshot.data!.data() as Map<String, dynamic>? ?? {};
+          // Fallback to widget.storeData if the stream hasn't loaded yet
+          final storeData = snapshot.hasData ? (snapshot.data!.data() as Map<String, dynamic>? ?? {}) : widget.storeData;
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),

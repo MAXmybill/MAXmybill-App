@@ -391,7 +391,7 @@ class SaleSyncService {
         await _updateCustomerCredit(
           saleData['customerPhone'],
           saleData['total'],
-          sale.id,
+          saleData['invoiceNumber'] ?? sale.id,
         );
         print('  ✅ Customer credit updated');
       }

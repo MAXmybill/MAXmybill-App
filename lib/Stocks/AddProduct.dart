@@ -1234,7 +1234,7 @@ class _AddProductPageState extends State<AddProductPage> {
         // Default units that cannot be deleted
         final defaultUnits = ['Piece', 'Kg', 'Liter', 'Box', 'Nos', 'Meter', 'Feet', 'Gram', 'ML'];
         final customUnits = snapshot.data ?? [];
-        final allUnits = [...defaultUnits, ...customUnits.map((u) => u['name'] as String)];
+        final allUnits = <String>{...defaultUnits, ...customUnits.map((u) => u['name'] as String)}.toList();
 
         return _wrapDropdown(
           "Measurement Unit",

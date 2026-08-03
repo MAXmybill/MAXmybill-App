@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:maxmybill/Colors.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MaintenanceWrapper extends StatefulWidget {
   final Widget child;
@@ -118,42 +119,6 @@ class _MaintenanceWrapperState extends State<MaintenanceWrapper> {
       return _buildForceUpdateScreen();
     }
 
-    if (_message.isNotEmpty) {
-      return Column(
-        children: [
-          Material(
-            color: kOrange.withValues(alpha: 0.1),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: kOrange, width: 2)),
-              ),
-              child: SafeArea(
-                bottom: false,
-                child: Row(
-                  children: [
-                    const HeroIcon(HeroIcons.megaphone, color: kOrange, size: 20),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _message,
-                        style: const TextStyle(
-                          color: kOrange,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Expanded(child: widget.child),
-        ],
-      );
-    }
-
     return widget.child;
   }
 
@@ -258,8 +223,13 @@ class _MaintenanceWrapperState extends State<MaintenanceWrapper> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 0,
                 ),
-                onPressed: () {
-                  // In a real app, use url_launcher to open app store/play store
+                onPressed: () async {
+                  final Uri url = Uri.parse('https://play.google.com/store/apps/details?id=com.maxmybill.app');
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                  } else {
+                    debugPrint('Could not launch $url');
+                  }
                 },
                 child: const Text('Update Now', style: TextStyle(color: kWhite, fontWeight: FontWeight.w900)),
               )

@@ -563,6 +563,8 @@ class _SettingsPageState extends State<SettingsPage> {
       child: OutlinedButton(
         onPressed: () async {
           FirestoreService().clearCache();
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.clear();
           await FirebaseAuth.instance.signOut();
           if (!mounted) return;
           Navigator.of(context).pushAndRemoveUntil(CupertinoPageRoute(builder: (_) => const LoginPage()), (r) => false);
@@ -913,6 +915,11 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       // Build update payload (trimmed values)
       final localPhone = _phoneCtrl.text.replaceAll(RegExp(r'[^0-9]'), '');
       final fullPhone = localPhone.isEmpty ? '' : '$_selectedCountryCode$localPhone';
+      
+      final oldLocal = _originalValues['businessPhone']?.toString().replaceAll(RegExp(r'[^0-9]'), '') ?? '';
+      final oldCode = _originalValues['countryCode']?.toString() ?? '';
+      final oldFullPhone = oldLocal.isEmpty ? '' : '$oldCode$oldLocal';
+
       final updateData = <String, dynamic>{
         'businessName': _nameCtrl.text.trim(),
         'businessPhone': fullPhone,
@@ -930,6 +937,10 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
             ? '${_licenseTypeCtrl.text.trim()} ${_licenseNumberCtrl.text.trim()}'
             : (_licenseNumberCtrl.text.trim().isNotEmpty ? _licenseNumberCtrl.text.trim() : _licenseTypeCtrl.text.trim()),
       };
+
+      if (oldFullPhone.isNotEmpty && oldFullPhone != fullPhone) {
+        updateData['phoneHistory'] = FieldValue.arrayUnion([oldFullPhone]);
+      }
 
       await FirebaseFirestore.instance.collection('store').doc(storeId).set(updateData, SetOptions(merge: true));
       await FirestoreService().notifyStoreDataChanged();

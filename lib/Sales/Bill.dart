@@ -304,18 +304,43 @@ class _BillPageState extends State<BillPage> {
   Future<void> _proceedToPayment(String paymentMode) async {
     // Credit payment requires a customer to be selected
     if (paymentMode == 'Credit' && (_selectedCustomerPhone == null || _selectedCustomerPhone!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select a customer for Credit payment', style: TextStyle(fontWeight: FontWeight.w600)),
-          backgroundColor: kOrange,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          action: SnackBarAction(
-            label: 'Select',
-            textColor: kWhite,
-            onPressed: _showCustomerDialog,
-          ),
-        ),
+      CommonWidgets.showCustomerSelectionDialog(
+        context: context,
+        onCustomerSelected: (phone, name, gst) async {
+          // Fetch customer data to get default discount
+          try {
+            final customersCollection = await FirestoreService().getStoreCollection('customers');
+            final customerDoc = await customersCollection.doc(phone).get();
+            double defaultDiscount = 0.0;
+            if (customerDoc.exists) {
+              final data = customerDoc.data() as Map<String, dynamic>?;
+              defaultDiscount = (data?['defaultDiscount'] ?? 0.0).toDouble();
+            }
+
+            if (mounted) {
+              setState(() {
+                _selectedCustomerPhone = phone;
+                _selectedCustomerName = name;
+                _selectedCustomerGST = gst;
+                _customerDefaultDiscount = defaultDiscount;
+                _recalculateDiscount();
+              });
+              // Automatically proceed to payment after selection
+              _proceedToPayment(paymentMode);
+            }
+          } catch (e) {
+            // Fallback if fetch fails
+            if (mounted) {
+              setState(() {
+                _selectedCustomerPhone = phone;
+                _selectedCustomerName = name;
+                _selectedCustomerGST = gst;
+              });
+              _proceedToPayment(paymentMode);
+            }
+          }
+        },
+        selectedCustomerPhone: _selectedCustomerPhone,
       );
       return;
     }
@@ -2770,7 +2795,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           padding: const EdgeInsets.only(bottom: 6, right: 4),
                           child: Text(_currencySymbol, style: TextStyle(color: Colors.white.withOpacity(0.15), fontSize: 20, fontWeight: FontWeight.w700)),
                         ),
-                        Text(widget.totalAmount.toString(), style: const TextStyle(color: kWhite, fontSize: 40, fontWeight: FontWeight.w900, height: 1)),
+                        Text(widget.totalAmount.toStringAsFixed(2), style: const TextStyle(color: kWhite, fontSize: 40, fontWeight: FontWeight.w900, height: 1)),
                       ],
                     ),
                     if (widget.paymentMode != 'Credit') ...[
