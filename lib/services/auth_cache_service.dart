@@ -124,7 +124,11 @@ class AuthCacheService {
       return true;
     } catch (e) {
       debugPrint('⚠️ Error verifying cached user (might be offline): $e');
-      // Return true here because we're offline and should allow the cached user
+      if (e is FirebaseException && e.code == 'permission-denied') {
+        debugPrint('⚠️ Permission denied - cached user is invalid');
+        return false;
+      }
+      // Return true here because we might be offline and should allow the cached user
       // The verification will happen again when network is restored
       return true;
     }
@@ -172,6 +176,12 @@ class AuthCacheService {
       }
     } catch (e) {
       debugPrint('⚠️ Firebase session check error: $e');
+      if (e is FirebaseAuthException && (e.code == 'user-not-found' || e.code == 'user-disabled')) {
+        debugPrint('⚠️ Firebase user invalid/deleted. Clearing cache.');
+        await _auth.signOut();
+        await clearCache();
+        return null;
+      }
     }
 
     // Fallback to cached data

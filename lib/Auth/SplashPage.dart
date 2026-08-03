@@ -164,7 +164,10 @@ class _SplashPageState extends State<SplashPage>
                 );
             userDocExists = userDoc.exists;
           } catch (e) {
-            if (e is TimeoutException) {
+            if (e is FirebaseException && e.code == 'permission-denied') {
+              debugPrint('⚠️ Permission denied checking user doc, assuming deleted/invalid');
+              userDocExists = false;
+            } else if (e is TimeoutException) {
               debugPrint('⚠️ Firestore timeout, assuming user is registered');
               userDocExists = true; // Assume registered if we can't check
             } else {
