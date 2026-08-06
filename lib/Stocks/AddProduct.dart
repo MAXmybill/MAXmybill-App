@@ -84,8 +84,6 @@ class _AddProductPageState extends State<AddProductPage> {
       _loadExistingData();
     } else {
       _generateProductCode();
-      // Ensure new products have a default cost of 0 so reports can calculate safely
-      _costPriceController.text = '0';
     }
   }
 
@@ -1022,7 +1020,7 @@ class _AddProductPageState extends State<AddProductPage> {
                     const SizedBox(height: 16),
                     _buildModernTextField(
                       controller: _priceController,
-                      label: "Price",
+                      label: "Selling Price",
                       icon: HeroIcons.banknotes,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -1030,6 +1028,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       isRequired: true,
                       hint: "0.00",
                     ),
+                    const SizedBox(height: 16),
+                    _buildCostPriceField(),
                     const SizedBox(height: 16),
                     _buildTrackStockAndQuantity(),
                     const SizedBox(height: 16),
@@ -1047,6 +1047,54 @@ class _AddProductPageState extends State<AddProductPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCostPriceField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildModernTextField(
+          controller: _costPriceController,
+          label: "Total Cost Price",
+          icon: HeroIcons.shoppingCart,
+          keyboardType: const TextInputType.numberWithOptions(
+            decimal: true,
+          ),
+          hint: "0.00",
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: kPrimaryColor.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: kPrimaryColor.withValues(alpha: 0.2)),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Cost = Purchase Price + Other Expenses",
+                style: TextStyle(
+                  color: kPrimaryColor,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                "Highly advisable to enter this to track your profit accurately. If not entered, the selling price will be considered as the cost price.",
+                style: TextStyle(
+                  color: kBlack87,
+                  fontSize: 12,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -1096,28 +1144,50 @@ class _AddProductPageState extends State<AddProductPage> {
                   onSuffixTap: _scanBarcode,
                 ),
                 const SizedBox(height: 16),
-                _buildModernTextField(
-                  controller: _costPriceController,
-                  label: "Total Cost Price",
-                  icon: HeroIcons.shoppingCart,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
+                if (_stockEnabled) ...[
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _buildModernTextField(
+                          controller: _lowStockAlertController,
+                          label: "Low Stock Alert",
+                          icon: HeroIcons.bellAlert,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          hint: "0.00",
+                          iconColor: kOrange,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 2,
+                        child: _wrapDropdown(
+                          "Alert Type",
+                          DropdownButton<String>(
+                            value: ['Count', 'Percentage'].contains(_lowStockAlertType)
+                                ? _lowStockAlertType
+                                : 'Count',
+                            isExpanded: true,
+                            isDense: true,
+                            items: const [
+                              DropdownMenuItem(value: 'Count', child: Text('Count')),
+                              DropdownMenuItem(
+                                value: 'Percentage',
+                                child: Text('Percentage'),
+                              ),
+                            ],
+                            onChanged: (val) =>
+                                setState(() => _lowStockAlertType = val!),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  hint: "0.00",
-                ),
-                const SizedBox(height: 6),
-                const Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Text(
-                    "Used to calculate profit.",
-                    style: TextStyle(
-                      color: kBlack54,
-                      fontSize: 12,
-                      height: 1.2,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
+                ],
                 _buildModernTextField(
                   controller: _mrpController,
                   label: "MRP",
@@ -1392,51 +1462,6 @@ class _AddProductPageState extends State<AddProductPage> {
         if (!_stockEnabled) ...[
           const SizedBox(height: 12),
           _buildInfinityStockIndicator(),
-        ],
-        // RESTORED: Low Stock Alert row
-        if (_stockEnabled) ...[
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3,
-                child: _buildModernTextField(
-                  controller: _lowStockAlertController,
-                  label: "Low Stock Alert",
-                  icon: HeroIcons.bellAlert,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  hint: "0.00",
-                  iconColor: kOrange,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: _wrapDropdown(
-                  "Alert Type",
-                  DropdownButton<String>(
-                    value: ['Count', 'Percentage'].contains(_lowStockAlertType)
-                        ? _lowStockAlertType
-                        : 'Count',
-                    isExpanded: true,
-                    isDense: true,
-                    items: const [
-                      DropdownMenuItem(value: 'Count', child: Text('Count')),
-                      DropdownMenuItem(
-                        value: 'Percentage',
-                        child: Text('Percentage'),
-                      ),
-                    ],
-                    onChanged: (val) =>
-                        setState(() => _lowStockAlertType = val!),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ],
       ],
     );
@@ -2257,10 +2282,16 @@ class _AddProductPageState extends State<AddProductPage> {
         ? selectedTaxes.first['id']
         : null;
 
+    final double sellingPrice = double.tryParse(_priceController.text) ?? 0.0;
+    double parsedCostPrice = double.tryParse(_costPriceController.text) ?? 0.0;
+    if (_costPriceController.text.trim().isEmpty || _costPriceController.text.trim() == '0' || _costPriceController.text.trim() == '0.0') {
+      parsedCostPrice = sellingPrice;
+    }
+
     final pData = {
       'itemName': _itemNameController.text.trim(),
-      'price': double.tryParse(_priceController.text) ?? 0.0,
-      'costPrice': double.tryParse(_costPriceController.text) ?? 0.0,
+      'price': sellingPrice,
+      'costPrice': parsedCostPrice,
       'mrp': double.tryParse(_mrpController.text) ?? 0.0,
       'category': _selectedCategory ?? 'General',
       'productCode': _productCodeController.text.trim(),
