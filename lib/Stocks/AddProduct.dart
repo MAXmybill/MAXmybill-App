@@ -238,6 +238,43 @@ class _AddProductPageState extends State<AddProductPage> {
     }
   }
 
+  Future<bool> _checkBarcodeExists(String barcode) async {
+    if (barcode.isEmpty) return false;
+    try {
+      final productsCollection = await FirestoreService().getStoreCollection(
+        'Products',
+      );
+      final existingProduct = await productsCollection
+          .where('barcode', isEqualTo: barcode)
+          .get();
+
+      for (var doc in existingProduct.docs) {
+        if (widget.productId != null && doc.id == widget.productId) {
+          continue; // Skip the current product being edited
+        }
+
+        final data = doc.data() as Map<String, dynamic>?;
+        final productName = data?['itemName'] ?? 'Unknown Product';
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Barcode is already mapped with $productName'),
+              backgroundColor: kErrorColor,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          );
+        }
+        return true;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   Future<void> _scanBarcode() async {
     final result = await Navigator.push(
       context,
@@ -2245,6 +2282,14 @@ class _AddProductPageState extends State<AddProductPage> {
   Future<void> _saveProduct() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
+
+    final barcodeExists = await _checkBarcodeExists(
+      _barcodeController.text.trim(),
+    );
+    if (barcodeExists) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
     final codeExists = await _checkProductCodeExists(
       _productCodeController.text.trim(),

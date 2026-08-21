@@ -471,6 +471,7 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
             return Container(
               decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
               child: ListView.separated(
+                padding: EdgeInsets.zero,
                 shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
                 itemCount: taxes.length,
                 separatorBuilder: (_, __) => const Divider(height: 1, color: kGrey100),
@@ -497,9 +498,10 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(6)), child: Text('$count ITEMS', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kBlack54))),
-                            const SizedBox(width: 4),
-                            IconButton(icon: const Icon(Icons.delete_outline_rounded, color: kErrorColor, size: 20), onPressed: () => _deleteTax(taxDoc.id, name)),
+                            Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(6)), child: Text('$count ${count == 1 ? "ITEM" : "ITEMS"}', style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, color: kBlack54))),
+                            const SizedBox(width: 12),
+                            GestureDetector(onTap: () => _deleteTax(taxDoc.id, name), child: const Icon(Icons.delete_outline_rounded, color: kErrorColor, size: 20)),
+                            const SizedBox(width: 12),
                             const Icon(Icons.arrow_forward_ios_rounded, color: kGrey300, size: 12),
                           ],
                         ),
@@ -619,6 +621,7 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
             return Container(
               decoration: BoxDecoration(color: kWhite, borderRadius: BorderRadius.circular(12), border: Border.all(color: kGrey200)),
               child: ListView.separated(
+                padding: EdgeInsets.zero,
                 shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
                 itemCount: taxes.length,
                 separatorBuilder: (_, __) => const Divider(height: 1, color: kGrey100),

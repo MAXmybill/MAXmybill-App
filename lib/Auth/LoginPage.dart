@@ -680,7 +680,7 @@ class _LoginPageState extends State<LoginPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 16),
-          SizedBox(
+          /*SizedBox(
             width: double.infinity,
             height: 56,
             child: OutlinedButton(
@@ -711,7 +711,7 @@ class _LoginPageState extends State<LoginPage> {
               const Expanded(child: Divider(color: kGrey200, thickness: 1)),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 24),*/
           SizedBox(
             width: double.infinity,
             height: 56,

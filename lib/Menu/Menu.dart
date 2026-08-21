@@ -898,9 +898,6 @@ class _MenuPageState extends State<MenuPage> {
                         decoration: BoxDecoration(
                           color: kErrorColor,
                           borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(color: kErrorColor.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
-                          ],
                         ),
                         child: Text(
                           badgeCount > 99 ? '99+' : badgeCount.toString(),
