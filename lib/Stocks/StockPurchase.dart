@@ -612,7 +612,7 @@ class _CreateStockPurchasePageState extends State<CreateStockPurchasePage> {
             setState(() {});
           },
           decoration: InputDecoration(
-            labelText: label,
+            labelText: isMandatory ? '$label *' : label,
             prefixIcon: HeroIcon(icon, color: hasText ? kPrimaryColor : kBlack54, size: 20),
             errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),

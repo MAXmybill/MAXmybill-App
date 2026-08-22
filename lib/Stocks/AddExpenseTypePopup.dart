@@ -147,7 +147,7 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
           controller: _typeController,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
           decoration: InputDecoration(
-            labelText: 'Expense Type Name',
+            labelText: 'Expense Type Name *',
             floatingLabelBehavior: FloatingLabelBehavior.auto,
             filled: true,
             fillColor: const Color(0xFFF8F9FA),

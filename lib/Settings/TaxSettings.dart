@@ -356,7 +356,7 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
             children: [
               // Tax Type Dropdown
               _wrapDropdown(
-                "Tax Type",
+                "Tax Type *",
                 DropdownButton<String>(
                   value: _taxNames.contains(_selectedTaxName) ? _selectedTaxName : _taxNames.first,
                   isExpanded: true,
@@ -379,7 +379,7 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
                 keyboardType: TextInputType.number,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato'),
                 decoration: InputDecoration(
-                  labelText: "Tax Rate (%)",
+                  labelText: "Tax Rate (%) *",
                   hintText: "e.g. 5, 12, 18",
                   prefixIcon: const Icon(Icons.percent_rounded, color: kBlack54, size: 20),
                   filled: true,

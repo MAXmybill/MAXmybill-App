@@ -13,7 +13,6 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
 import 'package:maxmybill/services/single_session_service.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
-import 'package:maxmybill/services/didit_auth_service.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
 
 // Ensure these imports match your file structure
@@ -314,6 +313,8 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  int? _resendToken;
+
   Future<void> _sendOTP() async {
     final phone = _phoneCtrl.text.trim();
     if (phone.isEmpty || phone.length < 5) {
@@ -325,15 +326,49 @@ class _LoginPageState extends State<LoginPage> {
     final fullPhone = '$_selectedCountryCode$phone';
 
     try {
-      await DiditAuthService.sendOTP(fullPhone);
-      setState(() {
-        _loading = false;
-        _otpSent = true;
-      });
-      _showMsg('OTP sent successfully!');
+      await _auth.verifyPhoneNumber(
+        phoneNumber: fullPhone,
+        forceResendingToken: _resendToken,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          // Auto-resolution on Android devices
+          try {
+            final userCred = await _auth.signInWithCredential(credential);
+            final user = userCred.user;
+            if (user != null) {
+              await _onPhoneAuthSuccess(user);
+            }
+          } catch (e) {
+            if (mounted) setState(() => _loading = false);
+            _showMsg('Auto-verification failed: $e', isError: true);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (mounted) {
+            setState(() => _loading = false);
+            _showMsg(e.message ?? 'Phone verification failed', isError: true);
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verificationId;
+              _resendToken = resendToken;
+              _loading = false;
+              _otpSent = true;
+            });
+            _showMsg('OTP sent successfully!');
+          }
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          _verificationId = verificationId;
+        },
+        timeout: const Duration(seconds: 60),
+      );
     } catch (e) {
-      setState(() => _loading = false);
-      _showMsg('Error sending OTP: $e', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg('Error sending OTP: $e', isError: true);
+      }
     }
   }
 
@@ -344,12 +379,19 @@ class _LoginPageState extends State<LoginPage> {
       return;
     }
 
+    if (_verificationId == null) {
+      _showMsg('Please request OTP first', isError: true);
+      return;
+    }
+
     setState(() => _loading = true);
-    final fullPhone = '$_selectedCountryCode${_phoneCtrl.text.trim()}';
 
     try {
-      final customToken = await DiditAuthService.verifyOTP(fullPhone, otp);
-      final userCred = await _auth.signInWithCustomToken(customToken);
+      final credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId!,
+        smsCode: otp,
+      );
+      final userCred = await _auth.signInWithCredential(credential);
       final user = userCred.user;
       if (user != null) {
         await _onPhoneAuthSuccess(user);
@@ -680,7 +722,7 @@ class _LoginPageState extends State<LoginPage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 16),
-          /*SizedBox(
+          SizedBox(
             width: double.infinity,
             height: 56,
             child: OutlinedButton(
@@ -690,12 +732,12 @@ class _LoginPageState extends State<LoginPage> {
                 side: const BorderSide(color: kPrimaryColor, width: 1.5),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const HeroIcon(HeroIcons.devicePhoneMobile, color: kPrimaryColor, size: 22),
-                  const SizedBox(width: 14),
-                  const Text('Continue with Phone Number', style: TextStyle(fontSize: 14, color: kPrimaryColor, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
+                  HeroIcon(HeroIcons.devicePhoneMobile, color: kPrimaryColor, size: 22),
+                  SizedBox(width: 14),
+                  Text('Continue with Phone Number', style: TextStyle(fontSize: 14, color: kPrimaryColor, fontWeight: FontWeight.w800, letterSpacing: 0.5)),
                 ],
               ),
             ),
@@ -711,7 +753,7 @@ class _LoginPageState extends State<LoginPage> {
               const Expanded(child: Divider(color: kGrey200, thickness: 1)),
             ],
           ),
-          const SizedBox(height: 24),*/
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -778,7 +820,7 @@ class _LoginPageState extends State<LoginPage> {
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87),
                 decoration: InputDecoration(
-                  labelText: 'Phone Number',
+                  labelText: 'Phone Number *',
                   hintText: 'Enter phone number',
                   hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
                   prefixIcon: GestureDetector(

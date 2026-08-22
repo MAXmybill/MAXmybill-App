@@ -186,7 +186,7 @@ class _RoleManagementPageState extends State<RoleManagementPage> {
         return TextField(
               controller: nameController,
               decoration: InputDecoration(
-                labelText: 'Role Name',
+                labelText: 'Role Name *',
                 filled: true,
                 fillColor: const Color(0xFFF8F9FA),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

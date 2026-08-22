@@ -637,7 +637,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 : null,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
             decoration: InputDecoration(
-              labelText: label,
+              labelText: isMandatory ? (label.contains('*') ? label : '$label *') : label,
               hintText: hint,
               hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
               prefixIcon: Padding(

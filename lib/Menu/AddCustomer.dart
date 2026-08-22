@@ -1310,7 +1310,7 @@ class _AddCustomerPageState extends State<AddCustomerPage> {
           maxLines: maxLines,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kBlack87),
           decoration: InputDecoration(
-            labelText: label,
+            labelText: isRequired ? '$label *' : label,
             hintText: hint,
             hintStyle: const TextStyle(color: kBlack54, fontSize: 14, fontWeight: FontWeight.normal),
             prefixIcon: Padding(

@@ -1304,7 +1304,7 @@ class _AddProductPageState extends State<AddProductPage> {
                 color: kBlack87,
               ),
               decoration: InputDecoration(
-                labelText: label,
+                labelText: isRequired ? '$label *' : label,
                 hintText: hint,
                 prefixIcon: HeroIcon(
                   icon,
