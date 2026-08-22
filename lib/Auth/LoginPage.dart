@@ -62,6 +62,10 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    // Disable app verification for testing on emulators (debug mode only)
+    if (kDebugMode) {
+      _auth.setSettings(appVerificationDisabledForTesting: true);
+    }
   }
 
   @override
