@@ -50,18 +50,7 @@ void main() async {
         appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
       );
     } catch (e) {
-      debugPrint('⚠️ Firebase App Check activation failed: $e');
-      debugPrint('⚠️ Retrying with safetyNet provider as fallback...');
-      try {
-        // Fallback to SafetyNet if PlayIntegrity fails (for compatibility)
-        await FirebaseAppCheck.instance.activate(
-          androidProvider: AndroidProvider.safetyNet,
-          appleProvider: kDebugMode ? AppleProvider.debug : AppleProvider.deviceCheck,
-        );
-      } catch (fallbackError) {
-        debugPrint('⚠️ Firebase App Check fallback also failed: $fallbackError');
-        debugPrint('⚠️ App will continue, but Firebase operations may be restricted.');
-      }
+      debugPrint('⚠️ Firebase App Check activation error: $e');
     }
   }
 

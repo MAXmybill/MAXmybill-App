@@ -8,8 +8,10 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/Auth/PlanComparisonPage.dart';
+import 'dart:async';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
+import 'package:maxmybill/services/currency_service.dart';
+import 'package:maxmybill/services/subscription_pricing_service.dart';
 
 class SubscriptionPlanPage extends StatefulWidget {
   final String uid;
@@ -27,6 +29,7 @@ class SubscriptionPlanPage extends StatefulWidget {
 
 class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
   Razorpay? _razorpay;
+  StreamSubscription? _pricingSub;
   String _selectedPlan = 'MAX Plus';
   int _selectedDuration = 1; // 1 or 12 months
   bool _isPaymentInProgress = false;
@@ -198,6 +201,16 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     super.initState();
     _setupRazorpay();
     _loadSubscriptionFromStore();
+
+    // Listen to real-time pricing updates from Superadmin web portal
+    _pricingSub = SubscriptionPricingService().streamPrices().listen((dynamicPrices) {
+      if (mounted) {
+        setState(() {
+          _applyDynamicPrices(dynamicPrices);
+        });
+      }
+    });
+
     // Default to 'MAX One' if current plan is Starter or Free or not found
     final currentPlanLower = widget.currentPlan.toLowerCase();
     if (currentPlanLower.contains('starter') || currentPlanLower.contains('free')) {
@@ -212,8 +225,21 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     }
   }
 
+  void _applyDynamicPrices(Map<String, Map<String, int>> dynamicPrices) {
+    for (var p in plans) {
+      final pName = p['name'] as String;
+      if (dynamicPrices.containsKey(pName)) {
+        p['price'] = dynamicPrices[pName]!;
+      }
+    }
+  }
+
   Future<void> _loadSubscriptionFromStore() async {
     try {
+      await CurrencyService().loadCurrency();
+      final dynamicPrices = await SubscriptionPricingService().loadPrices();
+      _applyDynamicPrices(dynamicPrices);
+
       final storeDoc = await FirestoreService().getCurrentStoreDoc();
       if (storeDoc != null && storeDoc.exists) {
         final data = storeDoc.data() as Map<String, dynamic>;
@@ -254,6 +280,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
 
   @override
   void dispose() {
+    _pricingSub?.cancel();
     try {
       _razorpay?.clear();
     } catch (e) {
@@ -563,7 +590,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
           
           final currentPrice = plan['price'][_selectedDuration.toString()] ?? 0;
           final String durationLabel = currentPrice == 0 ? "Forever" : "/${_selectedDuration == 12 ? 'year' : 'month'}";
-          final String priceLabel = currentPrice == 0 ? "Free" : "$currentPrice";
+          final String priceLabel = currentPrice == 0 ? "Free" : CurrencyService.formatPlanPrice(currentPrice);
 
           return Expanded(
             child: GestureDetector(
@@ -892,12 +919,19 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
     }
 
     final bool isYearly = _selectedDuration == 12;
-    final double dailyPrice = payablePrice > 0 ? (isYearly ? payablePrice / 365.0 : payablePrice / 30.0) : 0;
-    final String dailyPriceStr = dailyPrice < 10 ? dailyPrice.toStringAsFixed(1) : dailyPrice.toStringAsFixed(0);
+    final double convertedPayable = CurrencyService.convertFromINR(payablePrice.toDouble());
+    final double dailyPrice = convertedPayable > 0 ? (isYearly ? convertedPayable / 365.0 : convertedPayable / 30.0) : 0;
+    final String currencySymbol = CurrencyService().symbol;
+    final String dailyPriceStr = dailyPrice < 1
+        ? dailyPrice.toStringAsFixed(2)
+        : (dailyPrice < 10 ? dailyPrice.toStringAsFixed(1) : dailyPrice.toStringAsFixed(0));
     
     final int monthlyPrice = selectedPlanData['price']['1'] ?? 0;
     final int yearlyTotalIfMonthly = monthlyPrice * 12;
-    final int savings = isYearly ? yearlyTotalIfMonthly - price : 0;
+    final int inrSavings = isYearly ? yearlyTotalIfMonthly - price : 0;
+    final String savingsStr = CurrencyService.formatPlanPrice(inrSavings);
+    final String creditStr = CurrencyService.formatPlanPrice(appliedCredit);
+    final String totalPriceStr = CurrencyService.formatPlanPrice(payablePrice);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
@@ -924,7 +958,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                       )
                     ),
                     Text(
-                      "Save $savings",
+                      "Save $savingsStr",
                       style: const TextStyle(fontSize: 12, color: kGoogleGreen, fontWeight: FontWeight.w900),
                     ),
                   ],
@@ -944,7 +978,7 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                       ),
                     ),
                     Text(
-                      "-₹${appliedCredit.toStringAsFixed(0)}",
+                      "-$creditStr",
                       style: const TextStyle(fontSize: 12, color: kGoogleGreen, fontWeight: FontWeight.w900),
                     ),
                   ],
@@ -959,10 +993,10 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
                     children: [
                       Text(isYearly ? "TOTAL (YEARLY)" : "TOTAL (MONTHLY)", style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 0.5)),
                       const SizedBox(height: 2),
-                      Text("$payablePrice", style: TextStyle(color: themeColor, fontSize: 24, fontWeight: FontWeight.w900)),
+                      Text(totalPriceStr, style: TextStyle(color: themeColor, fontSize: 24, fontWeight: FontWeight.w900)),
                       if (payablePrice > 0) ...[
                         const SizedBox(height: 2),
-                        Text("Only $dailyPriceStr per day", style: const TextStyle(color: kBlack54, fontSize: 11, fontWeight: FontWeight.w700)),
+                        Text("Only $currencySymbol$dailyPriceStr per day", style: const TextStyle(color: kBlack54, fontSize: 11, fontWeight: FontWeight.w700)),
                       ],
                     ],
                   ),
