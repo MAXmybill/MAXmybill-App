@@ -379,7 +379,20 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
                 keyboardType: TextInputType.number,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato'),
                 decoration: InputDecoration(
-                  labelText: "Tax Rate (%) *",
+                  label: const Text.rich(
+                    TextSpan(
+                      text: "Tax Rate (%)",
+                      children: [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   hintText: "e.g. 5, 12, 18",
                   prefixIcon: const Icon(Icons.percent_rounded, color: kBlack54, size: 20),
                   filled: true,
@@ -429,7 +442,22 @@ class _TaxSettingsPageState extends State<TaxSettingsPage> with SingleTickerProv
   Widget _wrapDropdown(String label, Widget child, {VoidCallback? onAdd}) {
     return InputDecorator(
       decoration: InputDecoration(
-        labelText: label,
+        label: label.contains('*')
+            ? Text.rich(
+                TextSpan(
+                  text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(label),
         labelStyle: const TextStyle(color: kBlack54, fontSize: 13),
         
         

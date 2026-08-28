@@ -251,18 +251,14 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: () => _navigateTo('BusinessDetails'),
               subtitle: "Manage business profile & details",
             ),
-          // 2. User Management (visible for owner or staff with explicit staffManagement permission)
-          if (_isAdmin || _hasPermission('staffManagement'))
+          // 2. User Management (visible for owner account only)
+          if (_isAdmin)
             _buildModernTile(
               title: "Staff Access & Roles",
               icon: HeroIcons.users,
               color: const Color(0xFF9C27B0),
               isLocked: isStaffLocked,
               onTap: () async {
-                if (!_isAdmin) {
-                  _navigateTo('UserManagement');
-                  return;
-                }
                 final canAccess = await PlanPermissionHelper.canAccessStaffManagement();
                 if (!mounted) return;
                 if (canAccess) {
@@ -1434,7 +1430,22 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 keyboardType: type,
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
                 decoration: InputDecoration(
-                  labelText: isMandatory ? '$label *' : label,
+                  label: isMandatory
+                      ? Text.rich(
+                          TextSpan(
+                            text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                            children: const [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(
+                                  color: kOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(label),
                   labelStyle: TextStyle(color: labelColor, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
                   prefixIcon: Icon(icon, color: iconColor, size: 20),
                   filled: true,
@@ -1493,7 +1504,22 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 keyboardType: type,
                 style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
                 decoration: InputDecoration(
-                  labelText: isMandatory ? '$label *' : label,
+                  label: isMandatory
+                      ? Text.rich(
+                          TextSpan(
+                            text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                            children: const [
+                              TextSpan(
+                                text: ' *',
+                                style: TextStyle(
+                                  color: kOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(label),
                   hintText: hint,
                   hintStyle: const TextStyle(color: kGrey400, fontSize: 12, fontWeight: FontWeight.w400),
                   labelStyle: TextStyle(color: labelColor, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
@@ -1545,7 +1571,20 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: kBlack87, fontFamily: 'Lato'),
             decoration: InputDecoration(
-              labelText: 'Business Contact Number *',
+              label: const Text.rich(
+                TextSpan(
+                  text: 'Business Contact Number',
+                  children: [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               labelStyle: TextStyle(color: isFocused ? kPrimaryColor : kBlack54, fontSize: 12, fontWeight: FontWeight.w600, fontFamily: 'NotoSans'),
               prefixIcon: GestureDetector(
                 onTap: _showCountryCodePickerProfile,

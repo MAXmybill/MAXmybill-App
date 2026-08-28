@@ -1,5 +1,7 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:maxmybill/Sales/QuickSale.dart';
 import 'package:maxmybill/Sales/Saved.dart';
@@ -11,8 +13,12 @@ import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/amount_formatter.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
+import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/services/cart_service.dart';
 import 'package:maxmybill/services/referral_service.dart';
+import 'package:maxmybill/services/auth_cache_service.dart';
+import 'package:maxmybill/Auth/LoginPage.dart';
+import 'package:maxmybill/components/plan_expiry_popup.dart';
 
 class NewSalePage extends StatefulWidget {
   final String uid;
@@ -86,8 +92,10 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
       curve: Curves.easeOut,  // Smooth fade out
     ));
 
-    // Load cart from CartService (persisted across navigation)
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Immediately enforce staff logout if store subscription is expired
+      _enforceStaffSubscriptionCheck();
+
       final cartService = context.read<CartService>();
       if (cartService.hasItems) {
         setState(() {
@@ -98,6 +106,9 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
           _selectedCustomerGST = cartService.customerGST;
         });
       }
+
+      // Check and show plan expiry popup for owner if near expiry (<= 3 days or expired)
+      _checkAndShowPlanExpiryPopup();
 
       // Check and show referral popup if needed
       _checkAndShowReferralPopup();
@@ -114,6 +125,40 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
 
     // Track app launch for referral tracking
     ReferralService.trackAppLaunch();
+  }
+
+  Future<void> _enforceStaffSubscriptionCheck() async {
+    final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(_uid);
+    if (isStaffBlocked && mounted) {
+      debugPrint('🔒 Enforcing staff logout: Store subscription expired');
+      await FirebaseAuth.instance.signOut();
+      await AuthCacheService.instance.clearCache();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        CupertinoPageRoute(
+          builder: (_) => const LoginPage(
+            initialErrorMessage: 'Your store\'s subscription has expired. Please ask your store owner to renew the plan.',
+          ),
+        ),
+        (route) => false,
+      );
+    }
+  }
+
+  Future<void> _checkAndShowPlanExpiryPopup() async {
+    // Wait briefly for the page and providers to be ready
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    if (!mounted) return;
+
+    // Safety check for staff before showing dialog
+    final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(_uid);
+    if (isStaffBlocked && mounted) {
+      await _enforceStaffSubscriptionCheck();
+      return;
+    }
+
+    await PlanExpiryPopup.checkAndShow(context, uid: _uid);
   }
 
   Future<void> _checkAndShowReferralPopup() async {

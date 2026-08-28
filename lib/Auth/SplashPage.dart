@@ -13,6 +13,8 @@ import 'package:maxmybill/Sales/NewSale.dart';
 import 'package:maxmybill/Menu/KnowledgePage.dart';
 import 'package:maxmybill/Admin/Home.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
+import 'package:maxmybill/utils/plan_permission_helper.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maxmybill/services/in_app_update_service.dart';
 import 'package:maxmybill/services/single_session_service.dart';
 import 'package:maxmybill/services/notification_service.dart';
@@ -189,6 +191,23 @@ class _SplashPageState extends State<SplashPage>
                 uid: sessionData.uid,
                 email: sessionData.email,
                 displayName: sessionData.displayName,
+              ),
+            ),
+          );
+          return;
+        }
+
+        // Check if this is a staff account blocked due to expired store subscription
+        final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(sessionData.uid);
+        if (isStaffBlocked) {
+          debugPrint('🔒 Staff account blocked: Store plan expired');
+          await FirebaseAuth.instance.signOut();
+          await AuthCacheService.instance.clearCache();
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            CupertinoPageRoute(
+              builder: (_) => const LoginPage(
+                initialErrorMessage: 'Your store\'s subscription has expired. Please ask your store owner to renew the plan.',
               ),
             ),
           );

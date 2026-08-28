@@ -1304,7 +1304,22 @@ class _AddProductPageState extends State<AddProductPage> {
                 color: kBlack87,
               ),
               decoration: InputDecoration(
-                labelText: isRequired ? '$label *' : label,
+                label: isRequired
+                    ? Text.rich(
+                        TextSpan(
+                          text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                          children: const [
+                            TextSpan(
+                              text: ' *',
+                              style: TextStyle(
+                                color: kOrange,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    : Text(label),
                 hintText: hint,
                 prefixIcon: HeroIcon(
                   icon,
@@ -1905,7 +1920,22 @@ class _AddProductPageState extends State<AddProductPage> {
   Widget _wrapDropdown(String label, Widget child, {VoidCallback? onAdd}) {
     return InputDecorator(
       decoration: InputDecoration(
-        labelText: label,
+        label: label.contains('*')
+            ? Text.rich(
+                TextSpan(
+                  text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(label),
         labelStyle: const TextStyle(color: kBlack54, fontSize: 13),
 
         suffixIcon: onAdd != null

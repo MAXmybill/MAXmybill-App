@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:maxmybill/utils/language_provider.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
+import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/services/single_session_service.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
@@ -32,7 +33,8 @@ import 'dart:math' as math;
 const String _webClientId = '490905109908-6mbuv8jbcucq3vqanptqa7vp0q3is1tp.apps.googleusercontent.com';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final String? initialErrorMessage;
+  const LoginPage({super.key, this.initialErrorMessage});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -62,6 +64,11 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    if (widget.initialErrorMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showMsg(widget.initialErrorMessage!, isError: true);
+      });
+    }
   }
 
   @override
@@ -91,7 +98,20 @@ class _LoginPageState extends State<LoginPage> {
 
    void _navigate(String uid, String? identifier) async {
      if (!mounted) return;
-     
+
+     // Check if this is a staff account blocked due to expired store subscription
+     final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(uid);
+     if (isStaffBlocked) {
+       await FirebaseAuth.instance.signOut();
+       await AuthCacheService.instance.clearCache();
+       if (!mounted) return;
+       _showDialog(
+         title: 'Subscription Expired',
+         message: 'Your store\'s subscription plan has expired. Please ask your store owner to renew the plan to restore staff access.',
+       );
+       return;
+     }
+
      // Cache this user for future sessions
      await AuthCacheService.instance.cacheCurrentUser();
      
@@ -820,7 +840,20 @@ class _LoginPageState extends State<LoginPage> {
                 inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87),
                 decoration: InputDecoration(
-                  labelText: 'Phone Number *',
+                  label: const Text.rich(
+                    TextSpan(
+                      text: 'Phone Number',
+                      children: [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   hintText: 'Enter phone number',
                   hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
                   prefixIcon: GestureDetector(

@@ -489,8 +489,7 @@ class _CreateStockPurchasePageState extends State<CreateStockPurchasePage> {
 
                   const SizedBox(height: 24),
                   _buildSectionLabel("Invoice Details"),
-                  _buildModernField(_totalAmountController, 'Total Amount *', HeroIcons.banknotes, type: const TextInputType.numberWithOptions(decimal: true), isMandatory: true, onChanged: () => setState(() {})),
-                  const SizedBox(height: 16),
+                  _buildModernField(_totalAmountController, 'Total Amount', HeroIcons.banknotes, type: const TextInputType.numberWithOptions(decimal: true), isMandatory: true, onChanged: () => setState(() {})),
                   _buildModernField(_invoiceNumberController, 'Reference Invoice No (Optional)', HeroIcons.documentText),
                   const SizedBox(height: 16),
                   _buildDateSelector(),
@@ -612,7 +611,22 @@ class _CreateStockPurchasePageState extends State<CreateStockPurchasePage> {
             setState(() {});
           },
           decoration: InputDecoration(
-            labelText: isMandatory ? '$label *' : label,
+            label: isMandatory
+                ? Text.rich(
+                    TextSpan(
+                      text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                      children: const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(label),
             prefixIcon: HeroIcon(icon, color: hasText ? kPrimaryColor : kBlack54, size: 20),
             errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -653,7 +667,7 @@ class _CreateStockPurchasePageState extends State<CreateStockPurchasePage> {
       fieldViewBuilder: (ctx, ctrl, focus, onSub) {
         if (_supplierNameController.text.isNotEmpty && ctrl.text.isEmpty) ctrl.text = _supplierNameController.text;
         ctrl.addListener(() => _supplierNameController.text = ctrl.text);
-        return _buildModernField(ctrl, 'Supplier Name *', HeroIcons.buildingStorefront, isMandatory: true, focusNode: focus);
+        return _buildModernField(ctrl, 'Supplier Name', HeroIcons.buildingStorefront, isMandatory: true, focusNode: focus);
       },
       optionsViewBuilder: (ctx, onSel, options) => Align(
         alignment: Alignment.topLeft,

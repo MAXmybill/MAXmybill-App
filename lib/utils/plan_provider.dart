@@ -45,17 +45,20 @@ class PlanProvider extends ChangeNotifier {
   /// Get cached expiry date instantly (no async wait)
   DateTime? get cachedExpiryDate => _cachedExpiryDate;
 
-  /// Check if plan is expiring soon (within 3 days)
+  /// Check if plan is expiring soon (within 3 days or expired)
   bool get isExpiringSoon {
     if (_cachedExpiryDate == null) return false;
-    final daysUntilExpiry = _cachedExpiryDate!.difference(DateTime.now()).inDays;
-    return daysUntilExpiry >= 0 && daysUntilExpiry <= 3;
+    final days = daysUntilExpiry;
+    return days <= 3;
   }
 
-  /// Get days until expiry (negative if expired)
+  /// Get days until expiry based on calendar days (negative if expired)
   int get daysUntilExpiry {
     if (_cachedExpiryDate == null) return -1;
-    return _cachedExpiryDate!.difference(DateTime.now()).inDays;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final expiryDay = DateTime(_cachedExpiryDate!.year, _cachedExpiryDate!.month, _cachedExpiryDate!.day);
+    return expiryDay.difference(today).inDays;
   }
 
   /// Check if provider is initialized

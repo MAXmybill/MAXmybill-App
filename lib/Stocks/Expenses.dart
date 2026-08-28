@@ -651,7 +651,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   _buildAutocompleteExpenseName(),
                   const SizedBox(height: 16),
                   _buildModernField(
-                    _amountController, "Total Amount *", HeroIcons.banknotes,
+                    _amountController, "Total Amount", HeroIcons.banknotes,
                     type: TextInputType.number,
                     isMandatory: true,
                     onChanged: () => setState(() {}),
@@ -779,7 +779,22 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             setState(() {});
           },
           decoration: InputDecoration(
-            labelText: isMandatory ? '$label *' : label,
+            label: isMandatory
+                ? Text.rich(
+                    TextSpan(
+                      text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                      children: const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(label),
             prefixIcon: HeroIcon(icon, color: hasText ? kPrimaryColor : kBlack54, size: 20),
             errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -855,7 +870,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       fieldViewBuilder: (ctx, ctrl, focus, onSub) {
         if (_expenseNameController.text.isNotEmpty && ctrl.text.isEmpty) ctrl.text = _expenseNameController.text;
         ctrl.addListener(() => _expenseNameController.text = ctrl.text);
-        return _buildModernField(ctrl, 'Expense Name *', HeroIcons.tag, isMandatory: true, focusNode: focus);
+        return _buildModernField(ctrl, 'Expense Name', HeroIcons.tag, isMandatory: true, focusNode: focus);
       },
       optionsViewBuilder: (ctx, onSel, options) => Align(
         alignment: Alignment.topLeft,

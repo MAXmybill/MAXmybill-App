@@ -622,7 +622,9 @@ class _VendorsPageState extends State<VendorsPage> {
  
   Widget _buildNoResults() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const HeroIcon(HeroIcons.magnifyingGlass, size: 64, color: kGrey300), const SizedBox(height: 16), Text('No results for "$_searchQuery"', style: const TextStyle(color: kBlack54))]));
 
-  Widget _buildDialogField(TextEditingController ctrl, String label, HeroIcons icon, {TextInputType type = TextInputType.text, int maxLines = 1}) {
+  Widget _buildDialogField(TextEditingController ctrl, String label, HeroIcons icon, {TextInputType type = TextInputType.text, int maxLines = 1, bool isMandatory = false}) {
+    final bool hasStar = isMandatory || label.contains('*');
+    final String cleanLabel = label.replaceAll(RegExp(r'\s*\*'), '');
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: ctrl,
       builder: (context, value, _) {
@@ -631,13 +633,31 @@ class _VendorsPageState extends State<VendorsPage> {
           controller: ctrl, keyboardType: type, maxLines: maxLines,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
           decoration: InputDecoration(
-            hintText: label,
+            label: hasStar
+                ? Text.rich(
+                    TextSpan(
+                      text: cleanLabel,
+                      children: const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(cleanLabel),
+            hintText: cleanLabel,
             prefixIcon: HeroIcon(icon, color: hasText ? kPrimaryColor : kBlack54, size: 18),
             filled: true, fillColor: const Color(0xFFF8F9FA),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
             enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0)),
             focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: kPrimaryColor, width: 2.0)),
+            labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+            floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
           ),
         );
       },

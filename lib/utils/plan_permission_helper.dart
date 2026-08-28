@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
+import 'package:maxmybill/utils/permission_helper.dart';
 import 'package:maxmybill/Auth/SubscriptionPlanPage.dart';
 import 'package:maxmybill/Colors.dart';
 
@@ -12,6 +14,70 @@ class PlanPermissionHelper {
   static const String PLAN_MAXOne = 'MAX One';
   static const String PLAN_MAXPlus = 'MAX Plus';
   static const String PLAN_MAX = 'MAX Pro';
+
+  /// Checks if staff / non-owner login or app access is blocked due to an expired subscription.
+  /// Returns true if user is non-owner and the store subscription is expired.
+  static Future<bool> isStaffBlockedDueToExpiredPlan(String uid) async {
+    try {
+      // 1. Fetch user permissions and role
+      final userPermData = await PermissionHelper.getUserPermissions(uid);
+      final role = (userPermData['role'] ?? '').toString().trim().toLowerCase();
+
+      // 2. Owner is never blocked (needs access to renew the plan)
+      if (role == 'owner') return false;
+
+      // 3. Double check with store document to ensure they aren't the store owner
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc != null && storeDoc.exists) {
+        final storeData = storeDoc.data() as Map<String, dynamic>?;
+        if (storeData != null) {
+          final ownerId = storeData['ownerId']?.toString() ?? storeData['ownerUid']?.toString();
+          if (ownerId != null && ownerId == uid) {
+            return false; // User is actually the owner
+          }
+        }
+      } else {
+        // Fallback: Check if store with this ownerId exists
+        final fs = FirebaseFirestore.instance;
+        final ownerQuery = await fs.collection('store').where('ownerId', isEqualTo: uid).limit(1).get();
+        if (ownerQuery.docs.isNotEmpty) return false;
+        final ownerUidQuery = await fs.collection('store').where('ownerUid', isEqualTo: uid).limit(1).get();
+        if (ownerUidQuery.docs.isNotEmpty) return false;
+      }
+
+      // 4. For staff / employee: check if the store has an active valid plan with staff access
+      final currentEffectivePlan = await getCurrentPlan();
+      final effectivePlanKey = _normalizedPlanKey(currentEffectivePlan);
+
+      // If effective plan is Free or Starter (e.g. expired or free tier), staff cannot access!
+      if (effectivePlanKey == 'free' || effectivePlanKey == 'starter') {
+        debugPrint('🔒 Staff blocked: store plan is "$effectivePlanKey"');
+        return true;
+      }
+
+      // Check explicit expiry date in store document if present
+      if (storeDoc != null && storeDoc.exists) {
+        final storeData = storeDoc.data() as Map<String, dynamic>?;
+        final expiryDateStr = storeData?['subscriptionExpiryDate']?.toString();
+        if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
+          try {
+            final expiryDate = DateTime.parse(expiryDateStr);
+            if (DateTime.now().isAfter(expiryDate)) {
+              debugPrint('🔒 Staff blocked: subscription expired on $expiryDate');
+              return true;
+            }
+          } catch (_) {
+            return true;
+          }
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint('Error checking staff plan status: $e');
+      return false;
+    }
+  }
 
   /// Check if plan is a free/starter plan
   static bool _isPlanFree(String plan) {

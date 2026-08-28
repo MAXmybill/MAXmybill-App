@@ -5547,7 +5547,9 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
     );
   }
 
-  Widget _buildDialogField(TextEditingController ctrl, String label, HeroIcons icon) {
+  Widget _buildDialogField(TextEditingController ctrl, String label, HeroIcons icon, {bool isMandatory = false}) {
+    final bool hasStar = isMandatory || label.contains('*');
+    final String cleanLabel = label.replaceAll(RegExp(r'\s*\*'), '');
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: ctrl,
       builder: (context, value, _) {
@@ -5557,7 +5559,23 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
           decoration: InputDecoration(
-            labelText: label, prefixIcon: HeroIcon(icon, color: kPrimaryColor, size: 18),
+            label: hasStar
+                ? Text.rich(
+                    TextSpan(
+                      text: cleanLabel,
+                      children: const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(cleanLabel),
+            prefixIcon: HeroIcon(icon, color: kPrimaryColor, size: 18),
             filled: true,
             fillColor: const Color(0xFFF8F9FA),
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

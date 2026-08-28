@@ -59,12 +59,11 @@ class _StaffManagementPageState extends State<StaffManagementPage> {
   Future<void> _loadAccess() async {
     final userData = await PermissionHelper.getUserPermissions(widget.uid);
     final role = (userData['role'] ?? '').toString().toLowerCase();
-    final permissions = userData['permissions'] as Map<String, dynamic>? ?? {};
 
     if (!mounted) return;
     setState(() {
       _isOwner = role == 'owner';
-      _canAccessStaffManagement = _isOwner || permissions['staffManagement'] == true;
+      _canAccessStaffManagement = _isOwner;
       _accessLoaded = true;
     });
   }

@@ -524,10 +524,28 @@ class _CreateOtherExpensePageState extends State<CreateOtherExpensePage> {
 
   Widget _buildTextField(String label, TextEditingController controller, HeroIcons icon,
       {bool isNum = false, int lines = 1}) {
+    final bool hasStar = label.contains('*');
+    final String cleanLabel = label.replaceAll(RegExp(r'\s*\*'), '');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 14,fontWeight: FontWeight.bold)),
+        Text.rich(
+          TextSpan(
+            text: cleanLabel,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: kBlack87),
+            children: hasStar
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ]
+                : [],
+          ),
+        ),
         const SizedBox(height: 8),
         ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
@@ -569,7 +587,21 @@ class _CreateOtherExpensePageState extends State<CreateOtherExpensePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Title *', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+        const Text.rich(
+          TextSpan(
+            text: 'Title',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: kBlack87),
+            children: [
+              TextSpan(
+                text: ' *',
+                style: TextStyle(
+                  color: kOrange,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
         const SizedBox(height: 8),
         Autocomplete<String>(
           optionsBuilder: (v) {

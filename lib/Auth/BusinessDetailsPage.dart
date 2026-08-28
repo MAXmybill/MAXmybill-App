@@ -392,8 +392,8 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 child: Column(
                   children: [
                     _buildSectionLabel("Business Details"),
-                    _buildModernField("Business Name *", _businessNameCtrl, HeroIcons.buildingStorefront, isMandatory: true),
-                    _buildModernField("Owner Name *", _ownerNameCtrl, HeroIcons.user, isMandatory: true),
+                    _buildModernField("Business Name", _businessNameCtrl, HeroIcons.buildingStorefront, isMandatory: true),
+                    _buildModernField("Owner Name", _ownerNameCtrl, HeroIcons.user, isMandatory: true),
                     _buildBusinessPhoneField(),
                     _buildLocationField(),
                     _buildCurrencyField(isMandatory: true),
@@ -452,7 +452,20 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _isPhoneLocked ? kBlack54 : kBlack87),
             decoration: InputDecoration(
-              labelText: 'Business Number *',
+              label: const Text.rich(
+                TextSpan(
+                  text: 'Business Number',
+                  children: [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               hintText: 'Enter business number',
               hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
               prefixIcon: GestureDetector(
@@ -637,7 +650,22 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 : null,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
             decoration: InputDecoration(
-              labelText: isMandatory ? (label.contains('*') ? label : '$label *') : label,
+              label: isMandatory
+                  ? Text.rich(
+                      TextSpan(
+                        text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                        children: const [
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(
+                              color: kOrange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Text(label),
               hintText: hint,
               hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
               prefixIcon: Padding(
@@ -838,9 +866,22 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      "Business Currency ${isMandatory ? '*' : ''}",
-                      style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                    Text.rich(
+                      TextSpan(
+                        text: "Business Currency",
+                        style: const TextStyle(fontSize: 9, color: kBlack54, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                        children: isMandatory
+                            ? const [
+                                TextSpan(
+                                  text: ' *',
+                                  style: TextStyle(
+                                    color: kOrange,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ]
+                            : [],
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(

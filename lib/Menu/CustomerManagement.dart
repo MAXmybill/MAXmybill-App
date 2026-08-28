@@ -269,7 +269,9 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
 
   // --- UI COMPONENTS ---
 
-  Widget _buildPopupTextField({required TextEditingController controller, required String label, required HeroIcons icon, TextInputType keyboardType = TextInputType.text, int maxLines = 1}) {
+  Widget _buildPopupTextField({required TextEditingController controller, required String label, required HeroIcons icon, TextInputType keyboardType = TextInputType.text, int maxLines = 1, bool isMandatory = false}) {
+    final bool hasStar = isMandatory || label.contains('*');
+    final String cleanLabel = label.replaceAll(RegExp(r'\s*\*'), '');
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
@@ -280,7 +282,23 @@ class _CustomerDetailsPageState extends State<CustomerDetailsPage> {
       keyboardType: keyboardType,
       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: kBlack87),
       decoration: InputDecoration(
-        labelText: label, prefixIcon: Padding(
+        label: hasStar
+            ? Text.rich(
+                TextSpan(
+                  text: cleanLabel,
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(cleanLabel),
+        prefixIcon: Padding(
           padding: const EdgeInsets.all(12.0),
           child: HeroIcon(icon, color: kPrimaryColor, size: 20),
         ),

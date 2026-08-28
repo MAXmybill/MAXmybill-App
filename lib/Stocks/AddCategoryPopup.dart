@@ -175,7 +175,20 @@ class _AddCategoryPopupState extends State<AddCategoryPopup> {
           controller: _categoryController,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.black87),
           decoration: InputDecoration(
-            labelText:'Category Name *',
+            label: const Text.rich(
+              TextSpan(
+                text: 'Category Name',
+                children: [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: kOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             floatingLabelBehavior: FloatingLabelBehavior.auto,
             filled: true,
             fillColor: const Color(0xFFF8F9FA),

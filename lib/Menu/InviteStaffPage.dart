@@ -490,7 +490,23 @@ class _InviteStaffPageState extends State<InviteStaffPage> {
           controller: ctrl, keyboardType: type, obscureText: isPassword,
           style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
           decoration: InputDecoration(
-            labelText: isMandatory ? '$label *' : label, prefixIcon: Padding(
+            label: isMandatory
+                ? Text.rich(
+                    TextSpan(
+                      text: label.replaceAll(RegExp(r'\s*\*'), ''),
+                      children: const [
+                        TextSpan(
+                          text: ' *',
+                          style: TextStyle(
+                            color: kOrange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : Text(label),
+            prefixIcon: Padding(
               padding: const EdgeInsets.all(12.0),
               child: HeroIcon(icon, color: filled ? kPrimaryColor : kBlack54, size: 20),
             ),

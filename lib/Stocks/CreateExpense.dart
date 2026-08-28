@@ -277,7 +277,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         return TextField(
                 controller: nameCtrl,
                 decoration: InputDecoration(
-                  labelText: 'Vendor Name *',
+                  label: const Text.rich(
+                    TextSpan(
+                      text: 'Vendor Name',
+                      children: [
+                        TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -309,7 +316,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 controller: phoneCtrl,
                 keyboardType: TextInputType.phone,
                 decoration: InputDecoration(
-                  labelText: 'Phone Number *',
+                  label: const Text.rich(
+                    TextSpan(
+                      text: 'Phone Number',
+                      children: [
+                        TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -604,9 +618,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Category *',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                    const Text.rich(
+                      TextSpan(
+                        text: 'Category',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        children: [
+                          TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -632,9 +651,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               const SizedBox(height: 20),
 
               // Bill Number (renamed from Invoice Number)
-              Text(
-                '${widget.isStockPurchase ? 'Purchase Bill Number' : 'Bill Number'} *',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: _errorColor),
+              Text.rich(
+                TextSpan(
+                  text: widget.isStockPurchase ? 'Purchase Bill Number' : 'Bill Number',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  children: const [
+                    TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
@@ -644,7 +668,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         return TextFormField(
                 controller: _billNumberController,
                 decoration: InputDecoration(
-                  hintText: 'Enter bill number *',
+                  hintText: 'Enter bill number',
                   prefixIcon: const HeroIcon(HeroIcons.documentText, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
@@ -677,9 +701,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               const SizedBox(height: 20),
 
               // Expense Name
-              Text(
-                'Expense Name *',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Text.rich(
+                TextSpan(
+                  text: 'Expense Name',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  children: [
+                    TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
@@ -689,7 +718,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         return TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  hintText: 'Enter expense name *',
+                  hintText: 'Enter expense name',
                   prefixIcon: const HeroIcon(HeroIcons.tag, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
@@ -722,9 +751,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               const SizedBox(height: 20),
 
               // Total Amount
-              Text(
-                'Total Amount *',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Text.rich(
+                TextSpan(
+                  text: 'Total Amount',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  children: [
+                    TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               ValueListenableBuilder<TextEditingValue>(
@@ -735,7 +769,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 controller: _totalAmountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
-                  hintText: '0.00 *',
+                  hintText: '0.00',
                   prefixIcon: const HeroIcon(HeroIcons.currencyRupee, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
@@ -772,9 +806,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               const SizedBox(height: 20),
 
               // Payment Mode
-              Text(
-                'Payment Mode *',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Text.rich(
+                TextSpan(
+                  text: 'Payment Mode',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  children: [
+                    TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               Container(
@@ -808,7 +847,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                   controller: _paidAmountController,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: InputDecoration(
-                    hintText: '0.00 *',
+                    hintText: '0.00',
                     prefixIcon: const HeroIcon(HeroIcons.bookOpen, color: _successColor),
                     filled: true,
                     fillColor: const Color(0xFFF8F9FA),
@@ -896,7 +935,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
         return TextFormField(
                 controller: _gstinController,
                 decoration: InputDecoration(
-                  hintText: 'Enter GSTIN *',
+                  hintText: 'Enter GSTIN',
                   prefixIcon: const HeroIcon(HeroIcons.documentText, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
@@ -936,7 +975,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 controller: _gstAmountController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: InputDecoration(
-                  hintText: '0.00 *',
+                  hintText: '0.00',
                   prefixIcon: const HeroIcon(HeroIcons.calculator, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
@@ -1001,9 +1040,14 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               const SizedBox(height: 20),
 
               // Date Selection
-              Text(
-                'Date *',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              const Text.rich(
+                TextSpan(
+                  text: 'Date',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  children: [
+                    TextSpan(text: ' *', style: TextStyle(color: kOrange, fontWeight: FontWeight.bold)),
+                  ],
+                ),
               ),
               const SizedBox(height: 8),
               GestureDetector(
@@ -1043,7 +1087,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 controller: _notesController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  hintText: 'Add notes (optional) *',
+                  hintText: 'Add notes (optional)',
                   prefixIcon: const Icon(Icons.note, color: _primaryColor),
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),

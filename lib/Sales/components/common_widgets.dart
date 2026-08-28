@@ -239,14 +239,31 @@ class CommonWidgets {
     );
   }
 
-  static Widget _buildDialogField({required TextEditingController controller, required String label, required HeroIcons icon, TextInputType? keyboardType, Function(String)? onChanged}) {
+  static Widget _buildDialogField({required TextEditingController controller, required String label, required HeroIcons icon, TextInputType? keyboardType, Function(String)? onChanged, bool isMandatory = false}) {
+    final bool hasStar = isMandatory || label.contains('*');
+    final String cleanLabel = label.replaceAll(RegExp(r'\s*\*'), '');
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
       onChanged: onChanged,
       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
       decoration: InputDecoration(
-        labelText: label,
+        label: hasStar
+            ? Text.rich(
+                TextSpan(
+                  text: cleanLabel,
+                  children: const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(
+                        color: kOrange,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Text(cleanLabel),
         prefixIcon: Padding(
           padding: const EdgeInsets.all(12.0),
           child: HeroIcon(icon, color: kPrimaryColor, size: 18),

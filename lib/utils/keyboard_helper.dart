@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
+import 'package:maxmybill/Colors.dart';
 
 /// Helper class to optimize keyboard performance and behavior
 class KeyboardHelper {
@@ -20,8 +21,26 @@ class KeyboardHelper {
         ? EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 12))
         : const EdgeInsets.symmetric(horizontal: 16, vertical: 12);
 
+    final bool hasStar = labelText != null && labelText.contains('*');
+    final String? cleanLabel = labelText?.replaceAll(RegExp(r'\s*\*'), '');
+
     return InputDecoration(
-      labelText: labelText,
+      label: hasStar && cleanLabel != null
+          ? Text.rich(
+              TextSpan(
+                text: cleanLabel,
+                children: const [
+                  TextSpan(
+                    text: ' *',
+                    style: TextStyle(
+                      color: kOrange,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : (labelText != null ? Text(labelText) : null),
       hintText: hintText,
       prefixIcon: prefixIcon,
       suffixIcon: suffixIcon,
