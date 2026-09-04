@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/services/local_stock_service.dart';
 import 'package:maxmybill/Sales/NewSale.dart';
+import 'package:maxmybill/Menu/AiChatPage.dart';
 
 class AddProductPage extends StatefulWidget {
   final String uid;
@@ -57,7 +58,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
   DateTime? _selectedExpiryDate;
   String? _selectedCategory;
-  bool _stockEnabled = true;
+  bool _stockEnabled = false;
   String? _selectedStockUnit = 'Piece';
   Stream<List<String>>? _unitsStream;
   String _lowStockAlertType = 'Count';
@@ -1012,31 +1013,44 @@ class _AddProductPageState extends State<AddProductPage> {
           icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        actions: widget.productId == null
-            ? [
-                FutureBuilder<bool>(
-                  future: _canUseBulkInventoryFuture,
-                  builder: (context, snapshot) {
-                    final isLocked = !(snapshot.data ?? false);
-                    return IconButton(
-                      icon: PremiumLockIconWrapper(
-                        isLocked: isLocked,
-                        badgeSize: 14,
-                        child: HeroIcon(
-                          HeroIcons.arrowUpTray,
-                          color: isLocked ? kPremiumLockIcon : kWhite,
-                          size: 22,
-                        ),
-                      ),
-                      onPressed: () => _showImportExcelDialog(),
-                      tooltip: isLocked
-                          ? 'Import from Excel (Premium)'
-                          : 'Import from Excel',
-                    );
-                  },
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.auto_awesome, color: kWhite, size: 22),
+            tooltip: 'MAXX AI Assistant',
+            onPressed: () {
+              Navigator.push(
+                context,
+                CupertinoPageRoute(
+                  builder: (_) => AiChatPage(
+                    uid: widget.uid,
+                  ),
                 ),
-              ]
-            : null,
+              );
+            },
+          ),
+          if (widget.productId == null)
+            FutureBuilder<bool>(
+              future: _canUseBulkInventoryFuture,
+              builder: (context, snapshot) {
+                final isLocked = !(snapshot.data ?? false);
+                return IconButton(
+                  icon: PremiumLockIconWrapper(
+                    isLocked: isLocked,
+                    badgeSize: 14,
+                    child: HeroIcon(
+                      HeroIcons.arrowUpTray,
+                      color: isLocked ? kPremiumLockIcon : kWhite,
+                      size: 22,
+                    ),
+                  ),
+                  onPressed: () => _showImportExcelDialog(),
+                  tooltip: isLocked
+                      ? 'Import from Excel (Premium)'
+                      : 'Import from Excel',
+                );
+              },
+            ),
+        ],
       ),
       body: Form(
         key: _formKey,
@@ -2245,7 +2259,7 @@ class _AddProductPageState extends State<AddProductPage> {
     _lowStockAlertController.text = d['lowStockAlert']?.toString() ?? '';
     _locationController.text = d['location'] ?? '';
     _selectedCategory = d['category'];
-    _stockEnabled = d['stockEnabled'] ?? true;
+    _stockEnabled = d['stockEnabled'] ?? false;
 
     // Validate stockUnit - must be one of the valid values
     final defaultUnits = [

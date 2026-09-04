@@ -10,6 +10,7 @@ import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/services/currency_service.dart';
 import 'package:intl/intl.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:maxmybill/Menu/AiChatPage.dart';
 
 class CategoryPage extends StatefulWidget {
   final String uid;
@@ -139,8 +140,8 @@ class _CategoryPageState extends State<CategoryPage> {
           ? FloatingActionButton.extended(
         onPressed: () => _showAddCategoryDialog(context),
         backgroundColor: kPrimaryColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+        highlightElevation: 10,
         icon: const HeroIcon(HeroIcons.plus, color: kWhite, size: 20),
         label: Text(
           context.tr('add_category'),
@@ -213,6 +214,16 @@ class _CategoryPageState extends State<CategoryPage> {
           _buildHeaderActionBtn(HeroIcons.barsArrowUp, _showSortMenu),
           const SizedBox(width: 8),
           _buildHeaderActionBtn(HeroIcons.adjustmentsHorizontal, _showFilterMenu),
+          const SizedBox(width: 8),
+          _buildHeaderActionBtn(
+            HeroIcons.sparkles,
+            () => Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (_) => AiChatPage(uid: widget.uid, role: _role),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -760,8 +771,8 @@ class _CategoryDetailsPageState extends State<CategoryDetailsPage> {
               ? FloatingActionButton.extended(
             onPressed: () => _showAddOptions(context),
             backgroundColor: kPrimaryColor,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 6,
+            highlightElevation: 10,
             icon: const HeroIcon(HeroIcons.plus, color: kWhite, size: 20),
             label: const Text("Add Item", style: TextStyle(color: kWhite, fontWeight: FontWeight.w800, fontSize: 12, letterSpacing: 0.5)),
           )

@@ -552,7 +552,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
     final idx = _cart.indexWhere((item) => item.productId == id);
 
     if (idx != -1) {
-      if (stockEnabled && quantity > stock) {
+      if (stockEnabled && (_cart[idx].quantity + quantity) > stock) {
         CommonWidgets.showSnackBar(
           context,
           context.tr('max_stock_reached').replaceFirst('{0}', stock.toInt().toString()),
@@ -612,7 +612,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
     );
   }
 
-  Future<bool> _searchByBarcode(String barcode) async {
+  Future<dynamic> _searchByBarcode(String barcode) async {
     // Cache context-dependent values before async gaps
     final localStockService = context.read<LocalStockService>();
 
@@ -623,15 +623,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
           .limit(1)
           .get();
 
-      if (!mounted) return false;
+      if (!mounted) return {'success': false, 'message': 'Not mounted'};
 
       if (snap.docs.isEmpty) {
-        CommonWidgets.showSnackBar(
-          context,
-          context.tr('product_not_found'),
-          bgColor: kOrange,
-        );
-        return false;
+        return {
+          'success': false,
+          'message': context.tr('product_not_found'),
+        };
       }
 
       final doc = snap.docs.first;
@@ -647,7 +645,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
       // Cache the stock as double (NOT .toInt() — that was causing a type error)
       await localStockService.cacheStock(id, firestoreStock);
 
-      if (!mounted) return false;
+      if (!mounted) return {'success': false, 'message': 'Not mounted'};
 
       final stock = localStockService.hasStock(id)
           ? localStockService.getStock(id)
@@ -668,27 +666,57 @@ class _SaleAllPageState extends State<SaleAllPage> {
           taxType: taxType,
           taxes: taxes,
         );
-        return true;
+        return {
+          'success': true,
+          'name': name,
+          'quantity': 1.0,
+          'isWeightBased': true,
+        };
+      }
+
+      // Check stock before adding
+      final existingIndex = _cart.indexWhere((item) => item.productId == id);
+      final double currentInCart = (existingIndex != -1) ? _cart[existingIndex].quantity : 0.0;
+      if (stockEnabled && (currentInCart + 1.0) > stock) {
+        return {
+          'success': false,
+          'name': name,
+          'message': context.tr('max_stock_reached').replaceFirst('{0}', stock.toInt().toString()),
+        };
       }
 
       // All other items: add 1 unit directly
-      return _addToCart(
+      final added = _addToCart(
         id, name, price, cost, stockEnabled, stock, 1.0,
         taxName: taxName,
         taxPercentage: taxPercentage,
         taxType: taxType,
         taxes: taxes,
       );
+
+      if (!added) {
+        return {
+          'success': false,
+          'name': name,
+          'message': context.tr('out_of_stock'),
+        };
+      }
+
+      final updatedIndex = _cart.indexWhere((item) => item.productId == id);
+      final double currentQty = (updatedIndex != -1) ? _cart[updatedIndex].quantity : 1.0;
+
+      return {
+        'success': true,
+        'name': name,
+        'quantity': currentQty,
+        'price': price,
+      };
     } catch (e, stack) {
       debugPrint('❌ _searchByBarcode error: $e\n$stack');
-      if (mounted) {
-        CommonWidgets.showSnackBar(
-          context,
-          'Error: ${e.toString()}',
-          bgColor: kErrorColor,
-        );
-      }
-      return false;
+      return {
+        'success': false,
+        'message': e.toString(),
+      };
     }
   }
 

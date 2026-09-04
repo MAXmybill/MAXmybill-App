@@ -11,6 +11,7 @@ import 'package:maxmybill/Colors.dart';
 import 'package:intl/intl.dart';
 import 'package:heroicons/heroicons.dart';
 import 'package:maxmybill/services/local_stock_service.dart';
+import 'package:maxmybill/Menu/AiChatPage.dart';
 
 class ProductsPage extends StatefulWidget {
   final String uid;
@@ -134,8 +135,8 @@ class _ProductsPageState extends State<ProductsPage> {
           ),
         ),
         backgroundColor: kPrimaryColor,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 6,
+        highlightElevation: 10,
         icon: const HeroIcon(HeroIcons.plus, color: kWhite, size: 20),
         label: Text(
           context.tr('add_product'),
@@ -250,6 +251,16 @@ class _ProductsPageState extends State<ProductsPage> {
             const SizedBox(width: 8),
             _buildHeaderActionBtn(HeroIcons.clipboardDocumentCheck, () => setState(() => _isMultiSelectMode = true)),
           ],
+          const SizedBox(width: 8),
+          _buildHeaderActionBtn(
+            HeroIcons.sparkles,
+            () => Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (_) => AiChatPage(uid: _uid, role: _role),
+              ),
+            ),
+          ),
         ],
       ),
     );
