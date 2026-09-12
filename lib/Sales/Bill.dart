@@ -1396,14 +1396,20 @@ class _BillPageState extends State<BillPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(bottom: bottomInset),
           child: Container(
             decoration: const BoxDecoration(
               color: kWhite,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              bottomInset > 0 ? 16 : (MediaQuery.of(ctx).padding.bottom + 16),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1469,14 +1475,20 @@ class _BillPageState extends State<BillPage> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         return Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          padding: EdgeInsets.only(bottom: bottomInset),
           child: Container(
             decoration: const BoxDecoration(
               color: kWhite,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
             ),
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 100),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              16,
+              20,
+              bottomInset > 0 ? 16 : (MediaQuery.of(ctx).padding.bottom + 16),
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1790,7 +1802,7 @@ class _BillPageState extends State<BillPage> {
             color: kWhite,
             borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
+          padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(ctx).padding.bottom + 20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

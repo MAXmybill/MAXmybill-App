@@ -83,19 +83,30 @@ class PlanProvider extends ChangeNotifier {
   /// Call this after subscription purchase to instantly update the app
   Future<void> forceRefresh() async {
     debugPrint('🔄 PlanProvider: Force refreshing subscription status...');
-    await _fetchPlanAndExpiry();
+    await _loadPlanAndExpiry();
     debugPrint('✅ PlanProvider: New plan = $_cachedPlan, Expiry = $_cachedExpiryDate');
     notifyListeners();
   }
 
-  /// Fetch both plan and expiry date from Firestore
-  Future<void> _fetchPlanAndExpiry() async {
+  static DateTime? _tryParseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is Timestamp) return v.toDate();
+    if (v is DateTime) return v;
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    final str = v.toString().trim();
+    if (str.isEmpty) return null;
+    return DateTime.tryParse(str);
+  }
+
+  /// Fetch both plan and expiry date together
+  Future<void> _loadPlanAndExpiry() async {
     try {
       final storeDoc = await FirestoreService().getCurrentStoreDoc();
       if (storeDoc == null || !storeDoc.exists) {
         _cachedPlan = PLAN_FREE;
         _rawPlan = PLAN_FREE;
         _cachedExpiryDate = null;
+        _isTrial = false;
         return;
       }
 
@@ -109,16 +120,8 @@ class PlanProvider extends ChangeNotifier {
       }
 
       // Get expiry date
-      final expiryDateStr = data['subscriptionExpiryDate']?.toString();
-      if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
-        try {
-          _cachedExpiryDate = DateTime.parse(expiryDateStr);
-        } catch (e) {
-          _cachedExpiryDate = null;
-        }
-      } else {
-        _cachedExpiryDate = null;
-      }
+      final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+      _cachedExpiryDate = _tryParseDate(rawExpiry);
 
       // Get raw plan from Firestore (without expiry check)
       final rawPlanValue = data['plan']?.toString();
@@ -134,6 +137,11 @@ class PlanProvider extends ChangeNotifier {
       _rawPlan = PLAN_FREE;
       _cachedExpiryDate = null;
     }
+  }
+
+  /// Backward compatibility alias
+  Future<void> _fetchPlanAndExpiry() async {
+    await _loadPlanAndExpiry();
   }
 
   /// Start listening to plan changes in real-time (no caching, direct Firestore stream)
@@ -174,16 +182,8 @@ class PlanProvider extends ChangeNotifier {
             _isTrial = data['isTrial'] == true;
 
             // Update expiry date
-            final expiryDateStr = data['subscriptionExpiryDate']?.toString();
-            if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
-              try {
-                _cachedExpiryDate = DateTime.parse(expiryDateStr);
-              } catch (e) {
-                _cachedExpiryDate = null;
-              }
-            } else {
-              _cachedExpiryDate = null;
-            }
+            final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+            _cachedExpiryDate = _tryParseDate(rawExpiry);
           }
         }
         // Notify all widgets to rebuild
@@ -224,23 +224,14 @@ class PlanProvider extends ChangeNotifier {
 
       // Check expiry for paid plans (case-insensitive)
       if (!_isPlanFree(plan)) {
-        final expiryDateStr = data['subscriptionExpiryDate']?.toString();
-        debugPrint('🔍 getCurrentPlan: expiryDateStr = "$expiryDateStr"');
-        // Fail closed: paid plan requires a valid non-expired subscription date.
-        if (expiryDateStr == null || expiryDateStr.isEmpty) {
-          debugPrint('🔍 getCurrentPlan: Missing expiry for paid plan, returning Free');
-          return PLAN_FREE;
-        }
-        try {
-          final expiryDate = DateTime.parse(expiryDateStr);
+        final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+        final expiryDate = _tryParseDate(rawExpiry);
+        if (expiryDate != null) {
           debugPrint('🔍 getCurrentPlan: expiryDate = $expiryDate, now = ${DateTime.now()}');
           if (DateTime.now().isAfter(expiryDate)) {
-            debugPrint('🔍 getCurrentPlan: Plan EXPIRED, returning Free');
+            debugPrint('🔍 getCurrentPlan: Plan EXPIRED on $expiryDate, returning Free');
             return PLAN_FREE; // Expired
           }
-        } catch (e) {
-          debugPrint('🔍 getCurrentPlan: Error parsing expiry: $e, returning Free');
-          return PLAN_FREE;
         }
       }
 

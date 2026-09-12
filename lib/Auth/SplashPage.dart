@@ -22,6 +22,7 @@ import 'package:maxmybill/services/notification_service.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
+import 'package:maxmybill/utils/firestore_service.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -197,21 +198,34 @@ class _SplashPageState extends State<SplashPage>
           return;
         }
 
-        // Check if this is a staff account blocked due to expired store subscription
-        final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(sessionData.uid);
-        if (isStaffBlocked) {
-          debugPrint('🔒 Staff account blocked: Store plan expired');
-          await FirebaseAuth.instance.signOut();
-          await AuthCacheService.instance.clearCache();
-          if (!mounted) return;
-          Navigator.of(context).pushReplacement(
-            CupertinoPageRoute(
-              builder: (_) => const LoginPage(
-                initialErrorMessage: 'Your store\'s subscription has expired. Please ask your store owner to renew the plan.',
-              ),
-            ),
-          );
-          return;
+        // Check if this is a staff account blocked due to expired store subscription (only when online)
+        if (!isOffline) {
+          try {
+            // Pre-warm the store cache with session data
+            await FirestoreService().getCurrentStoreId(
+              explicitUid: sessionData.uid,
+              explicitEmail: sessionData.email,
+            );
+
+            final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(sessionData.uid);
+            if (isStaffBlocked) {
+              debugPrint('🔒 Staff account blocked: Store plan expired');
+              await FirebaseAuth.instance.signOut();
+              await AuthCacheService.instance.clearCache();
+              if (!mounted) return;
+              Navigator.of(context).pushReplacement(
+                CupertinoPageRoute(
+                  builder: (_) => const LoginPage(
+                    initialErrorMessage: 'Your store\'s subscription has expired. Please ask your store owner to renew the plan.',
+                  ),
+                ),
+              );
+              return;
+            }
+          } catch (e) {
+            debugPrint('⚠️ Error checking plan on splash: $e');
+            // Do not block user on unexpected check errors
+          }
         }
 
         // User has completed registration (or offline, so assume completed) - proceed normally

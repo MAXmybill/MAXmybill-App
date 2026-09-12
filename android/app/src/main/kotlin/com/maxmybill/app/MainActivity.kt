@@ -7,10 +7,15 @@ import android.content.Intent
 import android.app.Activity
 import android.net.Uri
 import java.io.OutputStream
+import android.media.ToneGenerator
+import android.media.AudioManager
 
 class MainActivity : FlutterActivity() {
 	private val CHANNEL = "maxbillup/storage"
+	private val SOUND_CHANNEL = "maxmybill/sound"
 	private val CREATE_FILE_REQUEST_CODE = 42424
+
+	private var toneGenerator: ToneGenerator? = null
 
 	private var pendingBytes: ByteArray? = null
 	private var pendingFileName: String? = null
@@ -19,6 +24,34 @@ class MainActivity : FlutterActivity() {
 
 	override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
 		super.configureFlutterEngine(flutterEngine)
+
+		MethodChannel(flutterEngine.dartExecutor.binaryMessenger, SOUND_CHANNEL).setMethodCallHandler { call, result ->
+			when (call.method) {
+				"playBeep" -> {
+					try {
+						if (toneGenerator == null) {
+							toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+						}
+						toneGenerator?.startTone(ToneGenerator.TONE_PROP_BEEP, 150)
+						result.success(true)
+					} catch (e: Exception) {
+						result.error("SOUND_ERROR", e.message, null)
+					}
+				}
+				"playError" -> {
+					try {
+						if (toneGenerator == null) {
+							toneGenerator = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+						}
+						toneGenerator?.startTone(ToneGenerator.TONE_PROP_NACK, 250)
+						result.success(true)
+					} catch (e: Exception) {
+						result.error("SOUND_ERROR", e.message, null)
+					}
+				}
+				else -> result.notImplemented()
+			}
+		}
 
 		MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
 			if (call.method == "saveFile") {
@@ -114,6 +147,14 @@ class MainActivity : FlutterActivity() {
 			pendingMimeType = null
 			pendingResult = null
 		}
+	}
+
+	override fun onDestroy() {
+		try {
+			toneGenerator?.release()
+			toneGenerator = null
+		} catch (e: Exception) {}
+		super.onDestroy()
 	}
 }
 

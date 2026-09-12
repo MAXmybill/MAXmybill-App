@@ -74,13 +74,20 @@ class PermissionHelper {
         }
 
         // 3. Check if user is the store owner
-        final storeDoc = await FirebaseFirestore.instance
-            .collection('store')
-            .doc(storeId)
-            .get();
-        if (storeDoc.exists) {
+        final storeDoc = await FirestoreService().getCurrentStoreDoc();
+        if (storeDoc != null && storeDoc.exists) {
           final storeData = storeDoc.data() as Map<String, dynamic>;
-          if (storeData['ownerId'] == uid || storeData['ownerUid'] == uid) {
+          final ownerUids = storeData['ownerUids'];
+          final isOwnerUid = storeData['ownerId'] == uid ||
+              storeData['ownerUid'] == uid ||
+              storeData['phoneAuthUid'] == uid ||
+              (ownerUids is List && ownerUids.contains(uid));
+
+          final userEmail = FirebaseAuth.instance.currentUser?.email?.toLowerCase().trim();
+          final ownerEmail = storeData['ownerEmail']?.toString().toLowerCase().trim();
+          final isOwnerEmail = userEmail != null && userEmail.isNotEmpty && ownerEmail == userEmail;
+
+          if (isOwnerUid || isOwnerEmail) {
             return {
               'role': 'Owner',
               'permissions': _getAllPermissions(),
@@ -98,10 +105,10 @@ class PermissionHelper {
     };
   }
 
-  /// Check if a role string represents the store owner (only owner bypasses permissions).
+  /// Check if a role string represents the store owner or admin (bypasses permissions).
   static bool _isAdminRole(String role) {
-    final r = role.toLowerCase();
-    return r == 'owner';
+    final r = role.toLowerCase().trim();
+    return r == 'owner' || r == 'admin';
   }
 
   static Map<String, bool> _getAllPermissions() {

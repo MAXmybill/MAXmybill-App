@@ -432,23 +432,158 @@ class _LoginPageState extends State<LoginPage> {
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
 
       if (userDoc.exists) {
+        final userData = userDoc.data();
+        final storeId = userData?['storeId']?.toString() ?? userData?['storeDocId']?.toString();
+        if (storeId != null && storeId.isNotEmpty) {
+          await _firestore_service.setUserStoreId(storeId);
+          await _firestore_service.notifyStoreDataChanged();
+          if (mounted) setState(() => _loading = false);
+          _navigate(user.uid, user.phoneNumber ?? user.email);
+          return;
+        }
+      }
+
+      // Check if an existing store or user matches this phone number
+      final candidatePhones = <String>{};
+      if (user.phoneNumber != null && user.phoneNumber!.trim().isNotEmpty) {
+        final p = user.phoneNumber!.trim();
+        candidatePhones.add(p);
+        final digits = p.replaceAll(RegExp(r'\D'), '');
+        if (digits.isNotEmpty) {
+          candidatePhones.add(digits);
+          if (digits.length > 10) {
+            candidatePhones.add(digits.substring(digits.length - 10));
+          }
+        }
+      }
+
+      final typedPhone = _phoneCtrl.text.trim();
+      if (typedPhone.isNotEmpty) {
+        candidatePhones.add(typedPhone);
+        candidatePhones.add('$_selectedCountryCode$typedPhone');
+        final digits = typedPhone.replaceAll(RegExp(r'\D'), '');
+        if (digits.isNotEmpty) {
+          candidatePhones.add(digits);
+          if (digits.length >= 10) {
+            candidatePhones.add(digits.substring(digits.length - 10));
+          }
+        }
+      }
+
+      DocumentSnapshot? matchedStoreDoc;
+      Map<String, dynamic>? matchedStoreData;
+      String? matchedStoreId;
+      Map<String, dynamic>? matchedUserData;
+
+      final fs = FirebaseFirestore.instance;
+
+      // 1. Search store collection by phone fields
+      for (final phone in candidatePhones) {
+        if (phone.isEmpty) continue;
+        for (final field in ['businessPhone', 'personalPhone', 'ownerPhone', 'phone']) {
+          final query = await fs.collection('store').where(field, isEqualTo: phone).limit(1).get();
+          if (query.docs.isNotEmpty) {
+            matchedStoreDoc = query.docs.first;
+            matchedStoreData = matchedStoreDoc.data() as Map<String, dynamic>;
+            matchedStoreId = matchedStoreData['storeId']?.toString() ?? matchedStoreDoc.id;
+            break;
+          }
+        }
+        if (matchedStoreDoc != null) break;
+      }
+
+      // 2. Search users collection by phone fields if not found in store
+      if (matchedStoreDoc == null) {
+        for (final phone in candidatePhones) {
+          if (phone.isEmpty) continue;
+          for (final field in ['phoneNumber', 'phone', 'businessPhone', 'personalPhone']) {
+            final query = await fs.collection('users').where(field, isEqualTo: phone).limit(1).get();
+            if (query.docs.isNotEmpty) {
+              matchedUserData = query.docs.first.data();
+              final sId = matchedUserData['storeId']?.toString() ?? matchedUserData['storeDocId']?.toString();
+              if (sId != null && sId.isNotEmpty) {
+                final sDoc = await fs.collection('store').doc(sId).get();
+                if (sDoc.exists) {
+                  matchedStoreDoc = sDoc;
+                  matchedStoreData = sDoc.data() as Map<String, dynamic>;
+                  matchedStoreId = sId;
+                } else {
+                  final sQuery = await fs.collection('store').where('storeId', isEqualTo: int.tryParse(sId) ?? sId).limit(1).get();
+                  if (sQuery.docs.isNotEmpty) {
+                    matchedStoreDoc = sQuery.docs.first;
+                    matchedStoreData = matchedStoreDoc.data() as Map<String, dynamic>;
+                    matchedStoreId = matchedStoreData['storeId']?.toString() ?? matchedStoreDoc.id;
+                  }
+                }
+              }
+              break;
+            }
+          }
+          if (matchedStoreDoc != null) break;
+        }
+      }
+
+      if (matchedStoreDoc != null && matchedStoreId != null) {
+        // An existing store was found! Map this phone login to the existing store
+        final effectiveStoreId = matchedStoreData?['storeId'] ?? int.tryParse(matchedStoreId) ?? matchedStoreId;
+        final primaryOwnerUid = matchedStoreData?['ownerUid'] ?? matchedStoreData?['ownerId'];
+        final phoneToSave = user.phoneNumber ?? '$_selectedCountryCode$typedPhone';
+
+        final Map<String, dynamic> phoneUserData = {
+          'uid': user.uid,
+          'phoneNumber': phoneToSave,
+          'phone': phoneToSave,
+          'name': matchedUserData?['name'] ?? matchedStoreData?['ownerName'] ?? matchedStoreData?['businessName'] ?? 'Owner',
+          'email': matchedUserData?['email'] ?? matchedStoreData?['ownerEmail'],
+          'storeId': effectiveStoreId,
+          'storeDocId': matchedStoreDoc.id,
+          'role': 'owner',
+          'isActive': true,
+          'isEmailVerified': true,
+          'isPhoneVerified': true,
+          if (primaryOwnerUid != null) 'linkedOwnerUid': primaryOwnerUid,
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        final userRef = fs.collection('users').doc(user.uid);
+        final checkDoc = await userRef.get();
+        if (!checkDoc.exists) {
+          phoneUserData['createdAt'] = FieldValue.serverTimestamp();
+        }
+        await userRef.set(phoneUserData, SetOptions(merge: true));
+
+        // Update the store document to link this phone user UID
+        await fs.collection('store').doc(matchedStoreDoc.id).set({
+          'ownerUids': FieldValue.arrayUnion([user.uid]),
+          'phoneAuthUid': user.uid,
+          if (phoneToSave.isNotEmpty) 'ownerPhone': phoneToSave,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        await _firestore_service.setUserStoreId(matchedStoreId);
         await _firestore_service.notifyStoreDataChanged();
+
+        final planProvider = Provider.of<PlanProvider>(context, listen: false);
+        await planProvider.initialize();
+
         if (mounted) setState(() => _loading = false);
         _navigate(user.uid, user.phoneNumber ?? user.email);
-      } else {
-        if (mounted) setState(() => _loading = false);
-        Navigator.push(
-          context,
-          CupertinoPageRoute(
-            builder: (context) => BusinessDetailsPage(
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              phoneNumber: user.phoneNumber,
-            ),
-          ),
-        );
+        return;
       }
+
+      // No existing store found: proceed to register a new business
+      if (mounted) setState(() => _loading = false);
+      Navigator.push(
+        context,
+        CupertinoPageRoute(
+          builder: (context) => BusinessDetailsPage(
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            phoneNumber: user.phoneNumber,
+          ),
+        ),
+      );
     } catch (e) {
       if (mounted) setState(() => _loading = false);
       _showMsg('Authentication redirect error: $e', isError: true);
@@ -529,6 +664,74 @@ class _LoginPageState extends State<LoginPage> {
             if (mounted) setState(() => _loading = false);
             _navigate(user.uid, user.email);
           } else {
+            // Check if there is an existing store or user with this Google email
+            DocumentSnapshot? matchedStoreDoc;
+            Map<String, dynamic>? matchedStoreData;
+            String? matchedStoreId;
+
+            final byOwnerEmail = await FirebaseFirestore.instance
+                .collection('store')
+                .where('ownerEmail', isEqualTo: userEmail)
+                .limit(1)
+                .get();
+
+            if (byOwnerEmail.docs.isNotEmpty) {
+              matchedStoreDoc = byOwnerEmail.docs.first;
+              matchedStoreData = matchedStoreDoc.data() as Map<String, dynamic>;
+              matchedStoreId = matchedStoreData['storeId']?.toString() ?? matchedStoreDoc.id;
+            } else {
+              final byUserEmail = await FirebaseFirestore.instance
+                  .collection('users')
+                  .where('email', isEqualTo: userEmail)
+                  .limit(1)
+                  .get();
+              if (byUserEmail.docs.isNotEmpty) {
+                final uData = byUserEmail.docs.first.data();
+                final sId = uData['storeId']?.toString() ?? uData['storeDocId']?.toString();
+                if (sId != null && sId.isNotEmpty) {
+                  final sDoc = await FirebaseFirestore.instance.collection('store').doc(sId).get();
+                  if (sDoc.exists) {
+                    matchedStoreDoc = sDoc;
+                    matchedStoreData = sDoc.data() as Map<String, dynamic>;
+                    matchedStoreId = sId;
+                  }
+                }
+              }
+            }
+
+            if (matchedStoreDoc != null && matchedStoreId != null) {
+              // Existing store found! Map this Google account to the existing store
+              final effectiveStoreId = matchedStoreData?['storeId'] ?? int.tryParse(matchedStoreId) ?? matchedStoreId;
+              await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+                'uid': user.uid,
+                'email': user.email,
+                'name': user.displayName ?? matchedStoreData?['ownerName'] ?? 'Owner',
+                'storeId': effectiveStoreId,
+                'storeDocId': matchedStoreDoc.id,
+                'role': 'owner',
+                'isActive': true,
+                'isEmailVerified': true,
+                'createdAt': FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+
+              await FirebaseFirestore.instance.collection('store').doc(matchedStoreDoc.id).set({
+                'ownerUids': FieldValue.arrayUnion([user.uid]),
+                'ownerEmail': user.email,
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+
+              await _firestore_service.setUserStoreId(matchedStoreId);
+              await _firestore_service.notifyStoreDataChanged();
+
+              final planProvider = Provider.of<PlanProvider>(context, listen: false);
+              await planProvider.initialize();
+
+              if (mounted) setState(() => _loading = false);
+              _navigate(user.uid, user.email);
+              return;
+            }
+
             // New user - redirect to business registration
             if (mounted) setState(() => _loading = false);
             Navigator.push(

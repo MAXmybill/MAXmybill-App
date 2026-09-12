@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:maxmybill/services/auth_cache_service.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
@@ -54,19 +55,26 @@ class FirestoreService {
   }
 
   /// Get the current user's store ID
-  Future<String?> getCurrentStoreId({bool forceRefresh = false}) async {
+  Future<String?> getCurrentStoreId({bool forceRefresh = false, String? explicitUid, String? explicitEmail}) async {
     // 1. Return cached ID immediately if available
     if (!forceRefresh && _cachedStoreId != null) {
       return _cachedStoreId;
     }
 
     final user = _auth.currentUser;
-    final uid = user?.uid;
-    final email = user?.email;
+    String? uid = explicitUid ?? user?.uid;
+    String? email = explicitEmail ?? user?.email;
+
+    if (uid == null) {
+      final cached = AuthCacheService.instance.getCachedUser();
+      uid = cached?.uid;
+      email = email ?? cached?.email;
+    }
+
     if (uid == null) return null;
 
     try {
-      // 2. Try usecollection first
+      // 2. Try users collection first
       final userDoc = await _firestore.collection('users').doc(uid).get();
       if (userDoc.exists) {
         final data = userDoc.data();
@@ -78,7 +86,7 @@ class FirestoreService {
         }
       }
 
-      // 3. Fallback: Search 'store' collection by Owner UID
+      // 3. Fallback: Search 'store' collection by Owner UID / ownerId
       final byUid = await _firestore
           .collection('store')
           .where('ownerUid', isEqualTo: uid)
@@ -91,11 +99,50 @@ class FirestoreService {
         return _cachedStoreId;
       }
 
-      // 4. Fallback: Search 'store' collection by Email
+      final byOwnerId = await _firestore
+          .collection('store')
+          .where('ownerId', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (byOwnerId.docs.isNotEmpty) {
+        final doc = byOwnerId.docs.first;
+        _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
+        return _cachedStoreId;
+      }
+
+      // Check ownerUids array
+      final byOwnerUids = await _firestore
+          .collection('store')
+          .where('ownerUids', arrayContains: uid)
+          .limit(1)
+          .get();
+
+      if (byOwnerUids.docs.isNotEmpty) {
+        final doc = byOwnerUids.docs.first;
+        _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
+        return _cachedStoreId;
+      }
+
+      // Check phoneAuthUid
+      final byPhoneUid = await _firestore
+          .collection('store')
+          .where('phoneAuthUid', isEqualTo: uid)
+          .limit(1)
+          .get();
+
+      if (byPhoneUid.docs.isNotEmpty) {
+        final doc = byPhoneUid.docs.first;
+        _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
+        return _cachedStoreId;
+      }
+
+      // 4. Fallback: Search 'store' and 'users' collections by Email
       if (email != null && email.isNotEmpty) {
+        final cleanEmail = email.toLowerCase().trim();
         final byEmail = await _firestore
             .collection('store')
-            .where('ownerEmail', isEqualTo: email)
+            .where('ownerEmail', isEqualTo: cleanEmail)
             .limit(1)
             .get();
 
@@ -103,6 +150,39 @@ class FirestoreService {
           final doc = byEmail.docs.first;
           _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
           return _cachedStoreId;
+        }
+
+        final byUserEmail = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: cleanEmail)
+            .limit(1)
+            .get();
+
+        if (byUserEmail.docs.isNotEmpty) {
+          final doc = byUserEmail.docs.first;
+          final sId = doc.data()['storeId']?.toString() ?? doc.data()['storeDocId']?.toString();
+          if (sId != null && sId.isNotEmpty) {
+            _cachedStoreId = sId;
+            return _cachedStoreId;
+          }
+        }
+      }
+
+      // 5. Fallback: Search 'store' collection by Phone Number
+      final phone = user?.phoneNumber;
+      if (phone != null && phone.isNotEmpty) {
+        for (final field in ['businessPhone', 'personalPhone', 'ownerPhone', 'phone']) {
+          final byPhone = await _firestore
+              .collection('store')
+              .where(field, isEqualTo: phone)
+              .limit(1)
+              .get();
+
+          if (byPhone.docs.isNotEmpty) {
+            final doc = byPhone.docs.first;
+            _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
+            return _cachedStoreId;
+          }
         }
       }
     } catch (e) {
@@ -113,13 +193,13 @@ class FirestoreService {
   }
 
   /// Get the whole store document
-  Future<DocumentSnapshot?> getCurrentStoreDoc({bool forceRefresh = false}) async {
+  Future<DocumentSnapshot?> getCurrentStoreDoc({bool forceRefresh = false, String? explicitUid, String? explicitEmail}) async {
     // Return cached doc if available
     if (!forceRefresh && _cachedStoreDoc != null) {
       return _cachedStoreDoc;
     }
 
-    final storeId = await getCurrentStoreId();
+    final storeId = await getCurrentStoreId(forceRefresh: forceRefresh, explicitUid: explicitUid, explicitEmail: explicitEmail);
     if (storeId == null) return null;
 
     try {
@@ -128,6 +208,21 @@ class FirestoreService {
         _cachedStoreDoc = doc;
         _cachedStoreData = doc.data() as Map<String, dynamic>?;
         return doc;
+      }
+
+      // Try matching by int storeId or string storeId
+      final intVal = int.tryParse(storeId);
+      if (intVal != null) {
+        final byIntField = await _firestore
+            .collection('store')
+            .where('storeId', isEqualTo: intVal)
+            .limit(1)
+            .get();
+        if (byIntField.docs.isNotEmpty) {
+          _cachedStoreDoc = byIntField.docs.first;
+          _cachedStoreData = byIntField.docs.first.data() as Map<String, dynamic>?;
+          return byIntField.docs.first;
+        }
       }
 
       final byField = await _firestore

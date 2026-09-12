@@ -18,6 +18,7 @@ import 'package:maxmybill/utils/plan_permission_helper.dart';
 import 'package:maxmybill/services/local_stock_service.dart';
 import 'package:maxmybill/Sales/NewSale.dart';
 import 'package:maxmybill/Menu/AiChatPage.dart';
+import 'package:maxmybill/Menu/Menu.dart' hide kPrimaryColor, kWhite;
 
 class AddProductPage extends StatefulWidget {
   final String uid;
@@ -72,9 +73,12 @@ class _AddProductPageState extends State<AddProductPage> {
   List<Map<String, dynamic>> _fetchedTaxes = [];
   List<String> _selectedTaxIds = []; // Multiple tax selection
 
+  bool _isTour = false;
+
   @override
   void initState() {
     super.initState();
+    _checkTourStatus();
     _selectedCategory = widget.preSelectedCategory ?? 'General';
     _canUseBulkInventoryFuture = PlanPermissionHelper.canUseBulkInventory();
     _checkPermission();
@@ -91,6 +95,28 @@ class _AddProductPageState extends State<AddProductPage> {
   // ==========================================
   // LOGIC METHODS
   // ==========================================
+
+  void _checkTourStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final bool isTour = prefs.getBool('isTourActive') ?? false;
+    if (mounted && isTour != _isTour) {
+      setState(() => _isTour = isTour);
+    }
+  }
+
+  void _skipTour() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isTourActive', false);
+    if (mounted) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        CupertinoPageRoute(
+          builder: (_) => MenuPage(uid: widget.uid, userEmail: widget.userEmail),
+        ),
+        (route) => false,
+      );
+    }
+  }
 
   Future<void> _fetchTaxesFromBackend() async {
     try {
@@ -992,7 +1018,7 @@ class _AddProductPageState extends State<AddProductPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final scaffold = Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         shape: const RoundedRectangleBorder(
@@ -1009,10 +1035,23 @@ class _AddProductPageState extends State<AddProductPage> {
             fontSize: 18,
           ),
         ),
-        leading: IconButton(
-          icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: _isTour
+            ? TextButton(
+                onPressed: _skipTour,
+                child: const Text(
+                  "Skip",
+                  style: TextStyle(
+                    color: kWhite,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              )
+            : IconButton(
+                icon: const HeroIcon(HeroIcons.arrowLeft, color: kWhite, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+        leadingWidth: _isTour ? 70 : null,
         actions: [
           IconButton(
             icon: const Icon(Icons.auto_awesome, color: kWhite, size: 22),
@@ -1099,6 +1138,17 @@ class _AddProductPageState extends State<AddProductPage> {
         ),
       ),
     );
+    if (_isTour) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          _skipTour();
+        },
+        child: scaffold,
+      );
+    }
+    return scaffold;
   }
 
   Widget _buildCostPriceField() {

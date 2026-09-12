@@ -4,6 +4,7 @@ import 'package:flutter/services.dart'; // Added for HapticFeedback, SystemSound
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
+import 'package:maxmybill/utils/sound_helper.dart';
 import 'package:maxmybill/Colors.dart'; // Using your theme colors
 import 'dart:math' as math;
 
@@ -117,12 +118,21 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
     if (cleanBarcode.isEmpty || !_isScanning || _isProcessingScan) return;
 
     final now = DateTime.now();
-    // For camera scanner: 1000ms debounce for the exact same barcode to prevent frame spam,
-    // while allowing scanning the second item smoothly right after!
     // For hardware scanner (user pulling trigger): 300ms debounce to prevent key bounce.
-    final debounceMs = isHardware ? 300 : 1000;
-    if (cleanBarcode == _lastScannedCode &&
-        _lastScanTime != null &&
+    // For camera scanner:
+    // - Exact same barcode: 2500ms cooldown so holding the product in front of the
+    //   lens before taking it out does NOT re-trigger or add duplicate quantities.
+    // - Different barcode: 700ms debounce to allow snappy scanning of the next item.
+    final int debounceMs;
+    if (isHardware) {
+      debounceMs = 300;
+    } else if (cleanBarcode == _lastScannedCode) {
+      debounceMs = 2500;
+    } else {
+      debounceMs = 700;
+    }
+
+    if (_lastScanTime != null &&
         now.difference(_lastScanTime!).inMilliseconds < debounceMs) {
       return;
     }
@@ -139,6 +149,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
 
       if (resolvedResult == false) {
         // Failed / not found
+        SoundHelper.playErrorBeep();
         HapticFeedback.heavyImpact();
         ScaffoldMessenger.of(context).clearSnackBars();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -172,9 +183,9 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
         final String? message = resolvedResult['message']?.toString();
 
         if (success) {
-          // Play mild click sound & light haptic feedback
-          SystemSound.play(SystemSoundType.click);
-          HapticFeedback.lightImpact();
+          // Play audible POS scanner beep & haptic feedback
+          SoundHelper.playScanBeep();
+          HapticFeedback.mediumImpact();
 
           if (!mounted) return;
 
@@ -242,6 +253,7 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
           );
         } else {
           // Max stock reached / out of stock / error
+          SoundHelper.playErrorBeep();
           HapticFeedback.heavyImpact();
           ScaffoldMessenger.of(context).clearSnackBars();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -268,8 +280,8 @@ class _BarcodeScannerPageState extends State<BarcodeScannerPage> with SingleTick
         }
       } else {
         // Fallback for non-map return types (e.g. true, String, etc.)
-        SystemSound.play(SystemSoundType.click);
-        HapticFeedback.lightImpact();
+        SoundHelper.playScanBeep();
+        HapticFeedback.mediumImpact();
 
         if (!mounted) return;
 

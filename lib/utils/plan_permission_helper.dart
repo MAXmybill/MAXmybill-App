@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/responsive_helper.dart';
 import 'package:maxmybill/utils/permission_helper.dart';
@@ -15,15 +16,28 @@ class PlanPermissionHelper {
   static const String PLAN_MAXPlus = 'MAX Plus';
   static const String PLAN_MAX = 'MAX Pro';
 
+  static DateTime? _tryParseDate(dynamic v) {
+    if (v == null) return null;
+    if (v is Timestamp) return v.toDate();
+    if (v is DateTime) return v;
+    if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+    final str = v.toString().trim();
+    if (str.isEmpty) return null;
+    return DateTime.tryParse(str);
+  }
+
   /// Checks if staff / non-owner login or app access is blocked due to an expired subscription.
   /// Returns true if user is non-owner and the store subscription is expired.
   static Future<bool> isStaffBlockedDueToExpiredPlan(String uid) async {
     try {
+      final authUser = FirebaseAuth.instance.currentUser;
+      final userEmail = authUser?.email?.trim().toLowerCase();
+
       // 1. Fetch user permissions and role
       final userPermData = await PermissionHelper.getUserPermissions(uid);
       final role = (userPermData['role'] ?? '').toString().trim().toLowerCase();
 
-      // 2. Owner is never blocked (needs access to renew the plan)
+      // 2. Owner or Admin is never blocked (needs access to renew the plan)
       if (role == 'owner') return false;
 
       // 3. Double check with store document to ensure they aren't the store owner
@@ -35,40 +49,64 @@ class PlanPermissionHelper {
           if (ownerId != null && ownerId == uid) {
             return false; // User is actually the owner
           }
+          final ownerUids = storeData['ownerUids'];
+          if (ownerUids is List && ownerUids.contains(uid)) {
+            return false;
+          }
+          if (storeData['phoneAuthUid'] == uid) {
+            return false;
+          }
+          final ownerEmail = storeData['ownerEmail']?.toString().trim().toLowerCase();
+          if (userEmail != null && userEmail.isNotEmpty && ownerEmail == userEmail) {
+            return false; // User email matches store owner email
+          }
         }
       } else {
-        // Fallback: Check if store with this ownerId exists
+        // Fallback: Check if store with this ownerId/ownerEmail exists
         final fs = FirebaseFirestore.instance;
+        if (userEmail != null && userEmail.isNotEmpty) {
+          final ownerEmailQuery = await fs.collection('store').where('ownerEmail', isEqualTo: userEmail).limit(1).get();
+          if (ownerEmailQuery.docs.isNotEmpty) return false;
+        }
         final ownerQuery = await fs.collection('store').where('ownerId', isEqualTo: uid).limit(1).get();
         if (ownerQuery.docs.isNotEmpty) return false;
         final ownerUidQuery = await fs.collection('store').where('ownerUid', isEqualTo: uid).limit(1).get();
         if (ownerUidQuery.docs.isNotEmpty) return false;
+        final ownerUidsQuery = await fs.collection('store').where('ownerUids', arrayContains: uid).limit(1).get();
+        if (ownerUidsQuery.docs.isNotEmpty) return false;
       }
 
-      // 4. For staff / employee: check if the store has an active valid plan with staff access
+      // If store doc couldn't be loaded, do NOT block the user on temporary failures.
+      if (storeDoc == null || !storeDoc.exists) {
+        debugPrint('⚠️ isStaffBlockedDueToExpiredPlan: storeDoc not found, allowing access');
+        return false;
+      }
+
+      final storeData = storeDoc.data() as Map<String, dynamic>?;
+
+      // Check explicit expiry date in store document
+      final rawExpiry = storeData?['subscriptionExpiryDate'] ?? storeData?['expiryDate'];
+      final expiryDate = _tryParseDate(rawExpiry);
+      if (expiryDate != null) {
+        if (DateTime.now().isAfter(expiryDate)) {
+          debugPrint('🔒 Staff blocked: subscription expired on $expiryDate');
+          return true;
+        } else {
+          // Expiry is in the future - plan is active!
+          return false;
+        }
+      }
+
+      // If no explicit expiry date, check plan name
       final currentEffectivePlan = await getCurrentPlan();
       final effectivePlanKey = _normalizedPlanKey(currentEffectivePlan);
 
       // If effective plan is Free or Starter (e.g. expired or free tier), staff cannot access!
       if (effectivePlanKey == 'free' || effectivePlanKey == 'starter') {
-        debugPrint('🔒 Staff blocked: store plan is "$effectivePlanKey"');
-        return true;
-      }
-
-      // Check explicit expiry date in store document if present
-      if (storeDoc != null && storeDoc.exists) {
-        final storeData = storeDoc.data() as Map<String, dynamic>?;
-        final expiryDateStr = storeData?['subscriptionExpiryDate']?.toString();
-        if (expiryDateStr != null && expiryDateStr.isNotEmpty) {
-          try {
-            final expiryDate = DateTime.parse(expiryDateStr);
-            if (DateTime.now().isAfter(expiryDate)) {
-              debugPrint('🔒 Staff blocked: subscription expired on $expiryDate');
-              return true;
-            }
-          } catch (_) {
-            return true;
-          }
+        final isTrial = storeData?['isTrial'] == true;
+        if (!isTrial) {
+          debugPrint('🔒 Staff blocked: store plan is "$effectivePlanKey"');
+          return true;
         }
       }
 
@@ -116,20 +154,13 @@ class PlanPermissionHelper {
 
       // Check expiry for paid plans (case-insensitive check)
       if (!_isPlanFree(plan)) {
-        final expiryDateStr = data?['subscriptionExpiryDate']?.toString();
-        if (expiryDateStr == null || expiryDateStr.isEmpty) {
-          debugPrint('🔍 _loadPlanData: Missing expiry for paid plan, returning Free');
-          return PLAN_FREE;
-        }
-        try {
-          final expiryDate = DateTime.parse(expiryDateStr);
+        final rawExpiry = data?['subscriptionExpiryDate'] ?? data?['expiryDate'];
+        final expiryDate = _tryParseDate(rawExpiry);
+        if (expiryDate != null) {
           if (DateTime.now().isAfter(expiryDate)) {
-            debugPrint('🔍 _loadPlanData: Plan "$plan" is EXPIRED, returning Free');
+            debugPrint('🔍 _loadPlanData: Plan "$plan" is EXPIRED on $expiryDate, returning Free');
             return PLAN_FREE;
           }
-        } catch (e) {
-          debugPrint('🔍 _loadPlanData: Error parsing expiry date: $e - returning Free');
-          return PLAN_FREE;
         }
       }
       debugPrint('🔍 _loadPlanData: Returning plan="$plan"');

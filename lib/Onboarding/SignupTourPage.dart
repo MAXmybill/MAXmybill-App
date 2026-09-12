@@ -55,17 +55,22 @@ class _SignupTourPageState extends State<SignupTourPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _skipTour();
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        elevation: 0,
-        automaticallyImplyLeading: false, // Removes the back button
-        actions: [
-          TextButton(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          automaticallyImplyLeading: false,
+          leading: TextButton(
             onPressed: _skipTour,
             child: const Text(
-              "Skip Tour",
+              "Skip",
               style: TextStyle(
                 color: kBlack54,
                 fontWeight: FontWeight.bold,
@@ -73,92 +78,94 @@ class _SignupTourPageState extends State<SignupTourPage> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B4EE6).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const HeroIcon(
-                HeroIcons.sparkles,
-                color: Color(0xFF6B4EE6),
-                size: 80,
-                style: HeroIconStyle.solid,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              "Welcome to MAXmybill!",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: kBlack87,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B4EE6),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                "⭐ 15-Day Free MAX Plus Trial Active",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
+          leadingWidth: 70,
+        ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6B4EE6).withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const HeroIcon(
+                  HeroIcons.sparkles,
+                  color: Color(0xFF6B4EE6),
+                  size: 80,
+                  style: HeroIconStyle.solid,
                 ),
               ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              "Let's get your store set up in 3 quick steps:\n\n1. Add a Product\n2. Create a Bill\n3. Connect a Printer",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: kBlack54,
-                height: 1.6,
+              const SizedBox(height: 32),
+              const Text(
+                "Welcome to MAXmybill!",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: kBlack87,
+                ),
               ),
-            ),
-            const Spacer(),
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _startTour,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kPrimaryColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  elevation: 0,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF6B4EE6),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
-                  "Start Guided Tour",
+                  "⭐ 15-Day Free MAX Plus Trial Active",
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 32),
+              const Text(
+                "Let's get your store set up in 3 quick steps:\n\n1. Add a Product\n2. Create a Bill\n3. Connect a Printer",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: kBlack54,
+                  height: 1.6,
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: _startTour,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: const Text(
+                    "Start Guided Tour",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

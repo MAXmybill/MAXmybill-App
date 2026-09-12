@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:heroicons/heroicons.dart';
-import 'package:maxmybill/Sales/NewSale.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
@@ -12,6 +11,7 @@ import 'package:maxmybill/Auth/LoginPage.dart';
 import 'package:maxmybill/Onboarding/SignupTourPage.dart';
 import 'package:provider/provider.dart';
 import 'package:maxmybill/utils/plan_provider.dart';
+import 'package:maxmybill/utils/firestore_service.dart';
 
 class BusinessDetailsPage extends StatefulWidget {
   final String uid;
@@ -290,54 +290,142 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
 
     try {
       final firestore = FirebaseFirestore.instance;
-      final storeId = await _getNextStoreId();
 
       final taxType = '${_taxTypeCtrl.text.trim()} ${_taxNumberCtrl.text.trim()}'.trim();
       final licenseNumber = '${_licenseTypeCtrl.text.trim()} ${_licenseNumberCtrl.text.trim()}'.trim();
       final fullBusinessPhone = '$_selectedCountryCode${_businessPhoneCtrl.text.trim()}';
+      final rawBusinessPhone = _businessPhoneCtrl.text.trim();
+      final personalPhone = _personalPhoneCtrl.text.trim();
 
-      final now = DateTime.now();
-      final trialExpires = now.add(const Duration(days: 15));
+      // Check if an existing store matches this phone or email
+      DocumentSnapshot? existingStoreDoc;
+      final Set<String> phoneCandidates = {};
+      if (fullBusinessPhone.isNotEmpty) phoneCandidates.add(fullBusinessPhone);
+      if (rawBusinessPhone.isNotEmpty) {
+        phoneCandidates.add(rawBusinessPhone);
+        final digits = rawBusinessPhone.replaceAll(RegExp(r'\D'), '');
+        if (digits.isNotEmpty) {
+          phoneCandidates.add(digits);
+          if (digits.length >= 10) phoneCandidates.add(digits.substring(digits.length - 10));
+        }
+      }
+      if (personalPhone.isNotEmpty) phoneCandidates.add(personalPhone);
+      if (widget.phoneNumber != null && widget.phoneNumber!.isNotEmpty) {
+        phoneCandidates.add(widget.phoneNumber!);
+      }
 
-      final storeData = {
-        'storeId': storeId,
-        'businessName': _businessNameCtrl.text.trim(),
-        'businessPhone': fullBusinessPhone,
-        'businessPhoneCountryCode': _selectedCountryCode,
-        'personalPhone': _personalPhoneCtrl.text.trim(),
-        'businessLocation': _businessLocationCtrl.text.trim(),
-        'gstin': taxType,
-        'taxType': taxType,
-        'licenseNumber': licenseNumber,
-        'currency': _selectedCurrency,
-        'ownerName': _ownerNameCtrl.text.trim(),
-        'ownerEmail': widget.email,
-        'ownerUid': widget.uid,
-        'plan': 'MAX Plus',
-        'isTrial': true,
-        'subscriptionExpiryDate': trialExpires.toIso8601String(),
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+      for (final phone in phoneCandidates) {
+        if (phone.isEmpty) continue;
+        for (final field in ['businessPhone', 'personalPhone', 'ownerPhone', 'phone']) {
+          final query = await firestore.collection('store').where(field, isEqualTo: phone).limit(1).get();
+          if (query.docs.isNotEmpty) {
+            existingStoreDoc = query.docs.first;
+            break;
+          }
+        }
+        if (existingStoreDoc != null) break;
+      }
 
-      await firestore.collection('store').doc(storeId.toString()).set(storeData);
+      if (existingStoreDoc == null && widget.email != null && widget.email!.isNotEmpty) {
+        final query = await firestore.collection('store').where('ownerEmail', isEqualTo: widget.email!.trim().toLowerCase()).limit(1).get();
+        if (query.docs.isNotEmpty) {
+          existingStoreDoc = query.docs.first;
+        }
+      }
 
-      final userData = {
-        'uid': widget.uid,
-        'email': widget.email,
-        'name': _ownerNameCtrl.text.trim(),
-        'storeId': storeId,
-        'role': 'owner',
-        'isActive': true,
-        'isEmailVerified': true,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
+      String savedStoreDocId;
+      dynamic effectiveStoreId;
 
-      await firestore.collection('users').doc(widget.uid).set(userData);
+      if (existingStoreDoc != null) {
+        // Map current user to the existing store
+        savedStoreDocId = existingStoreDoc.id;
+        final existingStoreData = existingStoreDoc.data() as Map<String, dynamic>;
+        effectiveStoreId = existingStoreData['storeId'] ?? int.tryParse(savedStoreDocId) ?? savedStoreDocId;
+
+        await firestore.collection('store').doc(savedStoreDocId).set({
+          'ownerUids': FieldValue.arrayUnion([widget.uid]),
+          if (widget.email != null && widget.email!.isNotEmpty) 'ownerEmail': widget.email,
+          if (fullBusinessPhone.isNotEmpty) 'businessPhone': fullBusinessPhone,
+          if (personalPhone.isNotEmpty) 'personalPhone': personalPhone,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
+        final userData = {
+          'uid': widget.uid,
+          'email': widget.email ?? existingStoreData['ownerEmail'],
+          'phoneNumber': widget.phoneNumber ?? fullBusinessPhone,
+          'phone': widget.phoneNumber ?? fullBusinessPhone,
+          'businessPhone': fullBusinessPhone,
+          'personalPhone': personalPhone,
+          'name': _ownerNameCtrl.text.trim().isNotEmpty ? _ownerNameCtrl.text.trim() : (existingStoreData['ownerName'] ?? 'Owner'),
+          'storeId': effectiveStoreId,
+          'storeDocId': savedStoreDocId,
+          'role': 'owner',
+          'isActive': true,
+          'isEmailVerified': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+        await firestore.collection('users').doc(widget.uid).set(userData, SetOptions(merge: true));
+      } else {
+        // Create new store
+        final storeId = await _getNextStoreId();
+        savedStoreDocId = storeId.toString();
+        effectiveStoreId = storeId;
+
+        final now = DateTime.now();
+        final trialExpires = now.add(const Duration(days: 15));
+
+        final storeData = {
+          'storeId': storeId,
+          'businessName': _businessNameCtrl.text.trim(),
+          'businessPhone': fullBusinessPhone,
+          'businessPhoneCountryCode': _selectedCountryCode,
+          'personalPhone': personalPhone,
+          'businessLocation': _businessLocationCtrl.text.trim(),
+          'gstin': taxType,
+          'taxType': taxType,
+          'licenseNumber': licenseNumber,
+          'currency': _selectedCurrency,
+          'ownerName': _ownerNameCtrl.text.trim(),
+          'ownerEmail': widget.email,
+          'ownerUid': widget.uid,
+          'ownerUids': [widget.uid],
+          'ownerPhone': fullBusinessPhone,
+          'plan': 'MAX Plus',
+          'isTrial': true,
+          'subscriptionExpiryDate': trialExpires.toIso8601String(),
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        await firestore.collection('store').doc(savedStoreDocId).set(storeData);
+
+        final userData = {
+          'uid': widget.uid,
+          'email': widget.email,
+          'phoneNumber': widget.phoneNumber ?? fullBusinessPhone,
+          'phone': widget.phoneNumber ?? fullBusinessPhone,
+          'businessPhone': fullBusinessPhone,
+          'personalPhone': personalPhone,
+          'name': _ownerNameCtrl.text.trim(),
+          'storeId': storeId,
+          'storeDocId': savedStoreDocId,
+          'role': 'owner',
+          'isActive': true,
+          'isEmailVerified': true,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        await firestore.collection('users').doc(widget.uid).set(userData);
+      }
 
       if (mounted) {
-        // Re-initialize PlanProvider so it starts listening to the newly created store
+        await FirestoreService().setUserStoreId(savedStoreDocId);
+        await FirestoreService().notifyStoreDataChanged();
+
+        // Re-initialize PlanProvider so it starts listening to the store
         await Provider.of<PlanProvider>(context, listen: false).initialize();
 
         _showMsg(context.tr('business_registered_success'));

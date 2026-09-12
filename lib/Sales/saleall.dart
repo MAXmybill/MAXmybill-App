@@ -78,6 +78,11 @@ class _SaleAllPageState extends State<SaleAllPage> {
   String? _animatingProductId;
   int _animationCounter = 0;
 
+  // Barcode scan debounce tracking to prevent duplicate adds
+  String? _lastScannedBarcodeInSales;
+  DateTime? _lastBarcodeScanTimeInSales;
+  Map<String, dynamic>? _lastScannedBarcodeFeedback;
+
   // Currency symbol
   String _currencySymbol = '';
 
@@ -613,19 +618,33 @@ class _SaleAllPageState extends State<SaleAllPage> {
   }
 
   Future<dynamic> _searchByBarcode(String barcode) async {
+    final cleanBarcode = barcode.trim();
+    final now = DateTime.now();
+
+    // Prevent duplicate scan of the exact same barcode within 2 seconds
+    if (_lastScannedBarcodeInSales == cleanBarcode &&
+        _lastBarcodeScanTimeInSales != null &&
+        now.difference(_lastBarcodeScanTimeInSales!).inMilliseconds < 2000 &&
+        _lastScannedBarcodeFeedback != null) {
+      return _lastScannedBarcodeFeedback!;
+    }
+
     // Cache context-dependent values before async gaps
     final localStockService = context.read<LocalStockService>();
 
     try {
       final collection = await FirestoreService().getStoreCollection('Products');
       final snap = await collection
-          .where('barcode', isEqualTo: barcode.trim())
+          .where('barcode', isEqualTo: cleanBarcode)
           .limit(1)
           .get();
 
       if (!mounted) return {'success': false, 'message': 'Not mounted'};
 
       if (snap.docs.isEmpty) {
+        _lastScannedBarcodeInSales = cleanBarcode;
+        _lastBarcodeScanTimeInSales = now;
+        _lastScannedBarcodeFeedback = null;
         return {
           'success': false,
           'message': context.tr('product_not_found'),
@@ -666,18 +685,24 @@ class _SaleAllPageState extends State<SaleAllPage> {
           taxType: taxType,
           taxes: taxes,
         );
-        return {
+        _lastScannedBarcodeInSales = cleanBarcode;
+        _lastBarcodeScanTimeInSales = now;
+        _lastScannedBarcodeFeedback = {
           'success': true,
           'name': name,
           'quantity': 1.0,
           'isWeightBased': true,
         };
+        return _lastScannedBarcodeFeedback!;
       }
 
       // Check stock before adding
       final existingIndex = _cart.indexWhere((item) => item.productId == id);
       final double currentInCart = (existingIndex != -1) ? _cart[existingIndex].quantity : 0.0;
       if (stockEnabled && (currentInCart + 1.0) > stock) {
+        _lastScannedBarcodeInSales = cleanBarcode;
+        _lastBarcodeScanTimeInSales = now;
+        _lastScannedBarcodeFeedback = null;
         return {
           'success': false,
           'name': name,
@@ -695,6 +720,9 @@ class _SaleAllPageState extends State<SaleAllPage> {
       );
 
       if (!added) {
+        _lastScannedBarcodeInSales = cleanBarcode;
+        _lastBarcodeScanTimeInSales = now;
+        _lastScannedBarcodeFeedback = null;
         return {
           'success': false,
           'name': name,
@@ -705,12 +733,16 @@ class _SaleAllPageState extends State<SaleAllPage> {
       final updatedIndex = _cart.indexWhere((item) => item.productId == id);
       final double currentQty = (updatedIndex != -1) ? _cart[updatedIndex].quantity : 1.0;
 
-      return {
+      _lastScannedBarcodeInSales = cleanBarcode;
+      _lastBarcodeScanTimeInSales = now;
+      _lastScannedBarcodeFeedback = {
         'success': true,
         'name': name,
         'quantity': currentQty,
         'price': price,
       };
+
+      return _lastScannedBarcodeFeedback!;
     } catch (e, stack) {
       debugPrint('❌ _searchByBarcode error: $e\n$stack');
       return {
