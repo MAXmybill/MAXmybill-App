@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
   final _phoneCtrl = TextEditingController();
   final _otpCtrl = TextEditingController();
   final _auth = FirebaseAuth.instance;
-  final _firestore_service = FirestoreService();
+  final _firestoreService = FirestoreService();
 
   // Scroll controller to ensure terms remain visible when keyboard opens
   final ScrollController _scrollController = ScrollController();
@@ -65,6 +65,7 @@ class _LoginPageState extends State<LoginPage> {
   void initState() {
     super.initState();
     SingleSessionService.instance.getDeviceId();
+    _otpCtrl.addListener(_onOtpChanged);
     if (widget.initialErrorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showMsg(widget.initialErrorMessage!, isError: true);
@@ -72,8 +73,16 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  void _onOtpChanged() {
+    final code = _otpCtrl.text.replaceAll(RegExp(r'\D'), '').trim();
+    if (code.length == 6 && !_loading && _otpSent && _verificationId != null) {
+      _verifyOTP();
+    }
+  }
+
   @override
   void dispose() {
+    _otpCtrl.removeListener(_onOtpChanged);
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _phoneCtrl.dispose();
@@ -169,6 +178,7 @@ class _LoginPageState extends State<LoginPage> {
 
      // Cache this user for future sessions
      await AuthCacheService.instance.cacheCurrentUser();
+     if (!mounted) return;
      
      final planProvider = Provider.of<PlanProvider>(context, listen: false);
      await planProvider.initialize();
@@ -183,9 +193,9 @@ class _LoginPageState extends State<LoginPage> {
        // Ensure the user actually has a registered store before pushing NewSalePage!
        String? storeId = preloadedUserData?['storeDocId']?.toString() ?? preloadedUserData?['storeId']?.toString();
        if (storeId != null && storeId.isNotEmpty) {
-         _firestore_service.setCachedStoreId(storeId);
+         _firestoreService.setCachedStoreId(storeId);
        } else {
-         storeId = await _firestore_service.getCurrentStoreId(explicitUid: uid, explicitEmail: identifier);
+         storeId = await _firestoreService.getCurrentStoreId(explicitUid: uid, explicitEmail: identifier);
        }
 
        if (storeId == null || storeId.isEmpty) {
@@ -203,6 +213,7 @@ class _LoginPageState extends State<LoginPage> {
          return;
        }
 
+       if (!mounted) return;
        Navigator.pushReplacement(
          context,
          CupertinoPageRoute(builder: (context) => NewSalePage(uid: uid, userEmail: identifier)),
@@ -271,7 +282,7 @@ class _LoginPageState extends State<LoginPage> {
         isAuthVerified = user?.emailVerified ?? false;
       }
 
-      QuerySnapshot storeUserQuery = await (await _firestore_service.getStoreCollection('users'))
+      QuerySnapshot storeUserQuery = await (await _firestoreService.getStoreCollection('users'))
           .where('uid', isEqualTo: user!.uid)
           .limit(1)
           .get();
@@ -291,6 +302,7 @@ class _LoginPageState extends State<LoginPage> {
           isGlobalDoc = true;
         } else {
           await _auth.signOut();
+          if (!mounted) return;
           setState(() => _loading = false);
           _showMsg(context.tr('login_failed'), isError: true);
           return;
@@ -308,6 +320,7 @@ class _LoginPageState extends State<LoginPage> {
       } else {
         await userRef.update({'lastLogin': FieldValue.serverTimestamp()});
         await _auth.signOut();
+        if (!mounted) return;
         setState(() => _loading = false);
         _showDialog(
             title: '📧 Verify Email',
@@ -315,6 +328,7 @@ class _LoginPageState extends State<LoginPage> {
             actionText: 'Resend Email',
             onAction: () async {
               await user?.sendEmailVerification();
+              if (!mounted) return;
               _showMsg('Verification email sent!');
             });
         return;
@@ -322,6 +336,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!(userData['isActive'] ?? false)) {
         await _auth.signOut();
+        if (!mounted) return;
         setState(() => _loading = false);
         _showDialog(
           title: '⏳ APPROVAL PENDING',
@@ -332,18 +347,23 @@ class _LoginPageState extends State<LoginPage> {
 
       final sId = userData['storeDocId']?.toString() ?? userData['storeId']?.toString();
       if (sId != null && sId.isNotEmpty) {
-        _firestore_service.setCachedStoreId(sId);
+        _firestoreService.setCachedStoreId(sId);
       }
 
-      await _firestore_service.notifyStoreDataChanged();
+      await _firestoreService.notifyStoreDataChanged();
+      if (!mounted) return;
       setState(() => _loading = false);
       _navigate(user.uid, user.email, preloadedUserData: isGlobalDoc ? userData : null);
     } on FirebaseAuthException catch (e) {
-      setState(() => _loading = false);
-      _showMsg(e.message ?? 'Login failed', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg(e.message ?? 'Login failed', isError: true);
+      }
     } catch (e) {
-      setState(() => _loading = false);
-      _showMsg('Error: $e', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg('Error: $e', isError: true);
+      }
     }
   }
 
@@ -358,14 +378,19 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _loading = true);
     final fullPhone = '$_selectedCountryCode$phone';
+    bool autoVerified = false;
 
     try {
       await _auth.verifyPhoneNumber(
         phoneNumber: fullPhone,
         forceResendingToken: _resendToken,
         verificationCompleted: (PhoneAuthCredential credential) async {
+          autoVerified = true;
           // Auto-resolution on Android devices
           try {
+            if (credential.smsCode != null && credential.smsCode!.isNotEmpty) {
+              _otpCtrl.text = credential.smsCode!;
+            }
             final userCred = await _auth.signInWithCredential(credential);
             final user = userCred.user;
             if (user != null) {
@@ -383,6 +408,8 @@ class _LoginPageState extends State<LoginPage> {
           }
         },
         codeSent: (String verificationId, int? resendToken) {
+          // If already auto-verified on device, do not flash OTP screen
+          if (autoVerified) return;
           if (mounted) {
             setState(() {
               _verificationId = verificationId;
@@ -433,11 +460,15 @@ class _LoginPageState extends State<LoginPage> {
         throw Exception('User was null after sign in');
       }
     } on FirebaseAuthException catch (e) {
-      setState(() => _loading = false);
-      _showMsg(e.message ?? 'Invalid OTP code', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg(e.message ?? 'Invalid OTP code', isError: true);
+      }
     } catch (e) {
-      setState(() => _loading = false);
-      _showMsg('Verification error: $e', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg('Verification error: $e', isError: true);
+      }
     }
   }
 
@@ -449,40 +480,35 @@ class _LoginPageState extends State<LoginPage> {
         final userData = userDoc.data();
         final storeId = userData?['storeId']?.toString() ?? userData?['storeDocId']?.toString();
         if (storeId != null && storeId.isNotEmpty) {
-          await _firestore_service.setUserStoreId(storeId);
-          await _firestore_service.notifyStoreDataChanged();
+          _firestoreService.setCachedStoreId(storeId);
+          await _firestoreService.notifyStoreDataChanged();
           if (mounted) setState(() => _loading = false);
-          _navigate(user.uid, user.phoneNumber ?? user.email);
+          _navigate(user.uid, user.phoneNumber ?? user.email, preloadedUserData: userData);
           return;
         }
       }
 
       // Check if an existing store or user matches this phone number
       final candidatePhones = <String>{};
-      if (user.phoneNumber != null && user.phoneNumber!.trim().isNotEmpty) {
-        final p = user.phoneNumber!.trim();
+      final p1 = user.phoneNumber?.trim() ?? '';
+      final p2 = _phoneCtrl.text.trim();
+
+      for (final p in [p1, p2]) {
+        if (p.isEmpty) continue;
         candidatePhones.add(p);
         final digits = p.replaceAll(RegExp(r'\D'), '');
         if (digits.isNotEmpty) {
           candidatePhones.add(digits);
-          if (digits.length > 10) {
-            candidatePhones.add(digits.substring(digits.length - 10));
+          if (digits.length >= 10) {
+            final ten = digits.substring(digits.length - 10);
+            candidatePhones.add(ten);
+            candidatePhones.add('+$ten');
+            candidatePhones.add('$_selectedCountryCode$ten');
           }
         }
       }
 
-      final typedPhone = _phoneCtrl.text.trim();
-      if (typedPhone.isNotEmpty) {
-        candidatePhones.add(typedPhone);
-        candidatePhones.add('$_selectedCountryCode$typedPhone');
-        final digits = typedPhone.replaceAll(RegExp(r'\D'), '');
-        if (digits.isNotEmpty) {
-          candidatePhones.add(digits);
-          if (digits.length >= 10) {
-            candidatePhones.add(digits.substring(digits.length - 10));
-          }
-        }
-      }
+      final phoneList = candidatePhones.where((p) => p.isNotEmpty).take(10).toList();
 
       DocumentSnapshot? matchedStoreDoc;
       Map<String, dynamic>? matchedStoreData;
@@ -491,29 +517,32 @@ class _LoginPageState extends State<LoginPage> {
 
       final fs = FirebaseFirestore.instance;
 
-      // 1. Search store collection by phone fields
-      for (final phone in candidatePhones) {
-        if (phone.isEmpty) continue;
-        for (final field in ['businessPhone', 'personalPhone', 'ownerPhone', 'phone']) {
-          final query = await fs.collection('store').where(field, isEqualTo: phone).limit(1).get();
-          if (query.docs.isNotEmpty) {
-            matchedStoreDoc = query.docs.first;
+      if (phoneList.isNotEmpty) {
+        // 1. Fast parallel search in 'store' collection
+        final storeQueries = ['businessPhone', 'personalPhone', 'ownerPhone', 'phone'].map((field) {
+          return fs.collection('store').where(field, whereIn: phoneList).limit(1).get();
+        });
+        final storeResults = await Future.wait(storeQueries);
+
+        for (final res in storeResults) {
+          if (res.docs.isNotEmpty) {
+            matchedStoreDoc = res.docs.first;
             matchedStoreData = matchedStoreDoc.data() as Map<String, dynamic>;
             matchedStoreId = matchedStoreData['storeId']?.toString() ?? matchedStoreDoc.id;
             break;
           }
         }
-        if (matchedStoreDoc != null) break;
-      }
 
-      // 2. Search users collection by phone fields if not found in store
-      if (matchedStoreDoc == null) {
-        for (final phone in candidatePhones) {
-          if (phone.isEmpty) continue;
-          for (final field in ['phoneNumber', 'phone', 'businessPhone', 'personalPhone']) {
-            final query = await fs.collection('users').where(field, isEqualTo: phone).limit(1).get();
-            if (query.docs.isNotEmpty) {
-              matchedUserData = query.docs.first.data();
+        // 2. Fast parallel search in 'users' collection if not found in store
+        if (matchedStoreDoc == null) {
+          final userQueries = ['phoneNumber', 'phone', 'businessPhone', 'personalPhone'].map((field) {
+            return fs.collection('users').where(field, whereIn: phoneList).limit(1).get();
+          });
+          final userResults = await Future.wait(userQueries);
+
+          for (final res in userResults) {
+            if (res.docs.isNotEmpty) {
+              matchedUserData = res.docs.first.data();
               final sId = matchedUserData['storeId']?.toString() ?? matchedUserData['storeDocId']?.toString();
               if (sId != null && sId.isNotEmpty) {
                 final sDoc = await fs.collection('store').doc(sId).get();
@@ -533,7 +562,6 @@ class _LoginPageState extends State<LoginPage> {
               break;
             }
           }
-          if (matchedStoreDoc != null) break;
         }
       }
 
@@ -541,7 +569,7 @@ class _LoginPageState extends State<LoginPage> {
         // An existing store was found! Map this phone login to the existing store
         final effectiveStoreId = matchedStoreData?['storeId'] ?? int.tryParse(matchedStoreId) ?? matchedStoreId;
         final primaryOwnerUid = matchedStoreData?['ownerUid'] ?? matchedStoreData?['ownerId'];
-        final phoneToSave = user.phoneNumber ?? '$_selectedCountryCode$typedPhone';
+        final phoneToSave = user.phoneNumber ?? '$_selectedCountryCode$p2';
 
         final Map<String, dynamic> phoneUserData = {
           'uid': user.uid,
@@ -560,33 +588,29 @@ class _LoginPageState extends State<LoginPage> {
         };
 
         final userRef = fs.collection('users').doc(user.uid);
-        final checkDoc = await userRef.get();
-        if (!checkDoc.exists) {
-          phoneUserData['createdAt'] = FieldValue.serverTimestamp();
-        }
-        await userRef.set(phoneUserData, SetOptions(merge: true));
 
-        // Update the store document to link this phone user UID
-        await fs.collection('store').doc(matchedStoreDoc.id).set({
-          'ownerUids': FieldValue.arrayUnion([user.uid]),
-          'phoneAuthUid': user.uid,
-          if (phoneToSave.isNotEmpty) 'ownerPhone': phoneToSave,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
+        // Run user doc write and store doc update in parallel
+        await Future.wait([
+          userRef.set(phoneUserData, SetOptions(merge: true)),
+          fs.collection('store').doc(matchedStoreDoc.id).set({
+            'ownerUids': FieldValue.arrayUnion([user.uid]),
+            'phoneAuthUid': user.uid,
+            if (phoneToSave.isNotEmpty) 'ownerPhone': phoneToSave,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true)),
+        ]);
 
-        await _firestore_service.setUserStoreId(matchedStoreId);
-        await _firestore_service.notifyStoreDataChanged();
-
-        final planProvider = Provider.of<PlanProvider>(context, listen: false);
-        await planProvider.initialize();
+        _firestoreService.setCachedStoreId(matchedStoreId);
+        await _firestoreService.notifyStoreDataChanged();
 
         if (mounted) setState(() => _loading = false);
-        _navigate(user.uid, user.phoneNumber ?? user.email);
+        _navigate(user.uid, user.phoneNumber ?? user.email, preloadedUserData: phoneUserData);
         return;
       }
 
       // No existing store found: proceed to register a new business
-      if (mounted) setState(() => _loading = false);
+      if (!mounted) return;
+      setState(() => _loading = false);
       Navigator.push(
         context,
         CupertinoPageRoute(
@@ -657,7 +681,8 @@ class _LoginPageState extends State<LoginPage> {
         if (isStaffAccount) {
           // This email belongs to a staff account - ALWAYS redirect to create new business
           // Staff accounts should use email/password login, not Google
-          if (mounted) setState(() => _loading = false);
+          if (!mounted) return;
+          setState(() => _loading = false);
           Navigator.push(
             context,
             CupertinoPageRoute(
@@ -677,9 +702,9 @@ class _LoginPageState extends State<LoginPage> {
             final uData = userDoc.data();
             final sId = uData?['storeDocId']?.toString() ?? uData?['storeId']?.toString();
             if (sId != null && sId.isNotEmpty) {
-              _firestore_service.setCachedStoreId(sId);
+              _firestoreService.setCachedStoreId(sId);
             }
-            await _firestore_service.notifyStoreDataChanged();
+            await _firestoreService.notifyStoreDataChanged();
             if (mounted) setState(() => _loading = false);
             _navigate(user.uid, user.email, preloadedUserData: uData);
           } else {
@@ -740,9 +765,10 @@ class _LoginPageState extends State<LoginPage> {
                 'updatedAt': FieldValue.serverTimestamp(),
               }, SetOptions(merge: true));
 
-              await _firestore_service.setUserStoreId(matchedStoreId);
-              await _firestore_service.notifyStoreDataChanged();
+              await _firestoreService.setUserStoreId(matchedStoreId);
+              await _firestoreService.notifyStoreDataChanged();
 
+              if (!mounted) return;
               final planProvider = Provider.of<PlanProvider>(context, listen: false);
               await planProvider.initialize();
 
@@ -752,7 +778,8 @@ class _LoginPageState extends State<LoginPage> {
             }
 
             // New user - redirect to business registration
-            if (mounted) setState(() => _loading = false);
+            if (!mounted) return;
+            setState(() => _loading = false);
             Navigator.push(
               context,
               CupertinoPageRoute(
@@ -767,8 +794,10 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
-      _showMsg('Google Sign In Error: $e', isError: true);
+      if (mounted) {
+        setState(() => _loading = false);
+        _showMsg('Google Sign In Error: $e', isError: true);
+      }
     }
   }
 
@@ -780,9 +809,9 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
     try {
       await _auth.sendPasswordResetEmail(email: _emailCtrl.text.trim());
-      _showMsg('Reset link sent!');
+      if (mounted) _showMsg('Reset link sent!');
     } catch (e) {
-      _showMsg('Error sending reset link', isError: true);
+      if (mounted) _showMsg('Error sending reset link', isError: true);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -1023,142 +1052,146 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
 
-    return Column(
-      key: const ValueKey('google_phone_form_input'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back, color: kBlack87),
-              onPressed: () {
-                setState(() {
-                  _showPhoneInput = false;
-                  _otpSent = false;
-                  _phoneCtrl.clear();
-                  _otpCtrl.clear();
-                });
-              },
-            ),
-            const Expanded(
-              child: Text(
-                "Sign In / Sign Up with Phone",
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
-              ),
-            ),
-            const SizedBox(width: 48), // balance the back button
-          ],
-        ),
-        if (!_otpSent) ...[
-          const SizedBox(height: 16),
-          ValueListenableBuilder<TextEditingValue>(
-            valueListenable: _phoneCtrl,
-            builder: (context, value, child) {
-              final bool isFilled = value.text.isNotEmpty;
-              return TextFormField(
-                controller: _phoneCtrl,
-                keyboardType: TextInputType.phone,
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87),
-                decoration: InputDecoration(
-                  label: const Text.rich(
-                    TextSpan(
-                      text: 'Phone Number',
-                      children: [
-                        TextSpan(
-                          text: ' *',
-                          style: TextStyle(
-                            color: kOrange,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  hintText: 'Enter phone number',
-                  hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
-                  prefixIcon: GestureDetector(
-                    onTap: _showCountryCodePicker,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_selectedCountryFlag, style: const TextStyle(fontSize: 18)),
-                          const SizedBox(width: 4),
-                          Text(
-                            _selectedCountryCode,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: isFilled ? kPrimaryColor : kBlack54,
-                            ),
-                          ),
-                          const SizedBox(width: 2),
-                          Icon(Icons.arrow_drop_down, size: 16, color: isFilled ? kPrimaryColor : kBlack54),
-                        ],
-                      ),
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF8F9FA),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
-                  ),
-                  labelStyle: TextStyle(color: isFilled ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
-                  floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
-                ),
-              );
-            },
-          ),
-        ] else ...[
-          const SizedBox(height: 8),
-          const Text(
-            "Verify OTP",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
-          ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            _otpCtrl,
-            "Enter 6-digit OTP",
-            HeroIcons.lockClosed,
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 8),
+    return AutofillGroup(
+      child: Column(
+        key: const ValueKey('google_phone_form_input'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton(
+              IconButton(
+                icon: const Icon(Icons.arrow_back, color: kBlack87),
                 onPressed: () {
                   setState(() {
+                    _showPhoneInput = false;
                     _otpSent = false;
+                    _phoneCtrl.clear();
                     _otpCtrl.clear();
                   });
                 },
-                child: const Text("Edit Mobile number", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
               ),
-              TextButton(
-                onPressed: _loading ? null : _sendOTP,
-                child: const Text("Resend OTP", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
+              const Expanded(
+                child: Text(
+                  "Sign In / Sign Up with Phone",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 12, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+                ),
               ),
+              const SizedBox(width: 48), // balance the back button
             ],
           ),
+          if (!_otpSent) ...[
+            const SizedBox(height: 16),
+            ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _phoneCtrl,
+              builder: (context, value, child) {
+                final bool isFilled = value.text.isNotEmpty;
+                return TextFormField(
+                  controller: _phoneCtrl,
+                  keyboardType: TextInputType.phone,
+                  autofillHints: const [AutofillHints.telephoneNumberNational, AutofillHints.telephoneNumber],
+                  inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]'))],
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: kBlack87),
+                  decoration: InputDecoration(
+                    label: const Text.rich(
+                      TextSpan(
+                        text: 'Phone Number',
+                        children: [
+                          TextSpan(
+                            text: ' *',
+                            style: TextStyle(
+                              color: kOrange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    hintText: 'Enter phone number',
+                    hintStyle: const TextStyle(color: kBlack54, fontSize: 13, fontWeight: FontWeight.normal),
+                    prefixIcon: GestureDetector(
+                      onTap: _showCountryCodePicker,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_selectedCountryFlag, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 4),
+                            Text(
+                              _selectedCountryCode,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: isFilled ? kPrimaryColor : kBlack54,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Icon(Icons.arrow_drop_down, size: 16, color: isFilled ? kPrimaryColor : kBlack54),
+                          ],
+                        ),
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF8F9FA),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: isFilled ? kPrimaryColor : kGrey200, width: isFilled ? 1.5 : 1.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
+                    ),
+                    labelStyle: TextStyle(color: isFilled ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
+                    floatingLabelStyle: const TextStyle(color: kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
+                  ),
+                );
+              },
+            ),
+          ] else ...[
+            const SizedBox(height: 8),
+            const Text(
+              "Verify OTP",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10, color: kBlack54, fontWeight: FontWeight.w800, letterSpacing: 1.0),
+            ),
+            const SizedBox(height: 16),
+            _buildTextField(
+              _otpCtrl,
+              "Enter 6-digit OTP",
+              HeroIcons.lockClosed,
+              keyboardType: TextInputType.number,
+              autofillHints: const [AutofillHints.oneTimeCode],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      _otpSent = false;
+                      _otpCtrl.clear();
+                    });
+                  },
+                  child: const Text("Edit Mobile number", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
+                ),
+                TextButton(
+                  onPressed: _loading ? null : _sendOTP,
+                  child: const Text("Resend OTP", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 20),
+          _buildPrimaryActionBtn(context),
         ],
-        const SizedBox(height: 20),
-        _buildPrimaryActionBtn(context),
-      ],
+      ),
     );
   }
 
@@ -1252,6 +1285,7 @@ class _LoginPageState extends State<LoginPage> {
         bool obscure = false,
         Widget? suffix,
         TextInputType? keyboardType,
+        Iterable<String>? autofillHints,
       }) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: ctrl,
@@ -1261,6 +1295,7 @@ class _LoginPageState extends State<LoginPage> {
           controller: ctrl,
           obscureText: obscure,
           keyboardType: keyboardType,
+          autofillHints: autofillHints,
           style: const TextStyle(fontSize: 15, color: kBlack87, fontWeight: FontWeight.w700),
           decoration: InputDecoration(
             labelText: label,

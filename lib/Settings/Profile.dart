@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:maxmybill/Colors.dart';
 import 'package:maxmybill/components/app_mini_switch.dart';
@@ -31,6 +32,7 @@ import 'package:maxmybill/Settings/TaxSettings.dart' as TaxSettingsNew;
 import 'package:maxmybill/Settings/StaffManagement.dart';
 import 'package:maxmybill/services/referral_service.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 // ==========================================DF
 // 1. MAIN SETTINGS PAGE
@@ -55,12 +57,25 @@ class _SettingsPageState extends State<SettingsPage> {
   Map<String, dynamic> _permissions = {};
   String _role = '';
   bool _isAdmin = false;
+  String _appVersion = '1.2.8';
 
   @override
   void initState() {
     super.initState();
     _initFastFetch();
     _loadPermissions();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (mounted && info.version.isNotEmpty) {
+        setState(() {
+          _appVersion = info.version;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadPermissions() async {
@@ -317,7 +332,7 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: "Share MAXmybill with friends",
           ),
           const SizedBox(height: 32),
-          const Center(child: Text('Version 1.0.0', style: TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, fontFamily: 'Lato'))),
+          Center(child: Text('Version $_appVersion', style: const TextStyle(color: kBlack54, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1, fontFamily: 'Lato'))),
           const SizedBox(height: 16),
           _buildLogoutButton(),
           const SizedBox(height: 40),
@@ -916,6 +931,39 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       final oldCode = _originalValues['countryCode']?.toString() ?? '';
       final oldFullPhone = oldLocal.isEmpty ? '' : '$oldCode$oldLocal';
 
+      final bool phoneChanged = oldFullPhone.isNotEmpty && fullPhone.isNotEmpty && oldFullPhone != fullPhone;
+
+      if (phoneChanged) {
+        // 1. Verify that no other store or user uses this phone number
+        final isTaken = await _isPhoneNumberAlreadyInUse(fullPhone, localPhone, storeId);
+        if (isTaken) {
+          if (mounted) {
+            setState(() => _loading = false);
+            CommonWidgets.showSnackBar(
+              context,
+              'This phone number ($fullPhone) is already in use by another store or account.',
+              bgColor: const Color(0xFFFF5252),
+            );
+          }
+          return;
+        }
+
+        // 2. Phone is not used: require OTP verification before saving!
+        if (mounted) setState(() => _loading = false);
+        final bool verified = await _verifyNewPhoneNumberWithOTP(fullPhone);
+        if (!verified) {
+          if (mounted) {
+            CommonWidgets.showSnackBar(
+              context,
+              'Phone number verification cancelled or failed.',
+              bgColor: const Color(0xFFFF5252),
+            );
+          }
+          return;
+        }
+        if (mounted) setState(() => _loading = true);
+      }
+
       final updateData = <String, dynamic>{
         'businessName': _nameCtrl.text.trim(),
         'businessPhone': fullPhone,
@@ -934,12 +982,28 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
             : (_licenseNumberCtrl.text.trim().isNotEmpty ? _licenseNumberCtrl.text.trim() : _licenseTypeCtrl.text.trim()),
       };
 
-      if (oldFullPhone.isNotEmpty && oldFullPhone != fullPhone) {
-        updateData['phoneHistory'] = FieldValue.arrayUnion([oldFullPhone]);
+      if (phoneChanged) {
+        updateData['phoneHistory'] = FieldValue.arrayUnion([
+          {
+            'phone': oldFullPhone,
+            'changedAt': DateTime.now().toIso8601String(),
+          }
+        ]);
       }
 
       await FirebaseFirestore.instance.collection('store').doc(storeId).set(updateData, SetOptions(merge: true));
       await FirestoreService().notifyStoreDataChanged();
+
+      if (phoneChanged) {
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(widget.uid).set({
+            'businessPhone': fullPhone,
+            'phone': fullPhone,
+            'phoneNumber': fullPhone,
+            'updatedAt': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
+        } catch (_) {}
+      }
 
       // Reset change tracking on success
       if (mounted) {
@@ -956,6 +1020,310 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<bool> _isPhoneNumberAlreadyInUse(String fullPhone, String localPhone, String currentStoreId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final candidatePhones = <String>{fullPhone, localPhone};
+      if (localPhone.length >= 10) {
+        final last10 = localPhone.substring(localPhone.length - 10);
+        candidatePhones.add(last10);
+        candidatePhones.add('+91$last10');
+      }
+
+      final phoneList = candidatePhones.toList();
+
+      final storeChecks = await Future.wait([
+        firestore.collection('store').where('businessPhone', whereIn: phoneList.take(10).toList()).get(),
+        firestore.collection('store').where('personalPhone', whereIn: phoneList.take(10).toList()).get(),
+        firestore.collection('users').where('phoneNumber', whereIn: phoneList.take(10).toList()).get(),
+        firestore.collection('users').where('phone', whereIn: phoneList.take(10).toList()).get(),
+        firestore.collection('users').where('businessPhone', whereIn: phoneList.take(10).toList()).get(),
+      ]);
+
+      for (int i = 0; i < 2; i++) {
+        for (final doc in storeChecks[i].docs) {
+          if (doc.id != currentStoreId) {
+            return true;
+          }
+        }
+      }
+
+      for (int i = 2; i < storeChecks.length; i++) {
+        for (final doc in storeChecks[i].docs) {
+          final data = doc.data();
+          final docStoreDocId = data['storeDocId']?.toString() ?? data['storeId']?.toString();
+          final docUid = data['uid']?.toString() ?? doc.id;
+          if (docUid != widget.uid && docStoreDocId != currentStoreId) {
+            return true;
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint('Error checking phone uniqueness: $e');
+      return false;
+    }
+  }
+
+  Future<bool> _verifyNewPhoneNumberWithOTP(String fullPhone) async {
+    final completer = Completer<bool>();
+    String? verificationId;
+    int? resendToken;
+    final otpCtrl = TextEditingController();
+    bool isSending = true;
+    bool isVerifying = false;
+    String? errorText;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            void sendOtp() async {
+              setSheetState(() {
+                isSending = true;
+                errorText = null;
+              });
+
+              try {
+                await FirebaseAuth.instance.verifyPhoneNumber(
+                  phoneNumber: fullPhone,
+                  forceResendingToken: resendToken,
+                  verificationCompleted: (PhoneAuthCredential credential) async {
+                    if (credential.smsCode != null && credential.smsCode!.isNotEmpty) {
+                      otpCtrl.text = credential.smsCode!;
+                    }
+                    if (!completer.isCompleted) {
+                      completer.complete(true);
+                    }
+                    if (Navigator.canPop(sheetContext)) {
+                      Navigator.pop(sheetContext);
+                    }
+                  },
+                  verificationFailed: (FirebaseAuthException e) {
+                    setSheetState(() {
+                      isSending = false;
+                      errorText = e.message ?? 'Failed to send OTP';
+                    });
+                  },
+                  codeSent: (String vId, int? rToken) {
+                    setSheetState(() {
+                      verificationId = vId;
+                      resendToken = rToken;
+                      isSending = false;
+                    });
+                  },
+                  codeAutoRetrievalTimeout: (String vId) {
+                    verificationId = vId;
+                  },
+                  timeout: const Duration(seconds: 60),
+                );
+              } catch (e) {
+                setSheetState(() {
+                  isSending = false;
+                  errorText = 'Error: $e';
+                });
+              }
+            }
+
+            if (verificationId == null && isSending && errorText == null) {
+              WidgetsBinding.instance.addPostFrameCallback((_) => sendOtp());
+            }
+
+            void verifyCode([String? inputCode]) async {
+              final code = (inputCode ?? otpCtrl.text).replaceAll(RegExp(r'\D'), '').trim();
+              if (code.length != 6) {
+                setSheetState(() => errorText = 'Please enter a 6-digit OTP');
+                return;
+              }
+              if (verificationId == null) {
+                setSheetState(() => errorText = 'OTP has not been sent yet');
+                return;
+              }
+
+              setSheetState(() {
+                isVerifying = true;
+                errorText = null;
+              });
+
+              try {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: verificationId!,
+                  smsCode: code,
+                );
+
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  try {
+                    await user.linkWithCredential(credential);
+                  } on FirebaseAuthException catch (linkError) {
+                    if (linkError.code == 'credential-already-in-use' ||
+                        linkError.code == 'provider-already-linked') {
+                      // Already linked
+                    } else {
+                      FirebaseApp tempApp;
+                      try {
+                        tempApp = Firebase.app('TempOtpCheck');
+                      } catch (_) {
+                        tempApp = await Firebase.initializeApp(
+                          name: 'TempOtpCheck',
+                          options: Firebase.app().options,
+                        );
+                      }
+                      final tempAuth = FirebaseAuth.instanceFor(app: tempApp);
+                      await tempAuth.signInWithCredential(credential);
+                      await tempAuth.signOut();
+                    }
+                  }
+                }
+
+                if (!completer.isCompleted) {
+                  completer.complete(true);
+                }
+                if (Navigator.canPop(sheetContext)) {
+                  Navigator.pop(sheetContext);
+                }
+              } on FirebaseAuthException catch (e) {
+                setSheetState(() {
+                  isVerifying = false;
+                  errorText = e.message ?? 'Invalid OTP code';
+                });
+              } catch (e) {
+                setSheetState(() {
+                  isVerifying = false;
+                  errorText = 'Verification failed: $e';
+                });
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+                child: AutofillGroup(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'Verify New Business Phone',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: kBlack87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'An SMS with a 6-digit OTP was sent to $fullPhone. Please enter it below to confirm this change.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 13, color: Colors.grey.shade600, height: 1.4),
+                      ),
+                      const SizedBox(height: 20),
+                      if (isSending) ...[
+                        const Padding(
+                          padding: EdgeInsets.all(24.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                        Text(
+                          'Sending OTP...',
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                        ),
+                      ] else ...[
+                        TextFormField(
+                          controller: otpCtrl,
+                          keyboardType: TextInputType.number,
+                          autofillHints: const [AutofillHints.oneTimeCode],
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 8),
+                          maxLength: 6,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            counterText: '',
+                            hintText: '000000',
+                            hintStyle: TextStyle(letterSpacing: 8, color: Colors.grey.shade400),
+                            filled: true,
+                            fillColor: const Color(0xFFF8F9FA),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide(color: Colors.grey.shade300),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(color: kPrimaryColor, width: 2),
+                            ),
+                          ),
+                          onChanged: (val) {
+                            if (val.trim().length == 6 && !isVerifying) {
+                              verifyCode(val.trim());
+                            }
+                          },
+                        ),
+                        if (errorText != null) ...[
+                          const SizedBox(height: 10),
+                          Text(
+                            errorText!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: isVerifying ? null : sendOtp,
+                              child: const Text('Resend OTP', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.bold)),
+                            ),
+                            ElevatedButton(
+                              onPressed: isVerifying ? null : () => verifyCode(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kPrimaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              ),
+                              child: isVerifying
+                                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                  : const Text('Verify & Update', style: TextStyle(fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (!completer.isCompleted) {
+      completer.complete(false);
+    }
+    return completer.future;
   }
 
 
