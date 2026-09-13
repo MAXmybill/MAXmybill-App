@@ -1813,7 +1813,7 @@ class _AddProductPageState extends State<AddProductPage> {
         .toList();
     final combinedPercentage = selectedTaxes.fold<double>(
       0.0,
-      (sum, t) => sum + (t['percentage'] as double),
+      (sum, t) => sum + ((t['percentage'] as num?)?.toDouble() ?? 0.0),
     );
 
     return Column(
@@ -1876,9 +1876,10 @@ class _AddProductPageState extends State<AddProductPage> {
             runSpacing: 8,
             children: _fetchedTaxes.map((tax) {
               final isSelected = _selectedTaxIds.contains(tax['id']);
+              final taxPct = (tax['percentage'] as num?)?.toDouble() ?? 0.0;
               return FilterChip(
                 label: Text(
-                  "${tax['name']} (${(tax['percentage'] as double).toStringAsFixed(1)}%)",
+                  "${tax['name']} (${taxPct.toStringAsFixed(1)}%)",
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,

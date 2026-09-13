@@ -9214,7 +9214,7 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      _buildExpSectionLabel("Expense By Category"),
+                                      _buildExpSectionLabel(_showCombinedCategory ? "Expense By Category" : "Expense By Name"),
                                       _buildExpCombinedToggle(),
                                     ],
                                   ),
@@ -9611,13 +9611,17 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
               color: kBorderColor.withValues(alpha: 0.3),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Expanded(flex: 4, child: Text("Name", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
-                Expanded(flex: 2, child: Text("Category", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
-                SizedBox(width: 30, child: Text("Qty", textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
-                Expanded(flex: 2, child: Text("Amount", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
-                SizedBox(width: 40, child: Text("%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                if (!_showCombinedCategory) ...[
+                  const Expanded(flex: 4, child: Text("Name", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                  const Expanded(flex: 2, child: Text("Category", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                ] else ...[
+                  const Expanded(flex: 5, child: Text("Category", style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                ],
+                const SizedBox(width: 30, child: Text("Qty", textAlign: TextAlign.center, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                const Expanded(flex: 2, child: Text("Amount", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
+                const SizedBox(width: 40, child: Text("%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kTextSecondary, letterSpacing: 0.5))),
               ],
             ),
           ),
@@ -9639,23 +9643,39 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
               ),
               child: Row(
                 children: [
-                  Expanded(
-                    flex: 4,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 6, height: 6,
-                          decoration: BoxDecoration(color: rowColor, borderRadius: BorderRadius.circular(2)),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                      ],
+                  if (!_showCombinedCategory) ...[
+                    Expanded(
+                      flex: 4,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(color: rowColor, borderRadius: BorderRadius.circular(2)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Text(category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
+                    Expanded(
+                      flex: 2,
+                      child: Text(category, style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600, color: kTextSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                  ] else ...[
+                    Expanded(
+                      flex: 5,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: BoxDecoration(color: rowColor, borderRadius: BorderRadius.circular(2)),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(category, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextPrimary), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        ],
+                      ),
+                    ),
+                  ],
                   SizedBox(width: 30, child: Text("$count", textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: kTextSecondary))),
                   Expanded(
                     flex: 2,
@@ -9678,8 +9698,12 @@ class _ExpenseReportPageState extends State<ExpenseReportPage> {
             ),
             child: Row(
               children: [
-                const Expanded(flex: 4, child: Text("Total", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
-                const Expanded(flex: 2, child: SizedBox()),
+                if (!_showCombinedCategory) ...[
+                  const Expanded(flex: 4, child: Text("Total", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
+                  const Expanded(flex: 2, child: SizedBox()),
+                ] else ...[
+                  const Expanded(flex: 5, child: Text("Total", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
+                ],
                 SizedBox(width: 30, child: Text("${entries.fold<int>(0, (s, e) => s + (e.value['count'] as int))}", textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: kExpenseRed))),
                 Expanded(flex: 2, child: Text("$_currencySymbol${total.toStringAsFixed(1)}", textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: kExpenseRed))),
                 const SizedBox(width: 40, child: Text("100%", textAlign: TextAlign.right, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: kExpenseRed))),

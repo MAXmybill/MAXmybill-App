@@ -64,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   void initState() {
     super.initState();
+    SingleSessionService.instance.getDeviceId();
     if (widget.initialErrorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showMsg(widget.initialErrorMessage!, isError: true);
@@ -96,9 +97,63 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-   void _navigate(String uid, String? identifier) async {
+   void _navigate(String uid, String? identifier, {Map<String, dynamic>? preloadedUserData}) async {
      if (!mounted) return;
 
+     // 1. Enforce: one account can be active on one device.
+     // Check FIRST so the user immediately sees the takeover dialog if active on another device,
+     // without waiting 3+ seconds for plan checks, permission queries, and plan initialization.
+     final sessionResult = await SingleSessionService.instance.activateOrRequestTakeover(
+       uid: uid,
+       deviceLabel: identifier ?? 'This device',
+       preloadedUserData: preloadedUserData,
+     );
+     if (!mounted) return;
+
+     if (sessionResult.needsApproval) {
+       final activeLabel = (sessionResult.activeDeviceLabel ?? 'another device').trim();
+       final confirm = await showDialog<bool>(
+         context: context,
+         barrierDismissible: false,
+         builder: (ctx) => AlertDialog(
+           backgroundColor: kWhite,
+           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+           title: const Text('Already logged in', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kBlack87)),
+           content: Text(
+             'This account is currently active on $activeLabel.\n\nDo you want to logout from the old device and continue here?',
+             style: const TextStyle(color: kBlack54, height: 1.5, fontWeight: FontWeight.w500),
+           ),
+           actions: [
+             TextButton(
+               onPressed: () => Navigator.pop(ctx, false),
+               child: Text(context.tr('close'), style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: 12)),
+             ),
+             ElevatedButton(
+               onPressed: () => Navigator.pop(ctx, true),
+               style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+               child: const Text('Yes, Logout Old', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
+             )
+           ],
+         ),
+       );
+
+       if (confirm != true) {
+         await FirebaseAuth.instance.signOut();
+         if (!mounted) return;
+         _showMsg('Login cancelled.', isError: true);
+         return;
+       }
+
+       // User confirmed: claim session directly and log out the old device immediately
+       await SingleSessionService.instance.claimSession(
+         uid: uid,
+         deviceLabel: identifier ?? 'This device',
+         requestedSessionId: sessionResult.requestedSessionId,
+       );
+       if (!mounted) return;
+     }
+
+     // 2. Now that this device is confirmed and active, run post-login verifications:
      // Check if this is a staff account blocked due to expired store subscription
      final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(uid);
      if (isStaffBlocked) {
@@ -119,92 +174,18 @@ class _LoginPageState extends State<LoginPage> {
      await planProvider.initialize();
      if (!mounted) return;
 
-    // Enforce: one account can be active on one device.
-    // If already active on another device, ask whether to logout old device.
-    final sessionResult = await SingleSessionService.instance.activateOrRequestTakeover(
-      uid: uid,
-      deviceLabel: identifier ?? 'This device',
-    );
-    if (!mounted) return;
-
-    if (sessionResult.needsApproval) {
-      final activeLabel = (sessionResult.activeDeviceLabel ?? 'another device').trim();
-      final confirm = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: kWhite,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: const Text('Already logged in', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: kBlack87)),
-          content: Text(
-            'This account is currently active on $activeLabel.\n\nDo you want to logout from the old device and continue here?',
-            style: const TextStyle(color: kBlack54, height: 1.5, fontWeight: FontWeight.w500),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: Text(context.tr('close'), style: const TextStyle(color: kBlack54, fontWeight: FontWeight.w800, fontSize: 12)),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-              child: const Text('Yes, Logout Old', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12)),
-            )
-          ],
-        ),
-      );
-
-      if (confirm != true) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showMsg('Login cancelled.', isError: true);
-        return;
-      }
-
-      // Client-side approval: flips the request status to approved.
-      // Old device will detect session flip and logout.
-      final reqId = sessionResult.requestId;
-      final requestedSessionId = sessionResult.requestedSessionId;
-      if (reqId == null || requestedSessionId == null) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showMsg('Unable to start login takeover.', isError: true);
-        return;
-      }
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .collection('takeoverRequests')
-          .doc(reqId)
-          .set({'status': 'approved', 'approvedAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
-
-      final ok = await SingleSessionService.instance.waitForTakeoverDecision(
-        uid: uid,
-        requestId: reqId,
-        requestedSessionId: requestedSessionId,
-      );
-
-      if (!ok) {
-        await FirebaseAuth.instance.signOut();
-        if (!mounted) return;
-        _showMsg('Login request was not approved.', isError: true);
-        return;
-      }
-    }
-
-    if (identifier != null && identifier.toLowerCase() == 'maxmybillapp@gmail.com') {
-      Navigator.pushReplacement(
-        context,
-        CupertinoPageRoute(builder: (context) => HomePage(uid: uid, userEmail: identifier)),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        CupertinoPageRoute(builder: (context) => NewSalePage(uid: uid, userEmail: identifier)),
-      );
-    }
-  }
+     if (identifier != null && identifier.toLowerCase() == 'maxmybillapp@gmail.com') {
+       Navigator.pushReplacement(
+         context,
+         CupertinoPageRoute(builder: (context) => HomePage(uid: uid, userEmail: identifier)),
+       );
+     } else {
+       Navigator.pushReplacement(
+         context,
+         CupertinoPageRoute(builder: (context) => NewSalePage(uid: uid, userEmail: identifier)),
+       );
+     }
+   }
 
   void _showDialog({
     required String title,
@@ -260,9 +241,12 @@ class _LoginPageState extends State<LoginPage> {
       User? user = cred.user;
       if (user == null) throw Exception('Login failed');
 
-      await user.reload();
-      user = _auth.currentUser;
-      final bool isAuthVerified = user?.emailVerified ?? false;
+      bool isAuthVerified = user.emailVerified;
+      if (!isAuthVerified) {
+        await user.reload();
+        user = _auth.currentUser;
+        isAuthVerified = user?.emailVerified ?? false;
+      }
 
       QuerySnapshot storeUserQuery = await (await _firestore_service.getStoreCollection('users'))
           .where('uid', isEqualTo: user!.uid)
@@ -271,6 +255,7 @@ class _LoginPageState extends State<LoginPage> {
 
       DocumentReference? userRef;
       Map<String, dynamic> userData;
+      bool isGlobalDoc = false;
 
       if (storeUserQuery.docs.isNotEmpty) {
         userRef = storeUserQuery.docs.first.reference;
@@ -280,6 +265,7 @@ class _LoginPageState extends State<LoginPage> {
         if (globalDoc.exists) {
           userRef = globalDoc.reference;
           userData = globalDoc.data() as Map<String, dynamic>;
+          isGlobalDoc = true;
         } else {
           await _auth.signOut();
           setState(() => _loading = false);
@@ -323,7 +309,7 @@ class _LoginPageState extends State<LoginPage> {
 
       await _firestore_service.notifyStoreDataChanged();
       setState(() => _loading = false);
-      _navigate(user.uid, user.email);
+      _navigate(user.uid, user.email, preloadedUserData: isGlobalDoc ? userData : null);
     } on FirebaseAuthException catch (e) {
       setState(() => _loading = false);
       _showMsg(e.message ?? 'Login failed', isError: true);
@@ -1128,7 +1114,7 @@ class _LoginPageState extends State<LoginPage> {
                     _otpCtrl.clear();
                   });
                 },
-                child: const Text("Edit Phone", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
+                child: const Text("Edit Mobile number", style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800, fontSize: 11)),
               ),
               TextButton(
                 onPressed: _loading ? null : _sendOTP,

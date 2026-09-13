@@ -166,8 +166,10 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
         if (creditDoc.exists) {
           final data = creditDoc.data() as Map<String, dynamic>?;
           final currentAmount = (data?['amount'] ?? 0.0).toDouble();
-          if (currentAmount <= _enteredAmount) {
+          final remaining = currentAmount - _enteredAmount;
+          if (remaining <= 0.01) {
             await creditsRef.doc(widget.creditDocId).update({
+              'amount': 0.0,
               'isSettled': true,
               'status': 'Settled',
               'settledAt': FieldValue.serverTimestamp(),
@@ -177,7 +179,7 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
             });
           } else {
              await creditsRef.doc(widget.creditDocId).update({
-              'amount': currentAmount - _enteredAmount,
+              'amount': remaining,
               'partiallySettledAt': FieldValue.serverTimestamp(),
               'lastPartialAmount': _enteredAmount,
               'lastPartialMethod': _paymentMode,
@@ -193,8 +195,9 @@ class _SettleManualCreditPageState extends State<SettleManualCreditPage> {
       if (customerDoc.exists) {
         final data = customerDoc.data() as Map<String, dynamic>?;
         customerPreviousBalance = (data?['balance'] ?? 0.0).toDouble();
+        final newBal = customerPreviousBalance - _enteredAmount;
         await customersRef.doc(widget.customerId).update({
-          'balance': customerPreviousBalance - _enteredAmount,
+          'balance': newBal <= 0.01 ? 0.0 : newBal,
         });
       }
 

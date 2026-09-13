@@ -392,6 +392,7 @@ class SaleSyncService {
           saleData['customerPhone'],
           saleData['total'],
           saleData['invoiceNumber'] ?? sale.id,
+          creditDueDate: saleData['creditDueDate'] != null ? DateTime.tryParse(saleData['creditDueDate'].toString()) : null,
         );
         print('  ✅ Customer credit updated');
       }
@@ -526,7 +527,8 @@ class SaleSyncService {
     }
   }
 
-  Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber) async {
+  Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber, {DateTime? creditDueDate}) async {
+    if (amount <= 0.01) return;
     try {
       final firestoreService = FirestoreService();
       final customersCollection = await firestoreService.getStoreCollection('customers');
@@ -568,6 +570,8 @@ class SaleSyncService {
           'timestamp': FieldValue.serverTimestamp(),
           'date': DateTime.now().toIso8601String(),
           'note': 'Credit sale - Invoice #$invoiceNumber (synced)',
+          if (creditDueDate != null) 'creditDueDate': creditDueDate.toIso8601String(),
+          'isSettled': false,
         });
       }
     } catch (e) {

@@ -2528,6 +2528,7 @@ class _PaymentPageState extends State<PaymentPage> {
         if (widget.savedOrderId != null) 'savedOrderId': widget.savedOrderId,
         if (widget.selectedCreditNotes.isNotEmpty) 'selectedCreditNotes': widget.selectedCreditNotes,
         if (widget.quotationId != null && widget.quotationId!.isNotEmpty) 'quotationId': widget.quotationId,
+        if (_creditDueDate != null) 'creditDueDate': _creditDueDate!.toIso8601String(),
         'customerPhone': widget.customerPhone,
         'customerName': widget.customerName,
         'customerGST': widget.customerGST,
@@ -2556,6 +2557,7 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber, DateTime? creditDueDate) async {
+    if (amount <= 0.01) return;
     final customerRef = await FirestoreService().getDocumentReference('customers', phone);
     final creditsCollection = await FirestoreService().getStoreCollection('credits');
 
@@ -3323,6 +3325,7 @@ class _SplitPaymentPageState extends State<SplitPaymentPage> {
             if (widget.savedOrderId != null) 'savedOrderId': widget.savedOrderId,
             if (widget.selectedCreditNotes.isNotEmpty) 'selectedCreditNotes': widget.selectedCreditNotes,
             if (widget.quotationId != null && widget.quotationId!.isNotEmpty) 'quotationId': widget.quotationId,
+            if (_creditDueDate != null) 'creditDueDate': _creditDueDate!.toIso8601String(),
             'customerPhone': widget.customerPhone,
             'customerName': widget.customerName,
             'customerGST': widget.customerGST,
@@ -3365,6 +3368,7 @@ class _SplitPaymentPageState extends State<SplitPaymentPage> {
       }
 
   Future<void> _updateCustomerCredit(String phone, double amount, String invoiceNumber, DateTime? creditDueDate) async {
+    if (amount <= 0.01) return;
     final customerRef = await FirestoreService().getDocumentReference('customers', phone);
     final creditsCollection = await FirestoreService().getStoreCollection('credits');
 

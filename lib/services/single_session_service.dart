@@ -71,20 +71,23 @@ class SingleSessionService {
 
   /// Establish a session for this device.
   ///
-  /// If the account is already active on another device, a takeover request is
-  /// created and this future returns an [ActivateSessionResult] with
-  /// `needsApproval=true`.
+  /// If the account is already active on another device, this returns immediately
+  /// with [ActivateSessionResult.needsApproval=true] without blocking on Firestore writes.
   Future<ActivateSessionResult> activateOrRequestTakeover({
     required String uid,
     required String deviceLabel,
     Duration requestTimeout = const Duration(minutes: 2),
+    Map<String, dynamic>? preloadedUserData,
   }) async {
     final deviceId = await getDeviceId();
     final requestedSessionId = _newSessionId(uid);
 
     final userRef = _firestore.collection('users').doc(uid);
-    final snap = await userRef.get();
-    final data = snap.data();
+    Map<String, dynamic>? data = preloadedUserData;
+    if (data == null || !data.containsKey('activeDeviceId')) {
+      final snap = await userRef.get();
+      data = snap.data();
+    }
     final activeSessionId = data?['activeSessionId']?.toString();
     final activeDeviceId = data?['activeDeviceId']?.toString();
 
@@ -110,28 +113,35 @@ class SingleSessionService {
       return ActivateSessionResult(activated: true, sessionId: requestedSessionId);
     }
 
-    // Someone else is active: create takeover request.
-    final reqRef = userRef.collection('takeoverRequests').doc();
-    final now = Timestamp.now();
-    final expiresAt = Timestamp.fromDate(DateTime.now().add(requestTimeout));
-    await reqRef.set({
-      'status': 'pending',
-      'requestedAt': now,
-      'expiresAt': expiresAt,
-      'requestedByDeviceId': deviceId,
-      'requestedByDeviceLabel': deviceLabel,
-      'requestedSessionId': requestedSessionId,
-      'activeDeviceIdAtRequest': activeDeviceId,
-      'activeDeviceLabelAtRequest': data?['activeDeviceLabel']?.toString(),
-    });
-
+    // Someone else is active: return immediately so UI can display prompt without
+    // waiting for unnecessary network writes to Firestore.
     return ActivateSessionResult(
       activated: false,
       needsApproval: true,
-      requestId: reqRef.id,
       requestedSessionId: requestedSessionId,
       activeDeviceLabel: data?['activeDeviceLabel']?.toString(),
     );
+  }
+
+  /// Claim session directly on this device after user confirms takeover.
+  /// This updates activeSessionId in Firestore, causing the old device to sign out immediately.
+  Future<void> claimSession({
+    required String uid,
+    required String deviceLabel,
+    String? requestedSessionId,
+  }) async {
+    final deviceId = await getDeviceId();
+    final sessionId = requestedSessionId ?? _newSessionId(uid);
+    final userRef = _firestore.collection('users').doc(uid);
+    await userRef.set({
+      'activeSessionId': sessionId,
+      'activeDeviceId': deviceId,
+      'activeDeviceLabel': deviceLabel,
+      'activeSessionUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    _currentSessionId = sessionId;
+    await _startListening(uid: uid);
   }
 
   /// Wait for a takeover request to be approved/denied/expired.

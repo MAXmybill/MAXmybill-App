@@ -314,7 +314,13 @@ class _SaleAllPageState extends State<SaleAllPage> {
   List<Map<String, dynamic>>? _parseTaxesFromData(Map<String, dynamic> data) {
     final rawTaxes = data['taxes'];
     if (rawTaxes is List && rawTaxes.isNotEmpty) {
-      return rawTaxes.map((t) => Map<String, dynamic>.from(t as Map)).toList();
+      return rawTaxes.map((t) {
+        final m = Map<String, dynamic>.from(t as Map);
+        if (m['percentage'] != null) {
+          m['percentage'] = (m['percentage'] as num).toDouble();
+        }
+        return m;
+      }).toList();
     }
     return null; // Let CartItem handle legacy fields via taxName/taxPercentage
   }
@@ -1171,6 +1177,11 @@ class _SaleAllPageState extends State<SaleAllPage> {
             if (price > 0) {
               final cost = (data['costPrice'] ?? 0.0).toDouble();
               final taxes = _parseTaxesFromData(data);
+              final String? taxName = data['taxName'] as String?;
+              final double? taxPercentage =
+                  data['taxPercentage'] != null ? (data['taxPercentage'] as num).toDouble() : null;
+              final String? taxType = data['taxType'] as String?;
+
               // Only show weight dialog for kg unit items
               if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
                 _showWeightInputDialog(
@@ -1180,9 +1191,9 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   cost,
                   stockEnabled,
                   stock,
-                  taxName: data['taxName'],
-                  taxPercentage: data['taxPercentage'],
-                  taxType: data['taxType'],
+                  taxName: taxName,
+                  taxPercentage: taxPercentage,
+                  taxType: taxType,
                   taxes: taxes,
                 );
               } else {
@@ -1195,9 +1206,9 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   stockEnabled,
                   stock,
                   1.0,
-                  taxName: data['taxName'],
-                  taxPercentage: data['taxPercentage'],
-                  taxType: data['taxType'],
+                  taxName: taxName,
+                  taxPercentage: taxPercentage,
+                  taxType: taxType,
                   taxes: taxes,
                 );
               }

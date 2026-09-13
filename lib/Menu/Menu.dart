@@ -201,6 +201,8 @@ class _MenuPageState extends State<MenuPage> {
             final uniqueCustomers = <String>{};
             for (var doc in snapshot.docs) {
               final data = doc.data();
+              final amount = ((data['amount'] as num?) ?? 0.0).toDouble();
+              if (amount <= 0.01) continue;
               final dueDateRaw = data['creditDueDate'];
               if (dueDateRaw == null) continue;
               try {
@@ -2403,13 +2405,13 @@ class SalesDetailPage extends StatelessWidget {
         double recalcSubtotal = 0;
         double recalcTax = 0;
         for (final item in items) {
-          final price = (item['price'] as double);
+          final price = (item['price'] as num?)?.toDouble() ?? 0.0;
           final qty = (item['quantity'] is int)
               ? (item['quantity'] as int).toDouble()
-              : double.tryParse(item['quantity'].toString()) ?? 1.0;
-          final taxPct = (item['taxPercentage'] as double);
+              : double.tryParse(item['quantity']?.toString() ?? '') ?? 1.0;
+          final taxPct = (item['taxPercentage'] as num?)?.toDouble() ?? 0.0;
           final taxType = item['taxType'] as String?;
-          double itemTax = (item['taxAmount'] as double);
+          double itemTax = (item['taxAmount'] as num?)?.toDouble() ?? 0.0;
           double itemBase = price * qty;
 
           if (itemTax == 0 && taxPct > 0 && taxType != null) {
@@ -3564,6 +3566,8 @@ class _CreditNotesPageState extends State<CreditNotesPage> {
             final now = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
             final overdue = snapshot.docs.where((doc) {
               final data = doc.data() as Map<String, dynamic>;
+              final amount = ((data['amount'] as num?) ?? 0.0).toDouble();
+              if (amount <= 0.01) return false;
               final dueDateRaw = data['creditDueDate'];
               if (dueDateRaw == null) return false;
               try {
@@ -4756,6 +4760,8 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
         final now = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
         final overdue = snapshot.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
+          final amount = ((data['amount'] as num?) ?? 0.0).toDouble();
+          if (amount <= 0.01) return false;
           final dueDateRaw = data['creditDueDate'];
           if (dueDateRaw == null) return false;
           try {
@@ -4945,6 +4951,8 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
             final docs = snapshot.data?.docs ?? [];
             final filtered = docs.where((d) {
               final data = d.data() as Map<String, dynamic>;
+              final balance = ((data['balance'] as num?) ?? 0.0).toDouble();
+              if (balance <= 0.01) return false;
               final name = (data['name'] ?? '').toString().toLowerCase();
               final phone = (data['phone'] ?? '').toString().toLowerCase();
               return name.contains(_searchQuery) || phone.contains(_searchQuery);
@@ -5189,6 +5197,8 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
       final data = doc.data() as Map<String, dynamic>;
       final customerId = (data['customerId'] ?? '').toString().trim();
       if (customerId.isEmpty) continue;
+      final amount = ((data['amount'] ?? 0.0) as num).toDouble();
+      if (amount <= 0.01) continue;
 
       if (!overdueCustomers.containsKey(customerId)) {
         overdueCustomers[customerId] = {
@@ -5200,7 +5210,6 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
         };
       }
 
-      final amount = ((data['amount'] ?? 0.0) as num).toDouble();
       overdueCustomers[customerId]!['totalDue'] += amount;
       overdueCustomers[customerId]!['billCount'] =
           (overdueCustomers[customerId]!['billCount'] as int) + 1;
@@ -5891,12 +5900,24 @@ class _CreditDetailsPageState extends State<CreditDetailsPage> {
   Future<void> _settleCustomerCredit(String id, Map<String, dynamic> data, double amt, String mode, double old) async {
     final custs = await FirestoreService().getStoreCollection('customers');
     final creds = await FirestoreService().getStoreCollection('credits');
+    final newBal = (old - amt) <= 0.01 ? 0.0 : (old - amt);
     await FirebaseFirestore.instance.runTransaction((tx) async {
-      tx.update(custs.doc(id), {'balance': old - amt, 'lastUpdated': FieldValue.serverTimestamp()});
+      tx.update(custs.doc(id), {'balance': newBal, 'lastUpdated': FieldValue.serverTimestamp()});
     });
     await creds.add({
       'customerId': id, 'customerName': data['name'], 'amount': amt, 'type': 'settlement', 'method': mode, 'timestamp': FieldValue.serverTimestamp(), 'date': DateTime.now().toIso8601String(),
     });
+    if (newBal <= 0.01) {
+      final unsettledSnap = await creds.where('customerId', isEqualTo: id).where('isSettled', isEqualTo: false).get();
+      for (var doc in unsettledSnap.docs) {
+        await doc.reference.update({
+          'isSettled': true,
+          'status': 'Settled',
+          'settledAt': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+    await LedgerHelper.computeClosingBalance(id, syncToFirestore: true);
   }
 
   Widget _buildEmptyState(String msg) {
@@ -5944,7 +5965,21 @@ class _CustomerCreditDetailsPageState extends State<CustomerCreditDetailsPage> {
 
   Future<void> _syncBalanceInBackground() async {
     try {
-      await LedgerHelper.computeClosingBalance(widget.customerId, syncToFirestore: true);
+      final bal = await LedgerHelper.computeClosingBalance(widget.customerId, syncToFirestore: true);
+      final creds = await FirestoreService().getStoreCollection('credits');
+      final snap = await creds.where('customerId', isEqualTo: widget.customerId).get();
+      for (var doc in snap.docs) {
+        final d = doc.data() as Map<String, dynamic>;
+        final isSettled = d['isSettled'] == true;
+        final amt = ((d['amount'] as num?) ?? 0.0).toDouble();
+        if (!isSettled && (amt <= 0.01 || bal <= 0.01)) {
+          await doc.reference.update({
+            'isSettled': true,
+            'status': 'Settled',
+            'settledAt': FieldValue.serverTimestamp(),
+          });
+        }
+      }
     } catch (e) {
       debugPrint('Error quietly syncing balance: $e');
     }
@@ -6079,12 +6114,14 @@ class _CustomerCreditDetailsPageState extends State<CustomerCreditDetailsPage> {
                           final type = data['type'] as String?;
                           final isSettled = data['isSettled'] == true;
                           final isCancelled = data['status'] == 'cancelled';
-                          final amount = (data['amount'] ?? 0.0).toDouble();
+                          final amount = ((data['amount'] as num?) ?? 0.0).toDouble();
 
-                          if (isCancelled) return false;
-                          if (type == 'credit_sale' && !isSettled) return true;
-                          if (type == 'add_credit' && !isSettled) return true; // hide once settled
-                          if (type == null && amount > 0 && data['invoiceNumber'] != null && !isSettled) return true;
+                          if (isCancelled || isSettled) return false;
+                          if (amount <= 0.01) return false;
+                          if (currentBalance <= 0.01) return false;
+                          if (type == 'credit_sale') return true;
+                          if (type == 'add_credit') return true;
+                          if (type == null && data['invoiceNumber'] != null) return true;
                           return false;
                         }).toList();
 
@@ -6165,27 +6202,46 @@ class _CustomerCreditDetailsPageState extends State<CustomerCreditDetailsPage> {
     final data = doc.data() as Map<String, dynamic>;
     final amount = (data['amount'] ?? 0.0).toDouble();
     final invoiceNumber = (data['invoiceNumber'] ?? 'N/A').toString();
-    final creditDueDateStr = data['creditDueDate'] as String?;
     final dateStr = data['date'] as String?;
 
     DateTime? billDate = dateStr != null ? DateTime.tryParse(dateStr) : null;
-    DateTime? dueDate = creditDueDateStr != null ? DateTime.tryParse(creditDueDateStr) : null;
+    if (billDate == null && data['timestamp'] != null) {
+      final ts = data['timestamp'];
+      if (ts is Timestamp) billDate = ts.toDate();
+      else if (ts is String) billDate = DateTime.tryParse(ts);
+    }
+
+    DateTime? dueDate;
+    final rawDueDate = data['creditDueDate'] ?? data['dueDate'];
+    if (rawDueDate is Timestamp) {
+      dueDate = rawDueDate.toDate();
+    } else if (rawDueDate != null && rawDueDate.toString().isNotEmpty) {
+      dueDate = DateTime.tryParse(rawDueDate.toString());
+    }
+    // Fallback: if no specific due date was set, default to billDate
+    dueDate ??= billDate;
 
     bool isOverdue = false;
     bool isNearDue = false;
     int daysRemaining = 0;
     if (dueDate != null) {
-      final now = DateTime.now();
-      final diff = dueDate.difference(now).inDays;
+      final now = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      final dueOnly = DateTime(dueDate.year, dueDate.month, dueDate.day);
+      final diff = dueOnly.difference(now).inDays;
       daysRemaining = diff;
       isOverdue = diff < 0;
       isNearDue = diff >= 0 && diff <= 7;
     }
 
     Color dueDateColor = kBlack54;
-    String dueDateLabel = '';
-    if (isOverdue) { dueDateColor = kErrorColor; dueDateLabel = 'Overdue'; }
-    else if (isNearDue) { dueDateColor = kOrange; dueDateLabel = daysRemaining == 0 ? 'Due Today' : 'DUE IN $daysRemaining DAYS'; }
+    String dueDateLabel = 'Due date';
+    if (isOverdue) {
+      dueDateColor = kErrorColor;
+      dueDateLabel = 'Overdue';
+    } else if (isNearDue) {
+      dueDateColor = kOrange;
+      dueDateLabel = daysRemaining == 0 ? 'Due Today' : 'DUE IN $daysRemaining DAYS';
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -6232,11 +6288,20 @@ class _CustomerCreditDetailsPageState extends State<CustomerCreditDetailsPage> {
               const Divider(height: 20, color: kGreyBg),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(dueDate != null ? (isOverdue || isNearDue ? dueDateLabel : 'Due date') : 'Credit bill',
-                      style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: dueDateColor.withValues(alpha: isOverdue || isNearDue ? 1 : 0.7), letterSpacing: 0.5)),
+                  Text(
+                    isOverdue || isNearDue ? dueDateLabel : 'Due date',
+                    style: TextStyle(
+                      fontSize: 8,
+                      fontWeight: FontWeight.w700,
+                      color: dueDateColor.withValues(alpha: isOverdue || isNearDue ? 1 : 0.7),
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                   if (dueDate != null)
-                    Text('${dueDate.day.toString().padLeft(2,'0')}-${dueDate.month.toString().padLeft(2,'0')}-${dueDate.year}',
-                        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: dueDateColor)),
+                    Text(
+                      '${dueDate.day.toString().padLeft(2,'0')}-${dueDate.month.toString().padLeft(2,'0')}-${dueDate.year}',
+                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: dueDateColor),
+                    ),
                 ]),
                 Row(children: [
                   // share buttons

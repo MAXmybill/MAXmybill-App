@@ -73,6 +73,9 @@ class LedgerHelper {
       for (var e in entries) {
         balance += e.balanceImpact;
       }
+      if (balance.abs() <= 0.01) {
+        balance = 0.0;
+      }
 
       if (syncToFirestore) {
         final customersCollection = await FirestoreService().getStoreCollection('customers');
