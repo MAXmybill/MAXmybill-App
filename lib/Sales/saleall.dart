@@ -196,20 +196,46 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
 
   Future<void> _initializeProductsStream() async {
-    final collection = await FirestoreService().getStoreCollection('Products');
-    final stream = collection.snapshots();
-    _loadCategories();
+    try {
+      final collection = await FirestoreService().getStoreCollection('Products');
+      final stream = collection.snapshots();
+      _loadCategories();
 
-    // Start real-time stock sync: whenever currentStock changes in Firestore
-    // (from another device, a completed sale, or manual edit), the local
-    // cache is updated instantly so stock availability is always accurate.
-    LocalStockService().startListening(collection);
+      // Start real-time stock sync: whenever currentStock changes in Firestore
+      // (from another device, a completed sale, or manual edit), the local
+      // cache is updated instantly so stock availability is always accurate.
+      LocalStockService().startListening(collection);
 
-    if (mounted) {
-      setState(() {
-        _productsStream = stream;
-        _isLoadingStream = false;
-      });
+      if (mounted) {
+        setState(() {
+          _productsStream = stream;
+          _isLoadingStream = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error initializing products stream: $e, retrying in 1s...');
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      try {
+        final collection = await FirestoreService().getStoreCollection('Products');
+        final stream = collection.snapshots();
+        _loadCategories();
+        LocalStockService().startListening(collection);
+
+        if (mounted) {
+          setState(() {
+            _productsStream = stream;
+            _isLoadingStream = false;
+          });
+        }
+      } catch (retryError) {
+        debugPrint('❌ Failed to load products stream on retry: $retryError');
+        if (mounted) {
+          setState(() {
+            _isLoadingStream = false;
+          });
+        }
+      }
     }
   }
 

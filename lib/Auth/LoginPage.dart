@@ -180,6 +180,29 @@ class _LoginPageState extends State<LoginPage> {
          CupertinoPageRoute(builder: (context) => HomePage(uid: uid, userEmail: identifier)),
        );
      } else {
+       // Ensure the user actually has a registered store before pushing NewSalePage!
+       String? storeId = preloadedUserData?['storeDocId']?.toString() ?? preloadedUserData?['storeId']?.toString();
+       if (storeId != null && storeId.isNotEmpty) {
+         _firestore_service.setCachedStoreId(storeId);
+       } else {
+         storeId = await _firestore_service.getCurrentStoreId(explicitUid: uid, explicitEmail: identifier);
+       }
+
+       if (storeId == null || storeId.isEmpty) {
+         debugPrint('⚠️ No store found for user $uid in _navigate - redirecting to BusinessDetailsPage');
+         if (!mounted) return;
+         Navigator.pushReplacement(
+           context,
+           CupertinoPageRoute(
+             builder: (context) => BusinessDetailsPage(
+               uid: uid,
+               email: identifier,
+             ),
+           ),
+         );
+         return;
+       }
+
        Navigator.pushReplacement(
          context,
          CupertinoPageRoute(builder: (context) => NewSalePage(uid: uid, userEmail: identifier)),
@@ -305,6 +328,11 @@ class _LoginPageState extends State<LoginPage> {
           message: 'Your account is waiting for Admin approval.',
         );
         return;
+      }
+
+      final sId = userData['storeDocId']?.toString() ?? userData['storeId']?.toString();
+      if (sId != null && sId.isNotEmpty) {
+        _firestore_service.setCachedStoreId(sId);
       }
 
       await _firestore_service.notifyStoreDataChanged();
@@ -646,9 +674,14 @@ class _LoginPageState extends State<LoginPage> {
 
           if (userDoc.exists) {
             // Existing business owner - proceed to app
+            final uData = userDoc.data();
+            final sId = uData?['storeDocId']?.toString() ?? uData?['storeId']?.toString();
+            if (sId != null && sId.isNotEmpty) {
+              _firestore_service.setCachedStoreId(sId);
+            }
             await _firestore_service.notifyStoreDataChanged();
             if (mounted) setState(() => _loading = false);
-            _navigate(user.uid, user.email);
+            _navigate(user.uid, user.email, preloadedUserData: uData);
           } else {
             // Check if there is an existing store or user with this Google email
             DocumentSnapshot? matchedStoreDoc;

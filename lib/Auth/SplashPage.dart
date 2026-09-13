@@ -152,6 +152,7 @@ class _SplashPageState extends State<SplashPage>
         // Check if user has completed business registration
         // Use timeout to prevent blocking if offline
         bool userDocExists = true;
+        String? storeId;
         if (!isOffline) {
           try {
             final userDoc = await FirebaseFirestore.instance
@@ -166,6 +167,13 @@ class _SplashPageState extends State<SplashPage>
                   },
                 );
             userDocExists = userDoc.exists;
+            if (userDocExists) {
+              final uData = userDoc.data();
+              storeId = uData?['storeDocId']?.toString() ?? uData?['storeId']?.toString();
+              if (storeId != null && storeId.isNotEmpty) {
+                FirestoreService().setCachedStoreId(storeId);
+              }
+            }
           } catch (e) {
             if (e is FirebaseException && e.code == 'permission-denied') {
               debugPrint('⚠️ Permission denied checking user doc, assuming deleted/invalid');
@@ -198,15 +206,32 @@ class _SplashPageState extends State<SplashPage>
           return;
         }
 
+        // Verify and pre-warm the store cache with session data
+        storeId ??= await FirestoreService().getCurrentStoreId(
+          explicitUid: sessionData.uid,
+          explicitEmail: sessionData.email,
+        );
+
+        // If online and NO store is associated with this account:
+        // redirect to BusinessDetailsPage to prevent opening app with empty/missing store data!
+        if (!isOffline && (storeId == null || storeId.isEmpty)) {
+          debugPrint('⚠️ No store associated with user ${sessionData.uid} - redirecting to BusinessDetailsPage');
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            CupertinoPageRoute(
+              builder: (_) => BusinessDetailsPage(
+                uid: sessionData.uid,
+                email: sessionData.email,
+                displayName: sessionData.displayName,
+              ),
+            ),
+          );
+          return;
+        }
+
         // Check if this is a staff account blocked due to expired store subscription (only when online)
         if (!isOffline) {
           try {
-            // Pre-warm the store cache with session data
-            await FirestoreService().getCurrentStoreId(
-              explicitUid: sessionData.uid,
-              explicitEmail: sessionData.email,
-            );
-
             final isStaffBlocked = await PlanPermissionHelper.isStaffBlockedDueToExpiredPlan(sessionData.uid);
             if (isStaffBlocked) {
               debugPrint('🔒 Staff account blocked: Store plan expired');

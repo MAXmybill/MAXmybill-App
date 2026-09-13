@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:maxmybill/services/auth_cache_service.dart';
 
 class FirestoreService {
@@ -12,6 +13,9 @@ class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  static const String _storeCacheBoxName = 'auth_cache';
+  static const String _storeIdKey = 'cached_store_id';
+
   // Cache to store the ID in memory for 0ms access
   String? _cachedStoreId;
   DocumentSnapshot? _cachedStoreDoc;
@@ -21,17 +25,54 @@ class FirestoreService {
   final _storeDataController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get storeDataStream => _storeDataController.stream;
 
-  /// Clear all cache on logout/login
-  void clearCache() {
+  /// Synchronously or quickly cache storeId in memory & persistent Hive storage
+  void setCachedStoreId(String storeId) {
+    if (storeId.isEmpty) return;
+    _cachedStoreId = storeId;
+    try {
+      if (Hive.isBoxOpen(_storeCacheBoxName)) {
+        Hive.box(_storeCacheBoxName).put(_storeIdKey, storeId);
+      }
+    } catch (e) {
+      debugPrint('FirestoreService: error caching storeId to Hive: $e');
+    }
+  }
+
+  /// Read persistent storeId from Hive if in-memory cache is empty
+  String? _getPersistentStoreId() {
+    try {
+      if (Hive.isBoxOpen(_storeCacheBoxName)) {
+        final id = Hive.box(_storeCacheBoxName).get(_storeIdKey)?.toString();
+        if (id != null && id.isNotEmpty) return id;
+      }
+    } catch (e) {
+      debugPrint('FirestoreService: error reading cached storeId from Hive: $e');
+    }
+    return null;
+  }
+
+  /// Clear cache on logout/login.
+  /// If clearPersistent is false, keeps persistent Hive storeId to prevent losing store on transient resets.
+  void clearCache({bool clearPersistent = false}) {
     _cachedStoreId = null;
     _cachedStoreDoc = null;
     _cachedStoreData = null;
+    if (clearPersistent) {
+      try {
+        if (Hive.isBoxOpen(_storeCacheBoxName)) {
+          Hive.box(_storeCacheBoxName).delete(_storeIdKey);
+        }
+      } catch (e) {
+        debugPrint('FirestoreService: error clearing persistent storeId: $e');
+      }
+    }
   }
 
   /// Notify listenethat store data has changed (e.g., logo updated)
   Future<void> notifyStoreDataChanged() async {
-    // Force refresh the cache
-    clearCache();
+    // Refresh doc cache without wiping persistent store id
+    _cachedStoreDoc = null;
+    _cachedStoreData = null;
     final doc = await getCurrentStoreDoc(forceRefresh: true);
     if (doc != null && doc.exists) {
       final data = doc.data() as Map<String, dynamic>?;
@@ -44,7 +85,7 @@ class FirestoreService {
 
   /// Clear cache and prefetch fresh data on login
   Future<void> refreshCacheOnLogin() async {
-    clearCache();
+    clearCache(clearPersistent: false);
     await prefetchStoreId();
     await getCurrentStoreDoc();
   }
@@ -56,9 +97,17 @@ class FirestoreService {
 
   /// Get the current user's store ID
   Future<String?> getCurrentStoreId({bool forceRefresh = false, String? explicitUid, String? explicitEmail}) async {
-    // 1. Return cached ID immediately if available
-    if (!forceRefresh && _cachedStoreId != null) {
+    // 1. Return cached ID immediately if available (memory first, then persistent Hive box)
+    if (!forceRefresh && _cachedStoreId != null && _cachedStoreId!.isNotEmpty) {
       return _cachedStoreId;
+    }
+
+    if (!forceRefresh) {
+      final persistentId = _getPersistentStoreId();
+      if (persistentId != null && persistentId.isNotEmpty) {
+        _cachedStoreId = persistentId;
+        return _cachedStoreId;
+      }
     }
 
     final user = _auth.currentUser;
@@ -81,7 +130,7 @@ class FirestoreService {
         final storeId = data?['storeId']?.toString() ?? data?['storeDocId']?.toString();
 
         if (storeId != null && storeId.isNotEmpty) {
-          _cachedStoreId = storeId;
+          setCachedStoreId(storeId);
           return _cachedStoreId;
         }
       }
@@ -95,7 +144,8 @@ class FirestoreService {
 
       if (byUid.docs.isNotEmpty) {
         final doc = byUid.docs.first;
-        _cachedStoreId = doc.data()['storeId']?.toString() ?? doc.id;
+        final sId = doc.data()['storeId']?.toString() ?? doc.id;
+        setCachedStoreId(sId);
         return _cachedStoreId;
       }
 
@@ -250,7 +300,7 @@ class FirestoreService {
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
 
-    _cachedStoreId = storeId;
+    setCachedStoreId(storeId);
   }
 
   // =========================================================
@@ -259,8 +309,12 @@ class FirestoreService {
 
   /// Get reference to a store-scoped collection
   Future<CollectionReference> getStoreCollection(String collectionName) async {
-    final storeId = await getCurrentStoreId();
-    if (storeId == null) {
+    var storeId = await getCurrentStoreId();
+    if (storeId == null || storeId.isEmpty) {
+      // Retry with explicit refresh in case user auth was just initialized
+      storeId = await getCurrentStoreId(forceRefresh: true);
+    }
+    if (storeId == null || storeId.isEmpty) {
       throw Exception('No store ID found for current user');
     }
     return _firestore.collection('store').doc(storeId).collection(collectionName);
