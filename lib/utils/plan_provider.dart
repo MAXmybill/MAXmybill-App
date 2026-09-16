@@ -23,16 +23,12 @@ class PlanProvider extends ChangeNotifier {
   bool _isTrial = false;
 
   /// Get cached plan instantly (no async wait)
-  /// Returns 'Free' if the plan has expired
+  /// Returns 'Free' if the plan has expired or has no valid future expiry date
   String get cachedPlan {
-    // Check if plan is expired
+    // Check if plan is expired strictly based on expiry date
     if (_rawPlan.toLowerCase() != 'free' && _rawPlan.toLowerCase() != 'starter') {
-      // Fail closed: paid plan without a valid expiry is treated as free.
-      if (_cachedExpiryDate == null) {
+      if (_cachedExpiryDate == null || DateTime.now().isAfter(_cachedExpiryDate!)) {
         return PLAN_FREE;
-      }
-      if (_cachedExpiryDate != null && DateTime.now().isAfter(_cachedExpiryDate!)) {
-        return PLAN_FREE; // Plan expired, return Free
       }
     }
     return _cachedPlan;
@@ -123,14 +119,22 @@ class PlanProvider extends ChangeNotifier {
       final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
       _cachedExpiryDate = _tryParseDate(rawExpiry);
 
-      // Get raw plan from Firestore (without expiry check)
+      // Get raw plan from Firestore
       final rawPlanValue = data['plan']?.toString();
       _rawPlan = (rawPlanValue != null && rawPlanValue.trim().isNotEmpty) ? rawPlanValue.trim() : PLAN_FREE;
       
       _isTrial = data['isTrial'] == true;
 
-      // Get plan (with expiry check applied)
-      _cachedPlan = await getCurrentPlan();
+      // Apply date-based check: paid/trial plans MUST have an active future expiry date
+      if (_rawPlan.toLowerCase() != 'free' && _rawPlan.toLowerCase() != 'starter') {
+        if (_cachedExpiryDate == null || DateTime.now().isAfter(_cachedExpiryDate!)) {
+          _cachedPlan = PLAN_FREE;
+        } else {
+          _cachedPlan = _rawPlan;
+        }
+      } else {
+        _cachedPlan = _rawPlan;
+      }
     } catch (e) {
       debugPrint('Error fetching plan and expiry: $e');
       _cachedPlan = PLAN_FREE;
@@ -173,17 +177,22 @@ class PlanProvider extends ChangeNotifier {
             final newPlan = data['plan']?.toString() ?? PLAN_FREE;
             _rawPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
 
-            // Update cached plan (with expiry check)
-            if (newPlan != _cachedPlan) {
-              debugPrint('📱 PlanProvider: Real-time update - Plan changed to $newPlan');
-              _cachedPlan = newPlan.isEmpty ? PLAN_FREE : newPlan;
+            // Parse expiry date FIRST
+            final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+            _cachedExpiryDate = _tryParseDate(rawExpiry);
+
+            // Date-first evaluation for active plan
+            if (_rawPlan.toLowerCase() != 'free' && _rawPlan.toLowerCase() != 'starter') {
+              if (_cachedExpiryDate == null || DateTime.now().isAfter(_cachedExpiryDate!)) {
+                _cachedPlan = PLAN_FREE;
+              } else {
+                _cachedPlan = _rawPlan;
+              }
+            } else {
+              _cachedPlan = _rawPlan;
             }
 
             _isTrial = data['isTrial'] == true;
-
-            // Update expiry date
-            final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
-            _cachedExpiryDate = _tryParseDate(rawExpiry);
           }
         }
         // Notify all widgets to rebuild
@@ -226,12 +235,9 @@ class PlanProvider extends ChangeNotifier {
       if (!_isPlanFree(plan)) {
         final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
         final expiryDate = _tryParseDate(rawExpiry);
-        if (expiryDate != null) {
-          debugPrint('🔍 getCurrentPlan: expiryDate = $expiryDate, now = ${DateTime.now()}');
-          if (DateTime.now().isAfter(expiryDate)) {
-            debugPrint('🔍 getCurrentPlan: Plan EXPIRED on $expiryDate, returning Free');
-            return PLAN_FREE; // Expired
-          }
+        if (expiryDate == null || DateTime.now().isAfter(expiryDate)) {
+          debugPrint('🔍 getCurrentPlan: Plan EXPIRED or no valid expiry ($expiryDate), returning Free');
+          return PLAN_FREE; // Expired
         }
       }
 
@@ -320,8 +326,20 @@ class PlanProvider extends ChangeNotifier {
   }
 
   Future<bool> canRemoveWatermarkAsync() async {
-    final plan = await getCurrentPlan();
-    return !_isPlanFree(plan);
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc == null || !storeDoc.exists) return false;
+      final data = storeDoc.data() as Map<String, dynamic>?;
+      if (data == null) return false;
+
+      final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+      final expiryDate = _tryParseDate(rawExpiry);
+      if (expiryDate == null) return false;
+
+      return DateTime.now().isBefore(expiryDate);
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<bool> canAccessStaffManagementAsync() async {
@@ -373,6 +391,9 @@ class PlanProvider extends ChangeNotifier {
   // ==========================================
 
   bool _isFreePlan() {
+    if (_cachedExpiryDate == null || DateTime.now().isAfter(_cachedExpiryDate!)) {
+      return true; // Expired or missing expiry date = Free
+    }
     final normalized = _normalizedPlanKey(cachedPlan);
     return normalized == 'free' || normalized == 'starter';
   }
@@ -386,7 +407,10 @@ class PlanProvider extends ChangeNotifier {
   bool canUseLogoOnBill() => !_isFreePlan();
   bool canImportContacts() => !_isFreePlan();
   bool canUseBulkInventory() => !_isFreePlan();
-  bool canRemoveWatermark() => !_isFreePlan();
+  bool canRemoveWatermark() {
+    if (_cachedExpiryDate == null) return false;
+    return DateTime.now().isBefore(_cachedExpiryDate!);
+  }
   bool canAccessStaffManagement() {
     final planLower = _normalizedPlanKey(cachedPlan);
     return planLower == 'max one' || planLower == 'max lite' || planLower == 'max plus' || planLower == 'max pro';

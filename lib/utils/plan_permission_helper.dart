@@ -84,30 +84,12 @@ class PlanPermissionHelper {
 
       final storeData = storeDoc.data() as Map<String, dynamic>?;
 
-      // Check explicit expiry date in store document
+      // Check expiry date strictly: store MUST have a valid future expiry date for staff to access
       final rawExpiry = storeData?['subscriptionExpiryDate'] ?? storeData?['expiryDate'];
       final expiryDate = _tryParseDate(rawExpiry);
-      if (expiryDate != null) {
-        if (DateTime.now().isAfter(expiryDate)) {
-          debugPrint('🔒 Staff blocked: subscription expired on $expiryDate');
-          return true;
-        } else {
-          // Expiry is in the future - plan is active!
-          return false;
-        }
-      }
-
-      // If no explicit expiry date, check plan name
-      final currentEffectivePlan = await getCurrentPlan();
-      final effectivePlanKey = _normalizedPlanKey(currentEffectivePlan);
-
-      // If effective plan is Free or Starter (e.g. expired or free tier), staff cannot access!
-      if (effectivePlanKey == 'free' || effectivePlanKey == 'starter') {
-        final isTrial = storeData?['isTrial'] == true;
-        if (!isTrial) {
-          debugPrint('🔒 Staff blocked: store plan is "$effectivePlanKey"');
-          return true;
-        }
+      if (expiryDate == null || DateTime.now().isAfter(expiryDate)) {
+        debugPrint('🔒 Staff blocked: store subscription/trial is expired or has no valid expiry date ($expiryDate)');
+        return true;
       }
 
       return false;
@@ -152,15 +134,13 @@ class PlanPermissionHelper {
 
       final plan = planValue.trim();
 
-      // Check expiry for paid plans (case-insensitive check)
+      // Check expiry for paid plans: must have a valid expiry date and not be expired
       if (!_isPlanFree(plan)) {
         final rawExpiry = data?['subscriptionExpiryDate'] ?? data?['expiryDate'];
         final expiryDate = _tryParseDate(rawExpiry);
-        if (expiryDate != null) {
-          if (DateTime.now().isAfter(expiryDate)) {
-            debugPrint('🔍 _loadPlanData: Plan "$plan" is EXPIRED on $expiryDate, returning Free');
-            return PLAN_FREE;
-          }
+        if (expiryDate == null || DateTime.now().isAfter(expiryDate)) {
+          debugPrint('🔍 _loadPlanData: Plan "$plan" is EXPIRED or has no valid expiry date ($expiryDate), returning Free');
+          return PLAN_FREE;
         }
       }
       debugPrint('🔍 _loadPlanData: Returning plan="$plan"');
@@ -250,8 +230,22 @@ class PlanPermissionHelper {
   }
 
   static Future<bool> canRemoveWatermark() async {
-    final plan = await _loadPlanData();
-    return !_isPlanFree(plan);
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc == null || !storeDoc.exists) return false;
+      final data = storeDoc.data() as Map<String, dynamic>?;
+      if (data == null) return false;
+
+      // Watermark removal is strictly checked based on whether the trial/paid plan has an active expiry date
+      final rawExpiry = data['subscriptionExpiryDate'] ?? data['expiryDate'];
+      final expiryDate = _tryParseDate(rawExpiry);
+      if (expiryDate == null) return false;
+
+      return DateTime.now().isBefore(expiryDate);
+    } catch (e) {
+      debugPrint('Error checking watermark removal permission: $e');
+      return false;
+    }
   }
 
   static Future<bool> canAddMoreStaff(int currentStaffCount) async {
