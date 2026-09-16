@@ -2323,6 +2323,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
 
   // Thermal Printer Settings
   String _thermalPageSize = '58mm';
+  String _thermalBillMode = 'full_bill'; // 'full_bill', 'full_bill_tokens', 'only_tokens'
   bool _thermalShowHeader = true;
   bool _thermalShowLogo = true;
   bool _thermalShowCustomerInfo = true;
@@ -2335,6 +2336,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
   bool _thermalShowLicense = true;
   String _thermalSaleInvoiceText = 'Thank you for your purchase!';
   bool _thermalShowTaxColumnInTable = false; // Tax column removed by default for thermal
+  int _thermalNumberOfCopies = 1;
 
   // A4 Printer Settings
   bool _a4ShowHeader = true;
@@ -2406,6 +2408,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
     setState(() {
       // Thermal settings
       _thermalPageSize = prefs.getString('thermal_page_size') ?? '58mm';
+      _thermalBillMode = prefs.getString('thermal_bill_mode') ?? 'full_bill';
       _thermalShowHeader = prefs.getBool('thermal_show_header') ?? true;
       _thermalShowLogo = prefs.getBool('thermal_show_logo') ?? true;
       _thermalShowCustomerInfo = prefs.getBool('thermal_show_customer_info') ?? true;
@@ -2418,6 +2421,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
       _thermalShowLicense = prefs.getBool('thermal_show_license') ?? true;
       _thermalSaleInvoiceText = prefs.getString('thermal_sale_invoice_text') ?? 'Thank you for your purchase!';
       _thermalShowTaxColumnInTable = prefs.getBool('thermal_show_tax_column') ?? false;
+      _thermalNumberOfCopies = prefs.getInt('thermal_number_of_copies') ?? 1;
 
       // A4 settings
       _a4ShowHeader = prefs.getBool('a4_show_header') ?? true;
@@ -2437,6 +2441,21 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
       _a4ShowTaxColumnInTable = prefs.getBool('a4_show_tax_column') ?? true;
       _a4ColorTheme = prefs.getString('a4_color_theme') ?? 'blue';
     });
+
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc != null && storeDoc.exists) {
+        final data = storeDoc.data() as Map<String, dynamic>?;
+        if (data != null && data['thermalNumberOfCopies'] != null && mounted) {
+          final cloudCopies = data['thermalNumberOfCopies'];
+          if (cloudCopies is int && cloudCopies >= 1) {
+            setState(() => _thermalNumberOfCopies = cloudCopies);
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.setInt('thermal_number_of_copies', cloudCopies);
+          }
+        }
+      }
+    } catch (_) {}
   }
 
   Future<void> _loadDocumentNumberSettings() async {
@@ -2484,6 +2503,7 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
     // Thermal settings
     await prefs.setString('thermal_page_size', _thermalPageSize);
     await prefs.setString('printer_width', _thermalPageSize);
+    await prefs.setString('thermal_bill_mode', _thermalBillMode);
     await prefs.setBool('thermal_show_header', _thermalShowHeader);
     await prefs.setBool('thermal_show_logo', _thermalShowLogo);
     await prefs.setBool('thermal_show_customer_info', _thermalShowCustomerInfo);
@@ -2496,6 +2516,16 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
     await prefs.setBool('thermal_show_license', _thermalShowLicense);
     await prefs.setString('thermal_sale_invoice_text', _thermalSaleInvoiceText);
     await prefs.setBool('thermal_show_tax_column', _thermalShowTaxColumnInTable);
+    await prefs.setInt('thermal_number_of_copies', _thermalNumberOfCopies);
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc != null && storeDoc.exists) {
+        await storeDoc.reference.set(
+          {'thermalNumberOfCopies': _thermalNumberOfCopies},
+          SetOptions(merge: true),
+        );
+      }
+    } catch (_) {}
 
     // A4 settings
     await prefs.setBool('a4_show_header', _a4ShowHeader);
@@ -2785,6 +2815,75 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
       children: [
         _buildInfoCard('Thermal Receipt', 'Small paper print for POS printers', Icons.print_rounded),
         const SizedBox(height: 16),
+        _buildSectionLabel('Print & Auto Cut Mode'),
+        _SettingsGroup(children: [
+          _buildPrintModeOption(
+            title: 'Full Bill',
+            subtitle: 'Prints standard bill and auto cuts paper',
+            value: 'full_bill',
+            icon: Icons.receipt_long_rounded,
+          ),
+          _buildPrintModeOption(
+            title: 'Full Bill + Tokens (Category Wise)',
+            subtitle: 'Prints full bill, auto cuts, then category tokens with auto cut',
+            value: 'full_bill_tokens',
+            icon: Icons.content_cut_rounded,
+          ),
+          _buildPrintModeOption(
+            title: 'Only Tokens (Category Wise)',
+            subtitle: 'Prints category token slips only with auto cut between each',
+            value: 'only_tokens',
+            icon: Icons.confirmation_number_outlined,
+            showDivider: false,
+          ),
+        ]),
+        const SizedBox(height: 16),
+        _buildSectionLabel('Print Copies'),
+        _SettingsGroup(children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.copy_rounded, color: kPrimaryColor, size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      'Number of Copies',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, fontFamily: 'Lato'),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.remove_circle_outline, color: kPrimaryColor),
+                      onPressed: _thermalNumberOfCopies > 1
+                          ? () {
+                              setState(() => _thermalNumberOfCopies--);
+                              _saveSettings();
+                            }
+                          : null,
+                    ),
+                    Text(
+                      '$_thermalNumberOfCopies',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.add_circle_outline, color: kPrimaryColor),
+                      onPressed: () {
+                        setState(() => _thermalNumberOfCopies++);
+                        _saveSettings();
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ]),
+        const SizedBox(height: 16),
         _buildSectionLabel('Identity & Branding'),
         _SettingsGroup(children: [
           _SwitchTile('Show Header', _thermalShowHeader, (v) { setState(() => _thermalShowHeader = v); _saveSettings(); }),
@@ -2805,6 +2904,75 @@ class _BillPrintSettingsPageState extends State<BillPrintSettingsPage> with Sing
         _buildSectionLabel('Footer'),
         _buildTextFieldSection('Sale Invoice Text', _thermalSaleInvoiceText, (v) { _thermalSaleInvoiceText = v; _saveSettings(); }),
         const SizedBox(height: 24),
+      ],
+    );
+  }
+
+  Widget _buildPrintModeOption({
+    required String title,
+    required String subtitle,
+    required String value,
+    required IconData icon,
+    bool showDivider = true,
+  }) {
+    final isSelected = _thermalBillMode == value;
+    return Column(
+      children: [
+        InkWell(
+          onTap: () {
+            setState(() => _thermalBillMode = value);
+            _saveSettings();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isSelected ? kPrimaryColor.withAlpha(25) : kGreyBg,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: isSelected ? kPrimaryColor : kGrey200),
+                  ),
+                  child: Icon(icon, color: isSelected ? kPrimaryColor : kBlack54, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          color: isSelected ? kPrimaryColor : kBlack87,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: kBlack54,
+                          fontFamily: 'Lato',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                  color: isSelected ? kPrimaryColor : kGrey400,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) const Divider(height: 1, indent: 16, endIndent: 16, color: kGrey100),
       ],
     );
   }
@@ -3552,6 +3720,8 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
     setState(() {
       _enableAutoPrint = prefs.getBool('enable_auto_print') ?? true;
       _printerWidth = prefs.getString('printer_width') ?? '58mm';
+      _thermalNumberOfCopies = prefs.getInt('thermal_number_of_copies') ?? 1;
+      _a4NumberOfCopies = prefs.getInt('a4_number_of_copies') ?? 1;
     });
 
     // Load number of copies from Firestore (backend)
@@ -3560,10 +3730,16 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
       if (storeDoc != null && storeDoc.exists) {
         final data = storeDoc.data() as Map<String, dynamic>?;
         if (data != null && mounted) {
-          setState(() {
-            _thermalNumberOfCopies = data['thermalNumberOfCopies'] ?? 1;
-            _a4NumberOfCopies = data['a4NumberOfCopies'] ?? 1;
-          });
+          final cloudThermal = data['thermalNumberOfCopies'];
+          final cloudA4 = data['a4NumberOfCopies'];
+          if (cloudThermal != null && cloudThermal is int && cloudThermal >= 1) {
+            setState(() => _thermalNumberOfCopies = cloudThermal);
+            await prefs.setInt('thermal_number_of_copies', cloudThermal);
+          }
+          if (cloudA4 != null && cloudA4 is int && cloudA4 >= 1) {
+            setState(() => _a4NumberOfCopies = cloudA4);
+            await prefs.setInt('a4_number_of_copies', cloudA4);
+          }
         }
       }
     } catch (e) {
@@ -3580,14 +3756,27 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
   }
 
   Future<void> _updateThermalCopies(int value) async {
-    setState(() => _thermalNumberOfCopies = value);
+    final safeValue = value < 1 ? 1 : value;
+    setState(() => _thermalNumberOfCopies = safeValue);
     try {
-      final storeId = await FirestoreService().getCurrentStoreId();
-      if (storeId != null) {
-        await FirebaseFirestore.instance.collection('store').doc(storeId).set(
-          {'thermalNumberOfCopies': value},
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('thermal_number_of_copies', safeValue);
+    } catch (_) {}
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc != null && storeDoc.exists) {
+        await storeDoc.reference.set(
+          {'thermalNumberOfCopies': safeValue},
           SetOptions(merge: true),
         );
+      } else {
+        final storeId = await FirestoreService().getCurrentStoreId();
+        if (storeId != null) {
+          await FirebaseFirestore.instance.collection('store').doc(storeId).set(
+            {'thermalNumberOfCopies': safeValue},
+            SetOptions(merge: true),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving thermal copies: $e');
@@ -3595,14 +3784,27 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
   }
 
   Future<void> _updateA4Copies(int value) async {
-    setState(() => _a4NumberOfCopies = value);
+    final safeValue = value < 1 ? 1 : value;
+    setState(() => _a4NumberOfCopies = safeValue);
     try {
-      final storeId = await FirestoreService().getCurrentStoreId();
-      if (storeId != null) {
-        await FirebaseFirestore.instance.collection('store').doc(storeId).set(
-          {'a4NumberOfCopies': value},
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('a4_number_of_copies', safeValue);
+    } catch (_) {}
+    try {
+      final storeDoc = await FirestoreService().getCurrentStoreDoc();
+      if (storeDoc != null && storeDoc.exists) {
+        await storeDoc.reference.set(
+          {'a4NumberOfCopies': safeValue},
           SetOptions(merge: true),
         );
+      } else {
+        final storeId = await FirestoreService().getCurrentStoreId();
+        if (storeId != null) {
+          await FirebaseFirestore.instance.collection('store').doc(storeId).set(
+            {'a4NumberOfCopies': safeValue},
+            SetOptions(merge: true),
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving A4 copies: $e');

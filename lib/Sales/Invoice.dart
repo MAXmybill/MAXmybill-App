@@ -233,14 +233,21 @@ class _InvoicePageState extends State<InvoicePage>
       }
 
       // Print multiple copies if needed
-      int numberOfCopies = 1;
+      int numberOfCopies = prefs.getInt('thermal_number_of_copies') ?? 1;
       try {
         final storeDoc = await FirestoreService().getCurrentStoreDoc();
         if (storeDoc != null && storeDoc.exists) {
           final data = storeDoc.data() as Map<String, dynamic>?;
-          numberOfCopies = data?['thermalNumberOfCopies'] ?? 1;
+          if (data != null && data['thermalNumberOfCopies'] != null) {
+            final cloudCopies = data['thermalNumberOfCopies'];
+            if (cloudCopies is int && cloudCopies >= 1) {
+              numberOfCopies = cloudCopies;
+              await prefs.setInt('thermal_number_of_copies', cloudCopies);
+            }
+          }
         }
       } catch (_) {}
+      if (numberOfCopies < 1) numberOfCopies = 1;
 
       for (int i = 0; i < numberOfCopies; i++) {
         bool printed = await PrintBluetoothThermal.writeBytes(escPosBytes);
@@ -334,6 +341,8 @@ class _InvoicePageState extends State<InvoicePage>
   bool _thermalShowTaxColumn =
       false; // Tax column hidden by default for thermal
   bool _thermalUseImagePrinting = false; // Use raster printing for custom fonts
+  String _thermalBillMode = 'full_bill'; // 'full_bill', 'full_bill_tokens', 'only_tokens'
+  Map<String, String> _resolvedCategories = {};
 
   // ==========================================
   // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -384,6 +393,7 @@ class _InvoicePageState extends State<InvoicePage>
     _loadStoreData();
     _checkTourState();
     _loadReceiptSettings();
+    _resolveMissingCategories();
     _loadTemplatePreference();
     _loadPdfFonts();
     _loadPlanStatus();
@@ -896,6 +906,8 @@ class _InvoicePageState extends State<InvoicePage>
             'Thank you for your purchase!';
         _thermalShowTaxColumn =
             prefs.getBool('thermal_show_tax_column') ?? false;
+        _thermalBillMode =
+            prefs.getString('thermal_bill_mode') ?? 'full_bill';
 
         // ==========================================
         // A4 / PDF PRINTER SPECIFIC SETTINGS
@@ -2714,9 +2726,356 @@ class _InvoicePageState extends State<InvoicePage>
   }
 
   // ==========================================
+  // CATEGORY TOKEN HELPERS
+  // ==========================================
+  Future<void> _resolveMissingCategories() async {
+    try {
+      final missingNames = <String>[];
+      for (final item in widget.items) {
+        final cat = item['category']?.toString().trim();
+        final name = (item['name'] ?? item['title'])?.toString().trim();
+        if ((cat == null || cat.isEmpty || cat.toLowerCase() == 'general') &&
+            name != null &&
+            name.isNotEmpty) {
+          missingNames.add(name);
+        }
+      }
+      if (missingNames.isEmpty) return;
+
+      final productsColl =
+          await FirestoreService().getStoreCollection('Products');
+      final querySnapshot = await productsColl
+          .where('title', whereIn: missingNames.take(10).toList())
+          .get();
+      final resolved = Map<String, String>.from(_resolvedCategories);
+      for (final doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>?;
+        final title = data?['title']?.toString();
+        final category = data?['category']?.toString();
+        if (title != null && category != null && category.isNotEmpty) {
+          resolved[title] = category;
+        }
+      }
+      if (mounted && resolved.isNotEmpty) {
+        setState(() {
+          _resolvedCategories = resolved;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error resolving item categories: $e');
+    }
+  }
+
+  String _getItemCategory(Map<String, dynamic> item) {
+    final explicitCat = item['category']?.toString().trim();
+    if (explicitCat != null &&
+        explicitCat.isNotEmpty &&
+        explicitCat.toLowerCase() != 'general') {
+      return explicitCat;
+    }
+    final name = (item['name'] ?? item['title'])?.toString().trim() ?? '';
+    if (_resolvedCategories.containsKey(name)) {
+      return _resolvedCategories[name]!;
+    }
+    if (explicitCat != null && explicitCat.isNotEmpty) {
+      return explicitCat;
+    }
+    return 'General';
+  }
+
+  Map<String, List<Map<String, dynamic>>> _getCategoryGroupedItems() {
+    final Map<String, List<Map<String, dynamic>>> grouped = {};
+    for (final item in widget.items) {
+      final cat = _getItemCategory(item);
+      if (!grouped.containsKey(cat)) {
+        grouped[cat] = [];
+      }
+      grouped[cat]!.add(item);
+    }
+    return grouped;
+  }
+
+  Widget _buildCutIndicator() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final boxWidth = constraints.constrainWidth();
+                const dashWidth = 4.0;
+                const dashSpace = 4.0;
+                final dashCount = (boxWidth / (dashWidth + dashSpace)).floor();
+                return Flex(
+                  direction: Axis.horizontal,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(dashCount, (_) {
+                    return const SizedBox(
+                      width: dashWidth,
+                      height: 1.5,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: Color(0xFF9E9E9E)),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEEEEEE),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFBDBDBD)),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.content_cut, size: 14, color: Color(0xFF616161)),
+                SizedBox(width: 5),
+                Text(
+                  'AUTO CUT',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.0,
+                    color: Color(0xFF616161),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final boxWidth = constraints.constrainWidth();
+                const dashWidth = 4.0;
+                const dashSpace = 4.0;
+                final dashCount = (boxWidth / (dashWidth + dashSpace)).floor();
+                return Flex(
+                  direction: Axis.horizontal,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: List.generate(dashCount, (_) {
+                    return const SizedBox(
+                      width: dashWidth,
+                      height: 1.5,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(color: Color(0xFF9E9E9E)),
+                      ),
+                    );
+                  }),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryTokenPreview(
+    String category,
+    List<Map<String, dynamic>> items,
+  ) {
+    final dateStr = DateFormat('dd - MMM - yyyy').format(widget.dateTime);
+    final timeStr = DateFormat('hh:mm a').format(widget.dateTime);
+    num totalQty = 0;
+    for (final item in items) {
+      final qty = item['quantity'] ?? 1;
+      totalQty += qty is num ? qty : (num.tryParse(qty.toString()) ?? 1);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            businessName.isNotEmpty ? businessName.toUpperCase() : 'STORE',
+            style: const TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'ORDER TOKEN',
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.8,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F4FF),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFF3B82F6), width: 1.2),
+            ),
+            child: Text(
+              category.toUpperCase(),
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 0.5,
+                color: Color(0xFF1D4ED8),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Bill #${widget.invoiceNumber}',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              Text(
+                '$dateStr  $timeStr',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 10,
+                  color: Colors.black54,
+                ),
+              ),
+            ],
+          ),
+          if (widget.customerName != null &&
+              widget.customerName!.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Customer: ${widget.customerName}',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 11,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Divider(thickness: 1, color: Colors.black26),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'ITEM',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                Text(
+                  'QTY',
+                  style: TextStyle(
+                    fontFamily: 'Roboto',
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(thickness: 0.8, color: Colors.black12),
+          ...items.map((item) {
+            final name = (item['name'] ?? item['title'] ?? 'Item').toString();
+            final qty = item['quantity'] ?? 1;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'x$qty',
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+          const Divider(thickness: 1, color: Colors.black26),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'TOTAL ITEMS',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
+              Text(
+                '$totalQty',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
   // THERMAL RECEIPT PREVIEW
   // ==========================================
   Widget _buildThermalPreview() {
+    final grouped = _getCategoryGroupedItems();
+
     return Center(
       child: Container(
         width: double.infinity,
@@ -2738,7 +3097,28 @@ class _InvoicePageState extends State<InvoicePage>
             ),
           ],
         ),
-        child: _buildThermalReceiptContent(false),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_thermalBillMode == 'full_bill' ||
+                _thermalBillMode == 'full_bill_tokens') ...[
+              _buildThermalReceiptContent(false),
+            ],
+            if (_thermalBillMode == 'full_bill_tokens') ...[
+              _buildCutIndicator(),
+            ],
+            if (_thermalBillMode == 'full_bill_tokens' ||
+                _thermalBillMode == 'only_tokens') ...[
+              for (int i = 0; i < grouped.entries.length; i++) ...[
+                if (i > 0) _buildCutIndicator(),
+                _buildCategoryTokenPreview(
+                  grouped.entries.elementAt(i).key,
+                  grouped.entries.elementAt(i).value,
+                ),
+              ],
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -2774,9 +3154,15 @@ class _InvoicePageState extends State<InvoicePage>
     );
 
     return Container(
-      color: Colors.white,
-      width: forPrint ? (is80mm ? 576 : 384) : (is80mm ? 380.0 : 280.0),
-      padding: forPrint ? EdgeInsets.all(12 * scale) : EdgeInsets.zero,
+      width: forPrint ? (is80mm ? 576 : 384) : double.infinity,
+      padding: forPrint ? EdgeInsets.all(12 * scale) : const EdgeInsets.all(16),
+      decoration: forPrint
+          ? const BoxDecoration(color: Colors.white)
+          : BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: const Color(0xFFE0E0E0)),
+            ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -3025,8 +3411,6 @@ class _InvoicePageState extends State<InvoicePage>
                   ? '${taxPct % 1 == 0 ? taxPct.toInt() : taxPct.toStringAsFixed(1)}%'
                   : '0%';
 
-              final isLengthy = name.toString().length > 11;
-
               return Container(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: const BoxDecoration(
@@ -3034,94 +3418,51 @@ class _InvoicePageState extends State<InvoicePage>
                     bottom: BorderSide(color: kGrey300, width: 0.5),
                   ),
                 ),
-                child: isLengthy
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(name, style: tStyle(size: 9)),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Expanded(flex: 5, child: SizedBox()),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  _formatQty(qty),
-                                  style: tStyle(size: 8),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                              Expanded(
-                                flex: 4,
-                                child: Text(
-                                  _formatDecimal(price),
-                                  style: tStyle(size: 8),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                              if (_thermalShowTaxColumn)
-                                Expanded(
-                                  flex: 3,
-                                  child: Text(
-                                    taxStr,
-                                    style: tStyle(size: 8),
-                                    textAlign: TextAlign.right,
-                                  ),
-                                ),
-                              Expanded(
-                                flex: 4,
-                                child: Text(
-                                  _formatDecimal(amount),
-                                  style: tStyle(size: 8),
-                                  textAlign: TextAlign.right,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      )
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 5,
-                            child: Text(name, style: tStyle(size: 9)),
-                          ),
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              _formatQty(qty),
-                              style: tStyle(size: 8),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                          Expanded(
-                            flex: 4,
-                            child: Text(
-                              _formatDecimal(price),
-                              style: tStyle(size: 8),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                          if (_thermalShowTaxColumn)
-                            Expanded(
-                              flex: 3,
-                              child: Text(
-                                taxStr,
-                                style: tStyle(size: 8),
-                                textAlign: TextAlign.right,
-                              ),
-                            ),
-                          Expanded(
-                            flex: 4,
-                            child: Text(
-                              _formatDecimal(amount),
-                              style: tStyle(size: 8),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        ],
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 5,
+                      child: Text(
+                        name,
+                        style: tStyle(size: 9),
                       ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        _formatQty(qty),
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        _formatDecimal(price),
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    if (_thermalShowTaxColumn)
+                      Expanded(
+                        flex: 3,
+                        child: Text(
+                          taxStr,
+                          style: tStyle(size: 8),
+                          textAlign: TextAlign.right,
+                        ),
+                      ),
+                    Expanded(
+                      flex: 4,
+                      child: Text(
+                        _formatDecimal(amount),
+                        style: tStyle(size: 8),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                  ],
+                ),
               );
             }),
           ],
@@ -3137,7 +3478,7 @@ class _InvoicePageState extends State<InvoicePage>
               children: [
                 Text('TOTAL', style: tStyle(size: 10, weight: FontWeight.w600)),
                 Text(
-                  '${_formatDecimal(_subtotalWithTax)}',
+                  _formatDecimal(_subtotalWithTax),
                   style: tStyle(size: 10, weight: FontWeight.w600),
                   textAlign: TextAlign.right,
                 ),
@@ -3170,7 +3511,7 @@ class _InvoicePageState extends State<InvoicePage>
                       textAlign: TextAlign.center,
                     ),
                     Text(
-                      '${_formatDecimal(_subtotalWithTax - _totalTaxAmount)}',
+                      _formatDecimal(_subtotalWithTax - _totalTaxAmount),
                       style: tStyle(size: 10, weight: FontWeight.w600),
                       textAlign: TextAlign.right,
                     ),
@@ -3189,7 +3530,7 @@ class _InvoicePageState extends State<InvoicePage>
                         textAlign: TextAlign.center,
                       ),
                       Text(
-                        '${_formatDecimal(_totalTaxAmount)}',
+                        _formatDecimal(_totalTaxAmount),
                         style: tStyle(size: 10, weight: FontWeight.w600),
                         textAlign: TextAlign.right,
                       ),
@@ -3655,13 +3996,19 @@ class _InvoicePageState extends State<InvoicePage>
       final prefs = await SharedPreferences.getInstance();
       final selectedPrinterId = prefs.getString('selected_printer_id');
 
-      // Get number of copies from Firestore (backend)
-      int numberOfCopies = 1;
+      // Get number of copies from local prefs first, then backend
+      int numberOfCopies = prefs.getInt('thermal_number_of_copies') ?? 1;
       try {
         final storeDoc = await FirestoreService().getCurrentStoreDoc();
         if (storeDoc != null && storeDoc.exists) {
           final data = storeDoc.data() as Map<String, dynamic>?;
-          numberOfCopies = data?['thermalNumberOfCopies'] ?? 1;
+          if (data != null && data['thermalNumberOfCopies'] != null) {
+            final cloudCopies = data['thermalNumberOfCopies'];
+            if (cloudCopies is int && cloudCopies >= 1) {
+              numberOfCopies = cloudCopies;
+              await prefs.setInt('thermal_number_of_copies', cloudCopies);
+            }
+          }
 
           // Freshly parse license for print (don't rely on stale state)
           final rawLicense = data?['licenseNumber']?.toString().trim() ?? '';
@@ -3679,6 +4026,7 @@ class _InvoicePageState extends State<InvoicePage>
       } catch (e) {
         debugPrint('Error loading thermal copies from Firestore: $e');
       }
+      if (numberOfCopies < 1) numberOfCopies = 1;
 
       final printerWidth = ThermalPrinterConfig.resolveWidthFromPrefs(prefs);
       // 80mm → Font A, 48 chars/line
@@ -4285,26 +4633,71 @@ class _InvoicePageState extends State<InvoicePage>
         bytes.addAll(enc(wmLine2.padLeft((lineWidth + wmLine2.length) ~/ 2)));
         bytes.add(lf);
       }
+      // Auto-cut main bill with clean spacing
       bytes.add(lf);
       bytes.add(lf);
-      bytes.add(lf);
-      bytes.addAll([gs, 0x56, 0x00]); // Cut
+      bytes.addAll([0x1D, 0x56, 0x00]); // GS V 0 (Direct full cut)
+      bytes.addAll([0x1B, 0x6D]);       // ESC m (Universal fallback cut)
 
-      for (int copy = 0; copy < numberOfCopies; copy++) {
-        bool printed = await PrintBluetoothThermal.writeBytes(bytes);
-        if (!printed) {
-          throw Exception("Printer rejected the data.");
-        }
-        if (copy < numberOfCopies - 1) {
-          await Future.delayed(const Duration(milliseconds: 1500));
+      final printMode = prefs.getString('thermal_bill_mode') ?? 'full_bill';
+      final groupedItems = _getCategoryGroupedItems();
+
+      // 1. Print full bill if mode includes it
+      if (printMode == 'full_bill' || printMode == 'full_bill_tokens') {
+        for (int copy = 0; copy < numberOfCopies; copy++) {
+          bool printed = await PrintBluetoothThermal.writeBytes(bytes);
+          if (!printed) {
+            throw Exception("Printer rejected the data.");
+          }
+          if (copy < numberOfCopies - 1) {
+            await Future.delayed(const Duration(milliseconds: 1500));
+          }
         }
       }
+
+      // 2. Print separate category tokens if mode includes tokens
+      if (printMode == 'full_bill_tokens' || printMode == 'only_tokens') {
+        for (int copy = 0; copy < numberOfCopies; copy++) {
+          // Pause between full bill cut or previous copy and first token cut
+          if (printMode == 'full_bill_tokens' || copy > 0) {
+            await Future.delayed(const Duration(milliseconds: 800));
+          }
+
+          for (final entry in groupedItems.entries) {
+            final tokenBytes = _buildCategoryTokenBytes(
+              category: entry.key,
+              items: entry.value,
+              printerWidth: printerWidth,
+              lineWidth: lineWidth,
+            );
+            bool printedToken = await PrintBluetoothThermal.writeBytes(tokenBytes);
+            if (!printedToken) {
+              debugPrint("Warning: printer rejected token for ${entry.key}");
+            }
+            // Hardware delay between cuts to allow cutter mechanism to cycle
+            await Future.delayed(const Duration(milliseconds: 800));
+          }
+        }
+      }
+
       Navigator.pop(context);
+      final String successMsg;
+      if (printMode == 'only_tokens') {
+        successMsg = numberOfCopies > 1
+            ? '${groupedItems.length} category tokens ($numberOfCopies copies) printed successfully'
+            : '${groupedItems.length} category tokens printed successfully';
+      } else if (printMode == 'full_bill_tokens') {
+        successMsg = numberOfCopies > 1
+            ? 'Receipt and ${groupedItems.length} category tokens ($numberOfCopies copies) printed successfully'
+            : 'Receipt and ${groupedItems.length} category tokens printed successfully';
+      } else {
+        successMsg = numberOfCopies > 1
+            ? '$numberOfCopies copies printed successfully'
+            : 'Receipt printed successfully';
+      }
       CommonWidgets.showSnackBar(
         context,
-        numberOfCopies > 1
-            ? '$numberOfCopies copies printed successfully'
-            : 'Receipt printed successfully',
+        successMsg,
         bgColor: kGoogleGreen,
       );
     } catch (e) {
@@ -4315,6 +4708,117 @@ class _InvoicePageState extends State<InvoicePage>
         bgColor: kErrorColor,
       );
     }
+  }
+
+  List<int> _buildCategoryTokenBytes({
+    required String category,
+    required List<Map<String, dynamic>> items,
+    required String printerWidth,
+    required int lineWidth,
+  }) {
+    List<int> bytes = [];
+    const esc = 0x1B;
+    const gs = 0x1D;
+    const lf = 0x0A;
+    const normalMode = 0x02;
+    const boldMode = 0x0A;
+
+    List<int> enc(String s) => utf8.encode(_toThermalSafe(s));
+    final String dividerLine = '=' * lineWidth;
+    final String thinDivider = '-' * lineWidth;
+
+    // 1. Initialize
+    bytes.addAll([esc, 0x40]);
+    bytes.addAll([esc, 0x4D, 0x00]);
+    bytes.addAll([gs, 0x21, 0x00]);
+
+    // 2. Centered Header
+    bytes.addAll([esc, 0x61, 0x01]);
+    bytes.addAll([esc, 0x21, boldMode]);
+    if (businessName.isNotEmpty) {
+      bytes.addAll(enc(businessName.toUpperCase()));
+      bytes.add(lf);
+    }
+    bytes.addAll(enc('*** ORDER TOKEN ***'));
+    bytes.add(lf);
+
+    // 3. Category Name (Double width & height for kitchen/counter clarity)
+    bytes.addAll([gs, 0x21, 0x11]);
+    bytes.addAll(enc('[$category]'));
+    bytes.add(lf);
+    bytes.addAll([gs, 0x21, 0x00]);
+
+    // 4. Meta info
+    bytes.addAll([esc, 0x61, 0x00]);
+    bytes.addAll([esc, 0x21, normalMode]);
+    bytes.addAll(enc('Bill No: ${widget.invoiceNumber}'));
+    bytes.add(lf);
+    final dateStr = DateFormat('dd-MMM-yyyy hh:mm a').format(widget.dateTime);
+    bytes.addAll(enc('Date   : $dateStr'));
+    bytes.add(lf);
+    if (widget.customerName != null && widget.customerName!.isNotEmpty) {
+      bytes.addAll(enc('Customer: ${widget.customerName}'));
+      bytes.add(lf);
+    }
+    if (widget.customNote != null && widget.customNote!.isNotEmpty) {
+      bytes.addAll(enc('Note   : ${widget.customNote}'));
+      bytes.add(lf);
+    }
+
+    // 5. Table Header
+    bytes.addAll(enc(dividerLine));
+    bytes.add(lf);
+    bytes.addAll([esc, 0x21, boldMode]);
+    final itemHeader = 'ITEM'.padRight(lineWidth - 6) + 'QTY'.padLeft(6);
+    bytes.addAll(enc(itemHeader));
+    bytes.add(lf);
+    bytes.addAll(enc(thinDivider));
+    bytes.add(lf);
+
+    // 6. Items
+    num catTotalQty = 0;
+    for (final item in items) {
+      final name = (item['name'] ?? item['title'] ?? 'Item').toString();
+      final qty = item['quantity'] ?? 1;
+      final numQty = qty is num ? qty : (num.tryParse(qty.toString()) ?? 1);
+      catTotalQty += numQty;
+
+      bytes.addAll([esc, 0x21, boldMode]);
+      final qtyStr = 'x$numQty'.padLeft(6);
+      final maxNameLen = lineWidth - 7;
+      if (name.length <= maxNameLen) {
+        bytes.addAll(enc(name.padRight(maxNameLen) + ' ' + qtyStr));
+        bytes.add(lf);
+      } else {
+        final wrapped = _wrapText(name, maxNameLen);
+        for (int i = 0; i < wrapped.length; i++) {
+          if (i == 0) {
+            bytes.addAll(enc(wrapped[i].padRight(maxNameLen) + ' ' + qtyStr));
+          } else {
+            bytes.addAll(enc(wrapped[i]));
+          }
+          bytes.add(lf);
+        }
+      }
+    }
+
+    // 7. Footer
+    bytes.addAll([esc, 0x21, normalMode]);
+    bytes.addAll(enc(dividerLine));
+    bytes.add(lf);
+    bytes.addAll([esc, 0x21, boldMode]);
+    final totalStr = 'TOTAL ITEMS: $catTotalQty';
+    bytes.addAll(enc(totalStr.padLeft((lineWidth + totalStr.length) ~/ 2)));
+    bytes.add(lf);
+    bytes.addAll([esc, 0x21, normalMode]);
+
+    // 8. Auto-Cut with clean spacing
+    bytes.add(lf);
+    bytes.add(lf);
+    bytes.addAll([0x1D, 0x56, 0x00]); // GS V 0 (Direct full cut)
+    bytes.addAll([0x1B, 0x6D]);       // ESC m (Universal fallback)
+
+    return bytes;
   }
 
   String _truncateText(String text, int maxWidth) {

@@ -95,7 +95,12 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
                 ),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
+
+            // Quick Select
+            _buildQuickSelect(),
+
+            const SizedBox(height: 18),
 
             // Input Field
             _buildExpenseTypeInput(),
@@ -131,6 +136,63 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
           ],
         ),
       ),
+    );
+  }
+
+  // --- Quick Select Chips ---
+  Widget _buildQuickSelect() {
+    final suggestions = ['Fixed Expense', 'Variable Expense', 'Salary'];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Quick Select",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w800,
+            color: kBlack54,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _typeController,
+          builder: (context, value, _) {
+            return Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: suggestions.map((s) {
+                final bool isSel = value.text.trim() == s;
+                return GestureDetector(
+                  onTap: () {
+                    _typeController.text = s;
+                    _typeController.selection = TextSelection.fromPosition(
+                      TextPosition(offset: s.length),
+                    );
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: isSel ? kPrimaryColor : kGreyBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: isSel ? kPrimaryColor : kGrey200),
+                    ),
+                    child: Text(
+                      s,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: isSel ? kWhite : kBlack54,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -186,7 +248,7 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
     ),
         const SizedBox(height: 6),
         Text(
-          "e.g. Salary, Rent, Electricity, Travel, etc.",
+          "e.g. Fixed Expense, Variable Expense, Salary",
           style: TextStyle(fontSize: 13, color: Colors.grey[500]),
         ),
       ],

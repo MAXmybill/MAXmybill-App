@@ -122,6 +122,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
             price: (item['price'] ?? 0.0).toDouble(),
             cost: (item['cost'] ?? 0.0).toDouble(),
             quantity: (item['quantity'] ?? 1).toDouble(),
+            category: item['category'] as String?,
             taxes: itemTaxes,
             taxName: item['taxName'] as String?,
             taxPercentage: item['taxPercentage'] != null ? (item['taxPercentage'] as num).toDouble() : null,
@@ -291,6 +292,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
             price: (item['price'] ?? 0.0).toDouble(),
             cost: (item['cost'] ?? 0.0).toDouble(),
             quantity: (item['quantity'] ?? 1).toDouble(),
+            category: item['category'] as String?,
           ));
         }
       }
@@ -358,7 +360,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
   }
 
   void _showWeightInputDialog(String id, String name, double price, double cost, bool stockEnabled, double stock,
-      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes}) {
+      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes, String? category}) {
     final gramController = TextEditingController();
     final kgController = TextEditingController();
 
@@ -563,7 +565,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
               Navigator.pop(ctx);
               _addToCart(id, name, price, cost, stockEnabled, stock, finalQuantity,
-                  taxName: taxName, taxPercentage: taxPercentage, taxType: taxType, taxes: taxes);
+                  taxName: taxName, taxPercentage: taxPercentage, taxType: taxType, taxes: taxes, category: category);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: kPrimaryColor,
@@ -585,7 +587,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
   }
 
   bool _addToCart(String id, String name, double price, double cost, bool stockEnabled, double stock, double quantity,
-      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes}) {
+      {String? taxName, double? taxPercentage, String? taxType, List<Map<String, dynamic>>? taxes, String? category}) {
     final idx = _cart.indexWhere((item) => item.productId == id);
 
     if (idx != -1) {
@@ -609,6 +611,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
         price: price,
         cost: cost,
         quantity: quantity,
+        category: category,
         taxes: taxes,
         taxName: taxName,
         taxPercentage: taxPercentage,
@@ -707,6 +710,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
       final double? taxPercentage =
           data['taxPercentage'] != null ? (data['taxPercentage'] as num).toDouble() : null;
       final String? taxType = data['taxType'] as String?;
+      final String? category = data['category'] as String?;
 
       // Weight-based items: show dialog first
       if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
@@ -716,6 +720,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
           taxPercentage: taxPercentage,
           taxType: taxType,
           taxes: taxes,
+          category: category,
         );
         _lastScannedBarcodeInSales = cleanBarcode;
         _lastBarcodeScanTimeInSales = now;
@@ -749,6 +754,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
         taxPercentage: taxPercentage,
         taxType: taxType,
         taxes: taxes,
+        category: category,
       );
 
       if (!added) {
@@ -1207,6 +1213,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
               final double? taxPercentage =
                   data['taxPercentage'] != null ? (data['taxPercentage'] as num).toDouble() : null;
               final String? taxType = data['taxType'] as String?;
+              final String? category = data['category'] as String?;
 
               // Only show weight dialog for kg unit items
               if (unit.toLowerCase() == 'kg' || unit.toLowerCase() == 'kilogram') {
@@ -1221,6 +1228,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   taxPercentage: taxPercentage,
                   taxType: taxType,
                   taxes: taxes,
+                  category: category,
                 );
               } else {
                 // For non-kg items, add directly with quantity 1
@@ -1236,6 +1244,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   taxPercentage: taxPercentage,
                   taxType: taxType,
                   taxes: taxes,
+                  category: category,
                 );
               }
             }

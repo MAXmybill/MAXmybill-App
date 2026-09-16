@@ -870,14 +870,20 @@ class _PaymentReceiptPageState extends State<PaymentReceiptPage>
       final printerWidth = ThermalPrinterConfig.resolveWidthFromPrefs(prefs);
       final int lineWidth = ThermalPrinterConfig.charsPerLine(printerWidth);
 
-      int numberOfCopies = 1;
+      int numberOfCopies = prefs.getInt('thermal_number_of_copies') ?? 1;
       try {
         final storeDoc = await FirestoreService().getCurrentStoreDoc();
         if (storeDoc != null && storeDoc.exists) {
           final data = storeDoc.data() as Map<String, dynamic>?;
-          numberOfCopies = data?['thermalNumberOfCopies'] ?? 1;
+          if (data != null && data['thermalNumberOfCopies'] != null) {
+            final cloudCopies = data['thermalNumberOfCopies'];
+            if (cloudCopies is int && cloudCopies >= 1) {
+              numberOfCopies = cloudCopies;
+            }
+          }
         }
       } catch (_) {}
+      if (numberOfCopies < 1) numberOfCopies = 1;
 
       if (selectedPrinterId == null) {
         if (context.mounted) Navigator.pop(context);

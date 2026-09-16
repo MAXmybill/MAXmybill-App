@@ -2496,7 +2496,7 @@ class _PaymentPageState extends State<PaymentPage> {
       Navigator.popUntil(context, (route) => route.isFirst);
       Navigator.push(context, CupertinoPageRoute(builder: (_) => InvoicePage(
           uid: widget.uid, userEmail: widget.userEmail, businessName: widget.businessName, businessLocation: widget.businessLocation, businessPhone: widget.businessPhone, invoiceNumber: invoiceNumber, dateTime: DateTime.now(),
-          items: widget.cartItems.map((e)=>{'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount, 'taxes': e.taxes, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
+          items: widget.cartItems.map((e)=>{'productId': e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'category': e.category ?? 'General', 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount, 'taxes': e.taxes, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
           subtotal: widget.totalAmount + widget.discountAmount + widget.actualCreditUsed - totalTax, discount: widget.discountAmount, taxes: taxList, total: widget.totalAmount, paymentMode: widget.paymentMode, cashReceived: _cashReceived,
           cashReceived_partial: widget.paymentMode == 'Credit' && _cashReceived > 0 && _cashReceived < widget.totalAmount ? _cashReceived : null,
           creditIssued_partial: widget.paymentMode == 'Credit' && _cashReceived > 0 && _cashReceived < widget.totalAmount ? widget.totalAmount - _cashReceived : null,
@@ -2513,7 +2513,7 @@ class _PaymentPageState extends State<PaymentPage> {
     try {
       final nowIso = DateTime.now().toIso8601String();
       final baseSaleData = {
-        'invoiceNumber': invoiceNumber, 'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'cost': e.cost, 'total':e.total, 'taxes': e.taxes, 'taxPercentage': e.taxPercentage ?? 0, 'taxAmount': e.taxAmount, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
+        'invoiceNumber': invoiceNumber, 'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'cost': e.cost, 'category': e.category ?? 'General', 'total':e.total, 'taxes': e.taxes, 'taxPercentage': e.taxPercentage ?? 0, 'taxAmount': e.taxAmount, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
         'subtotal': widget.totalAmount + widget.discountAmount + widget.actualCreditUsed, 'discount': widget.discountAmount, 'creditUsed': widget.actualCreditUsed, 'total': widget.totalAmount, 'taxes': taxList, 'totalTax': totalTax,
         'paymentMode': widget.paymentMode, 'cashReceived': _cashReceived, 'change': _change > 0 ? _change : 0.0,
         if (widget.paymentMode == 'Credit') ...{
@@ -3308,7 +3308,7 @@ class _SplitPaymentPageState extends State<SplitPaymentPage> {
           final nowIso = DateTime.now().toIso8601String();
           final baseSaleData = {
             'invoiceNumber': invoiceNumber,
-            'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.total, 'taxes': e.taxes, 'taxPercentage': e.taxPercentage ?? 0, 'taxAmount': e.taxAmount, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
+            'items': widget.cartItems.map((e)=> {'productId':e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'category': e.category ?? 'General', 'total':e.total, 'taxes': e.taxes, 'taxPercentage': e.taxPercentage ?? 0, 'taxAmount': e.taxAmount, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
             'subtotal': widget.totalAmount + widget.discountAmount + widget.actualCreditUsed,
             'discount': widget.discountAmount,
             'creditUsed': widget.actualCreditUsed,
@@ -3358,7 +3358,7 @@ class _SplitPaymentPageState extends State<SplitPaymentPage> {
               Navigator.popUntil(context, (route) => route.isFirst);
               Navigator.push(context, CupertinoPageRoute(builder: (_) => InvoicePage(
                   uid: widget.uid, userEmail: widget.userEmail, businessName: widget.businessName, businessLocation: widget.businessLocation, businessPhone: widget.businessPhone, invoiceNumber: invoiceNumber, dateTime: DateTime.now(),
-                  items: widget.cartItems.map((e)=> {'name':e.name, 'quantity':e.quantity, 'price':e.price, 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount, 'taxes': e.taxes, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
+                  items: widget.cartItems.map((e)=> {'productId': e.productId, 'name':e.name, 'quantity':e.quantity, 'price':e.price, 'category': e.category ?? 'General', 'total':e.totalWithTax, 'taxPercentage':e.taxPercentage ?? 0, 'taxAmount':e.taxAmount, 'taxes': e.taxes, 'taxName': e.taxName, 'taxType': e.taxType}).toList(),
                   subtotal: widget.totalAmount + widget.discountAmount + widget.actualCreditUsed - totalTax, discount: widget.discountAmount, taxes: taxList, total: widget.totalAmount, paymentMode: 'Split', cashReceived: _totalPaid - _creditAmount,
                   cashReceived_split: _cashAmount, onlineReceived_split: _onlineAmount, creditIssued_split: _creditAmount,
                   customerName: widget.customerName, customerPhone: widget.customerPhone, customNote: widget.customNote, deliveryAddress: widget.deliveryAddress, deliveryCharge: widget.deliveryCharge)));

@@ -5,6 +5,7 @@ class CartItem {
   double quantity; // Changed from int to double to support weights
 
   final double cost;
+  final String? category;
 
   // Multiple taxes support: [{name: 'CGST', percentage: 9.0}, {name: 'SGST', percentage: 9.0}]
   final List<Map<String, dynamic>> taxes;
@@ -29,6 +30,7 @@ class CartItem {
     required this.price,
     this.cost = 0.0,
     this.quantity = 1.0,
+    this.category,
     List<Map<String, dynamic>>? taxes,
     // Legacy params — auto-migrate to taxes list
     String? taxName,

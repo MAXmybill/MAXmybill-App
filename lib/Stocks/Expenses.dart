@@ -384,7 +384,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
   String _selectedExpenseType = 'Select Expense Type';
   String _paymentMode = 'Cash';
   bool _isLoading = false;
-  List<String> _expenseTypes = [];
+  List<String> _expenseTypes = ['Fixed Expense', 'Variable Expense', 'Salary'];
   List<String> _expenseNameSuggestions = [];
   String _currencySymbol = '';
 
@@ -418,7 +418,9 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
       final snapshot = await stream.first;
       if (mounted) {
         setState(() {
-          _expenseTypes = snapshot.docs.map((doc) => (doc.data() as Map<String, dynamic>)['name'].toString()).toList();
+          final loaded = snapshot.docs.map((doc) => (doc.data() as Map<String, dynamic>)['name'].toString()).toList();
+          final all = <String>{'Fixed Expense', 'Variable Expense', 'Salary', ...loaded};
+          _expenseTypes = all.toList();
         });
       }
     } catch (e) { debugPrint(e.toString()); }
@@ -647,6 +649,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
                 children: [
                   _buildSectionLabel("Basic Details"),
                   _buildExpenseTypeDropdown(),
+                  _buildQuickSelectExpenseTypes(),
                   const SizedBox(height: 16),
                   _buildAutocompleteExpenseName(),
                   const SizedBox(height: 16),
@@ -915,7 +918,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: kBlack87),
           items: [
             const DropdownMenuItem(value: 'Select Expense Type', child: Text('Select Expense Type', style: TextStyle(color: kBlack54))),
-            const DropdownMenuItem(value: 'Add Expense Type', child: Row(children: [HeroIcon(HeroIcons.plusCircle, size: 18, color: kPrimaryColor), SizedBox(width: 8), Text('New Category', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800))])),
+            const DropdownMenuItem(value: 'Add Expense Type', child: Row(children: [HeroIcon(HeroIcons.plusCircle, size: 18, color: kPrimaryColor), SizedBox(width: 8), Text('Add Expense Type', style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w800))])),
             ..._expenseTypes.map((e) => DropdownMenuItem(value: e, child: Text(e))),
           ],
           onChanged: (v) async {
@@ -925,6 +928,47 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
             } else if (v != 'Select Expense Type') setState(() => _selectedExpenseType = v!);
           },
         ),
+      ),
+    );
+  }
+
+  Widget _buildQuickSelectExpenseTypes() {
+    final quickTypes = ['Fixed Expense', 'Variable Expense', 'Salary'];
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: quickTypes.map((type) {
+          final isSel = _selectedExpenseType == type;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedExpenseType = type;
+                if (!_expenseTypes.contains(type)) {
+                  _expenseTypes.add(type);
+                }
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSel ? kPrimaryColor : kGreyBg,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: isSel ? kPrimaryColor : kGrey200),
+              ),
+              child: Text(
+                type,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: isSel ? kWhite : kBlack54,
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

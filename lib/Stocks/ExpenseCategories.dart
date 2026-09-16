@@ -413,7 +413,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
 
   void _showAddCategoryDialog(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
-    final List<String> suggestions = ['Salary', 'Rent', 'Fuel', 'Food', 'Electricity', 'Bill', 'Insurance', 'Miscellaneous'];
+    final List<String> suggestions = ['Fixed Expense', 'Variable Expense', 'Salary'];
 
     showDialog(
       context: context,

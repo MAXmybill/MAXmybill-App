@@ -52,7 +52,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
   String _selectedCategory = 'General';
   String _paymentMode = 'Cash'; // Payment mode: Cash, Online, Credit
   bool _isLoading = false;
-  List<String> _categories = ['General', 'Salary', 'EB Bill', 'Stock Purchase', 'Other'];
+  List<String> _categories = ['General', 'Fixed Expense', 'Variable Expense', 'Salary', 'EB Bill', 'Stock Purchase', 'Other'];
   String? _selectedVendor;
   List<Map<String, dynamic>> _vendors = [];
   String _currencySymbol = '';
@@ -83,7 +83,7 @@ class _CreateExpensePageState extends State<CreateExpensePage> {
               .toList();
 
           if (loadedCategories.isNotEmpty) {
-            _categories = ['General', 'Salary', 'EB Bill', 'Stock Purchase', 'Other', ...loadedCategories];
+            _categories = ['General', 'Fixed Expense', 'Variable Expense', 'Salary', 'EB Bill', 'Stock Purchase', 'Other', ...loadedCategories];
           }
         });
       }
