@@ -118,7 +118,7 @@ class _SignupTourPageState extends State<SignupTourPage> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Text(
-                  "⭐ 15-Day Free MAX Plus Trial Active",
+                  "⭐ 7-Day Free MAX One Trial Active",
                   style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

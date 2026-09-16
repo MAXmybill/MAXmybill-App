@@ -374,7 +374,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         effectiveStoreId = storeId;
 
         final now = DateTime.now();
-        final trialExpires = now.add(const Duration(days: 15));
+        final trialExpires = now.add(const Duration(days: 7));
 
         final storeData = {
           'storeId': storeId,
@@ -392,7 +392,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
           'ownerUid': widget.uid,
           'ownerUids': [widget.uid],
           'ownerPhone': fullBusinessPhone,
-          'plan': 'MAX Plus',
+          'plan': 'MAX One',
           'isTrial': true,
           'subscriptionExpiryDate': trialExpires.toIso8601String(),
           'createdAt': FieldValue.serverTimestamp(),
