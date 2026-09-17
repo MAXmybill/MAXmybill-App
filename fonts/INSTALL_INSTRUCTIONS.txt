@@ -51,7 +51,7 @@ fonts/
 Run these commands in your terminal:
 
 ```bash
-cd C:\MaxBillUp
+cd C:\MAXmybill
 flutter clean
 flutter pub get
 flutter run

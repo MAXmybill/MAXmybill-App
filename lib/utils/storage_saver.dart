@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 
 class StorageSaver {
-  static const MethodChannel _channel = MethodChannel('maxbillup/storage');
+  static const MethodChannel _channel = MethodChannel('maxmybill/storage');
 
   /// Save bytes to a user-selected location (SAF) on Android. Returns the
   /// content URI string when saved, or null if the user cancels.

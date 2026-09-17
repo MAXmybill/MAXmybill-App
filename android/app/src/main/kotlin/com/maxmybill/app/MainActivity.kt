@@ -11,7 +11,7 @@ import android.media.ToneGenerator
 import android.media.AudioManager
 
 class MainActivity : FlutterActivity() {
-	private val CHANNEL = "maxbillup/storage"
+	private val CHANNEL = "maxmybill/storage"
 	private val SOUND_CHANNEL = "maxmybill/sound"
 	private val CREATE_FILE_REQUEST_CODE = 42424
 

@@ -5119,7 +5119,7 @@ class HelpPage extends StatelessWidget {
                     child: const Icon(Icons.email_rounded, color: Colors.green, size: 20),
                   ),
                   title: const Text('Email Support', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
-                  subtitle: const Text('support@maxbillup.com', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  subtitle: const Text('support@maxmybill.com', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
                   trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
                 ),
                 const Divider(height: 1, indent: 60, color: kGrey100),

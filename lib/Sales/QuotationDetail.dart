@@ -7,7 +7,7 @@ import 'package:maxmybill/models/cart_item.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/Colors.dart';
-import 'package:maxmybill/Sales/nq.dart' as maxbillup_nq;
+import 'package:maxmybill/Sales/nq.dart' as maxmybill_nq;
 
 class QuotationDetailPage extends StatefulWidget {
   final String uid;
@@ -314,7 +314,7 @@ class _QuotationDetailPageState extends State<QuotationDetailPage> {
     Navigator.pushReplacement(
       context,
       CupertinoPageRoute(
-        builder: (context) => maxbillup_nq.NewQuotationPage(
+        builder: (context) => maxmybill_nq.NewQuotationPage(
           uid: uid,
           userEmail: userEmail,
           editQuotationId: quotationId,
