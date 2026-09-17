@@ -125,7 +125,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2F7CF6)),
         useMaterial3: true,
-        fontFamily: 'MiSans',
+        fontFamily: 'NotoSans',
         scaffoldBackgroundColor: Colors.white,
         // Improve text field performance
         textSelectionTheme: const TextSelectionThemeData(
@@ -154,10 +154,10 @@ class MyApp extends StatelessWidget {
             borderSide: const BorderSide(color: Colors.red, width: 2.0),
           ),
         ),
-        // Reduce animations for better keyboard performance
+        // Hardware-accelerated transitions for better performance
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),
@@ -173,7 +173,7 @@ class MyApp extends StatelessWidget {
         ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
         ),

@@ -150,11 +150,8 @@ class KeyboardHelper {
       ),
     );
 
-    // Enable edge-to-edge mode for better keyboard performance
-    SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.edgeToEdge,
-      overlays: [SystemUiOverlay.top],
-    );
+    // Enable edge-to-edge mode for smooth keyboard transitions
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 }
 

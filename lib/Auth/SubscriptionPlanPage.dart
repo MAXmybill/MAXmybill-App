@@ -463,30 +463,37 @@ class _SubscriptionPlanPageState extends State<SubscriptionPlanPage> {
         ? dynamicKey!
         : fallbackKey).trim();
     final String razorpayKey = baseKey.startsWith('rzp_') ? baseKey : 'rzp_live_$baseKey';
-    // SUPER-LIGHTWEIGHT OPTIONS: 
-    // Removing 'modal', 'timeout', and 'backdrop' to prevent the "Null anb" GPU errors
-    var options = {
+    // Latest Razorpay Standard Checkout Interface Options
+    final Map<String, dynamic> options = {
       'key': razorpayKey,
       'amount': amount,
       'currency': 'INR',
-      'name': storeName.length > 20 ? storeName.substring(0, 20) : storeName,
-      'description': 'Plan: $_selectedPlan',
+      'name': storeName.length > 30 ? storeName.substring(0, 30) : storeName,
+      'description': 'Subscription: $_selectedPlan ($_selectedDuration Month${_selectedDuration > 1 ? 's' : ''})',
       'prefill': {
-        'contact': contactPhone.isNotEmpty ? contactPhone : '9999999999',
-        'email': contactEmail.isNotEmpty ? contactEmail : 'customer@maxmybill.com',
+        if (contactPhone.trim().isNotEmpty) 'contact': contactPhone.trim(),
+        if (contactEmail.trim().isNotEmpty) 'email': contactEmail.trim(),
       },
       'theme': {
-        'color': '#2F7CF6'
+        'color': '#2F7CF6',
+        'backdrop_color': '#0F172A',
+        'hide_topbar': false,
+      },
+      'modal': {
+        'confirm_close': true,
+        'animation': true,
+        'backdropclose': false,
       },
       'retry': {
         'enabled': true,
-        'max_count': 1
+        'max_count': 3,
       },
-      'send_sms_hash': true
+      'timeout': 300,
+      'send_sms_hash': true,
     };
 
     try {
-      debugPrint('Launching Ultra-Light Razorpay Interface...');
+      debugPrint('Launching Latest Razorpay Interface...');
       _razorpay!.open(options);
     } catch (e) {
       debugPrint('Razorpay Opening Error: $e');

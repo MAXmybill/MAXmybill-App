@@ -255,11 +255,14 @@ class _ExpensesPageState extends State<ExpensesPage> {
                     if (expenses.isEmpty) return _buildNoResults();
 
                     return ListView.separated(
+                      cacheExtent: 500,
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                       itemCount: expenses.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
-                        return _buildExpenseCard(context, expenses[index].id, expenses[index].data() as Map<String, dynamic>);
+                        return RepaintBoundary(
+                          child: _buildExpenseCard(context, expenses[index].id, expenses[index].data() as Map<String, dynamic>),
+                        );
                       },
                     );
                   },

@@ -25,6 +25,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
   late Future<Stream<QuerySnapshot>> _categoriesStreamFuture;
   late Future<Stream<QuerySnapshot>> _expenseNamesStreamFuture;
   late TabController _tabController;
+  List<String> _cachedCategoryNames = [];
 
   @override
   void initState() {
@@ -180,6 +181,11 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                   }
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) return _buildEmptyState();
 
+                  _cachedCategoryNames = snapshot.data!.docs.map((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return (data['name'] ?? '').toString().trim();
+                  }).where((name) => name.isNotEmpty).toList();
+
                   final categories = snapshot.data!.docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final name = (data['name'] ?? '').toString().toLowerCase();
@@ -189,6 +195,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                   if (categories.isEmpty) return _buildNoResults();
 
                   return ListView.separated(
+                    cacheExtent: 500,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                     itemCount: categories.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -198,52 +205,54 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                       final ts = (data['timestamp'] ?? data['createdAt']) as Timestamp?;
                       final dateStr = ts != null ? DateFormat('dd MMM yyyy').format(ts.toDate()) : 'N/A';
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: kWhite,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: kGrey200),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
+                      return RepaintBoundary(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kWhite,
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => showDialog(
-                              context: context,
-                              builder: (ctx) => _EditDeleteCategoryDialog(
-                                docId: categories[index].id,
-                                initialName: name,
-                                onChanged: () => setState(() {}),
+                            border: Border.all(color: kGrey200),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => showDialog(
+                                context: context,
+                                builder: (ctx) => _EditDeleteCategoryDialog(
+                                  docId: categories[index].id,
+                                  initialName: name,
+                                  onChanged: () => setState(() {}),
+                                ),
                               ),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              child: Column(children: [
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  Row(children: [
-                                    const HeroIcon(HeroIcons.tag, size: 14, color: kPrimaryColor),
-                                    const SizedBox(width: 5),
-                                    Text(name.length > 24 ? '${name.substring(0, 24)}…' : name,
-                                        style: const TextStyle(fontWeight: FontWeight.w900, color: kPrimaryColor, fontSize: 13)),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                child: Column(children: [
+                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                    Row(children: [
+                                      const HeroIcon(HeroIcons.tag, size: 14, color: kPrimaryColor),
+                                      const SizedBox(width: 5),
+                                      Text(name.length > 24 ? '${name.substring(0, 24)}…' : name,
+                                          style: const TextStyle(fontWeight: FontWeight.w900, color: kPrimaryColor, fontSize: 13)),
+                                    ]),
+                                    Text('Created: $dateStr', style: const TextStyle(fontSize: 10.5, color: Colors.black, fontWeight: FontWeight.w500)),
                                   ]),
-                                  Text('Created: $dateStr', style: const TextStyle(fontSize: 10.5, color: Colors.black, fontWeight: FontWeight.w500)),
+                                  const Divider(height: 20, color: kGreyBg),
+                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                    const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      Text('Expense type', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
+                                    ]),
+                                    Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(color: kPrimaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kPrimaryColor.withValues(alpha: 0.2))),
+                                        child: const Text('Edit', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor)),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const HeroIcon(HeroIcons.chevronRight, color: kPrimaryColor, size: 16),
+                                    ]),
+                                  ]),
                                 ]),
-                                const Divider(height: 20, color: kGreyBg),
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    Text('Expense type', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
-                                  ]),
-                                  Row(mainAxisSize: MainAxisSize.min, children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(color: kPrimaryColor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kPrimaryColor.withValues(alpha: 0.2))),
-                                      child: const Text('Edit', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kPrimaryColor)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const HeroIcon(HeroIcons.chevronRight, color: kPrimaryColor, size: 16),
-                                  ]),
-                                ]),
-                              ]),
+                              ),
                             ),
                           ),
                         ),
@@ -336,6 +345,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                   if (expenseNames.isEmpty) return _buildNoResults();
 
                   return ListView.separated(
+                    cacheExtent: 500,
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
                     itemCount: expenseNames.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),
@@ -346,53 +356,55 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                       final ts = data['lastUsed'] as Timestamp?;
                       final dateStr = ts != null ? DateFormat('dd MMM yyyy').format(ts.toDate()) : 'N/A';
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: kWhite,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: kGrey200),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
+                      return RepaintBoundary(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: kWhite,
                             borderRadius: BorderRadius.circular(12),
-                            onTap: () => Navigator.push(
-                              context,
-                              CupertinoPageRoute(builder: (_) => ExpenseNameDetailsPage(
-                                docId: expenseNames[index].id,
-                                name: name,
-                                usageCount: usageCount is int ? usageCount : int.tryParse(usageCount.toString()) ?? 0,
-                              )),
-                            ).then((_) => setState(() {})),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                              child: Column(children: [
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  Row(children: [
-                                    const HeroIcon(HeroIcons.documentText, size: 14, color: kOrange),
-                                    const SizedBox(width: 5),
-                                    Text(name.length > 24 ? '${name.substring(0, 24)}…' : name,
-                                        style: const TextStyle(fontWeight: FontWeight.w900, color: kOrange, fontSize: 13)),
+                            border: Border.all(color: kGrey200),
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(12),
+                              onTap: () => Navigator.push(
+                                context,
+                                CupertinoPageRoute(builder: (_) => ExpenseNameDetailsPage(
+                                  docId: expenseNames[index].id,
+                                  name: name,
+                                  usageCount: usageCount is int ? usageCount : int.tryParse(usageCount.toString()) ?? 0,
+                                )),
+                              ).then((_) => setState(() {})),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                child: Column(children: [
+                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                    Row(children: [
+                                      const HeroIcon(HeroIcons.documentText, size: 14, color: kOrange),
+                                      const SizedBox(width: 5),
+                                      Text(name.length > 24 ? '${name.substring(0, 24)}…' : name,
+                                          style: const TextStyle(fontWeight: FontWeight.w900, color: kOrange, fontSize: 13)),
+                                    ]),
+                                    Text('Last: $dateStr', style: const TextStyle(fontSize: 10.5, color: Colors.black, fontWeight: FontWeight.w500)),
                                   ]),
-                                  Text('Last: $dateStr', style: const TextStyle(fontSize: 10.5, color: Colors.black, fontWeight: FontWeight.w500)),
+                                  const Divider(height: 20, color: kGreyBg),
+                                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                      const Text('Usage count', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
+                                      Text('$usageCount times', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: kBlack87)),
+                                    ]),
+                                    Row(mainAxisSize: MainAxisSize.min, children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                        decoration: BoxDecoration(color: kOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kOrange.withValues(alpha: 0.2))),
+                                        child: const Text('Edit', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kOrange)),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      const HeroIcon(HeroIcons.chevronRight, color: kPrimaryColor, size: 16),
+                                    ]),
+                                  ]),
                                 ]),
-                                const Divider(height: 20, color: kGreyBg),
-                                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                    const Text('Usage count', style: TextStyle(fontSize: 8, fontWeight: FontWeight.w700, color: kBlack54, letterSpacing: 0.5)),
-                                    Text('$usageCount times', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 10, color: kBlack87)),
-                                  ]),
-                                  Row(mainAxisSize: MainAxisSize.min, children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(color: kOrange.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10), border: Border.all(color: kOrange.withValues(alpha: 0.2))),
-                                      child: const Text('Edit', style: TextStyle(fontSize: 9, fontWeight: FontWeight.w900, color: kOrange)),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    const HeroIcon(HeroIcons.chevronRight, color: kPrimaryColor, size: 16),
-                                  ]),
-                                ]),
-                              ]),
+                              ),
                             ),
                           ),
                         ),
@@ -415,7 +427,10 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
   void _showAddCategoryDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) => AddExpenseTypePopup(uid: widget.uid),
+      builder: (BuildContext context) => AddExpenseTypePopup(
+        uid: widget.uid,
+        existingTypes: _cachedCategoryNames.isNotEmpty ? _cachedCategoryNames : null,
+      ),
     );
   }
 }

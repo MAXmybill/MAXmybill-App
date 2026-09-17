@@ -6,20 +6,20 @@ class R {
 
   // ── Screen dimensions ────────────────────────────
   static double w(BuildContext context) =>
-      MediaQuery.of(context).size.width;
+      MediaQuery.sizeOf(context).width;
   static double h(BuildContext context) =>
-      MediaQuery.of(context).size.height;
+      MediaQuery.sizeOf(context).height;
 
   // ── % of screen width / height ───────────────────
   static double wp(BuildContext context, double pct) =>
-      MediaQuery.of(context).size.width * pct / 100;
+      MediaQuery.sizeOf(context).width * pct / 100;
   static double hp(BuildContext context, double pct) =>
-      MediaQuery.of(context).size.height * pct / 100;
+      MediaQuery.sizeOf(context).height * pct / 100;
 
   // ── Scalable font size ────────────────────────────
   /// Base size is designed for a 390 px wide phone.
   static double sp(BuildContext context, double size) {
-    final scale = MediaQuery.of(context).size.width / 390;
+    final scale = MediaQuery.sizeOf(context).width / 390;
     return (size * scale).clamp(size * 0.85, size * 1.35);
   }
 
@@ -50,12 +50,12 @@ class R {
 
   // ── Breakpoints ──────────────────────────────────
   static bool isPhone(BuildContext context) =>
-      MediaQuery.of(context).size.width < 600;
+      MediaQuery.sizeOf(context).width < 600;
   static bool isTablet(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 600 &&
-      MediaQuery.of(context).size.width < 900;
+      MediaQuery.sizeOf(context).width >= 600 &&
+      MediaQuery.sizeOf(context).width < 900;
   static bool isLarge(BuildContext context) =>
-      MediaQuery.of(context).size.width >= 900;
+      MediaQuery.sizeOf(context).width >= 900;
 
   // ── Adaptive values ──────────────────────────────
   static T adaptive<T>(BuildContext context,

@@ -39,7 +39,7 @@
             android:theme="@style/LaunchTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
-            android:windowSoftInputMode="adjustPan">
+            android:windowSoftInputMode="adjustResize">
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues
@@ -80,10 +80,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- Disable Impeller to fix gralloc4/graphics memory issues on specific devices -->
+        <!-- Enable Impeller rendering engine for modern, stutter-free 60/120fps graphics -->
         <meta-data
             android:name="io.flutter.embedding.android.EnableImpeller"
-            android:value="false" />
+            android:value="true" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -95,5 +95,26 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+
+        <!-- UPI Intent Scheme for Razorpay (Android 11+ Package Visibility) -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="upi"/>
+        </intent>
+
+        <!-- Major Indian UPI Apps -->
+        <package android:name="com.google.android.apps.nbu.paisa.user"/> <!-- Google Pay -->
+        <package android:name="com.phonepe.app"/> <!-- PhonePe -->
+        <package android:name="net.one97.paytm"/> <!-- Paytm -->
+        <package android:name="in.org.npci.upiapp"/> <!-- BHIM -->
+        <package android:name="com.dreamplug.androidapp"/> <!-- CRED -->
+        <package android:name="com.whatsapp"/> <!-- WhatsApp Pay -->
+        <package android:name="in.amazon.mShop.android.shopping"/> <!-- Amazon Pay -->
+        <package android:name="com.myairtelapp"/> <!-- Airtel Payments -->
+        <package android:name="com.freecharge.android"/> <!-- Freecharge -->
+        <package android:name="com.sbi.upi"/> <!-- BHIM SBI Pay -->
+        <package android:name="com.icicibank.mobile"/> <!-- iMobile Pay -->
+        <package android:name="com.msf.kbank.mobile"/> <!-- Kotak Bank -->
+        <package android:name="com.axis.mobile"/> <!-- Axis Mobile -->
     </queries>
 </manifest>

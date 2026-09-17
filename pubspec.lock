@@ -1308,10 +1308,10 @@ packages:
     dependency: "direct main"
     description:
       name: razorpay_flutter
-      sha256: a90e05bb571fd1df5b7846d2173cb9cf1e07ec6d57df48068a05c152be177311
+      sha256: c8a3202f84e28051949fd70d80cba78e2e8575db3114b14b316dc0484cd86468
       url: "https://pub.dev"
     source: hosted
-    version: "1.4.1"
+    version: "1.4.6"
   rxdart:
     dependency: transitive
     description:
