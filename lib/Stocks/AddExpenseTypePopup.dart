@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:maxmybill/utils/permission_helper.dart';
 import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/Colors.dart';
@@ -9,11 +8,13 @@ import 'package:heroicons/heroicons.dart';
 class AddExpenseTypePopup extends StatefulWidget {
   final String uid;
   final String? userEmail;
+  final List<String>? existingTypes;
 
   const AddExpenseTypePopup({
     super.key,
     required this.uid,
     this.userEmail,
+    this.existingTypes,
   });
 
   @override
@@ -23,6 +24,44 @@ class AddExpenseTypePopup extends StatefulWidget {
 class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
   final TextEditingController _typeController = TextEditingController();
   bool _isLoading = false;
+  static const List<String> _defaultSuggestions = ['Fixed Expense', 'Variable Expense', 'Salary'];
+  List<String> _existingTypes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingTypes != null) {
+      _existingTypes = List.from(widget.existingTypes!);
+    }
+    _loadExistingTypes();
+  }
+
+  Future<void> _loadExistingTypes() async {
+    try {
+      final col = await FirestoreService().getStoreCollection('expenseCategories');
+      final snap = await col.get();
+      if (mounted) {
+        final names = snap.docs
+            .map((d) {
+              final data = d.data() as Map<String, dynamic>?;
+              return (data?['name'] ?? '').toString().trim();
+            })
+            .where((n) => n.isNotEmpty)
+            .toList();
+        setState(() {
+          final merged = <String>{..._existingTypes, ...names};
+          _existingTypes = merged.toList();
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading existing types: $e");
+    }
+  }
+
+  List<String> get _availableSuggestions {
+    final existingLower = _existingTypes.map((e) => e.trim().toLowerCase()).toSet();
+    return _defaultSuggestions.where((s) => !existingLower.contains(s.toLowerCase())).toList();
+  }
 
   @override
   void dispose() {
@@ -43,6 +82,7 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
       final typesCollection = await FirestoreService().getStoreCollection('expenseCategories');
       final existingType = await typesCollection.where('name', isEqualTo: typeName).get();
       if (existingType.docs.isNotEmpty) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(context.tr('expense_type_exists'))),
         );
@@ -52,23 +92,30 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
       await FirestoreService().addDocument('expenseCategories', {
         'name': typeName,
         'createdAt': FieldValue.serverTimestamp(),
+        'timestamp': FieldValue.serverTimestamp(),
         'ownerUid': widget.uid,
+        'uid': widget.uid,
         'ownerEmail': widget.userEmail,
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.tr('expense_type_added_success'))),
       );
       Navigator.pop(context, typeName);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('error_adding_expense_type'))),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('error_adding_expense_type'))),
+        );
+      }
     }
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final unusedSuggestions = _availableSuggestions;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       backgroundColor: Colors.white,
@@ -97,10 +144,11 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
             ),
             const SizedBox(height: 20),
 
-            // Quick Select
-            _buildQuickSelect(),
-
-            const SizedBox(height: 18),
+            // Quick Select (only shown if there are unused suggestions)
+            if (unusedSuggestions.isNotEmpty) ...[
+              _buildQuickSelect(unusedSuggestions),
+              const SizedBox(height: 18),
+            ],
 
             // Input Field
             _buildExpenseTypeInput(),
@@ -140,8 +188,7 @@ class _AddExpenseTypePopupState extends State<AddExpenseTypePopup> {
   }
 
   // --- Quick Select Chips ---
-  Widget _buildQuickSelect() {
-    final suggestions = ['Fixed Expense', 'Variable Expense', 'Salary'];
+  Widget _buildQuickSelect(List<String> suggestions) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

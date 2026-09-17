@@ -7,6 +7,7 @@ import 'package:maxmybill/utils/firestore_service.dart';
 import 'package:maxmybill/utils/translation_helper.dart';
 import 'package:maxmybill/services/currency_service.dart';
 import 'package:heroicons/heroicons.dart';
+import 'package:maxmybill/Stocks/AddExpenseTypePopup.dart';
 
 class ExpenseCategoriesPage extends StatefulWidget {
   final String uid;
@@ -194,7 +195,7 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
                     itemBuilder: (context, index) {
                       final data = categories[index].data() as Map<String, dynamic>;
                       final name = data['name'] ?? 'Unnamed Type';
-                      final ts = data['timestamp'] as Timestamp?;
+                      final ts = (data['timestamp'] ?? data['createdAt']) as Timestamp?;
                       final dateStr = ts != null ? DateFormat('dd MMM yyyy').format(ts.toDate()) : 'N/A';
 
                       return Container(
@@ -412,114 +413,9 @@ class _ExpenseCategoriesPageState extends State<ExpenseCategoriesPage> with Sing
   Widget _buildNoResults() => Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [const HeroIcon(HeroIcons.magnifyingGlass, size: 64, color: kGrey300), const SizedBox(height: 16), Text('No results for "$_searchQuery"', style: const TextStyle(color: kBlack54))]));
 
   void _showAddCategoryDialog(BuildContext context) {
-    final TextEditingController nameController = TextEditingController();
-    final List<String> suggestions = ['Fixed Expense', 'Variable Expense', 'Salary'];
-
     showDialog(
       context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              backgroundColor: kWhite,
-              title: const Text('Add New Type', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildSectionLabel("Quick Select"),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: suggestions.map((s) {
-                        final bool isSel = nameController.text == s;
-                        return GestureDetector(
-                          onTap: () => setDialogState(() => nameController.text = s),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: isSel ? kPrimaryColor : kGreyBg,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: isSel ? kPrimaryColor : kGrey200),
-                            ),
-                            child: Text(s, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: isSel ? kWhite : kBlack54)),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildSectionLabel("Category Identity"),
-                    _buildDialogField(nameController, 'Category Name', HeroIcons.tag),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel", style: TextStyle(fontWeight: FontWeight.bold, color: kBlack54))),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.trim().isEmpty) return;
-                    await FirestoreService().addDocument('expenseCategories', {
-                      'name': nameController.text.trim(),
-                      'timestamp': FieldValue.serverTimestamp(),
-                      'uid': widget.uid,
-                    });
-                    if (mounted) Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                  child: const Text('ADD Type', style: TextStyle(color: kWhite, fontWeight: FontWeight.w800)),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildSectionLabel(String text) => Padding(padding: const EdgeInsets.only(bottom: 10, left: 4), child: Text(text, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: kBlack54, letterSpacing: 0.5)));
-
-  Widget _buildDialogField(TextEditingController ctrl, String label, HeroIcons icon) {
-    return ValueListenableBuilder(
-      valueListenable: ctrl,
-      builder: (context, val, child) {
-        bool filled = ctrl.text.isNotEmpty;
-        return Container(
-          decoration: BoxDecoration(color: kGreyBg, borderRadius: BorderRadius.circular(12), border: Border.all(color: filled ? kPrimaryColor : kGrey200, width: filled ? 1.5 : 1.0)),
-          child: ValueListenableBuilder<TextEditingValue>(
-      valueListenable: ctrl,
-      builder: (context, value, _) {
-        final bool hasText = value.text.isNotEmpty;
-        return TextField(
-            controller: ctrl,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: kBlack87),
-            decoration: InputDecoration(hintText: label, prefixIcon: HeroIcon(icon, color: filled ? kPrimaryColor : kBlack54, size: 18),
-              filled: true,
-              fillColor: const Color(0xFFF8F9FA),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: kPrimaryColor, width: 2.0),
-              ),
-              labelStyle: TextStyle(color: hasText ? kPrimaryColor : kBlack54, fontSize: 13, fontWeight: FontWeight.w600),
-              floatingLabelStyle: TextStyle(color: hasText ? kPrimaryColor : kPrimaryColor, fontSize: 11, fontWeight: FontWeight.w900),
-            ),
-          
-);
-      },
-    ),
-        );
-      },
+      builder: (BuildContext context) => AddExpenseTypePopup(uid: widget.uid),
     );
   }
 }
