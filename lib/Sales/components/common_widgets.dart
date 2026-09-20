@@ -955,8 +955,8 @@ class _DebouncedBillButtonState extends State<_DebouncedBillButton>
           opacity: _tapped ? 0.7 : 1.0,
           duration: const Duration(milliseconds: 200),
           child: Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: kPrimaryColor,
               borderRadius: BorderRadius.circular(12),
@@ -973,25 +973,25 @@ class _DebouncedBillButtonState extends State<_DebouncedBillButton>
               children: [
                 _tapped
                     ? const SizedBox(
-                        height: 18,
-                        width: 18,
+                        height: 16,
+                        width: 16,
                         child: CircularProgressIndicator(
                           color: kWhite,
                           strokeWidth: 2,
                         ),
                       )
-                    : const HeroIcon(HeroIcons.banknotes, color: kWhite, size: 18),
-                const SizedBox(width: 10),
+                    : const HeroIcon(HeroIcons.banknotes, color: kWhite, size: 17),
+                const SizedBox(width: 8),
                 Text(
                   "${widget.currencySymbol}${AmountFormatter.format(widget.totalBill)}",
-                  style: const TextStyle(color: kWhite, fontSize: 18, fontWeight: FontWeight.w900),
+                  style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w900),
                 ),
-                const SizedBox(width: 10),
-                Container(width: 1.5, height: 20, color: kWhite.withOpacity(0.3)),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
+                Container(width: 1.5, height: 18, color: kWhite.withOpacity(0.3)),
+                const SizedBox(width: 8),
                 Text(
                   context.tr('Bill'),
-                  style: const TextStyle(color: kWhite, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 1.0),
+                  style: const TextStyle(color: kWhite, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 0.8),
                 ),
               ],
             ),

@@ -1124,338 +1124,349 @@ class _QuickSalePageState extends State<QuickSalePage> {
   Widget build(BuildContext context) {
     // ALWAYS show calculator UI in Quick Bill tab
     // Only the bottom action buttons change based on quotation mode
-    return Column(
-      children: [
-        // Spacer to push content to bottom
-        const Spacer(),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double maxH = constraints.maxHeight;
+        final double screenW = MediaQuery.of(context).size.width;
 
-        // Fixed components at bottom: Input + Keypad + Action Buttons
-        Container(
-          color: Colors.white,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Billing Mode Toggle
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _billingMode = 'item'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _billingMode == 'item'
-                                ? kPrimaryColor
-                                : Colors.grey.shade200,
-                            borderRadius: const BorderRadius.horizontal(
-                              left: Radius.circular(8),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Quick Price',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: _billingMode == 'item'
-                                    ? Colors.white
-                                    : Colors.black54,
-                              ),
-                            ),
-                          ),
-                        ),
+        final bool isVeryCompact = maxH < 390;
+        final bool isCompact = maxH < 470;
+
+        final double buttonHeight = isVeryCompact
+            ? 38.0
+            : (isCompact ? 42.0 : 48.0);
+        final double keypadSpacing = isVeryCompact ? 4.0 : 5.0;
+        final double addBtnHeight = buttonHeight * 2 + keypadSpacing;
+
+        return Column(
+          children: [
+            // Responsive branding GIF (MAX Your Sales) or flexible space
+            if (maxH >= 270)
+              Expanded(
+                child: Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: isVeryCompact ? 2 : (isCompact ? 6 : 10),
+                    ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: isVeryCompact ? 75 : (isCompact ? 120 : 180),
+                      ),
+                      child: Image.asset(
+                        'assets/Quick.gif',
+                        fit: BoxFit.contain,
                       ),
                     ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _billingMode = 'productCode'),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _billingMode == 'productCode'
-                                ? Color(0xffffab36)
-                                : Colors.grey.shade200,
-                            borderRadius: const BorderRadius.horizontal(
-                              right: Radius.circular(8),
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Quick Product',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: _billingMode == 'productCode'
-                                    ? Colors.black
-                                    : Colors.black54,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+              )
+            else
+              const SizedBox.shrink(),
 
-              // Input Display with hint based on mode
-              Container(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF2F7CF6),
-                      width: 2,
+            // Fixed components at bottom: Input + Keypad + Action Buttons
+            Container(
+              color: Colors.white,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Billing Mode Toggle
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      isVeryCompact ? 4 : (isCompact ? 6 : 8),
+                      16,
+                      isVeryCompact ? 2 : 4,
                     ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_input.isEmpty)
-                        Text(
-                          _billingMode == 'productCode'
-                              ? 'Product Code x Qty (e.g., 1001 x 5)'
-                              : 'Price x Qty',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey.shade400,
-                          ),
-                        ),
-                      Expanded(
-                        child: Text(
-                          _input,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      if (editingIndex != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 12),
-                          child: ElevatedButton(
-                            onPressed: _confirmEditQuantity,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2F7CF6),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 4,
-                              ),
-                            ),
-                            child: Text(
-                              context.tr('update'),
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Calculator Keypad
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 4,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        _numBtn('7'),
-                        const SizedBox(width: 6),
-                        _numBtn('8'),
-                        const SizedBox(width: 6),
-                        _numBtn('9'),
-                        const SizedBox(width: 6),
-                        _actBtn(Icons.backspace_outlined, _handleBackspace),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        _numBtn('4'),
-                        const SizedBox(width: 6),
-                        _numBtn('5'),
-                        const SizedBox(width: 6),
-                        _numBtn('6'),
-                        const SizedBox(width: 6),
-                        _opBtn(
-                          _billingMode == 'productCode' ? '×' : '×',
-                          _billingMode == 'productCode'
-                              ? _handleProductCodeMultiply
-                              : _handleMultiply,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
                         Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  _numBtn('1'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('2'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('3'),
-                                ],
+                          child: GestureDetector(
+                            onTap: () => setState(() => _billingMode = 'item'),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: isVeryCompact ? 6 : (isCompact ? 8 : 10),
                               ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  _numBtn('0'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('00'),
-                                  const SizedBox(width: 6),
-                                  _numBtn('•'),
-                                ],
+                              decoration: BoxDecoration(
+                                color: _billingMode == 'item'
+                                    ? kPrimaryColor
+                                    : Colors.grey.shade200,
+                                borderRadius: const BorderRadius.horizontal(
+                                  left: Radius.circular(8),
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        editingIndex == null
-                            ? _addBtn()
-                            : SizedBox(
-                                width:
-                                    (MediaQuery.of(context).size.width - 48) /
-                                    4,
-                                height: 118,
-                                child: GestureDetector(
-                                  onTap: _confirmEditQuantity,
-                                  child: Container(
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF2F7CF6),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            'Update',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                          SizedBox(height: 2),
-                                          Text(
-                                            'Qty',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                              child: Center(
+                                child: Text(
+                                  'Quick Price',
+                                  style: TextStyle(
+                                    fontSize: isVeryCompact ? 11 : 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: _billingMode == 'item'
+                                        ? Colors.white
+                                        : Colors.black54,
                                   ),
                                 ),
                               ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // Action Buttons - Hide in quotation mode (parent provides floating bottom bar)
-              !widget.isQuotationMode
-                  ? CommonWidgets.buildActionButtons(
-                      context: context,
-                      onSaveOrder: () {
-                        if (_items.isEmpty) {
-                          CommonWidgets.showSnackBar(
-                            context,
-                            'Cart is empty!',
-                            bgColor: const Color(0xFFFF9800),
-                          );
-                          return;
-                        }
-                        CommonWidgets.showSaveOrderDialog(
-                          context: context,
-                          uid: widget.uid,
-                          cartItems: _cartItems,
-                          totalBill: _totalWithTax,
-                          savedOrderId: widget.savedOrderId,
-                          savedOrderName:
-                              null, // QuickSale doesn't track order names yet
-                          savedOrderPhone: _selectedCustomerPhone,
-                          onSuccess: (orderName, orderId) {
-                            setState(() {
-                              _items.clear();
-                              _input = '';
-                              _counter = 1;
-                              editingIndex = null;
-                            });
-                            _notifyChange(); // Notify parent that cart is now empty
-                          },
-                        );
-                      },
-                      onCustomer: () {
-                        CommonWidgets.showCustomerSelectionDialog(
-                          context: context,
-                          onCustomerSelected: (phone, name, gst) {
-                            setState(() {
-                              _selectedCustomerPhone = phone;
-                              _selectedCustomerName = name;
-                              _selectedCustomerGST = gst;
-                            });
-                            // Notify parent about customer selection
-                            widget.onCustomerChanged?.call(phone, name, gst);
-                          },
-                          selectedCustomerPhone: _selectedCustomerPhone,
-                        );
-                      },
-                      customerName: _selectedCustomerName,
-                      onBill: () {
-                        if (_items.isNotEmpty) {
-                          Navigator.push(
-                            context,
-                            CupertinoPageRoute(
-                              builder: (context) => BillPage(
-                                uid: widget.uid,
-                                userEmail: widget.userEmail,
-                                cartItems: _cartItems,
-                                totalAmount: _totalWithTax,
-                                savedOrderId: widget.savedOrderId,
-                                customerPhone: _selectedCustomerPhone,
-                                customerName: _selectedCustomerName,
-                                customerGST: _selectedCustomerGST,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _billingMode = 'productCode'),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                vertical: isVeryCompact ? 6 : (isCompact ? 8 : 10),
+                              ),
+                              decoration: BoxDecoration(
+                                color: _billingMode == 'productCode'
+                                    ? const Color(0xffffab36)
+                                    : Colors.grey.shade200,
+                                borderRadius: const BorderRadius.horizontal(
+                                  right: Radius.circular(8),
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  'Quick Product',
+                                  style: TextStyle(
+                                    fontSize: isVeryCompact ? 11 : 13,
+                                    fontWeight: FontWeight.w700,
+                                    color: _billingMode == 'productCode'
+                                        ? Colors.black
+                                        : Colors.black54,
+                                  ),
+                                ),
                               ),
                             ),
-                          );
-                        }
-                      },
-                      totalBill: _totalWithTax,
-                      currencySymbol: _currencySymbol,
-                    )
-                  : const SizedBox.shrink(), // Hide buttons in quotation mode - parent provides floating bar
-            ],
-          ),
-        ),
-      ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Input Display with hint based on mode
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                      16,
+                      isVeryCompact ? 2 : 4,
+                      16,
+                      isVeryCompact ? 2 : 6,
+                    ),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: isVeryCompact ? 2 : 4,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: const Color(0xFF2F7CF6),
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (_input.isEmpty)
+                            Text(
+                              _billingMode == 'productCode'
+                                  ? 'Product Code x Qty (e.g., 1001 x 5)'
+                                  : 'Price x Qty',
+                              style: TextStyle(
+                                fontSize: isVeryCompact ? 12 : 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey.shade400,
+                              ),
+                            ),
+                          Expanded(
+                            child: Text(
+                              _input,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                fontSize: isVeryCompact ? 16 : 19,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                          if (editingIndex != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 10),
+                              child: ElevatedButton(
+                                onPressed: _confirmEditQuantity,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2F7CF6),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 2,
+                                  ),
+                                ),
+                                child: Text(
+                                  context.tr('update'),
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Calculator Keypad
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: isVeryCompact ? 2 : 4,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            _numBtn('7', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _numBtn('8', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _numBtn('9', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _actBtn(Icons.backspace_outlined, _handleBackspace, buttonHeight),
+                          ],
+                        ),
+                        SizedBox(height: keypadSpacing),
+                        Row(
+                          children: [
+                            _numBtn('4', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _numBtn('5', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _numBtn('6', buttonHeight),
+                            SizedBox(width: keypadSpacing),
+                            _opBtn(
+                              '×',
+                              _billingMode == 'productCode'
+                                  ? _handleProductCodeMultiply
+                                  : _handleMultiply,
+                              buttonHeight,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: keypadSpacing),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Row(
+                                    children: [
+                                      _numBtn('1', buttonHeight),
+                                      SizedBox(width: keypadSpacing),
+                                      _numBtn('2', buttonHeight),
+                                      SizedBox(width: keypadSpacing),
+                                      _numBtn('3', buttonHeight),
+                                    ],
+                                  ),
+                                  SizedBox(height: keypadSpacing),
+                                  Row(
+                                    children: [
+                                      _numBtn('0', buttonHeight),
+                                      SizedBox(width: keypadSpacing),
+                                      _numBtn('00', buttonHeight),
+                                      SizedBox(width: keypadSpacing),
+                                      _numBtn('•', buttonHeight),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: keypadSpacing),
+                            editingIndex == null
+                                ? _addBtn(addBtnHeight, (screenW - 48) / 4)
+                                : _updateBtn(addBtnHeight, (screenW - 48) / 4),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Action Buttons - Hide in quotation mode (parent provides floating bottom bar)
+                  !widget.isQuotationMode
+                      ? CommonWidgets.buildActionButtons(
+                          context: context,
+                          onSaveOrder: () {
+                            if (_items.isEmpty) {
+                              CommonWidgets.showSnackBar(
+                                context,
+                                'Cart is empty!',
+                                bgColor: const Color(0xFFFF9800),
+                              );
+                              return;
+                            }
+                            CommonWidgets.showSaveOrderDialog(
+                              context: context,
+                              uid: widget.uid,
+                              cartItems: _cartItems,
+                              totalBill: _totalWithTax,
+                              savedOrderId: widget.savedOrderId,
+                              savedOrderName: null,
+                              savedOrderPhone: _selectedCustomerPhone,
+                              onSuccess: (orderName, orderId) {
+                                setState(() {
+                                  _items.clear();
+                                  _input = '';
+                                  _counter = 1;
+                                  editingIndex = null;
+                                });
+                                _notifyChange();
+                              },
+                            );
+                          },
+                          onCustomer: () {
+                            CommonWidgets.showCustomerSelectionDialog(
+                              context: context,
+                              onCustomerSelected: (phone, name, gst) {
+                                setState(() {
+                                  _selectedCustomerPhone = phone;
+                                  _selectedCustomerName = name;
+                                  _selectedCustomerGST = gst;
+                                });
+                                widget.onCustomerChanged?.call(phone, name, gst);
+                              },
+                              selectedCustomerPhone: _selectedCustomerPhone,
+                            );
+                          },
+                          customerName: _selectedCustomerName,
+                          onBill: () {
+                            if (_items.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                CupertinoPageRoute(
+                                  builder: (context) => BillPage(
+                                    uid: widget.uid,
+                                    userEmail: widget.userEmail,
+                                    cartItems: _cartItems,
+                                    totalAmount: _totalWithTax,
+                                    savedOrderId: widget.savedOrderId,
+                                    customerPhone: _selectedCustomerPhone,
+                                    customerName: _selectedCustomerName,
+                                    customerGST: _selectedCustomerGST,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          totalBill: _totalWithTax,
+                          currencySymbol: _currencySymbol,
+                        )
+                      : const SizedBox.shrink(),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1573,21 +1584,21 @@ class _QuickSalePageState extends State<QuickSalePage> {
     );
   }
 
-  Widget _numBtn(String num) => Expanded(
+  Widget _numBtn(String num, [double height = 48]) => Expanded(
     child: GestureDetector(
       onTap: () => _handleInput(num == '•' ? '.' : num),
       child: Container(
-        height: 56,
+        height: height,
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Text(
             num,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              fontSize: (height * 0.44).clamp(16.0, 22.0),
+              fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
@@ -1596,21 +1607,21 @@ class _QuickSalePageState extends State<QuickSalePage> {
     ),
   );
 
-  Widget _opBtn(String op, VoidCallback onTap) => Expanded(
+  Widget _opBtn(String op, VoidCallback onTap, [double height = 48]) => Expanded(
     child: GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 56,
+        height: height,
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Text(
             op,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w500,
+            style: TextStyle(
+              fontSize: (height * 0.44).clamp(16.0, 22.0),
+              fontWeight: FontWeight.w600,
               color: Colors.black87,
             ),
           ),
@@ -1619,39 +1630,45 @@ class _QuickSalePageState extends State<QuickSalePage> {
     ),
   );
 
-  Widget _actBtn(IconData icon, VoidCallback onTap) => Expanded(
+  Widget _actBtn(IconData icon, VoidCallback onTap, [double height = 48]) => Expanded(
     child: GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 56,
+        height: height,
         decoration: BoxDecoration(
           color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
-        child: Center(child: Icon(icon, size: 22, color: Colors.black87)),
+        child: Center(
+          child: Icon(
+            icon,
+            size: (height * 0.42).clamp(16.0, 21.0),
+            color: Colors.black87,
+          ),
+        ),
       ),
     ),
   );
 
-  Widget _addBtn() => SizedBox(
-    width: (MediaQuery.of(context).size.width - 48) / 4,
-    height: 118,
+  Widget _addBtn([double height = 101, double? width]) => SizedBox(
+    width: width ?? (MediaQuery.of(context).size.width - 48) / 4,
+    height: height,
     child: GestureDetector(
       onTap: _handleEnter,
       child: Container(
         decoration: BoxDecoration(
-          color: _billingMode == 'item' ? kPrimaryColor : Color(0xffffab36),
-          borderRadius: BorderRadius.circular(12),
+          color: _billingMode == 'item' ? kPrimaryColor : const Color(0xffffab36),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                _billingMode == 'productCode' ? 'Add' : 'Add',
+                'Add',
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
+                  fontSize: (height * 0.13).clamp(12.0, 15.0),
+                  fontWeight: FontWeight.w700,
                   color: _billingMode == 'productCode'
                       ? Colors.black
                       : Colors.white,
@@ -1661,8 +1678,8 @@ class _QuickSalePageState extends State<QuickSalePage> {
               Text(
                 _billingMode == 'productCode' ? 'Product' : 'Item',
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontSize: (height * 0.11).clamp(10.0, 13.0),
+                  fontWeight: FontWeight.w700,
                   color: _billingMode == 'productCode'
                       ? Colors.black
                       : Colors.white,
@@ -1675,99 +1692,34 @@ class _QuickSalePageState extends State<QuickSalePage> {
     ),
   );
 
-  // Dynamic button widgets with adaptive height
-  Widget _numBtnDynamic(String num, double height) => Expanded(
-    child: GestureDetector(
-      onTap: () => _handleInput(num == '•' ? '.' : num),
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Center(
-          child: Text(
-            num,
-            style: TextStyle(
-              fontSize: height * 0.38,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
-  Widget _opBtnDynamic(String op, VoidCallback onTap, double height) =>
-      Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                op,
-                style: TextStyle(
-                  fontSize: height * 0.38,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-
-  Widget _actBtnDynamic(IconData icon, VoidCallback onTap, double height) =>
-      Expanded(
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            height: height,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF5F5F5),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Icon(icon, size: height * 0.38, color: Colors.black87),
-            ),
-          ),
-        ),
-      );
-
-  Widget _addBtnDynamic(double height) => SizedBox(
-    width: (MediaQuery.of(context).size.width - 48) / 4,
+  Widget _updateBtn(double height, double width) => SizedBox(
+    width: width,
     height: height,
     child: GestureDetector(
-      onTap: _addItem,
+      onTap: _confirmEditQuantity,
       child: Container(
         decoration: BoxDecoration(
           color: const Color(0xFF2F7CF6),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Add',
+                'Update',
                 style: TextStyle(
-                  fontSize: height * 0.13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: (height * 0.13).clamp(12.0, 15.0),
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),
-              SizedBox(height: 2),
+              const SizedBox(height: 2),
               Text(
-                'Item',
+                'Qty',
                 style: TextStyle(
-                  fontSize: height * 0.13,
-                  fontWeight: FontWeight.w600,
+                  fontSize: (height * 0.11).clamp(10.0, 13.0),
+                  fontWeight: FontWeight.w700,
                   color: Colors.white,
                 ),
               ),

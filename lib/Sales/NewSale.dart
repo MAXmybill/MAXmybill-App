@@ -59,9 +59,24 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
   late String _uid;
   String? _userEmail;
 
-  double _cartHeight = 200;
-  final double _minCartHeight = 200;
+  double? _userCustomCartHeight;
   double _maxCartHeight = 600;
+
+  double get _minCartHeight {
+    final count = _sharedCartItems?.length ?? 0;
+    if (count <= 0) return 0;
+    // Header (~40px) + Footer (~36px) + each item (~36px)
+    // 1 item: ~112px, 2 items: ~148px, 3+ items: capped at 170px
+    return (76.0 + count * 36.0).clamp(112.0, 170.0);
+  }
+
+  double get _cartHeight {
+    final minH = _minCartHeight;
+    if (_userCustomCartHeight != null && _userCustomCartHeight! > minH) {
+      return _userCustomCartHeight!.clamp(minH, _maxCartHeight);
+    }
+    return minH;
+  }
 
   String? _selectedCustomerPhone;
   String? _selectedCustomerName;
@@ -954,7 +969,7 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
               // Top spacing: only reserve space for minimum cart height
               // This allows cart to expand and overlay other content
               SizedBox(
-                height: topPadding+2 + (reservedCartSpace > 0 ? reservedCartSpace + 12 : 0),
+                height: topPadding+2 + (reservedCartSpace > 0 ? reservedCartSpace + 6 : 0),
               ),
 
               // AppBar: Only show when search is NOT focused
@@ -1041,22 +1056,23 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
         setState(() {
           if (details.delta.dy > 10) {
             // User pulled down quickly, expand fully
-            _cartHeight = _maxCartHeight;
+            _userCustomCartHeight = _maxCartHeight;
           } else if (details.delta.dy < -10) {
             // User pulled up quickly, collapse to minimum
-            _cartHeight = _minCartHeight;
+            _userCustomCartHeight = null;
           } else {
             // Normal drag, keep smooth resizing
-            _cartHeight = (_cartHeight + details.delta.dy).clamp(_minCartHeight, _maxCartHeight);
+            final current = _userCustomCartHeight ?? _minCartHeight;
+            _userCustomCartHeight = (current + details.delta.dy).clamp(_minCartHeight, _maxCartHeight);
           }
         });
       },
       onDoubleTap: isSearchFocused ? null : () {
         setState(() {
-          if (_cartHeight < _maxCartHeight * 0.95) {
-            _cartHeight = _maxCartHeight+100;
+          if ((_userCustomCartHeight ?? _minCartHeight) < _maxCartHeight * 0.95) {
+            _userCustomCartHeight = _maxCartHeight + 100;
           } else {
-            _cartHeight = _minCartHeight;
+            _userCustomCartHeight = null;
           }
         });
       },
