@@ -117,3 +117,8 @@ dependencies {
     // Play Integrity API - Required for Firebase App Check PlayIntegrity Provider
     implementation("com.google.android.play:integrity:1.3.0")
 }
+
+configurations.all {
+    exclude(group = "com.google.android.gms", module = "play-services-safetynet")
+}
+

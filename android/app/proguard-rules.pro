@@ -1,10 +1,9 @@
 ## Flutter wrapper
 -keep class io.flutter.app.** { *; }
--keep class io.flutter.plugin.**  { *; }
--keep class io.flutter.util.**  { *; }
--keep class io.flutter.view.**  { *; }
--keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.view.** { *; }
+-keep class io.flutter.plugins.** { *; }
 
 ## UCrop - Image Cropper
 -dontwarn com.yalantis.ucrop**
@@ -63,17 +62,14 @@
 -keep interface com.google.android.gms.playintegrity.** { *; }
 -dontwarn com.google.android.gms.playintegrity.**
 
-## Google Play Services - Critical for bundles
--keep class com.google.android.gms.** { *; }
--keep class com.google.android.gms.internal.** { *; }
--keep interface com.google.android.gms.** { *; }
--keep interface com.google.android.gms.internal.** { *; }
+## Google Play Services & Firebase - Suppress warnings (AAR consumer rules handle keeping what's needed)
 -dontwarn com.google.android.gms.**
+-dontwarn com.google.android.gms.internal.**
 
-## Firebase Core - Ensure initialization works
--keep class com.google.firebase.** { *; }
--keep interface com.google.firebase.** { *; }
--keep class com.google.firebase.internal.** { *; }
+
+## Firebase Core - Suppress warnings (Firebase AARs bundle their own consumer rules)
+-dontwarn com.google.firebase.**
+-dontwarn com.google.firebase.internal.**
 -keepclassmembers class ** {
   public static final long serialVersionUID;
 }
@@ -83,7 +79,6 @@
 -dontwarn com.google.firebase.crashlytics.**
 
 ## Google Analytics
--keep class com.google.analytics.** { *; }
 -dontwarn com.google.analytics.**
 
 ## Hive - Local database
@@ -91,22 +86,14 @@
 -dontwarn com.hive.**
 
 ## In-App Update library
--keep class com.google.android.play.core.tasks.** { *; }
--keep class com.google.android.play.core.install.** { *; }
 -keep class com.google.android.play.core.appupdate.** { *; }
--keep interface com.google.android.play.core.tasks.** { *; }
--keep interface com.google.android.play.core.install.** { *; }
--keep interface com.google.android.play.core.appupdate.** { *; }
 -dontwarn com.google.android.play.core.**
 
 ## Firebase Messaging - FCM
--keep class com.google.firebase.messaging.** { *; }
--keep interface com.google.firebase.messaging.** { *; }
+-keep class com.google.firebase.messaging.FirebaseMessagingService { *; }
 -dontwarn com.google.firebase.messaging.**
 
 ## AndroidX - Core library support
--keep class androidx.** { *; }
--keep interface androidx.** { *; }
 -dontwarn androidx.**
 
 ## AppCompat (used by UCrop)
