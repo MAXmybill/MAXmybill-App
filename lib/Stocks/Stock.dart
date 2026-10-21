@@ -46,7 +46,11 @@ class _StockPageState extends State<StockPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           // Stock AppBar Component
@@ -69,8 +73,8 @@ class _StockPageState extends State<StockPage> {
               );
             },
             buildActionButton: _buildActionButton,
-            screenWidth: MediaQuery.of(context).size.width,
-            screenHeight: MediaQuery.of(context).size.height,
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
           ),
 
           // Content area - Show Products or Category based on selected tab
@@ -87,7 +91,7 @@ class _StockPageState extends State<StockPage> {
         uid: widget.uid,
         userEmail: widget.userEmail,
         currentIndex: 3,
-        screenWidth: MediaQuery.of(context).size.width,
+        screenWidth: screenWidth,
       ),
     );
   }

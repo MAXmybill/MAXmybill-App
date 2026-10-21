@@ -408,11 +408,8 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
   }
 
   void _handleSearchFocusChange(bool isFocused) {
-    print('🔍 Search focus changed: $isFocused'); // Debug
-    setState(() {
-      _isSearchFocused = isFocused;
-    });
-    print('🔍 State updated - _isSearchFocused: $_isSearchFocused, shouldShowCart: ${_sharedCartItems != null && _sharedCartItems!.isNotEmpty}'); // Debug
+    // Keep UI layout completely stable when search is focused.
+    // Do not call setState or destroy the AppBar, keeping keyboard animation zero-lag.
   }
 
   /// Enhanced logic to detect which specific item changed and trigger its highlight.
@@ -914,9 +911,9 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final topPadding = MediaQuery.of(context).padding.top;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final topPadding = MediaQuery.paddingOf(context).top;
 
     _maxCartHeight = screenHeight - topPadding - 350;
 
@@ -949,15 +946,11 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
       });
     }
 
-    // Calculate dynamic cart height based on search focus
-    // 120px in search mode: enough for header(40px) + 1 item(40px) + footer(40px)
-    final double dynamicCartHeight = _isSearchFocused ? 120 : _cartHeight;
+    final double dynamicCartHeight = _cartHeight;
     final bool shouldShowCart = _sharedCartItems != null && _sharedCartItems!.isNotEmpty;
 
     // Only reserve space for minimum cart height to allow overlay expansion
-    final double reservedCartSpace = shouldShowCart ? (_isSearchFocused ? 120 : _minCartHeight) : 0;
-
-    print('🎨 Building NewSale - Focus: $_isSearchFocused, ShowCart: $shouldShowCart, CartHeight: $dynamicCartHeight'); // Debug
+    final double reservedCartSpace = shouldShowCart ? _minCartHeight : 0;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -972,17 +965,16 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
                 height: topPadding+2 + (reservedCartSpace > 0 ? reservedCartSpace + 6 : 0),
               ),
 
-              // AppBar: Only show when search is NOT focused
-              if (!_isSearchFocused)
-                SaleAppBar(
-                  selectedTabIndex: _selectedTabIndex,
-                  onTabChanged: _handleTabChange,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight,
-                  uid: _uid,
-                  userEmail: _userEmail,
-                  savedOrderCount: _savedOrderCount,
-                ),
+              // AppBar: Always shown stably for zero-lag keyboard opening
+              SaleAppBar(
+                selectedTabIndex: _selectedTabIndex,
+                onTabChanged: _handleTabChange,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                uid: _uid,
+                userEmail: _userEmail,
+                savedOrderCount: _savedOrderCount,
+              ),
 
               Expanded(
                 child: AnimatedSwitcher(

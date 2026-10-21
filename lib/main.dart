@@ -13,7 +13,6 @@ import 'firebase_options.dart';
 import 'utils/theme_notifier.dart';
 import 'utils/language_provider.dart';
 import 'utils/plan_provider.dart';
-import 'utils/keyboard_helper.dart';
 import 'utils/maintenance_wrapper.dart';
 import 'models/sale.dart';
 import 'services/sale_sync_service.dart';
@@ -28,9 +27,8 @@ void main() async {
   await dotenv.load(fileName: ".env");
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Configure keyboard optimizations early (skip on web)
+  // Standard orientation lock for mobile devices
   if (!kIsWeb) {
-    KeyboardHelper.configureKeyboardOptimizations();
     await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -181,11 +179,7 @@ class MyApp extends StatelessWidget {
       themeMode: themeNotifier.themeMode,
       home: const SplashPage(), // Use custom splash page directly
       builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(
-            // Disable text scaling to improve performance
-            textScaler: const TextScaler.linear(1.0),
-          ),
+        return MediaQuery.withNoTextScaling(
           child: MaintenanceWrapper(
             child: child ?? const SizedBox.shrink(),
           ),

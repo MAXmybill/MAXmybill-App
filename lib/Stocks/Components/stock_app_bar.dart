@@ -34,7 +34,7 @@ class StockAppBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final topPadding = MediaQuery.of(context).padding.top;
+    final topPadding = MediaQuery.paddingOf(context).top;
     final double tabHeight = R.sp(context, 44);
 
     return Container(

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:maxmybill/Colors.dart' as colors;
 import 'package:maxmybill/utils/firestore_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SupportPage extends StatefulWidget {
   final String uid;
@@ -29,6 +30,8 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
   bool _isSubmitting = false;
   String? _storeId;
   String _storeName = 'Loading...';
+  String _storePhone = '';
+  String _storeDisplayNumber = '';
 
   @override
   void initState() {
@@ -39,23 +42,65 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
 
   Future<void> _loadStoreInfo() async {
     try {
+      // 1. Try getCurrentStoreDoc for fast / cached store document
+      final doc = await FirestoreService().getCurrentStoreDoc();
+      if (doc != null && doc.exists && mounted) {
+        final data = doc.data() as Map<String, dynamic>? ?? {};
+        final storeId = await FirestoreService().getCurrentStoreId();
+        final name = (data['businessName'] ?? data['name'] ?? data['storeName'] ?? 'Store').toString().trim();
+        final phone = (data['businessPhone'] ??
+                data['phoneNumber'] ??
+                data['ownerPhone'] ??
+                data['personalPhone'] ??
+                data['phone'] ??
+                FirebaseAuth.instance.currentUser?.phoneNumber ??
+                '')
+            .toString()
+            .trim();
+        final sNum = (data['storeId'] ?? storeId ?? doc.id).toString().trim();
+
+        setState(() {
+          _storeId = storeId ?? doc.id;
+          _storeName = name.isNotEmpty ? name : 'Store';
+          _storePhone = phone;
+          _storeDisplayNumber = sNum;
+        });
+        return;
+      }
+
+      // 2. Fallback by ID
       final storeId = await FirestoreService().getCurrentStoreId();
       if (storeId != null && mounted) {
         setState(() => _storeId = storeId);
-        
-        // Fetch store name
+
         final storeDoc = await FirebaseFirestore.instance
             .collection('store')
             .doc(storeId)
             .get();
-        
+
         if (mounted && storeDoc.exists) {
-          final data = storeDoc.data() as Map<String, dynamic>;
-          setState(() => _storeName = data['businessName'] ?? 'Store');
+          final data = storeDoc.data() ?? {};
+          final name = (data['businessName'] ?? data['name'] ?? data['storeName'] ?? 'Store').toString().trim();
+          final phone = (data['businessPhone'] ??
+                  data['phoneNumber'] ??
+                  data['ownerPhone'] ??
+                  data['personalPhone'] ??
+                  data['phone'] ??
+                  FirebaseAuth.instance.currentUser?.phoneNumber ??
+                  '')
+              .toString()
+              .trim();
+          final sNum = (data['storeId'] ?? storeId).toString().trim();
+
+          setState(() {
+            _storeName = name.isNotEmpty ? name : 'Store';
+            _storePhone = phone;
+            _storeDisplayNumber = sNum;
+          });
         }
       }
     } catch (e) {
-      print('Error loading store info: $e');
+      debugPrint('Error loading store info: $e');
     }
   }
 
@@ -128,6 +173,56 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
     }
   }
 
+  Future<void> _openWhatsAppSupport() async {
+    const supportPhone = '919994593969';
+    final name = _storeName.isNotEmpty && _storeName != 'Loading...' ? _storeName : 'My Store';
+    final storeNumber = _storePhone.isNotEmpty
+        ? _storePhone
+        : (_storeDisplayNumber.isNotEmpty ? _storeDisplayNumber : (_storeId ?? 'N/A'));
+
+    final buffer = StringBuffer();
+    buffer.writeln('Hello MAXmybill Support,');
+    buffer.writeln('I need help with my store.');
+    buffer.writeln('');
+    buffer.writeln('Store Name: $name');
+    buffer.writeln('Store Number: $storeNumber');
+    if (_storeDisplayNumber.isNotEmpty && _storeDisplayNumber != storeNumber) {
+      buffer.writeln('Store ID: $_storeDisplayNumber');
+    }
+    buffer.writeln('');
+    buffer.writeln('Please assist me.');
+
+    final message = buffer.toString();
+    final encodedMsg = Uri.encodeComponent(message);
+
+    // Try direct WhatsApp scheme first, fallback to https://wa.me
+    final whatsappUri = Uri.parse('whatsapp://send?phone=$supportPhone&text=$encodedMsg');
+    final webUri = Uri.parse('https://wa.me/$supportPhone?text=$encodedMsg');
+
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(webUri, mode: LaunchMode.externalNonBrowserApplication);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open WhatsApp. Contact: +91 99945 93969'),
+              backgroundColor: colors.kErrorColor,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -150,6 +245,47 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
             icon: const HeroIcon(HeroIcons.arrowLeft, color: colors.kWhite, size: 20),
             onPressed: widget.onBack,
           ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: Center(
+                child: InkWell(
+                  onTap: _openWhatsAppSupport,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF25D366),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.chat_rounded, color: Colors.white, size: 15),
+                        SizedBox(width: 4),
+                        Text(
+                          'WhatsApp',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           bottom: TabBar(
             controller: _tabController,
             labelColor: colors.kWhite,
@@ -172,12 +308,188 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
     );
   }
 
+  Widget _buildWhatsAppSupportCard() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF25D366), Color(0xFF128C7E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF25D366).withValues(alpha: 0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: _openWhatsAppSupport,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Text(
+                                'WhatsApp Support',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'INSTANT',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            '+91 99945 93969',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.store_rounded, color: Colors.white70, size: 14),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _storeName != 'Loading...'
+                              ? '$_storeName • ${_storePhone.isNotEmpty ? _storePhone : (_storeDisplayNumber.isNotEmpty ? 'ID: $_storeDisplayNumber' : 'Store')}'
+                              : 'Chat directly with our team on WhatsApp',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 42,
+                  child: ElevatedButton.icon(
+                    onPressed: _openWhatsAppSupport,
+                    icon: const Icon(Icons.send_rounded, size: 16, color: Color(0xFF128C7E)),
+                    label: const Text(
+                      'Chat on WhatsApp Now',
+                      style: TextStyle(
+                        color: Color(0xFF128C7E),
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildNewRequestTab() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildWhatsAppSupportCard(),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              const Expanded(child: Divider(color: colors.kGrey200, thickness: 1)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'OR SUBMIT IN-APP TICKET',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    color: colors.kBlack54.withValues(alpha: 0.6),
+                    letterSpacing: 1.0,
+                  ),
+                ),
+              ),
+              const Expanded(child: Divider(color: colors.kGrey200, thickness: 1)),
+            ],
+          ),
+          const SizedBox(height: 16),
           const SizedBox(height: 8),
           Container(
             padding: const EdgeInsets.all(16),
@@ -390,6 +702,27 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
                       height: 1.5,
                     ),
                   ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _openWhatsAppSupport,
+                    icon: const Icon(Icons.chat_rounded, size: 16, color: Colors.white),
+                    label: const Text(
+                      'Chat on WhatsApp (+91 99945 93969)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -451,6 +784,27 @@ class _SupportPageState extends State<SupportPage> with SingleTickerProviderStat
                       fontSize: 13,
                       color: colors.kBlack54,
                       height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: _openWhatsAppSupport,
+                    icon: const Icon(Icons.chat_rounded, size: 16, color: Colors.white),
+                    label: const Text(
+                      'Chat on WhatsApp (+91 99945 93969)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF25D366),
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                   ),
                 ],

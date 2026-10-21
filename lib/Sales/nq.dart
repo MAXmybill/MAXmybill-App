@@ -535,15 +535,15 @@ class _NewQuotationPageState extends State<NewQuotationPage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final topPadding = MediaQuery.of(context).padding.top;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final topPadding = MediaQuery.paddingOf(context).top;
 
     _maxCartHeight = screenHeight - topPadding - 180;
 
-    final double dynamicCartHeight = _isSearchFocused ? 150 : _cartHeight;
+    final double dynamicCartHeight = _cartHeight;
     final bool shouldShowCart = _sharedCartItems != null && _sharedCartItems!.isNotEmpty;
-    final double reservedCartSpace = shouldShowCart ? (_isSearchFocused ? 150 : _minCartHeight) : 0;
+    final double reservedCartSpace = shouldShowCart ? _minCartHeight : 0;
 
     return Scaffold(
       backgroundColor: kWhite, // Changed from kGreyBg to kWhite
@@ -554,17 +554,16 @@ class _NewQuotationPageState extends State<NewQuotationPage> with SingleTickerPr
             children: [
               SizedBox(height: topPadding + 10 + (reservedCartSpace > 0 ? reservedCartSpace + 10 : 0)),
 
-              if (!_isSearchFocused)
-                SaleAppBar(
-                  selectedTabIndex: _selectedTabIndex,
-                  onTabChanged: _handleTabChange,
-                  screenWidth: screenWidth,
-                  screenHeight: screenHeight,
-                  uid: widget.uid,
-                  userEmail: widget.userEmail,
-                  hideSavedTab: true,
-                  showBackButton: true,
-                ),
+              SaleAppBar(
+                selectedTabIndex: _selectedTabIndex,
+                onTabChanged: _handleTabChange,
+                screenWidth: screenWidth,
+                screenHeight: screenHeight,
+                uid: widget.uid,
+                userEmail: widget.userEmail,
+                hideSavedTab: true,
+                showBackButton: true,
+              ),
 
               Expanded(
                 child: _selectedTabIndex == 0

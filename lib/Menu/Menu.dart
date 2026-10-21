@@ -346,7 +346,7 @@ class _MenuPageState extends State<MenuPage> {
           body: Column(
             children: [
               SizedBox(
-                height: MediaQuery.of(context).padding.top +
+                height: MediaQuery.paddingOf(context).top +
                     (_shouldShowUpgradeCta(planProvider) ? 122 : 110),
                 child: _buildProfileHeader(context, planProvider),
               ),
@@ -450,14 +450,14 @@ class _MenuPageState extends State<MenuPage> {
             ),
           ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          bottomNavigationBar: CommonBottomNav(uid: widget.uid, userEmail: widget.userEmail, currentIndex: 0, screenWidth: MediaQuery.of(context).size.width),
+          bottomNavigationBar: CommonBottomNav(uid: widget.uid, userEmail: widget.userEmail, currentIndex: 0, screenWidth: MediaQuery.sizeOf(context).width),
         );
       },
     );
   }
 
   Widget _buildProfileHeader(BuildContext context, PlanProvider planProvider) {
-    final topPadding = MediaQuery.of(context).padding.top;
+    final topPadding = MediaQuery.paddingOf(context).top;
     return Container(
       padding: EdgeInsets.only(top: (topPadding > 10 ? topPadding - 10 : 0), left: 20, right: 20, bottom: 0),
       decoration: const BoxDecoration(
@@ -503,7 +503,7 @@ class _MenuPageState extends State<MenuPage> {
   }
 
   Widget _buildBannerHeader(BuildContext context, PlanProvider planProvider) {
-    final double bannerWidth = MediaQuery.of(context).size.width - 32;
+    final double bannerWidth = MediaQuery.sizeOf(context).width - 32;
     final double bannerHeight = bannerWidth * (400 / 1125);
 
     final banners = _visibleBannerImages(planProvider);

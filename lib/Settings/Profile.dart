@@ -33,6 +33,7 @@ import 'package:maxmybill/Settings/StaffManagement.dart';
 import 'package:maxmybill/services/referral_service.dart';
 import 'package:maxmybill/utils/phone_country_codes.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 // ==========================================DF
 // 1. MAIN SETTINGS PAGE
@@ -173,7 +174,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
     if (_currentView != null) {
       // Wrap sub-pages with PopScope to handle Android back button
@@ -229,7 +230,7 @@ class _SettingsPageState extends State<SettingsPage> {
       case 'VideoTutorials':
         return VideoTutorialsPage(onBack: _goBack);
       default:
-        return _buildMainSettingsPage(context, MediaQuery.of(context).size.width);
+        return _buildMainSettingsPage(context, MediaQuery.sizeOf(context).width);
     }
   }
 
@@ -5032,6 +5033,74 @@ class HelpPage extends StatelessWidget {
   final Function(String) onNavigate;
   const HelpPage({super.key, required this.onBack, required this.onNavigate});
 
+  Future<void> _openWhatsAppSupport(BuildContext context) async {
+    const supportPhone = '919994593969';
+    String storeName = 'My Store';
+    String storeNumber = '';
+    String storeId = '';
+
+    try {
+      final doc = await FirestoreService().getCurrentStoreDoc();
+      if (doc != null && doc.exists) {
+        final data = doc.data() as Map<String, dynamic>? ?? {};
+        storeName = (data['businessName'] ?? data['name'] ?? data['storeName'] ?? 'My Store').toString().trim();
+        storeNumber = (data['businessPhone'] ??
+                data['phoneNumber'] ??
+                data['ownerPhone'] ??
+                data['personalPhone'] ??
+                data['phone'] ??
+                FirebaseAuth.instance.currentUser?.phoneNumber ??
+                '')
+            .toString()
+            .trim();
+        storeId = (data['storeId'] ?? doc.id).toString().trim();
+      }
+    } catch (_) {}
+
+    final finalStoreNum = storeNumber.isNotEmpty ? storeNumber : (storeId.isNotEmpty ? storeId : 'N/A');
+
+    final buffer = StringBuffer();
+    buffer.writeln('Hello MAXmybill Support,');
+    buffer.writeln('I need help with my store.');
+    buffer.writeln('');
+    buffer.writeln('Store Name: $storeName');
+    buffer.writeln('Store Number: $finalStoreNum');
+    if (storeId.isNotEmpty && storeId != finalStoreNum) {
+      buffer.writeln('Store ID: $storeId');
+    }
+    buffer.writeln('');
+    buffer.writeln('Please assist me.');
+
+    final message = buffer.toString();
+    final encodedMsg = Uri.encodeComponent(message);
+
+    final whatsappUri = Uri.parse('whatsapp://send?phone=$supportPhone&text=$encodedMsg');
+    final webUri = Uri.parse('https://wa.me/$supportPhone?text=$encodedMsg');
+
+    try {
+      if (await canLaunchUrl(whatsappUri)) {
+        await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
+      } else if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(webUri, mode: LaunchMode.externalNonBrowserApplication);
+      }
+    } catch (_) {
+      try {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not open WhatsApp. Contact: +91 99945 93969'),
+              backgroundColor: kErrorColor,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -5045,6 +5114,13 @@ class HelpPage extends StatelessWidget {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: kWhite, size: 18), onPressed: onBack),
+        actions: [
+          IconButton(
+            tooltip: 'WhatsApp Support',
+            icon: const Icon(Icons.chat_rounded, color: Colors.white, size: 20),
+            onPressed: () => _openWhatsAppSupport(context),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -5112,6 +5188,18 @@ class HelpPage extends StatelessWidget {
             ),
             child: Column(
               children: [
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(color: const Color(0xFF25D366).withAlpha(35), borderRadius: BorderRadius.circular(8)),
+                    child: const Icon(Icons.chat_rounded, color: Color(0xFF25D366), size: 20),
+                  ),
+                  title: const Text('WhatsApp Support', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, fontFamily: 'NotoSans')),
+                  subtitle: const Text('+91 99945 93969 • Instant Response', style: TextStyle(fontSize: 11, color: kBlack54, fontWeight: FontWeight.w500, fontFamily: 'Lato')),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: kGrey400),
+                  onTap: () => _openWhatsAppSupport(context),
+                ),
+                const Divider(height: 1, indent: 60, color: kGrey100),
                 ListTile(
                   leading: Container(
                     padding: const EdgeInsets.all(8),

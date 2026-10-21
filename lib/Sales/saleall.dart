@@ -90,12 +90,6 @@ class _SaleAllPageState extends State<SaleAllPage> {
   void initState() {
     super.initState();
     _searchCtrl.addListener(() => setState(() => _query = _searchCtrl.text.toLowerCase()));
-    _searchFocusNode.addListener(() {
-      setState(() {
-        _isSearchFocused = _searchFocusNode.hasFocus;
-      });
-      widget.onSearchFocusChanged?.call(_searchFocusNode.hasFocus);
-    });
     _initializeProductsStream();
 
     // Always extract orderName from savedOrderData if available
@@ -793,7 +787,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
   @override
   Widget build(BuildContext context) {
-    final w = MediaQuery.of(context).size.width;
+    final w = MediaQuery.sizeOf(context).width;
 
     // Listen to CartService for changes (e.g., when cart is cleared from Bill page)
     // Only sync with CartService when NOT in quotation mode
@@ -834,17 +828,15 @@ class _SaleAllPageState extends State<SaleAllPage> {
       },
       child: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: Scaffold(
-          backgroundColor: kGreyBg,
-          resizeToAvoidBottomInset: false,
-          body: Column(
+        child: ColoredBox(
+          color: kGreyBg,
+          child: Column(
             children: [
               _buildHeader(w),
               Expanded(
                 child: Column(
                   children: [
-                    if (!_searchFocusNode.hasFocus)
-                      _buildCategorySelector(w),
+                    _buildCategorySelector(w),
                     Expanded(child: _buildProductGrid(w)),
                   ],
                 ),

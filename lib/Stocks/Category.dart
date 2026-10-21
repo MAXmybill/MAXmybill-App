@@ -91,18 +91,49 @@ class _CategoryPageState extends State<CategoryPage> {
         _productsRef = ref;
         _productsStream = ref.snapshots();
       });
-      // Listen to products stream to keep count map updated live
+      // Listen to products stream to keep count map updated live and auto-sync missing categories
       _productsStream!.listen((snapshot) {
         if (!mounted) return;
         final newMap = <String, int>{};
         for (final doc in snapshot.docs) {
-          final cat = ((doc.data() as Map<String, dynamic>)['category'] ?? '').toString();
+          final cat = ((doc.data() as Map<String, dynamic>)['category'] ?? '').toString().trim();
           if (cat.isNotEmpty) newMap[cat] = (newMap[cat] ?? 0) + 1;
         }
         setState(() => _productCountMap = newMap);
+        _syncMissingCategories(newMap.keys);
       });
     } catch (e) {
       debugPrint("Stream init error: $e");
+    }
+  }
+
+  bool _isSyncingCategories = false;
+  Future<void> _syncMissingCategories(Iterable<String> productCategories) async {
+    if (_isSyncingCategories || productCategories.isEmpty) return;
+    _isSyncingCategories = true;
+    try {
+      final catCol = await FirestoreService().getStoreCollection('categories');
+      final catSnap = await catCol.get();
+      final existingNames = catSnap.docs
+          .map((d) => ((d.data() as Map<String, dynamic>)['name'] ?? '').toString().trim().toLowerCase())
+          .toSet();
+
+      for (final catName in productCategories) {
+        final trimmed = catName.trim();
+        if (trimmed.isNotEmpty && !existingNames.contains(trimmed.toLowerCase())) {
+          existingNames.add(trimmed.toLowerCase());
+          await FirestoreService().addDocument('categories', {
+            'name': trimmed,
+            'createdAt': FieldValue.serverTimestamp(),
+            'ownerUid': _uid,
+            'ownerEmail': _userEmail,
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint("Auto category sync error: $e");
+    } finally {
+      _isSyncingCategories = false;
     }
   }
 
@@ -258,8 +289,12 @@ class _CategoryPageState extends State<CategoryPage> {
           return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || (snapshot.data!.docs.isEmpty && _productCountMap.isEmpty)) {
           return _buildEmptyState();
+        }
+
+        if (snapshot.data!.docs.isEmpty && _productCountMap.isNotEmpty) {
+          return const Center(child: CircularProgressIndicator(color: kPrimaryColor));
         }
 
         var filteredCategories = snapshot.data!.docs.where((doc) {

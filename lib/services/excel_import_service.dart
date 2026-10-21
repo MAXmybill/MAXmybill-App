@@ -362,6 +362,21 @@ class ExcelImportService {
         return {'success': false, 'message': 'Empty Excel file'};
       }
 
+      // Pre-load existing categories to automatically create new categories from Excel
+      final Set<String> existingCategories = {};
+      try {
+        final categoriesCol = await FirestoreService().getStoreCollection('categories');
+        final catSnap = await categoriesCol.get();
+        for (final doc in catSnap.docs) {
+          final catName = ((doc.data() as Map<String, dynamic>)['name'] ?? '').toString().trim().toLowerCase();
+          if (catName.isNotEmpty) {
+            existingCategories.add(catName);
+          }
+        }
+      } catch (e) {
+        print('⚠️ Could not fetch existing categories during Excel import: $e');
+      }
+
       // Skip header row, start from row 1 (index 1)
       // Template columns (0-indexed):
       // 0: Category, 1: Item Name*, 2: Product code, 3: Price, 4: Initial Stock,
@@ -379,6 +394,23 @@ class ExcelImportService {
 
           // Extract data based on actual template columns
           final category = row.length > 0 ? row[0]?.value?.toString().trim() ?? '' : '';
+          final resolvedCategory = category.isEmpty ? 'General' : category;
+
+          // Auto-create category in categories collection if not yet present
+          if (!existingCategories.contains(resolvedCategory.toLowerCase())) {
+            existingCategories.add(resolvedCategory.toLowerCase());
+            try {
+              await FirestoreService().addDocument('categories', {
+                'name': resolvedCategory,
+                'createdAt': FieldValue.serverTimestamp(),
+                'ownerUid': uid,
+              });
+              print('✅ Auto-created category during Excel import: $resolvedCategory');
+            } catch (catErr) {
+              print('⚠️ Error creating category $resolvedCategory: $catErr');
+            }
+          }
+
           final name = row.length > 1 ? row[1]?.value?.toString().trim() ?? '' : '';
           String barcode = row.length > 2 ? row[2]?.value?.toString().trim() ?? '' : '';
           final priceStr = row.length > 3 ? row[3]?.value?.toString().trim() ?? '0' : '0';

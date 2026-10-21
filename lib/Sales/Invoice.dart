@@ -1155,7 +1155,7 @@ class _InvoicePageState extends State<InvoicePage>
               builder: (context, child) {
                 return IgnorePointer(
                   child: CustomPaint(
-                    size: MediaQuery.of(context).size,
+                    size: MediaQuery.sizeOf(context),
                     painter: _ConfettiPainter(
                       particles: _confettiParticles,
                       progress: _celebrationController.value,
@@ -1796,7 +1796,7 @@ class _InvoicePageState extends State<InvoicePage>
       builder: (context, constraints) {
         final availW = constraints.maxWidth.isFinite
             ? constraints.maxWidth
-            : MediaQuery.of(context).size.width - 32;
+            : MediaQuery.sizeOf(context).width - 32;
         // Scale factor: designed for 460px, shrinks on smaller screens
         final scale = (availW / 460).clamp(0.6, 1.0);
         return _buildA4PreviewContent(scale);
@@ -4308,33 +4308,21 @@ class _InvoicePageState extends State<InvoicePage>
               : '0%';
 
           // No currency in table columns; no tax sub-line
-          // Print the item name in standard Font A (large)
-          bytes.addAll([esc, 0x21, normalMode]);
-          for (final line in _wrapText(name, lineWidth)) {
-            bytes.addAll(enc(line));
-            bytes.add(lf);
-          }
-
-          // Print the column values on the next line
-          final String valuesLine = _formatTableRow(
-            '',
+          // Single-line if item name fits, multi-line if lengthy
+          final List<String> itemLines = _formatTableRowMultiLine(
+            name,
             _formatQty(qty),
             _formatDecimal(price),
             _formatDecimal(amount),
-            lineWidth, // Use standard line width since the font is the same
+            lineWidth,
             tax: showTaxCol ? taxStr : null,
           );
 
-          bytes.addAll([
-            esc,
-            0x21,
-            fontBNormal,
-          ]); // Switch to Font B (smaller font) for values
-          bytes.addAll(enc(valuesLine));
-          bytes.add(lf);
-          bytes.addAll([esc, 0x21, normalMode]); // Restore to default Font A
-          // Add spacing between items
-          bytes.add(lf);
+          bytes.addAll([esc, 0x21, normalMode]);
+          for (final line in itemLines) {
+            bytes.addAll(enc(line));
+            bytes.add(lf);
+          }
         }
       } else {
         // Just compute totalQty if we're not showing the table
@@ -5016,17 +5004,17 @@ class _InvoicePageState extends State<InvoicePage>
     final int itemW;
 
     if (lineWidth <= 32) {
-      qtyW = showTax ? 4 : 5;
-      priceW = showTax ? 6 : 7;
+      qtyW = 3;
+      priceW = 6;
       taxW = showTax ? 4 : 0;
-      amtW = showTax ? 6 : 8;
+      amtW = showTax ? 6 : 7;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     } else {
-      qtyW = showTax ? 6 : 8;
-      priceW = showTax ? 10 : 12;
-      taxW = showTax ? 8 : 0;
-      amtW = showTax ? 10 : 13;
+      qtyW = 4;
+      priceW = 8;
+      taxW = showTax ? 5 : 0;
+      amtW = 9;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     }
@@ -5064,16 +5052,16 @@ class _InvoicePageState extends State<InvoicePage>
 
     if (lineWidth <= 32) {
       qtyW = 3;
-      priceW = showTax ? 5 : 5;
-      taxW = showTax ? 3 : 0;
-      amtW = showTax ? 5 : 6;
+      priceW = 6;
+      taxW = showTax ? 4 : 0;
+      amtW = showTax ? 6 : 7;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     } else {
-      qtyW = showTax ? 3 : 4;
-      priceW = showTax ? 8 : 10;
-      taxW = showTax ? 6 : 0;
-      amtW = showTax ? 8 : 10;
+      qtyW = 4;
+      priceW = 8;
+      taxW = showTax ? 5 : 0;
+      amtW = 9;
       final int numSpaces = showTax ? 4 : 3;
       itemW = lineWidth - qtyW - priceW - taxW - amtW - numSpaces;
     }

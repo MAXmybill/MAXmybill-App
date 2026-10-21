@@ -330,7 +330,7 @@ class _ReportsPageState extends State<ReportsPage> {
         uid: widget.uid,
         userEmail: widget.userEmail,
         currentIndex: 1,
-        screenWidth: MediaQuery.of(context).size.width,
+        screenWidth: MediaQuery.sizeOf(context).width,
       ),
     );
   }

@@ -99,7 +99,6 @@ class KeyboardHelper {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) {
-        final bool hasText = value.text.isNotEmpty;
         return TextField(
       controller: controller,
       keyboardType: keyboardType,
@@ -139,19 +138,26 @@ class KeyboardHelper {
     );
   }
 
-  /// Optimize keyboard animation speed (call once in main or splash)
+  /// Optimize keyboard animation speed and responsiveness across the entire app
   static void configureKeyboardOptimizations() {
-    // Set system UI overlay style for better keyboard transition
+    // Set system UI overlay style for smooth keyboard transition
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
     );
 
-    // Enable edge-to-edge mode for smooth keyboard transitions
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    // Use standard manual mode with system overlays instead of edgeToEdge.
+    // Edge-to-edge mode on Android forces system bar insets to synchronize with IME,
+    // which causes severe frame drops, lag, and slow-motion keyboard opening.
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom],
+    );
   }
 }
 
