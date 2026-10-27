@@ -65,9 +65,9 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
   double get _minCartHeight {
     final count = _sharedCartItems?.length ?? 0;
     if (count <= 0) return 0;
-    // Header (~40px) + Footer (~36px) + each item (~36px)
-    // 1 item: ~112px, 2 items: ~148px, 3+ items: capped at 170px
-    return (76.0 + count * 36.0).clamp(112.0, 170.0);
+    // Header (~36px) + Footer (~32px) + each item (~32px)
+    // Supports displaying 4-5 items cleanly
+    return (68.0 + count * 32.0).clamp(100.0, 235.0);
   }
 
   double get _cartHeight {
@@ -1083,7 +1083,7 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: R.sp(context, 16),
-                vertical: isSearchFocused ? R.sp(context, 6) : R.sp(context, 12),
+                vertical: isSearchFocused ? R.sp(context, 4) : R.sp(context, 7),
               ),
               decoration: BoxDecoration(
                 color: Color(0xFFE0B646),
@@ -1123,7 +1123,7 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
                             duration: const Duration(milliseconds: 400),
                             padding: EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: isSearchFocused ? 4 : 8, // Reduced padding in search mode
+                              vertical: isSearchFocused ? 3 : 5, // Compact row padding to show more items
                             ),
                             decoration: BoxDecoration(
                               // Use animated color for smooth transition
@@ -1137,17 +1137,17 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
                                   child: Row(
                                     children: [
                                       Expanded(
-                                        child: Text(item.name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 13)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        child: Text(item.name, style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 12)), maxLines: 1, overflow: TextOverflow.ellipsis),
                                       ),
                                       SizedBox(width: R.sp(context, 4)),
-                                      HeroIcon(HeroIcons.pencil, color: kPrimaryColor, size: R.sp(context, 16)),
+                                      HeroIcon(HeroIcons.pencil, color: kPrimaryColor, size: R.sp(context, 14)),
                                     ],
                                   ),
                                 ),
                                 Expanded(flex: 2, child: Text(
                                   item.quantity % 1 == 0 ? '${item.quantity.toInt()}' : '${item.quantity.toStringAsFixed(item.quantity < 1 ? 3 : 2).replaceAll(RegExp(r'\.?0+$'), '')}',
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 13))
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: R.sp(context, 12))
                                 )),
                                 Expanded(flex: 2, child: Text(AmountFormatter.formatWithSymbol(item.priceWithTax), textAlign: TextAlign.center, style: TextStyle(fontSize: R.sp(context, 12)))),
                                 Expanded(
@@ -1155,7 +1155,7 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
                                   child: Text(
                                     AmountFormatter.formatWithSymbol(item.totalWithTax),
                                     textAlign: TextAlign.right,
-                                    style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w600, fontSize: R.sp(context, 13)),
+                                    style: TextStyle(color: kPrimaryColor, fontWeight: FontWeight.w600, fontSize: R.sp(context, 12)),
                                   ),
                                 ),
                               ],
@@ -1171,7 +1171,7 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
             Container(
               padding: EdgeInsets.symmetric(
                 horizontal: R.sp(context, 16),
-                vertical: isSearchFocused ? R.sp(context, 4) : R.sp(context, 8),
+                vertical: isSearchFocused ? R.sp(context, 3) : R.sp(context, 4),
               ),
               decoration: BoxDecoration(
                 color: kPrimaryColor.withOpacity(0.03),
@@ -1187,25 +1187,25 @@ class _NewSalePageState extends State<NewSalePage> with SingleTickerProviderStat
                       borderRadius: BorderRadius.circular(8),
                       onTap: _handleClearCart,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            HeroIcon(HeroIcons.trash, color: Colors.redAccent, size: R.sp(context, 18)),
+                            HeroIcon(HeroIcons.trash, color: Colors.redAccent, size: R.sp(context, 16)),
                             SizedBox(width: R.sp(context, 4)),
-                            Text('Clear', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800, fontSize: R.sp(context, 13))),
+                            Text('Clear', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800, fontSize: R.sp(context, 12))),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  HeroIcon(HeroIcons.bars3, color: Colors.grey, size: R.sp(context, 24)),
+                  HeroIcon(HeroIcons.bars3, color: Colors.grey, size: R.sp(context, 20)),
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 10), vertical: R.sp(context, 4)),
+                    padding: EdgeInsets.symmetric(horizontal: R.sp(context, 10), vertical: R.sp(context, 3)),
                     decoration: BoxDecoration(color: kPrimaryColor, borderRadius: R.radius(context, 12)),
                     child: Text(
                       '${_sharedCartItems?.length ?? 0} Items',
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: R.sp(context, 12)),
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: R.sp(context, 11)),
                     ),
                   ),
                 ],

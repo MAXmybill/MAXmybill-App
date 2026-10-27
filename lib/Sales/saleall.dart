@@ -919,7 +919,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
   Widget _buildHeader(double w) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       decoration: const BoxDecoration(
         color: kWhite,
         border: Border(bottom: BorderSide(color: kGrey200)),
@@ -928,7 +928,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
         children: [
           Expanded(
             child: Container(
-              height: R.sp(context, 46),
+              height: R.sp(context, 42),
               decoration: BoxDecoration(
                 borderRadius: R.radius(context, 12),
               ),
@@ -944,12 +944,12 @@ class _SaleAllPageState extends State<SaleAllPage> {
                   hintText: context.tr('search'),
                   hintStyle: TextStyle(color: kBlack54, fontSize: R.sp(context, 14)),
                   prefixIcon: Padding(
-                    padding: R.all(context, 12),
-                    child: HeroIcon(HeroIcons.magnifyingGlass, color: kPrimaryColor, size: R.sp(context, 20)),
+                    padding: R.all(context, 10),
+                    child: HeroIcon(HeroIcons.magnifyingGlass, color: kPrimaryColor, size: R.sp(context, 18)),
                   ),
                   suffixIcon: _searchFocusNode.hasFocus
                       ? IconButton(
-                    icon: HeroIcon(HeroIcons.xMark, color: kPrimaryColor, size: R.sp(context, 20)),
+                    icon: HeroIcon(HeroIcons.xMark, color: kPrimaryColor, size: R.sp(context, 18)),
                     onPressed: () {
                       _searchCtrl.clear();
                       _searchFocusNode.unfocus();
@@ -958,7 +958,7 @@ class _SaleAllPageState extends State<SaleAllPage> {
                       : null,
                   filled: true,
                   fillColor: const Color(0xFFF8F9FA),
-                  contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 16), vertical: R.sp(context, 14)),
+                  contentPadding: EdgeInsets.symmetric(horizontal: R.sp(context, 14), vertical: R.sp(context, 10)),
                   border: OutlineInputBorder(
                     borderRadius: R.radius(context, 12),
                     borderSide: BorderSide(color: hasText ? kPrimaryColor : kGrey200, width: hasText ? 1.5 : 1.0),
@@ -980,17 +980,17 @@ class _SaleAllPageState extends State<SaleAllPage> {
     ),
             ),
           ),
-          SizedBox(width: R.sp(context, 12)),
+          SizedBox(width: R.sp(context, 10)),
           GestureDetector(
             onTap: _openScanner,
             child: Container(
-              height: R.sp(context, 46),
-              width: R.sp(context, 46),
+              height: R.sp(context, 42),
+              width: R.sp(context, 42),
               decoration: BoxDecoration(
                 color: Color(0xFFC9A227),
                 borderRadius: R.radius(context, 12),
               ),
-              child: const HeroIcon(HeroIcons.qrCode, color: kWhite, size: 22),
+              child: const HeroIcon(HeroIcons.qrCode, color: kWhite, size: 20),
             ),
           ),
         ],
@@ -1003,9 +1003,9 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
     return Container(
       color: kWhite,
-      padding: const EdgeInsets.fromLTRB(16, 10, 0, 10),
+      padding: const EdgeInsets.fromLTRB(16, 6, 0, 6),
       child: SizedBox(
-        height: 36,
+        height: 32,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: _categories.length,
@@ -1080,11 +1080,11 @@ class _SaleAllPageState extends State<SaleAllPage> {
 
         return GridView.builder(
           padding: EdgeInsets.fromLTRB(R.sp(context, 16), R.sp(context, 8), R.sp(context, 16), R.sp(context, 100)),
-          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: w > 600 ? 220 : (w > 400 ? R.sp(context, 130) : R.sp(context, 115)),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: w > 600 ? 4 : 3,
             crossAxisSpacing: R.sp(context, 8),
-            mainAxisSpacing: R.sp(context, 10),
-            childAspectRatio: 1.0,
+            mainAxisSpacing: R.sp(context, 8),
+            childAspectRatio: 0.92,
           ),
           itemCount: filtered.length,
           itemBuilder: (ctx, idx) {
