@@ -125,6 +125,7 @@ class _ProductsPageState extends State<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // parent Scaffold already handles keyboard
       backgroundColor: kGreyBg,
       floatingActionButton: (isAdmin || _hasPermission('addProduct'))
           ? FloatingActionButton.extended(

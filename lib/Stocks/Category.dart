@@ -166,6 +166,7 @@ class _CategoryPageState extends State<CategoryPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false, // parent Scaffold already handles keyboard
       backgroundColor: kGreyBg,
       floatingActionButton: (_hasPermission('addCategory') || isAdmin)
           ? FloatingActionButton.extended(

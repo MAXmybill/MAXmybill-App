@@ -55,6 +55,8 @@ class FirestoreService {
   /// If clearPersistent is false, keeps persistent Hive storeId to prevent losing store on transient resets.
   void clearCache({bool clearPersistent = false}) {
     _cachedStoreId = null;
+    _collectionFutureCache.clear();
+    _streamFutureCache.clear();
     _cachedStoreDoc = null;
     _cachedStoreData = null;
     if (clearPersistent) {
@@ -308,7 +310,23 @@ class FirestoreService {
   // =========================================================
 
   /// Get reference to a store-scoped collection
-  Future<CollectionReference> getStoreCollection(String collectionName) async {
+  // Memoized futures/streams so widgets that call these inside build()
+  // (FutureBuilder/StreamBuilder) receive the SAME instance on every rebuild.
+  // Without this, each keyboard animation frame / keystroke recreated the
+  // Firestore listener, causing heavy lag when the keyboard opens.
+  final Map<String, Future<CollectionReference>> _collectionFutureCache = {};
+  final Map<String, Future<Stream<QuerySnapshot>>> _streamFutureCache = {};
+
+  Future<CollectionReference> getStoreCollection(String collectionName) {
+    final key = '${_cachedStoreId ?? ''}|$collectionName';
+    return _collectionFutureCache[key] ??=
+        _resolveStoreCollection(collectionName).catchError((Object e) {
+      _collectionFutureCache.remove(key);
+      throw e;
+    });
+  }
+
+  Future<CollectionReference> _resolveStoreCollection(String collectionName) async {
     var storeId = await getCurrentStoreId();
     if (storeId == null || storeId.isEmpty) {
       // Retry with explicit refresh in case user auth was just initialized
@@ -327,9 +345,14 @@ class FirestoreService {
     return collection.doc(docId);
   }
 
-  Future<Stream<QuerySnapshot>> getCollectionStream(String collectionName) async {
-    final collection = await getStoreCollection(collectionName);
-    return collection.snapshots();
+  Future<Stream<QuerySnapshot>> getCollectionStream(String collectionName) {
+    final key = '${_cachedStoreId ?? ''}|$collectionName';
+    return _streamFutureCache[key] ??= getStoreCollection(collectionName)
+        .then((c) => _ReplayStream<QuerySnapshot>(c.snapshots()).stream)
+        .catchError((Object e) {
+      _streamFutureCache.remove(key);
+      throw e;
+    });
   }
 
   Future<DocumentSnapshot> getDocument(String collectionName, String docId) async {
@@ -378,4 +401,43 @@ class FirestoreService {
   // Direct access to top-level collections
   CollectionReference get usersCollection => _firestore.collection('users');
   CollectionReference get storeCollection => _firestore.collection('store');
+}
+
+/// Wraps a source stream so many widgets can listen to ONE underlying
+/// Firestore listener. New listeners immediately receive the latest value.
+class _ReplayStream<T> {
+  _ReplayStream(this._source) {
+    stream = Stream<T>.multi((controller) {
+      if (_hasValue) controller.add(_last as T);
+      _listeners.add(controller);
+      _sub ??= _source.listen(
+        (value) {
+          _last = value;
+          _hasValue = true;
+          for (final l in _listeners.toList()) {
+            l.add(value);
+          }
+        },
+        onError: (Object e, StackTrace s) {
+          for (final l in _listeners.toList()) {
+            l.addError(e, s);
+          }
+        },
+      );
+      controller.onCancel = () {
+        _listeners.remove(controller);
+        if (_listeners.isEmpty) {
+          _sub?.cancel();
+          _sub = null;
+        }
+      };
+    }, isBroadcast: true);
+  }
+
+  final Stream<T> _source;
+  late final Stream<T> stream;
+  final Set<MultiStreamController<T>> _listeners = {};
+  StreamSubscription<T>? _sub;
+  T? _last;
+  bool _hasValue = false;
 }

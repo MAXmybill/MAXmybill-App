@@ -593,7 +593,11 @@ class _SaleAllPageState extends State<SaleAllPage> {
         );
         return false;
       }
-      _cart[idx].quantity += quantity;
+      // Move the item to the most-recent position so it shows at the top
+      // of the cart and receives the highlight (not the previously added item).
+      final existing = _cart.removeAt(idx);
+      existing.quantity += quantity;
+      _cart.add(existing);
     } else {
       if (stockEnabled && stock < quantity) {
         CommonWidgets.showSnackBar(context, context.tr('out_of_stock'), bgColor: kErrorColor);
